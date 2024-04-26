@@ -31,11 +31,12 @@ Item {
     implicitWidth: {
         return sourceSize.width;
     }
+    opacity: root.status === Image.Ready && root.paintedHeight > 0 ? 1 : 0
 
     MD.MatProp.elevation: MD.Token.elevation.level0
-    layer.enabled: root.status === Image.Ready && root.paintedHeight > 0 && root.MD.MatProp.elevation != MD.Token.elevation.level0
+    layer.enabled: true
     layer.effect: MD.RoundedElevationEffect {
-        elevation: root.MD.MatProp.elevation
+        elevation: root.opacity > 0 ? root.MD.MatProp.elevation : MD.Token.elevation.level0
     }
 
     Image {
