@@ -144,6 +144,7 @@ Item {
 
         // key box
         MD.BoxShadow {
+            visible: effect.elevation > 0
             offsetY: effect._shadow.angularValues[0].offset
             blurRadius: effect._shadow.angularValues[0].blur
             spreadRadius: effect._shadow.angularValues[0].spread
@@ -157,6 +158,7 @@ Item {
         
         // ambient box
         MD.BoxShadow {
+            visible: effect.elevation > 0
             offsetY: effect._shadow.angularValues[1].offset
             blurRadius: effect._shadow.angularValues[1].blur
             spreadRadius: effect._shadow.angularValues[1].spread
@@ -169,6 +171,7 @@ Item {
         }
 
         MD.BoxShadow {
+            visible: effect.elevation > 0
             offsetY: effect._shadow.angularValues[2].offset
             blurRadius: effect._shadow.angularValues[2].blur
             spreadRadius: effect._shadow.angularValues[2].spread
