@@ -92,7 +92,7 @@ T.Switch {
                 color: control.icon.color
                 visible: handle.hasIcon
             }
-*/
+            */
 
         }
         Ripple {
@@ -136,7 +136,7 @@ T.Switch {
             },
             State {
                 name: "Pressed"
-                when: control.down || control.focus
+                when: control.down
                 PropertyChanges {
                     item_state.textColor: control.checked ? item_state.ctx.color.on_primary_container : item_state.ctx.color.surface_container_highest
                     item_state.backgroundColor: control.checked ? item_state.ctx.color.primary : item_state.ctx.color.surface_container_highest
