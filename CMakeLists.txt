@@ -74,6 +74,7 @@ set(QML_FILES
     qml/GridView.qml
     qml/Icon.qml
     qml/Text.qml
+    qml/TextEdit.qml
     qml/Pane.qml
     qml/Page.qml
     qml/StackView.qml
