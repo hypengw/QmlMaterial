@@ -52,6 +52,7 @@ set(QML_FILES
     qml/Button.qml
     qml/Control.qml
     qml/ComboBox.qml
+    qml/CircleProgress.qml
     qml/Dialog.qml
     qml/Divider.qml
     qml/Drawer.qml
