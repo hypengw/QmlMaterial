@@ -155,29 +155,33 @@ void Util::track(QVariant, Track t) {
     }
 }
 
-
 QString Util::type_str(const QJSValue& obj) {
-    if(obj.isQObject()) {
+    if (obj.isQObject()) {
         return obj.toQObject()->metaObject()->className();
     }
-    if(obj.isVariant()) {
+    if (obj.isVariant()) {
         return obj.toVariant().metaType().name();
     }
-    if(auto objname = obj.property("objectName").toString(); !objname.isEmpty()) {
+    if (auto objname = obj.property("objectName").toString(); ! objname.isEmpty()) {
         return objname;
     }
     return obj.toString();
 }
 
 void Util::print_parents(const QJSValue& obj) {
-    auto cur = obj;
-    auto format_parent = core::y_combinator {[this](auto format_parent, const QJSValue& cur, i32 level) -> std::string {
-        if(!cur.isNull()) {
-            return fmt::format("    {}\n{}", type_str(cur), format_parent(cur.property("parent"), level + 1));
+    auto cur           = obj;
+    auto format_parent = core::y_combinator {
+        [this](auto format_parent, const QJSValue& cur, i32 level) -> std::string {
+            if (! cur.isNull()) {
+                return fmt::format(
+                    "    {}\n{}", type_str(cur), format_parent(cur.property("parent"), level + 1));
+            }
+            return {};
         }
-        return {};
-    }};
+    };
     DEBUG_LOG("{}\n{}", type_str(obj), format_parent(obj.property("parent"), 1));
 }
+
+auto Util::lightness(QColor color) -> qreal { return color.lightnessF(); }
 
 } // namespace qml_material

@@ -50,6 +50,7 @@ set(SOURCES
     src/round_item.cpp)
 set(QML_FILES
     qml/Button.qml
+    qml/BarItem.qml
     qml/Control.qml
     qml/ComboBox.qml
     qml/CircleProgress.qml
@@ -83,7 +84,7 @@ set(QML_FILES
     qml/SearchBar.qml
     qml/ScrollBar.qml
     qml/Switch.qml
-    qml/Rail.qml
+    qml/RailItem.qml
     qml/TextInput.qml
     qml/TextField.qml
     qml/TabBar.qml

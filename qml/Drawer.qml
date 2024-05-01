@@ -3,6 +3,7 @@ import QtQuick.Templates as T
 import QtQuick.Controls.Material
 import QtQuick.Controls.Material.impl
 import Qcm.Material as MD
+import QtQuick.Window
 
 T.Drawer {
     id: control
@@ -29,7 +30,7 @@ T.Drawer {
     MD.MatProp.elevation: !interactive && !dim ? MD.Token.elevation.level0 : MD.Token.elevation.level1
 
     background: Item {
-        implicitWidth: 200
+        implicitWidth: Math.min(200, control.Window.window?.width ?? 200)
         Rectangle {
             anchors.fill: parent
             color: MD.Token.color.surface

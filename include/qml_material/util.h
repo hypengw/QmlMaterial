@@ -101,6 +101,8 @@ public:
 
     QString type_str(const QJSValue&);
     Q_INVOKABLE void print_parents(const QJSValue&);
+
+    Q_INVOKABLE qreal lightness(QColor color);
 private:
     usize m_tracked { 0 };
 };

@@ -11,7 +11,7 @@ T.SplitView {
     handle: Rectangle {
         implicitWidth: control.orientation === Qt.Horizontal ? 6 : control.width
         implicitHeight: control.orientation === Qt.Horizontal ? control.height : 6
-        color: T.SplitHandle.pressed ? control.MD.MatProp.backgroundColor : Qt.lighter(control.MD.MatProp.backgroundColor, T.SplitHandle.hovered ? 1.1 : 1.0)
+        color:  T.SplitHandle.pressed || T.SplitHandle.hovered ? MD.Util.transparent(control.MD.MatProp.textColor, 0.12) : control.MD.MatProp.backgroundColor
 
         Rectangle {
             color: control.MD.MatProp.textColor
@@ -24,7 +24,7 @@ T.SplitView {
             property int length: parent.T.SplitHandle.pressed ? 3 : 8
             readonly property int thickness: parent.T.SplitHandle.pressed ? 3 : 1
 
-            Behavior on length  {
+            Behavior on length {
                 NumberAnimation {
                     duration: 100
                 }
