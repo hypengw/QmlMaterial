@@ -5,6 +5,8 @@ import Qcm.Material as MD
 T.Page {
     id: control
 
+    property bool canBack: false
+
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
                             contentWidth + leftPadding + rightPadding,
                             implicitHeaderWidth,
