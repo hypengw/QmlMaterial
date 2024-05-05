@@ -49,6 +49,7 @@ set(SOURCES
     src/type_scale.cpp
     src/round_item.cpp)
 set(QML_FILES
+    qml/js/utils.mjs
     qml/Button.qml
     qml/BarItem.qml
     qml/Control.qml

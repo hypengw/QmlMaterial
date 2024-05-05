@@ -3,11 +3,14 @@ import QtQuick.Templates as T
 import QtQuick.Controls.impl
 import Qcm.Material as MD
 
+import "js/utils.mjs" as UT
+
 T.Button {
     id: control
 
     property int type: MD.Enum.FABNormal
     property int color: MD.Enum.FABColorPrimary
+    property QtObject flickable: null
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
@@ -137,7 +140,7 @@ T.Button {
             },
             State {
                 name: "Hovered"
-                when: control.hovered 
+                when: control.hovered
                 PropertyChanges {
                     item_state.elevation: MD.Token.elevation.level4
                 }
@@ -147,6 +150,47 @@ T.Button {
                         const c = item_state.textColor;
                         return MD.Util.transparent(c, MD.Token.state.hover.state_layer_opacity);
                     }
+                }
+            }
+        ]
+    }
+
+    Item {
+        visible: false
+        state: "show"
+        states: [
+            State {
+                name: "hide"
+                when: {
+                    const fk = control.flickable;
+                    const fk_end = fk && !UT.epsilon_equal(fk.visibleArea.heightRatio, 1.0) && (1.0 - fk.visibleArea.heightRatio - fk.visibleArea.yPosition) * fk.height < 4.0;
+                    return !control.visible || fk_end
+                }
+                PropertyChanges {
+                    control.scale: 0.5
+                    control.opacity: 0.0
+                }
+            },
+            State {
+                name: "show"
+                when: true
+                PropertyChanges {
+                    control.scale: 1.0
+                    control.opacity: 1.0
+                }
+            }
+        ]
+
+        transitions: [
+            Transition {
+                to: "*"
+                ScaleAnimator {
+                    target: control
+                    duration: 100
+                }
+                OpacityAnimator {
+                    target: control
+                    duration: 100
                 }
             }
         ]
