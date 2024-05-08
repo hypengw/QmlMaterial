@@ -12,5 +12,6 @@ Item {
     property color textColor
     property color backgroundColor
     property color supportTextColor
-    property color stateLayerColor
+    property color stateLayerColor: "transparent"
+    property real stateLayerOpacity: 0.0
 }

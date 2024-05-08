@@ -58,15 +58,14 @@ T.MenuItem {
         implicitHeight: 48
         color: "transparent"
 
-        MD.Ripple {
-            width: parent.width
-            height: parent.height
-
-            clip: visible
+        MD.Ripple2 {
+            anchors.fill: parent
+            radius: parent.radius
+            pressX: control.pressX
+            pressY: control.pressY
             pressed: control.pressed
-            anchor: control
-            active: control.down || control.highlighted
-            color: control.MD.MatProp.stateLayerColor
+            stateOpacity: item_state.stateLayerOpacity
+            color: item_state.stateLayerColor
         }
     }
 
@@ -74,7 +73,6 @@ T.MenuItem {
     MD.MatProp.textColor: item_state.textColor
     MD.MatProp.supportTextColor: item_state.supportTextColor
     MD.MatProp.backgroundColor: item_state.backgroundColor
-    MD.MatProp.stateLayerColor: item_state.stateLayerColor
 
     property color leadingIconColor: item_state.leadingIconColor
     property color trailingIconColor: item_state.trailingIconColor
@@ -102,26 +100,22 @@ T.MenuItem {
             },
             State {
                 name: "Pressed"
-                when: control.down || control.focus
+                when: control.down || control.visualFocus
                 PropertyChanges {
                     item_state.leadingIconColor: item_state.ctx.color.on_surface_variant
                     item_state.trailingIconColor: item_state.ctx.color.on_surface_variant
-                    item_state.stateLayerColor: {
-                        const c = item_state.ctx.color.on_surface;
-                        return MD.Util.transparent(c, MD.Token.state.pressed.state_layer_opacity);
-                    }
+                    item_state.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
+                    item_state.stateLayerColor: item_state.ctx.color.on_surface
                 }
             },
             State {
                 name: "Hovered"
-                when:  control.hovered
+                when: control.hovered
                 PropertyChanges {
                     item_state.leadingIconColor: item_state.ctx.color.on_surface_variant
                     item_state.trailingIconColor: item_state.ctx.color.on_surface_variant
-                    item_state.stateLayerColor: {
-                        const c = item_state.ctx.color.on_surface;
-                        return MD.Util.transparent(c, MD.Token.state.hover.state_layer_opacity);
-                    }
+                    item_state.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
+                    item_state.stateLayerColor: item_state.ctx.color.on_surface
                 }
             }
         ]

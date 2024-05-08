@@ -76,21 +76,23 @@ T.Button {
             radius: height / 2
             color: control.MD.MatProp.backgroundColor
 
-            layer.enabled: control.enabled && color.a > 0 && !control.flat
+            layer.enabled: true
             layer.effect: MD.RoundedElevationEffect {
-                elevation: MD.Token.elevation.level0//control.MD.MatProp.elevation
+                elevation: control.MD.MatProp.elevation
             }
-
-            MD.Ripple {
-                clip: true
-                clipRadius: parent.radius
-                width: parent.width
-                height: parent.height
-                pressed: control.pressed
-                anchor: control
-                active: enabled && (control.down || control.visualFocus || control.hovered)
-                color: control.MD.MatProp.stateLayerColor
-            }
+        }
+        MD.Ripple2 {
+            readonly property point p: control.mapToItem(this, control.pressX, control.pressY)
+            x: (parent.width - width) / 2
+            y: 0
+            height: 32
+            width: 64
+            radius: height / 2
+            pressX: p.x
+            pressY: p.y
+            pressed: control.pressed
+            stateOpacity: item_state.stateLayerOpacity
+            color: item_state.stateLayerColor
         }
     }
 
@@ -98,13 +100,12 @@ T.Button {
     MD.MatProp.textColor: item_state.textColor
     MD.MatProp.supportTextColor: item_state.supportTextColor // icon color
     MD.MatProp.backgroundColor: item_state.backgroundColor
-    MD.MatProp.stateLayerColor: item_state.stateLayerColor
 
     MD.State {
         id: item_state
         item: control
 
-        elevation: MD.Token.elevation.level1
+        elevation: MD.Token.elevation.level0
         textColor: control.checked ? item_state.ctx.color.on_surface : item_state.ctx.color.on_surface_variant
         backgroundColor: control.checked ? item_state.ctx.color.secondary_container : "transparent"
         supportTextColor: control.checked ? item_state.ctx.color.on_secondary_container : item_state.ctx.color.on_surface_variant
@@ -113,34 +114,22 @@ T.Button {
         states: [
             State {
                 name: "Pressed"
-                when: control.down || control.focus
+                when: control.down || control.visualFocus
                 PropertyChanges {
-                    item_state.elevation: MD.Token.elevation.level1
                     item_state.textColor: item_state.ctx.color.on_surface
                     item_state.supportTextColor: control.checked ? item_state.ctx.color.on_secondary_container : item_state.ctx.color.on_surface
-                }
-                PropertyChanges {
-                    restoreEntryValues: false
-                    item_state.stateLayerColor: {
-                        const c = item_state.ctx.color.on_surface;
-                        return MD.Util.transparent(c, MD.Token.state.pressed.state_layer_opacity);
-                    }
+                    item_state.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
+                    item_state.stateLayerColor: item_state.ctx.color.on_surface
                 }
             },
             State {
                 name: "Hovered"
                 when: control.hovered
                 PropertyChanges {
-                    item_state.elevation: MD.Token.elevation.level2
                     item_state.textColor: item_state.ctx.color.on_surface
                     item_state.supportTextColor: control.checked ? item_state.ctx.color.on_secondary_container : item_state.ctx.color.on_surface
-                }
-                PropertyChanges {
-                    restoreEntryValues: false
-                    item_state.stateLayerColor: {
-                        const c = item_state.ctx.color.on_surface;
-                        return MD.Util.transparent(c, MD.Token.state.hover.state_layer_opacity);
-                    }
+                    item_state.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
+                    item_state.stateLayerColor: item_state.ctx.color.on_surface
                 }
             }
         ]

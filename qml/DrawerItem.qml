@@ -61,22 +61,20 @@ T.ItemDelegate {
             elevation: control.MD.MatProp.elevation
         }
 
-        MD.Ripple {
-            clip: true
-            clipRadius: parent.radius
-            width: parent.width
-            height: parent.height
+        MD.Ripple2 {
+            anchors.fill: parent
+            radius: parent.radius
+            pressX: control.pressX
+            pressY: control.pressY
             pressed: control.pressed
-            anchor: control
-            active: enabled && (control.down || control.visualFocus || control.hovered)
-            color: control.MD.MatProp.stateLayerColor
+            stateOpacity: item_state.stateLayerOpacity
+            color: item_state.stateLayerColor
         }
     }
     MD.MatProp.elevation: item_state.elevation
     MD.MatProp.textColor: item_state.textColor
     MD.MatProp.supportTextColor: item_state.supportTextColor
     MD.MatProp.backgroundColor: item_state.backgroundColor
-    MD.MatProp.stateLayerColor: item_state.stateLayerColor
 
     MD.State {
         id: item_state
@@ -102,30 +100,26 @@ T.ItemDelegate {
                 }
             },
             State {
-                name: "Hovered"
-                when: control.enabled && control.hovered && !control.down
+                name: "Pressed"
+                when: control.pressed || control.visualFocus
                 PropertyChanges {
                     item_state.textColor: control.checked ? on_secondary_container : MD.Token.color.on_surface
-                }
-                PropertyChanges {
-                    restoreEntryValues: false
+                    item_state.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
                     item_state.stateLayerColor: {
-                        const c = control.checked ? MD.Token.color.on_secondary_container : MD.Token.color.on_surface;
-                        return MD.Util.transparent(c, MD.Token.state.hover.state_layer_opacity);
+                        const c = MD.Token.color.on_secondary_container;
+                        return c;
                     }
                 }
             },
             State {
-                name: "Pressed"
-                when: control.enabled && control.down
+                name: "Hovered"
+                when: control.hovered
                 PropertyChanges {
                     item_state.textColor: control.checked ? on_secondary_container : MD.Token.color.on_surface
-                }
-                PropertyChanges {
-                    restoreEntryValues: false
+                    item_state.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
                     item_state.stateLayerColor: {
-                        const c = MD.Token.color.on_secondary_container;
-                        return MD.Util.transparent(c, MD.Token.state.pressed.state_layer_opacity);
+                        const c = control.checked ? MD.Token.color.on_secondary_container : MD.Token.color.on_surface;
+                        return c;
                     }
                 }
             }

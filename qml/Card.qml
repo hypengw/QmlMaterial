@@ -19,8 +19,7 @@ T.Button {
     verticalPadding: 0
     horizontalPadding: 16
 
-    contentItem: Item {
-    }
+    contentItem: Item {}
 
     background: Rectangle {
         implicitWidth: 64
@@ -43,23 +42,20 @@ T.Button {
         control.background.z: -2
         when: control.contentItem
     }
-
-    MD.Ripple {
-        clip: true
-        clipRadius: 12
-        width: parent.width
-        height: parent.height
+    MD.Ripple2 {
+        anchors.fill: parent
+        radius: 12
+        pressX: control.pressX
+        pressY: control.pressY
         pressed: control.pressed
-        anchor: control
-        active: enabled && (control.pressed || control.visualFocus || control.hovered)
-        color: MD.MatProp.stateLayerColor
+        stateOpacity: item_state.stateLayerOpacity
+        color: item_state.stateLayerColor
     }
 
     MD.MatProp.elevation: item_state.elevation
     MD.MatProp.textColor: item_state.textColor
     MD.MatProp.supportTextColor: item_state.supportTextColor
     MD.MatProp.backgroundColor: item_state.backgroundColor
-    MD.MatProp.stateLayerColor: item_state.stateLayerColor
 
     MD.State {
         id: item_state
@@ -110,7 +106,7 @@ T.Button {
             },
             State {
                 name: "Pressed"
-                when: control.down || control.focus
+                when: control.down || control.visualFocus
                 PropertyChanges {
                     item_state.elevation: {
                         switch (control.type) {
@@ -122,13 +118,8 @@ T.Button {
                             return MD.Token.elevation.level1;
                         }
                     }
-                }
-                PropertyChanges {
-                    restoreEntryValues: false
-                    item_state.stateLayerColor: {
-                        let c = item_state.ctx.color.on_surface;
-                        return MD.Util.transparent(c, MD.Token.state.pressed.state_layer_opacity);
-                    }
+                    item_state.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
+                    item_state.stateLayerColor: item_state.ctx.color.on_surface
                 }
             },
             State {
@@ -145,13 +136,8 @@ T.Button {
                             return MD.Token.elevation.level2;
                         }
                     }
-                }
-                PropertyChanges {
-                    restoreEntryValues: false
-                    item_state.stateLayerColor: {
-                        let c = item_state.ctx.color.on_surface;
-                        return MD.Util.transparent(c, MD.Token.state.hover.state_layer_opacity);
-                    }
+                    item_state.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
+                    item_state.stateLayerColor: item_state.ctx.color.on_surface
                 }
             }
         ]

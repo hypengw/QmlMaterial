@@ -79,15 +79,14 @@ T.Button {
             elevation: control.MD.MatProp.elevation
         }
 
-        MD.Ripple {
-            clip: true
-            clipRadius: parent.radius
-            width: parent.width
-            height: parent.height
+        MD.Ripple2 {
+            anchors.fill: parent
+            radius: parent.radius
+            pressX: control.pressX
+            pressY: control.pressY
             pressed: control.pressed
-            anchor: control
-            active: enabled && (control.down || control.visualFocus || control.hovered)
-            color: control.MD.MatProp.stateLayerColor
+            stateOpacity: item_state.stateLayerOpacity
+            color: item_state.stateLayerColor
         }
     }
 
@@ -121,28 +120,18 @@ T.Button {
             },
             State {
                 name: "Pressed"
-                when: control.pressed || control.focus
+                when: control.pressed || control.visualFocus
                 PropertyChanges {
-                }
-                PropertyChanges {
-                    restoreEntryValues: false
-                    item_state.stateLayerColor: {
-                        const c = item_state.ctx.color.on_surface;
-                        return MD.Util.transparent(c, MD.Token.state.pressed.state_layer_opacity);
-                    }
+                    item_state.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
+                    item_state.stateLayerColor: item_state.ctx.color.on_surface
                 }
             },
             State {
                 name: "Hovered"
                 when: control.hovered
                 PropertyChanges {
-                }
-                PropertyChanges {
-                    restoreEntryValues: false
-                    item_state.stateLayerColor: {
-                        const c = item_state.ctx.color.on_surface;
-                        return MD.Util.transparent(c, MD.Token.state.hover.state_layer_opacity);
-                    }
+                    item_state.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
+                    item_state.stateLayerColor: item_state.ctx.color.on_surface
                 }
             }
         ]

@@ -114,7 +114,7 @@ T.Slider {
             },
             State {
                 name: "Pressed"
-                when: control.pressed || control.focus
+                when: control.pressed || control.visualFocus
                 PropertyChanges {
                     item_state.stateLayerColor: {
                         const c = item_state.ctx.color.primary;

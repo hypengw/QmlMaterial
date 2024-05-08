@@ -131,7 +131,7 @@ T.ComboBox {
             },
             State {
                 name: "Focused"
-                when: control.focus
+                when: control.visualFocus
                 PropertyChanges {
                     item_state.outlineColor: item_state.ctx.color.primary
                 }

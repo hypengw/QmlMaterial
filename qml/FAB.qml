@@ -68,15 +68,14 @@ T.Button {
             elevation: MD.MatProp.elevation
         }
 
-        MD.Ripple {
-            clip: true
-            clipRadius: parent.radius
-            width: parent.width
-            height: parent.height
+        MD.Ripple2 {
+            anchors.fill: parent
+            radius: parent.radius
+            pressX: control.pressX
+            pressY: control.pressY
             pressed: control.pressed
-            anchor: control
-            active: enabled && (control.down || control.visualFocus || control.hovered)
-            color: MD.MatProp.stateLayerColor
+            stateOpacity: item_state.stateLayerOpacity
+            color: item_state.stateLayerColor
         }
     }
 
@@ -121,21 +120,15 @@ T.Button {
                 return item_state.ctx.color.primary_container;
             }
         }
-        stateLayerColor: "transparent"
+        stateLayerColor: textColor
 
         states: [
             State {
                 name: "Pressed"
-                when: control.down || control.focus
+                when: control.pressed || control.visualFocus
                 PropertyChanges {
                     item_state.elevation: MD.Token.elevation.level3
-                }
-                PropertyChanges {
-                    restoreEntryValues: false
-                    item_state.stateLayerColor: {
-                        const c = item_state.textColor;
-                        return MD.Util.transparent(c, MD.Token.state.pressed.state_layer_opacity);
-                    }
+                    item_state.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
                 }
             },
             State {
@@ -143,13 +136,7 @@ T.Button {
                 when: control.hovered
                 PropertyChanges {
                     item_state.elevation: MD.Token.elevation.level4
-                }
-                PropertyChanges {
-                    restoreEntryValues: false
-                    item_state.stateLayerColor: {
-                        const c = item_state.textColor;
-                        return MD.Util.transparent(c, MD.Token.state.hover.state_layer_opacity);
-                    }
+                    item_state.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
                 }
             }
         ]
@@ -164,7 +151,7 @@ T.Button {
                 when: {
                     const fk = control.flickable;
                     const fk_end = fk && !UT.epsilon_equal(fk.visibleArea.heightRatio, 1.0) && (1.0 - fk.visibleArea.heightRatio - fk.visibleArea.yPosition) * fk.height < 4.0;
-                    return !control.visible || fk_end
+                    return !control.visible || fk_end;
                 }
                 PropertyChanges {
                     control.scale: 0.5

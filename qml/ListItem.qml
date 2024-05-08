@@ -128,15 +128,15 @@ T.ItemDelegate {
             elevation: control.MD.MatProp.elevation
         }
 
-        MD.Ripple {
-            clip: true
-            clipRadius: parent.radius
+        MD.Ripple2 {
+            radius: parent.radius
             width: parent.width
             height: parent.height
+            pressX: control.pressX
+            pressY: control.pressY
             pressed: control.pressed
-            anchor: control
-            active: enabled && (control.down || control.visualFocus || control.hovered)
-            color: control.MD.MatProp.stateLayerColor
+            stateOpacity: item_state.stateLayerOpacity
+            color: item_state.stateLayerColor
         }
 
         MD.ItemHolder {
@@ -158,7 +158,8 @@ T.ItemDelegate {
         textColor: item_state.ctx.color.on_surface
         backgroundColor: item_state.ctx.color.surface
         supportTextColor: item_state.ctx.color.on_surface_variant
-        stateLayerColor: "transparent"
+        stateLayerOpacity: 0.0
+        stateLayerColor: item_state.ctx.color.on_surface
 
         states: [
             State {
@@ -175,24 +176,16 @@ T.ItemDelegate {
             },
             State {
                 name: "Pressed"
-                when: control.down || control.focus
+                when: control.pressed || control.visualFocus
                 PropertyChanges {
-                    restoreEntryValues: false
-                    item_state.stateLayerColor: {
-                        const c = item_state.ctx.color.on_surface;
-                        return MD.Util.transparent(c, MD.Token.state.pressed.state_layer_opacity);
-                    }
+                    item_state.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
                 }
             },
             State {
                 name: "Hovered"
                 when: control.hovered
                 PropertyChanges {
-                    restoreEntryValues: false
-                    item_state.stateLayerColor: {
-                        const c = item_state.ctx.color.on_surface;
-                        return MD.Util.transparent(c, MD.Token.state.hover.state_layer_opacity);
-                    }
+                    item_state.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
                 }
             }
         ]

@@ -94,6 +94,7 @@ set(QML_FILES
     qml/impl/Shadow.qml
     qml/impl/ListBusyFooter.qml
     qml/impl/Ripple.qml
+    qml/impl/Ripple2.qml
     qml/impl/RectangularGlow.qml
     qml/impl/CursorDelegate.qml
     qml/impl/State.qml

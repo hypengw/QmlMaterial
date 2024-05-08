@@ -48,15 +48,14 @@ T.Button {
             elevation: control.MD.MatProp.elevation
         }
 
-        MD.Ripple {
-            clip: true
-            clipRadius: parent.radius
-            width: parent.width
-            height: parent.height
+        MD.Ripple2 {
+            anchors.fill: parent
+            radius: parent.radius
+            pressX: control.pressX
+            pressY: control.pressY
             pressed: control.pressed
-            anchor: control
-            active: enabled && (control.down || control.visualFocus || control.hovered)
-            color: control.MD.MatProp.stateLayerColor
+            stateOpacity: item_state.stateLayerOpacity
+            color: item_state.stateLayerColor
         }
     }
 
@@ -64,7 +63,6 @@ T.Button {
     MD.MatProp.textColor: item_state.textColor
     MD.MatProp.supportTextColor: item_state.supportTextColor
     MD.MatProp.backgroundColor: item_state.backgroundColor
-    MD.MatProp.stateLayerColor: item_state.stateLayerColor
 
     MD.State {
         id: item_state
@@ -134,12 +132,10 @@ T.Button {
             },
             State {
                 name: "Pressed"
-                when: control.down || control.focus
+                when: control.down || control.visualFocus
                 PropertyChanges {
                     item_state.elevation: MD.Token.elevation.level1
-                }
-                PropertyChanges {
-                    restoreEntryValues: false
+                    item_state.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
                     item_state.stateLayerColor: {
                         let c = null;
                         switch (control.type) {
@@ -168,7 +164,7 @@ T.Button {
                             else
                                 c = item_state.ctx.color.on_surface_variant;
                         }
-                        return MD.Util.transparent(c, MD.Token.state.pressed.state_layer_opacity);
+                        return c;
                     }
                 }
             },
@@ -177,9 +173,7 @@ T.Button {
                 when: control.hovered
                 PropertyChanges {
                     item_state.elevation: MD.Token.elevation.level2
-                }
-                PropertyChanges {
-                    restoreEntryValues: false
+                    item_state.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
                     item_state.stateLayerColor: {
                         let c = null;
                         switch (control.type) {
@@ -209,7 +203,7 @@ T.Button {
                                 c = item_state.ctx.color.on_surface_variant;
                             break;
                         }
-                        return MD.Util.transparent(c, MD.Token.state.hover.state_layer_opacity);
+                        return c;
                     }
                 }
             }

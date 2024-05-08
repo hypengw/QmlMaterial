@@ -16,11 +16,10 @@ Item {
     Rectangle {
         id: handleRect
         anchors.centerIn: parent
-        width: 20; height: 20
+        width: 20
+        height: 20
         radius: width / 2
-        color: root.control
-            ? root.control.MD.MatProp.backgroundColor
-            : "transparent"
+        color: root.control ? root.control.MD.MatProp.backgroundColor : "transparent"
 
         layer.enabled: true
         layer.effect: MD.RoundedElevationEffect {
@@ -28,11 +27,13 @@ Item {
         }
     }
 
-    MD.Ripple {
+    MD.Ripple2 {
         anchors.centerIn: parent
-        width: 28; height: 28
-        pressed: root.handlePressed
-        active: root.handlePressed || root.handleHasFocus || (enabled && root.handleHovered)
-        color: root.control ? MD.Util.transparent(root.control.MD.MatProp.backgroundColor, MD.Token.state.hover.state_layer_opacity) : "transparent"
+        width: 36
+        height: 36
+        radius: width / 2
+        pressed: root.handlePressed || root.handleHasFocus
+        color: root.control.MD.MatProp.backgroundColor
+        stateOpacity: root.handleHovered ? MD.Token.state.hover.state_layer_opacity : "transparent"
     }
 }

@@ -39,21 +39,20 @@ T.TabButton {
         icon_size: control.icon.width
     }
 
-    background: MD.Ripple {
+    background: MD.Ripple2 {
         implicitHeight: 48
 
-        clip: true
+        pressX: control.pressX
+        pressY: control.pressY
         pressed: control.pressed
-        anchor: control
-        active: enabled && (control.down || control.visualFocus || control.hovered)
-        color: control.MD.MatProp.stateLayerColor
+        stateOpacity: item_state.stateLayerOpacity
+        color: item_state.stateLayerColor
     }
 
     MD.MatProp.elevation: item_state.elevation
     MD.MatProp.textColor: item_state.textColor
     MD.MatProp.supportTextColor: item_state.supportTextColor
     MD.MatProp.backgroundColor: item_state.backgroundColor
-    MD.MatProp.stateLayerColor: item_state.stateLayerColor
 
     MD.State {
         id: item_state
@@ -77,13 +76,11 @@ T.TabButton {
             },
             State {
                 name: "Pressed"
-                when: control.down || control.focus
+                when: control.down || control.visualFocus
                 PropertyChanges {
                     item_state.textColor: item_state.ctx.color.on_surface
-                    item_state.stateLayerColor: {
-                        const c = item_state.ctx.color.on_surface;
-                        return MD.Util.transparent(c, MD.Token.state.pressed.state_layer_opacity);
-                    }
+                    item_state.stateLayerOpacity:MD.Token.state.pressed.state_layer_opacity
+                    item_state.stateLayerColor: item_state.ctx.color.on_surface
                 }
             },
             State {
@@ -91,10 +88,8 @@ T.TabButton {
                 when: control.hovered
                 PropertyChanges {
                     item_state.textColor: item_state.ctx.color.on_surface
-                    item_state.stateLayerColor: {
-                        const c = item_state.ctx.color.on_surface;
-                        return MD.Util.transparent(c, MD.Token.state.hover.state_layer_opacity);
-                    }
+                    item_state.stateLayerOpacity:MD.Token.state.hover.state_layer_opacity
+                    item_state.stateLayerColor: item_state.ctx.color.on_surface
                 }
             }
         ]
