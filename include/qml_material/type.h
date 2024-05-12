@@ -90,5 +90,12 @@ public:
         ListItemThreeine
     };
     Q_ENUM(ListItemHeightMode)
+
+    enum class TabType
+    {
+        PrimaryTab,
+        SecondaryTab
+    };
+    Q_ENUM(TabType)
 };
 } // namespace qml_material

@@ -6,8 +6,12 @@ import Qcm.Material as MD
 T.TabButton {
     id: control
 
+    property int type: MD.Enum.PrimaryTab
     property int iconStyle: hasIcon ? MD.Enum.IconAndText : MD.Enum.TextOnly
     readonly property bool hasIcon: MD.Util.hasIcon(icon)
+
+    // use checked instead
+    // property bool active: T.TabBar.index === T.TabBar.tabBar.currentIndex
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
@@ -58,8 +62,9 @@ T.TabButton {
         id: item_state
         item: control
 
+        property color baseTextColor: control.type == MD.Enum.PrimaryTab ? (control.checked ? item_state.ctx.color.primary : item_state.ctx.color.on_surface) : (control.checked ? item_state.ctx.color.on_surface : item_state.ctx.color.on_surface_variant)
         elevation: MD.Token.elevation.level0
-        textColor: control.checked ? item_state.ctx.color.on_surface : item_state.ctx.color.on_surface_variant
+        textColor: baseTextColor
         backgroundColor: item_state.ctx.color.surface
         stateLayerColor: "transparent"
 
@@ -78,18 +83,18 @@ T.TabButton {
                 name: "Pressed"
                 when: control.down || control.visualFocus
                 PropertyChanges {
-                    item_state.textColor: item_state.ctx.color.on_surface
-                    item_state.stateLayerOpacity:MD.Token.state.pressed.state_layer_opacity
-                    item_state.stateLayerColor: item_state.ctx.color.on_surface
+                    item_state.textColor: control.type == MD.Enum.PrimaryTab ? item_state.baseTextColor : item_state.ctx.color.on_surface
+                    item_state.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
+                    item_state.stateLayerColor: control.type == MD.Enum.PrimaryTab ? item_state.ctx.color.primary : item_state.ctx.color.on_surface
                 }
             },
             State {
                 name: "Hovered"
                 when: control.hovered
                 PropertyChanges {
-                    item_state.textColor: item_state.ctx.color.on_surface
-                    item_state.stateLayerOpacity:MD.Token.state.hover.state_layer_opacity
-                    item_state.stateLayerColor: item_state.ctx.color.on_surface
+                    item_state.textColor: control.type == MD.Enum.PrimaryTab ? item_state.baseTextColor : item_state.ctx.color.on_surface
+                    item_state.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
+                    item_state.stateLayerColor: control.type == MD.Enum.PrimaryTab ? item_state.ctx.color.primary : item_state.ctx.color.on_surface
                 }
             }
         ]

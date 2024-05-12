@@ -79,6 +79,7 @@ set(QML_FILES
     qml/TextEdit.qml
     qml/Pane.qml
     qml/Page.qml
+    qml/PageIndicator.qml
     qml/StackView.qml
     qml/SplitView.qml
     qml/Slider.qml
