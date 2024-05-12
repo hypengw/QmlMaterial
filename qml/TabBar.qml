@@ -34,7 +34,7 @@ T.TabBar {
                 x: control.type == MD.Enum.PrimaryTab ? (parent.width - width) / 2 : 0
                 y: control.position === T.TabBar.Footer ? 0 : parent.height - height
                 height: control.type == MD.Enum.PrimaryTab ? 3 : 2
-                width: control.type == MD.Enum.PrimaryTab ? m_view.currentItem.implicitContentWidth : parent.width
+                width: control.type == MD.Enum.PrimaryTab ? (m_view.currentItem?.implicitContentWidth ?? 0) : parent.width
                 clip: true
                 Rectangle {
                     height: parent.height * 2
