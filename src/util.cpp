@@ -170,7 +170,7 @@ QString Util::type_str(const QJSValue& obj) {
 
 void Util::print_parents(const QJSValue& obj) {
     auto cur           = obj;
-    auto format_parent = core::y_combinator {
+    auto format_parent = ycore::y_combinator {
         [this](auto format_parent, const QJSValue& cur, i32 level) -> std::string {
             if (! cur.isNull()) {
                 return fmt::format(
