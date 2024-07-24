@@ -3,6 +3,8 @@ import QtQuick.Templates as T
 import QtQuick.Controls.impl
 import Qcm.Material as MD
 
+pragma ComponentBehavior: Bound
+
 T.Slider {
     id: control
 
@@ -103,7 +105,7 @@ T.Slider {
         states: [
             State {
                 name: "Disabled"
-                when: !enabled
+                when: !control.enabled
                 PropertyChanges {
                     item_state.textColor: item_state.ctx.color.on_surface
                     item_state.backgroundColor: item_state.ctx.color.on_surface

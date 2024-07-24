@@ -7,19 +7,27 @@ project(
 
 option(QM_BUILD_STATIC "build static plugin" OFF)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_CXX_STANDARD
+    20)
+set(CMAKE_CXX_STANDARD_REQUIRED
+    ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE
+    ON)
 
-set(QM_BUILD SHARED)
+set(QM_BUILD
+    SHARED)
 if(QM_BUILD_STATIC)
-  set(QM_BUILD STATIC)
+  set(QM_BUILD
+      STATIC)
 endif()
 
-find_package(Qt6 REQUIRED COMPONENTS Core Quick QuickControls2 Gui)
+find_package(
+  Qt6 REQUIRED
+  COMPONENTS Core Quick QuickControls2 Gui)
 find_package(PkgConfig REQUIRED)
 
-set(LIBNAME qml_material)
+set(LIBNAME
+    qml_material)
 
 set(SOURCES
     include/qml_material/util.h
@@ -80,6 +88,7 @@ set(QML_FILES
     qml/Pane.qml
     qml/Page.qml
     qml/PageIndicator.qml
+    qml/Popup.qml
     qml/StackView.qml
     qml/SplitView.qml
     qml/Slider.qml
@@ -91,6 +100,7 @@ set(QML_FILES
     qml/TextField.qml
     qml/TabBar.qml
     qml/TabButton.qml
+    qml/Tool.qml
     qml/impl/BoxShadow.qml
     qml/impl/Shadow.qml
     qml/impl/ListBusyFooter.qml
@@ -104,10 +114,16 @@ set(QML_FILES
     qml/impl/ElevationEffect.qml
     qml/impl/TextFieldEmbed.qml
     qml/impl/RoundClip.qml)
-set(RESOURCES assets/MaterialIconsRound-Regular.otf
-              assets/MaterialIconsOutlined-Regular.otf)
+set(RESOURCES
+    assets/MaterialIconsRound-Regular.otf
+    assets/MaterialIconsOutlined-Regular.otf)
 
-set_source_files_properties(qml/Token.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+set_source_files_properties(
+  qml/Token.qml
+  PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+set_source_files_properties(
+  qml/Tool.qml
+  PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 include_directories(include)
 
 qt_add_qml_module(
@@ -125,16 +141,18 @@ qt_add_qml_module(
   ${RESOURCES}
   NO_PLUGIN_OPTIONAL)
 
-set(SHADER_GLSLS "assets/shader/sdf.glsl")
-set(SHADER_SOURCES 
-  "assets/shader/round.frag"
-  "assets/shader/shadow.frag"
-  "assets/shader/rect_glow.frag"
-)
+set(SHADER_GLSLS
+    "assets/shader/sdf.glsl")
+set(SHADER_SOURCES
+    "assets/shader/round.frag" "assets/shader/shadow.frag"
+    "assets/shader/rect_glow.frag")
 qt_add_shaders(${LIBNAME} "shader" PREFIX "/Qcm/Material" FILES
                ${SHADER_SOURCES})
-foreach(file ${SHADER_SOURCES})
-  set(output_file ".qsb/${file}.qsb")
+foreach(
+  file
+  ${SHADER_SOURCES})
+  set(output_file
+      ".qsb/${file}.qsb")
   add_custom_command(
     OUTPUT ${output_file}
     DEPENDS ${SHADER_GLSLS}
