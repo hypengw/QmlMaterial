@@ -18,8 +18,8 @@ Item {
         }
     }
 
-    function show_popup(url, props, parent = null, open_and_destry = true) {
-        const popup = create_item(url, props, parent ? parent : main_win);
+    function show_popup(url, props, parent, open_and_destry = true) {
+        const popup = create_item(url, props, parent);
         if (open_and_destry) {
             popup.closed.connect(() => {
                 if (popup.destroy)
