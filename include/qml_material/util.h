@@ -9,6 +9,7 @@
 
 #include "qml_material/corner.h"
 #include "qml_material/type.h"
+#include "qml_material/token.h"
 #include "core/core.h"
 
 namespace qml_material
@@ -103,6 +104,8 @@ public:
     Q_INVOKABLE void print_parents(const QJSValue&);
 
     Q_INVOKABLE qreal lightness(QColor color);
+
+    Q_INVOKABLE token::Elevation elevation();
 private:
     usize m_tracked { 0 };
 };

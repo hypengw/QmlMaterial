@@ -61,14 +61,7 @@ Item {
             readonly property real state_layer_opacity: 0.1
         }
     }
-    readonly property QtObject elevation: QtObject {
-        readonly property int level0: 0
-        readonly property int level1: 1
-        readonly property int level2: 3
-        readonly property int level3: 6
-        readonly property int level4: 8
-        readonly property int level5: 12
-    }
+    readonly property MD.t_elevation elevation: MD.Util.elevation()
 
     readonly property QtObject shape: QtObject {
         readonly property QtObject corner: QtObject {

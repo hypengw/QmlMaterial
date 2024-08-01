@@ -41,6 +41,7 @@ set(SOURCES
     include/qml_material/round_item.h
     include/qml_material/helper.h
     include/qml_material/type_scale.h
+    include/qml_material/token.h
     include/qml_material/kirigami/wheelhandler.h
     src/kirigami/wheelhandler.cpp
     src/type.cpp

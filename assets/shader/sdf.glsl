@@ -28,7 +28,7 @@ vec4 sdf_render(in float sdf, in vec4 sourceColor, in vec4 sdfColor, in float al
 
 vec4 sdf_render(in float sdf, in vec4 sourceColor, in vec4 sdfColor, in float alpha, in float smoothing)
 {
-    return sdf_render(sdf, sourceColor, sdfColor, alpha, smoothing, 0);
+    return sdf_render(sdf, sourceColor, sdfColor, alpha, smoothing, 0.0);
 }
 
 vec4 sdf_render(in float sdf, in vec4 sourceColor, in vec4 sdfColor, in float alpha)

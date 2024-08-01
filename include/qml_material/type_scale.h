@@ -12,11 +12,11 @@ struct TypeScaleItem {
     QML_ELEMENT
     QML_VALUE_TYPE(t_typescale)
 
-    Q_PROPERTY(i32 size MEMBER size)
-    Q_PROPERTY(i32 line_height MEMBER line_height)
-    Q_PROPERTY(QFont::Weight weight MEMBER weight)
-    Q_PROPERTY(QFont::Weight weight_prominent MEMBER weight_prominent)
-    Q_PROPERTY(qreal tracking MEMBER tracking)
+    Q_PROPERTY(i32 size MEMBER size CONSTANT FINAL)
+    Q_PROPERTY(i32 line_height MEMBER line_height CONSTANT FINAL)
+    Q_PROPERTY(QFont::Weight weight MEMBER weight CONSTANT FINAL)
+    Q_PROPERTY(QFont::Weight weight_prominent MEMBER weight_prominent CONSTANT FINAL)
+    Q_PROPERTY(qreal tracking MEMBER tracking CONSTANT FINAL)
 public:
     Q_INVOKABLE TypeScaleItem fresh() const { return *this; }
 
@@ -33,12 +33,12 @@ class TypeScale : public QObject {
 public:
     using QObject::QObject;
 
-#define X(NAME, ...)                                                 \
-    Q_PROPERTY(TypeScaleItem NAME READ NAME NOTIFY typescaleChanged) \
-public:                                                              \
-    TypeScaleItem NAME() const { return m_##NAME; }           \
-                                                                     \
-private:                                                             \
+#define X(NAME, ...)                                                       \
+    Q_PROPERTY(TypeScaleItem NAME READ NAME NOTIFY typescaleChanged FINAL) \
+public:                                                                    \
+    TypeScaleItem NAME() const { return m_##NAME; }                        \
+                                                                           \
+private:                                                                   \
     TypeScaleItem m_##NAME { __VA_ARGS__ };
     // clang-format off
     X(display_large  , 57, 64, QFont::Normal, QFont::Normal, -0.25)

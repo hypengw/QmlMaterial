@@ -1,9 +1,8 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Templates as T
 import QtQuick.Controls.impl
 import Qcm.Material as MD
-
-pragma ComponentBehavior: Bound
 
 T.Slider {
     id: control
@@ -17,6 +16,8 @@ T.Slider {
     topPadding: 0
     bottomPadding: 0
     clip: false
+
+    property vector2d overlay: new Qt.vector2d(0, 0)
 
     // The Slider is discrete if all of the following requirements are met:
     // * stepSize is positive
@@ -50,6 +51,17 @@ T.Slider {
             color: control.trackInactiveColor
 
             Rectangle {
+                visible: control.overlay.length() > 0
+                x: control.horizontal ? control.overlay.x * parent.width : (parent.width - width) / 2
+                y: control.horizontal ? (parent.height - height) / 2 : control.overlay.y * parent.height
+                width: control.horizontal ? (control.overlay.y - control.overlay.x) * parent.width : 4
+                height: control.horizontal ? 4 : (control.overlay.y - control.overlay.x) * parent.height
+                radius: Math.min(width, height) / 2
+                color: control.trackOverlayColor
+                opacity: control.trackOverlayOpacity
+            }
+
+            Rectangle {
                 x: control.horizontal ? 0 : (parent.width - width) / 2
                 y: control.horizontal ? (parent.height - height) / 2 : control.visualPosition * parent.height
                 width: control.horizontal ? control.position * parent.width : 4
@@ -78,8 +90,11 @@ T.Slider {
             }
         }
     }
-    property color trackColor: MD.MatProp.backgroundColor
+    property color trackColor: item_state.trackColor
     property color trackInactiveColor: item_state.trackInactiveColor
+    property color trackOverlayColor: item_state.trackOverlayColor
+    property real trackOverlayOpacity: 0.12
+
     property color trackMarkColor: MD.MatProp.supportTextColor
     property color trackMarkInactiveColor: item_state.trackMarkInactiveColor
 
@@ -99,6 +114,8 @@ T.Slider {
         supportTextColor: item_state.ctx.color.on_primary
         stateLayerColor: "#00000000"
 
+        property color trackColor: MD.MatProp.backgroundColor
+        property color trackOverlayColor: MD.MatProp.backgroundColor
         property color trackInactiveColor: item_state.ctx.color.surface_container_highest
         property color trackMarkInactiveColor: item_state.ctx.color.on_surface_variant
 
