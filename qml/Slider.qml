@@ -17,7 +17,7 @@ T.Slider {
     bottomPadding: 0
     clip: false
 
-    property vector2d overlay: new Qt.vector2d(0, 0)
+    property vector2d overlay: Qt.vector2d(0, 0)
 
     // The Slider is discrete if all of the following requirements are met:
     // * stepSize is positive
