@@ -6,14 +6,34 @@
 
 namespace qml_material
 {
+//  Font.Thin	0
+//  Font.ExtraLight	12
+//  Font.Light	25
+//  Font.Normal	50
+//  Font.Medium	57
+//  Font.DemiBold	63
+//  Font.Bold	75
+//  Font.ExtraBold	81
+//  Font.Black	87
 
+// Value 	Common weight name
+// 100 	Thin (Hairline)
+// 200 	Extra Light (Ultra Light)
+// 300 	Light
+// 400 	Normal (Regular)
+// 500 	Medium
+// 600 	Semi Bold (Demi Bold)
+// 700 	Bold
+// 800 	Extra Bold (Ultra Bold)
+// 900 	Black (Heavy)
+// 950 	Extra Black (Ultra Black)
 struct TypeScaleItem {
     Q_GADGET
     QML_ELEMENT
     QML_VALUE_TYPE(t_typescale)
 
-    Q_PROPERTY(i32 size MEMBER size CONSTANT FINAL)
-    Q_PROPERTY(i32 line_height MEMBER line_height CONSTANT FINAL)
+    Q_PROPERTY(qint32 size MEMBER size CONSTANT FINAL)
+    Q_PROPERTY(qint32 line_height MEMBER line_height CONSTANT FINAL)
     Q_PROPERTY(QFont::Weight weight MEMBER weight CONSTANT FINAL)
     Q_PROPERTY(QFont::Weight weight_prominent MEMBER weight_prominent CONSTANT FINAL)
     Q_PROPERTY(qreal tracking MEMBER tracking CONSTANT FINAL)

@@ -8,7 +8,7 @@
 #include <QtDBus/QDBusVariant>
 
 #include "qml_material/corner.h"
-#include "qml_material/type.h"
+#include "qml_material/enum.h"
 #include "qml_material/token.h"
 #include "core/core.h"
 
@@ -18,13 +18,12 @@ namespace qml_material
 class Xdp : public QObject {
     Q_OBJECT
 public:
-
     Xdp(QObject* parent = nullptr);
     ~Xdp();
 
     static Xdp* insance();
 
-    QColor accentColor() const;
+    QColor          accentColor() const;
     Qt::ColorScheme colorScheme() const;
 public Q_SLOTS:
     void xdpSettingChangeSlot(QString, QString, QDBusVariant);
@@ -35,7 +34,7 @@ Q_SIGNALS:
 
 private:
     std::optional<Qt::ColorScheme> m_color_scheme;
-    std::optional<QColor> m_accent_color;
+    std::optional<QColor>          m_accent_color;
 };
 
 class Util : public QObject {
@@ -100,12 +99,14 @@ public:
 
     Q_INVOKABLE CornersGroup corner(qreal br, qreal tr, qreal bl, qreal tl);
 
-    QString type_str(const QJSValue&);
+    QString          type_str(const QJSValue&);
     Q_INVOKABLE void print_parents(const QJSValue&);
 
     Q_INVOKABLE qreal lightness(QColor color);
 
-    Q_INVOKABLE token::Elevation elevation();
+    Q_INVOKABLE token::Elevation token_elevation();
+    Q_INVOKABLE token::Shape token_shape();
+    Q_INVOKABLE token::State token_state();
 private:
     usize m_tracked { 0 };
 };

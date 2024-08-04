@@ -184,6 +184,8 @@ void Util::print_parents(const QJSValue& obj) {
 
 auto Util::lightness(QColor color) -> qreal { return color.lightnessF(); }
 
-auto Util::elevation() -> token::Elevation { return token::Elevation(); }
+auto Util::token_elevation() -> token::Elevation { return token::Elevation(); }
+auto Util::token_shape() -> token::Shape { return token::Shape(); }
+auto Util::token_state() -> token::State { return token::State(); }
 
 } // namespace qml_material

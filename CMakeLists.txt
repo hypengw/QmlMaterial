@@ -37,14 +37,13 @@ set(SOURCES
     include/qml_material/icon.h
     include/qml_material/input_block.h
     include/qml_material/item_holder.h
-    include/qml_material/type.h
+    include/qml_material/enum.h
     include/qml_material/round_item.h
     include/qml_material/helper.h
     include/qml_material/type_scale.h
     include/qml_material/token.h
     include/qml_material/kirigami/wheelhandler.h
     src/kirigami/wheelhandler.cpp
-    src/type.cpp
     src/color.cpp
     src/corner.cpp
     src/icon.cpp
@@ -55,6 +54,7 @@ set(SOURCES
     src/state.cpp
     src/theme.cpp
     src/helper.cpp
+    src/token.cpp
     src/type_scale.cpp
     src/round_item.cpp)
 set(QML_FILES
