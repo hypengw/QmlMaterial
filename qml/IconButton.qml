@@ -121,7 +121,7 @@ T.Button {
         states: [
             State {
                 name: "Disabled"
-                when: !enabled
+                when: !control.enabled
                 PropertyChanges {
                     item_state.elevation: MD.Token.elevation.level0
                     item_state.textColor: item_state.ctx.color.on_surface

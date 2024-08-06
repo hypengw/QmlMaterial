@@ -48,6 +48,8 @@ T.MenuItem {
 
         text: control.text
         font: control.font
+        typescale: MD.Token.typescale.label_large
+
         icon_name: control.icon.name
         icon_size: control.icon.width
         icon_color: control.leadingIconColor

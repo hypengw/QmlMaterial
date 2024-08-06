@@ -28,15 +28,10 @@ T.TabButton {
     icon.width: 24
     icon.height: 24
 
-    font.weight: MD.Token.typescale.title_small.weight
-    font.pixelSize: MD.Token.typescale.title_small.size
-    property int lineHeight: MD.Token.typescale.title_small.line_height
-
     contentItem: MD.IconLabel {
-        lineHeight: control.lineHeight
-
         font: control.font
         text: control.text
+        typescale: MD.Token.typescale.title_small
         icon_style: control.iconStyle
 
         icon_name: control.icon.name

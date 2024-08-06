@@ -12,13 +12,13 @@ Item {
 
     property alias text: item_label_text.text
     property alias font: item_label_text.font
-    property color color: MD.MatProp.textColor
+    property alias typescale: item_label_text.typescale
+    property alias color: item_label_text.color
 
-    property alias icon_name: item_label_icon.text
-    property alias icon_size: item_label_icon.font.pixelSize
-    property color icon_color: MD.MatProp.textColor
+    property alias icon_name: item_label_icon.name
+    property alias icon_size: item_label_icon.size
+    property alias icon_color: item_label_icon.color
 
-    property int lineHeight: MD.Token.typescale.label_large.line_height
     property int icon_style: MD.Enum.IconAndText
 
     property int horizontalAlignment: Qt.AlignHCenter
@@ -29,32 +29,25 @@ Item {
         anchors.fill: parent
         spacing: 8
 
-        Text {
+        MD.Icon {
             id: item_label_icon
             Layout.alignment: root.horizontalAlignment | Qt.AlignVCenter
-            visible: root.icon_style != MD.Enum.TextOnly && text.length > 0
-
-            font.family: MD.Token.font.icon_round.family
-            color: root.icon_color
-
-            lineHeight: root.lineHeight
-            lineHeightMode: Text.FixedHeight
+            visible: root.icon_style != MD.Enum.TextOnly && name.length > 0
+            // font.family: MD.Token.font.icon_round.family
         }
 
-        Text {
+        MD.Text {
             id: item_label_text
             Layout.alignment: root.horizontalAlignment | Qt.AlignVCenter
+            verticalAlignment: Text.AlignVCenter
 
             visible: root.icon_style != MD.Enum.IconOnly
             color: root.color
-            lineHeight: root.lineHeight
-            lineHeightMode: Text.FixedHeight
         }
 
         Item {
             Layout.fillWidth: true
             visible: root.horizontalAlignment == Qt.AlignLeft
         }
-
     }
 }

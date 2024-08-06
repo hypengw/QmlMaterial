@@ -39,6 +39,7 @@ set(SOURCES
     include/qml_material/item_holder.h
     include/qml_material/enum.h
     include/qml_material/round_item.h
+    include/qml_material/state_holder.h
     include/qml_material/helper.h
     include/qml_material/type_scale.h
     include/qml_material/token.h
@@ -54,6 +55,7 @@ set(SOURCES
     src/state.cpp
     src/theme.cpp
     src/helper.cpp
+    src/state_holder.cpp
     src/token.cpp
     src/type_scale.cpp
     src/round_item.cpp)
@@ -90,6 +92,7 @@ set(QML_FILES
     qml/Page.qml
     qml/PageIndicator.qml
     qml/Popup.qml
+    qml/SnakeBar.qml
     qml/StackView.qml
     qml/SplitView.qml
     qml/Slider.qml
@@ -102,6 +105,9 @@ set(QML_FILES
     qml/TabBar.qml
     qml/TabButton.qml
     qml/Tool.qml
+    qml/state/State.qml
+    qml/state/StateSnakeBar.qml
+    qml/state/StateButton.qml
     qml/impl/BoxShadow.qml
     qml/impl/Shadow.qml
     qml/impl/ListBusyFooter.qml
@@ -109,7 +115,6 @@ set(QML_FILES
     qml/impl/Ripple2.qml
     qml/impl/RectangularGlow.qml
     qml/impl/CursorDelegate.qml
-    qml/impl/State.qml
     qml/impl/SliderHandle.qml
     qml/impl/RoundedElevationEffect.qml
     qml/impl/ElevationEffect.qml
