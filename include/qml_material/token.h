@@ -9,6 +9,7 @@ namespace qml_material::token
 {
 struct Elevation {
     Q_GADGET
+    QML_UNCREATABLE("")
     QML_VALUE_TYPE(t_token_elevation)
     Q_PROPERTY(qint32 level0 MEMBER level0 CONSTANT FINAL)
     Q_PROPERTY(qint32 level1 MEMBER level1 CONSTANT FINAL)
@@ -27,6 +28,7 @@ public:
 
 struct ShapeCorner {
     Q_GADGET
+    QML_UNCREATABLE("")
     QML_VALUE_TYPE(t_token_shape_corner)
     Q_PROPERTY(qint32 none MEMBER none CONSTANT FINAL)
     Q_PROPERTY(qint32 extra_small MEMBER extra_small CONSTANT FINAL)
@@ -48,6 +50,7 @@ public:
 
 struct Shape {
     Q_GADGET
+    QML_UNCREATABLE("")
     QML_VALUE_TYPE(t_token_shape)
     Q_PROPERTY(ShapeCorner corner MEMBER corner CONSTANT FINAL)
 public:
@@ -56,6 +59,7 @@ public:
 
 struct StateItem {
     Q_GADGET
+    QML_UNCREATABLE("")
     Q_PROPERTY(double state_layer_opacity MEMBER state_layer_opacity CONSTANT FINAL)
 public:
     double state_layer_opacity;
@@ -63,6 +67,7 @@ public:
 
 struct State {
     Q_GADGET
+    QML_UNCREATABLE("")
     QML_VALUE_TYPE(t_token_state)
     Q_PROPERTY(StateItem hover MEMBER hover CONSTANT FINAL)
     Q_PROPERTY(StateItem pressed MEMBER pressed CONSTANT FINAL)

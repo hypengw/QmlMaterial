@@ -4,8 +4,8 @@ import Qcm.Material as MD
 Item {
     id: root
     visible: false
-
     property QtObject item
+
     property var ctx: item?.MD.MatProp
 
     property int elevation
@@ -14,4 +14,7 @@ Item {
     property color supportTextColor
     property color stateLayerColor: "transparent"
     property real stateLayerOpacity: 0.0
+
+    property real contentOpacity: 1.0
+    property real backgroundOpacity: 1.0
 }
