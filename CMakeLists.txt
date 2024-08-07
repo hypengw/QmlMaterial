@@ -108,6 +108,7 @@ set(QML_FILES
     qml/state/State.qml
     qml/state/StateSnakeBar.qml
     qml/state/StateButton.qml
+    qml/state/StateTabButton.qml
     qml/impl/BoxShadow.qml
     qml/impl/Shadow.qml
     qml/impl/ListBusyFooter.qml

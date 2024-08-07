@@ -10,6 +10,8 @@ T.TabButton {
     property int iconStyle: hasIcon ? MD.Enum.IconAndText : MD.Enum.TextOnly
     readonly property bool hasIcon: MD.Util.hasIcon(icon)
 
+    property alias mdState: m_sh.state
+
     // use checked instead
     // property bool active: T.TabBar.index === T.TabBar.tabBar.currentIndex
 
@@ -32,10 +34,12 @@ T.TabButton {
         font: control.font
         text: control.text
         typescale: MD.Token.typescale.title_small
+        color: control.mdState.textColor
         icon_style: control.iconStyle
 
         icon_name: control.icon.name
         icon_size: control.icon.width
+        opacity: control.mdState.contentOpacity
     }
 
     background: MD.Ripple2 {
@@ -44,54 +48,15 @@ T.TabButton {
         pressX: control.pressX
         pressY: control.pressY
         pressed: control.pressed
-        stateOpacity: item_state.stateLayerOpacity
-        color: item_state.stateLayerColor
+        stateOpacity: control.mdState.stateLayerOpacity
+        color: control.mdState.stateLayerColor
+        // opacity: control.mdState.backgroundOpacity
     }
 
-    MD.MatProp.elevation: item_state.elevation
-    MD.MatProp.textColor: item_state.textColor
-    MD.MatProp.supportTextColor: item_state.supportTextColor
-    MD.MatProp.backgroundColor: item_state.backgroundColor
-
-    MD.State {
-        id: item_state
-        item: control
-
-        property color baseTextColor: control.type == MD.Enum.PrimaryTab ? (control.checked ? item_state.ctx.color.primary : item_state.ctx.color.on_surface) : (control.checked ? item_state.ctx.color.on_surface : item_state.ctx.color.on_surface_variant)
-        elevation: MD.Token.elevation.level0
-        textColor: baseTextColor
-        backgroundColor: item_state.ctx.color.surface
-        stateLayerColor: "transparent"
-
-        states: [
-            State {
-                name: "Disabled"
-                when: !enabled
-                PropertyChanges {
-                    item_state.textColor: item_state.ctx.color.on_surface
-                    item_state.backgroundColor: item_state.ctx.color.on_surface
-                    control.contentItem.opacity: 0.38
-                    control.background.opacity: 0.12
-                }
-            },
-            State {
-                name: "Pressed"
-                when: control.down || control.visualFocus
-                PropertyChanges {
-                    item_state.textColor: control.type == MD.Enum.PrimaryTab ? item_state.baseTextColor : item_state.ctx.color.on_surface
-                    item_state.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
-                    item_state.stateLayerColor: control.type == MD.Enum.PrimaryTab ? item_state.ctx.color.primary : item_state.ctx.color.on_surface
-                }
-            },
-            State {
-                name: "Hovered"
-                when: control.hovered
-                PropertyChanges {
-                    item_state.textColor: control.type == MD.Enum.PrimaryTab ? item_state.baseTextColor : item_state.ctx.color.on_surface
-                    item_state.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
-                    item_state.stateLayerColor: control.type == MD.Enum.PrimaryTab ? item_state.ctx.color.primary : item_state.ctx.color.on_surface
-                }
-            }
-        ]
+    MD.StateHolder {
+        id: m_sh
+        state: MD.StateTabButton {
+            item: control
+        }
     }
 }

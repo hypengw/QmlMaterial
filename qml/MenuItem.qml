@@ -36,6 +36,7 @@ T.MenuItem {
         name: MD.Token.icon.arrow_right
     }
 
+    font.capitalization: Font.Capitalize
     contentItem: MD.IconLabel {
 
         //readonly property real arrowPadding: control.subMenu && control.arrow ? control.arrow.width + control.spacing : 0
