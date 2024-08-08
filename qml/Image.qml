@@ -44,7 +44,7 @@ Item {
         layer.enabled: true
         layer.effect: MD.RoundClip {
             radius: root.radius
-            size: root.height
+            size: Qt.vector2d(root.width, root.height)
             layer.enabled: true
             layer.effect: MD.RoundedElevationEffect {
                 elevation: root.opacity > 0 ? root.MD.MatProp.elevation : MD.Token.elevation.level0

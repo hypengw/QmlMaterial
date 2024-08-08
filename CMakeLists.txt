@@ -172,8 +172,10 @@ target_include_directories(
   PRIVATE "include/${LIBNAME}" "include/${LIBNAME}/kirigami")
 
 add_subdirectory(third_party)
+add_subdirectory(example)
 
 target_link_libraries(
   ${LIBNAME}
   PUBLIC Qt6::Core Qt6::Quick Qt6::QuickControls2 Qt6::GuiPrivate core
-  PRIVATE material_color)
+  PRIVATE material_color
+  )

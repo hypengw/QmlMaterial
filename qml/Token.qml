@@ -6,7 +6,7 @@ import Qcm.Material as MD
 
 MD.TokenImpl {
     id: root
-    readonly property QtObject color: root.MD.MatProp.color
+    readonly property MD.MdColorMgr color: root.MD.MatProp.color
     property int theme: root.color.colorScheme
     readonly property var icon: MD.IconToken.codeMap
     readonly property bool is_dark_theme: Number(theme) == MD.MdColorMgr.Dark

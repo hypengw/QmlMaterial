@@ -37,7 +37,7 @@ T.Drawer {
             layer.enabled: true
             layer.effect: MD.RoundClip {
                 radius: [0, 16, 0, 16]
-                size: parent.height
+                size: Qt.vector2d(parent.width, parent.height)
             }
         }
         //layer.enabled: control.position > 0 && control.MD.MatProp.elevation > 0

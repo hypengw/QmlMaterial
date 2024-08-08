@@ -2,6 +2,11 @@
 
 // according to https://iquilezles.org/articles/distfunctions2d/
 
+float filterwidth(vec2 v) {
+  vec2 fw = max(abs(dFdx(v)), abs(dFdy(v)));
+  return max(fw.x, fw.y);
+}
+
 float sdf_circle(vec2 p, float r) { return length(p) - r; }
 
 float sdf_rectangle(in vec2 p, in vec2 rect) {
@@ -26,17 +31,15 @@ vec4 sdf_render(in float sdf, in vec4 sourceColor, in vec4 sdfColor, in float al
     return mix(sourceColor, sdfColor, alpha * (1.0 - clamp((1.0 / g) * sdf - offset, 0.0, 1.0)));
 }
 
-vec4 sdf_render(in float sdf, in vec4 sourceColor, in vec4 sdfColor, in float alpha, in float smoothing)
+vec4 sdf_render_uv(in float sdf, in vec2 uv, in vec4 sourceColor, in vec4 sdfColor, in float alpha, in float smoothing, in float offset)
 {
-    return sdf_render(sdf, sourceColor, sdfColor, alpha, smoothing, 0.0);
+    // bigger when zoom out
+    float g = smoothing * filterwidth(uv);
+    return mix(sourceColor, sdfColor, alpha * (1.0 - clamp((1.0 / g) * sdf - offset, 0.0, 1.0)));
 }
 
-vec4 sdf_render(in float sdf, in vec4 sourceColor, in vec4 sdfColor, in float alpha)
+float sdf_alpha_uv(in float sdf, in vec2 uv, in float smoothing, in float offset)
 {
-    return sdf_render(sdf, sourceColor, sdfColor, alpha, sdf_default_smoothing);
-}
-
-vec4 sdf_render(in float sdf, in vec4 sourceColor, in vec4 sdfColor)
-{
-    return sdf_render(sdf, sourceColor, sdfColor, 1.0);
+    float g = smoothing * filterwidth(uv);
+    return 1.0 - clamp((1.0 / g) * sdf - offset, 0.0, 1.0);
 }

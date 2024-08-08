@@ -1,5 +1,6 @@
 #include "qml_material/color.h"
 
+#include <ranges>
 #include <QtGui/QGuiApplication>
 #include <QStyleHints>
 
@@ -14,8 +15,8 @@ namespace
 {
 constexpr QRgb BASE_COLOR { qRgb(190, 231, 253) };
 
-std::map<QColor, QColor, QColorCompare> gen_on_map(const MdScheme& sh) {
-    return {
+auto gen_on_map(const MdScheme& sh) -> std::map<QColor, QColor, QColorCompare> {
+    std::map<QColor, QColor, QColorCompare> map {
         { sh.primary, sh.on_primary },
         { sh.primary_container, sh.on_primary_container },
         { sh.secondary, sh.on_secondary },
@@ -23,15 +24,14 @@ std::map<QColor, QColor, QColorCompare> gen_on_map(const MdScheme& sh) {
         { sh.tertiary, sh.on_tertiary },
         { sh.tertiary_container, sh.on_tertiary_container },
         { sh.error, sh.on_error },
-        { sh.background, sh.on_background },
+        { sh.error_container, sh.on_error_container },
+
         { sh.inverse_surface, sh.inverse_on_surface },
+        { sh.inverse_primary, sh.inverse_on_surface },
+
+        { sh.background, sh.on_background },
         { sh.surface, sh.on_surface },
         { sh.surface_variant, sh.on_surface_variant },
-        { sh.surface_1, sh.on_surface },
-        { sh.surface_2, sh.on_surface },
-        { sh.surface_3, sh.on_surface },
-        { sh.surface_4, sh.on_surface },
-        { sh.surface_5, sh.on_surface },
         { sh.surface_dim, sh.on_surface },
         { sh.surface_bright, sh.on_surface },
         { sh.surface_container, sh.on_surface },
@@ -39,7 +39,21 @@ std::map<QColor, QColor, QColorCompare> gen_on_map(const MdScheme& sh) {
         { sh.surface_container_highest, sh.on_surface },
         { sh.surface_container_low, sh.on_surface },
         { sh.surface_container_lowest, sh.on_surface },
+
+        { sh.outline, sh.background },
+        { sh.shadow, sh.background },
+
+        { sh.surface_1, sh.on_surface },
+        { sh.surface_2, sh.on_surface },
+        { sh.surface_3, sh.on_surface },
+        { sh.surface_4, sh.on_surface },
+        { sh.surface_5, sh.on_surface },
     };
+    auto map2 = map;
+    for (auto& el : map2) {
+        map.insert({ el.second, el.first });
+    }
+    return map;
 }
 } // namespace
 
