@@ -1,6 +1,6 @@
 #include "qml_material/util.h"
 
-#include <set>
+#include <format>
 #include <QtDBus/QDBusConnection>
 #include <QtDBus/QDBusMessage>
 #include <QtDBus/QDBusReply>
@@ -9,9 +9,6 @@
 #include <QtGui/qpa/qplatformtheme.h>
 #include <QStyleHints>
 #include <QGlobalStatic>
-#include "core/log.h"
-#include "core/qstr_helper.h"
-#include "core/lambda_hlper.h"
 
 Q_GLOBAL_STATIC(qml_material::Xdp, TheXdp)
 
@@ -47,7 +44,7 @@ Xdp::Xdp(QObject* parent): QObject(parent) {
                            "SettingChanged",
                            this,
                            SLOT(xdpSettingChangeSlot(QString, QString, QDBusVariant)));
-    _assert_(res);
+    assert(res);
 
     auto message =
         QDBusMessage::createMethodCall(kService, kObjectPath, kSettingsInterface, "Read");
@@ -85,12 +82,6 @@ void Xdp::xdpSettingChangeSlot(QString namespace_, QString key, QDBusVariant val
         m_accent_color = to_accent_color(value);
         Q_EMIT accentColorChanged();
     }
-
-    DEBUG_LOG("xdp SettingChanged: {} {}, v({}): {}",
-              namespace_,
-              key,
-              value.metaType().name(),
-              value.toString());
 }
 
 QColor Xdp::accentColor() const { return m_accent_color.value_or(QColor {}); }
@@ -146,11 +137,11 @@ void Util::track(QVariant, Track t) {
     switch (t) {
     case TrackCreate:
         m_tracked++;
-        WARN_LOG("track create {}", m_tracked);
+        std::printf("track create %lu", m_tracked);
         break;
     case TrackDelete:
         m_tracked--;
-        WARN_LOG("track delete {}", m_tracked);
+        std::printf("track delete %lu", m_tracked);
         break;
     }
 }
@@ -173,13 +164,13 @@ void Util::print_parents(const QJSValue& obj) {
     auto format_parent = ycore::y_combinator {
         [this](auto format_parent, const QJSValue& cur, i32 level) -> std::string {
             if (! cur.isNull()) {
-                return fmt::format(
+                return std::format(
                     "    {}\n{}", type_str(cur), format_parent(cur.property("parent"), level + 1));
             }
             return {};
         }
     };
-    DEBUG_LOG("{}\n{}", type_str(obj), format_parent(obj.property("parent"), 1));
+    // DEBUG_LOG("{}\n{}", type_str(obj), format_parent(obj.property("parent"), 1));
 }
 
 auto Util::lightness(QColor color) -> qreal { return color.lightnessF(); }

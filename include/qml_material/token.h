@@ -2,7 +2,7 @@
 
 #include <QQmlEngine>
 #include <QFont>
-#include "core/core.h"
+#include "qml_material/core.h"
 #include "qml_material/type_scale.h"
 
 namespace qml_material::token

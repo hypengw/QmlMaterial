@@ -178,5 +178,5 @@ add_subdirectory(example)
 
 target_link_libraries(
   ${LIBNAME}
-  PUBLIC Qt6::Core Qt6::Quick Qt6::QuickControls2 Qt6::GuiPrivate core
+  PUBLIC Qt6::Core Qt6::Quick Qt6::QuickControls2 Qt6::GuiPrivate
   PRIVATE material_color)

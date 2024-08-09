@@ -1,10 +1,8 @@
 #include "qml_material/color.h"
 
-#include <ranges>
 #include <QtGui/QGuiApplication>
 #include <QStyleHints>
 
-#include "core/log.h"
 #include "qml_material/helper.h"
 #include "qml_material/util.h"
 
@@ -57,7 +55,10 @@ auto gen_on_map(const MdScheme& sh) -> std::map<QColor, QColor, QColorCompare> {
 }
 } // namespace
 
-DEFINE_CONVERT(qml_material::MdColorMgr::ColorSchemeEnum, Qt::ColorScheme) {
+static void convert_from(qml_material::MdColorMgr::ColorSchemeEnum& out,
+                         const Qt::ColorScheme&                     in) {
+    using out_type = qml_material::MdColorMgr::ColorSchemeEnum;
+    using in_type  = Qt::ColorScheme;
     switch (in) {
     case in_type::Dark: out = out_type::Dark; break;
     default: out = out_type::Light;
@@ -81,7 +82,9 @@ MdColorMgr::MdColorMgr(QObject* parent)
 }
 
 MdColorMgr::ColorSchemeEnum MdColorMgr::sysColorScheme() const {
-    return convert_from<ColorSchemeEnum>(Xdp::insance()->colorScheme());
+    ColorSchemeEnum out;
+    convert_from(out, Xdp::insance()->colorScheme());
+    return out;
 }
 QColor MdColorMgr::sysAccentColor() const { return Xdp::insance()->accentColor(); }
 

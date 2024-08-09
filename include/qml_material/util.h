@@ -10,7 +10,7 @@
 #include "qml_material/corner.h"
 #include "qml_material/enum.h"
 #include "qml_material/token.h"
-#include "core/core.h"
+#include "qml_material/core.h"
 
 namespace qml_material
 {

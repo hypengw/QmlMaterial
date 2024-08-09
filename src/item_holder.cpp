@@ -1,5 +1,4 @@
 #include "qml_material/item_holder.h"
-#include "core/log.h"
 #include <QtQuick/QQuickItem>
 
 using namespace qml_material;
@@ -14,7 +13,7 @@ bool     ItemHolder::visible() const { return m_visible; }
 
 void ItemHolder::setItem(QObject* item) {
     if (auto old = std::exchange(m_item, item); old != item) {
-        _assert_(parent());
+        assert(parent());
         if (old) {
             old->setParent(nullptr);
             if (auto quick_old = qobject_cast<QQuickItem*>(old)) {

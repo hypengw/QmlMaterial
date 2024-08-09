@@ -1,5 +1,4 @@
 #include "qml_material/state_holder.h"
-#include "core/log.h"
 
 using namespace qml_material;
 

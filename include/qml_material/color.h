@@ -5,7 +5,7 @@
 #include <QtQml/QQmlEngine>
 #include <QtGui/QColor>
 
-#include "core/core.h"
+#include "qml_material/core.h"
 #include "qml_material/helper.h"
 
 namespace qml_material

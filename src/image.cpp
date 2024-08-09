@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <QImage>
-#include "core/log.h"
 
 namespace qml_material
 {
@@ -11,13 +10,13 @@ QImage Round(QImage&& image, CornersMaskRef mask, QRect target) {
     if (target.isNull()) {
         target = QRect(QPoint(), image.size());
     } else {
-        _assert_(QRect(QPoint(), image.size()).contains(target));
+        assert(QRect(QPoint(), image.size()).contains(target));
     }
     const auto targetWidth  = target.width();
     const auto targetHeight = target.height();
 
     image = std::move(image).convertToFormat(QImage::Format_ARGB32_Premultiplied);
-    _assert_(! image.isNull());
+    assert(! image.isNull());
 
     // We need to detach image first (if it is shared), before we
     // count some offsets using QImage::bytesPerLine etc, because
@@ -27,8 +26,8 @@ QImage Round(QImage&& image, CornersMaskRef mask, QRect target) {
 
     constexpr auto kImageIntsPerPixel = 1;
     const auto     imageIntsPerLine   = (image.bytesPerLine() >> 2);
-    _assert_(image.depth() == ((kImageIntsPerPixel * sizeof(std::uint32_t)) << 3));
-    _assert_(image.bytesPerLine() == (imageIntsPerLine << 2));
+    assert(image.depth() == ((kImageIntsPerPixel * sizeof(std::uint32_t)) << 3));
+    assert(image.bytesPerLine() == (imageIntsPerLine << 2));
     const auto maskCorner = [&](const QImage* mask, bool right = false, bool bottom = false) {
         const auto maskWidth  = mask ? mask->width() : 0;
         const auto maskHeight = mask ? mask->height() : 0;
@@ -39,10 +38,10 @@ QImage Round(QImage&& image, CornersMaskRef mask, QRect target) {
         const auto maskBytesPerPixel = (mask->depth() >> 3);
         const auto maskBytesPerLine  = mask->bytesPerLine();
         const auto maskBytesAdded    = maskBytesPerLine - maskWidth * maskBytesPerPixel;
-        _assert_(maskBytesAdded >= 0);
-        _assert_(mask->depth() == (maskBytesPerPixel << 3));
+        assert(maskBytesAdded >= 0);
+        assert(mask->depth() == (maskBytesPerPixel << 3));
         const auto imageIntsAdded = imageIntsPerLine - maskWidth * kImageIntsPerPixel;
-        _assert_(imageIntsAdded >= 0);
+        assert(imageIntsAdded >= 0);
         auto imageInts = ints + target.x() + target.y() * imageIntsPerLine;
         if (right) {
             imageInts += targetWidth - maskWidth;

@@ -3,7 +3,7 @@
 #include "cpp/scheme/scheme.h"
 #include "cpp/blend/blend.h"
 
-#include "core/core.h"
+#include "qml_material/core.h"
 
 #include "cpp/palettes/core.h"
 
@@ -22,7 +22,7 @@ QRgb blend(QRgb a, QRgb b, double t) {
 }
 } // namespace
 
-DEFINE_CONVERT(MdScheme, md::Scheme) {
+static void convert_from(MdScheme& out, const md::Scheme& in) {
     out.primary                = in.primary;
     out.on_primary             = in.on_primary;
     out.primary_container      = in.primary_container;
@@ -61,7 +61,8 @@ DEFINE_CONVERT(MdScheme, md::Scheme) {
 
 MdScheme qcm::MaterialLightColorScheme(QRgb rgb) {
     auto palette         = md::CorePalette::Of(rgb);
-    auto scheme          = convert_from<MdScheme>(md::MaterialLightColorSchemeFromPalette(palette));
+    MdScheme scheme;
+    convert_from(scheme, md::MaterialLightColorSchemeFromPalette(palette));
     scheme.background    = palette.neutral().get(98);
     scheme.on_background = palette.neutral().get(10);
 
@@ -79,7 +80,8 @@ MdScheme qcm::MaterialLightColorScheme(QRgb rgb) {
 
 MdScheme qcm::MaterialDarkColorScheme(QRgb rgb) {
     auto palette         = md::CorePalette::Of(rgb);
-    auto scheme          = convert_from<MdScheme>(md::MaterialDarkColorSchemeFromPalette(palette));
+    MdScheme scheme;
+    convert_from(scheme, md::MaterialDarkColorSchemeFromPalette(palette));
     scheme.background    = palette.neutral().get(6);
     scheme.on_background = palette.neutral().get(90);
 

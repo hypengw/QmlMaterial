@@ -1,5 +1,4 @@
 pragma Singleton
-import QtCore
 import QtQml
 import QtQuick
 import Qcm.Material as MD
