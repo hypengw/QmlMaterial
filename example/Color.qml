@@ -43,7 +43,6 @@ MD.Page {
 
     contentItem: MD.Flickable {
         id: flick
-        clip: true
         topMargin: 8
         bottomMargin: 8
 

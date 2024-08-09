@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Shapes
 import Qcm.Material as MD
 
-Rectangle {
+MD.Rectangle {
     id: root
     property real stateOpacity: 0.0
     property bool pressed: false
@@ -10,6 +10,8 @@ Rectangle {
     property real pressY: height / 2
 
     color: "transparent"
+    readonly property MD.t_corner corner: MD.Util.corner(radius)
+
     clip: false
     opacity: stateOpacity
 
@@ -42,48 +44,49 @@ Rectangle {
                 }
             }
 
-            startX: root.radius
+            startX: root.corner.topLeft
+           
             startY: 0
 
             PathLine {
-                x: root.width - root.radius
+                x: root.width - root.corner.topRight
                 y: 0
             }
             PathArc {
-                relativeX: root.radius
-                relativeY: root.radius
-                radiusX: root.radius
-                radiusY: root.radius
+                relativeX: root.corner.topRight
+                relativeY: root.corner.topRight
+                radiusX: root.corner.topRight
+                radiusY: root.corner.topRight
             }
             PathLine {
                 x: root.width
-                y: root.height - root.radius
+                y: root.height - root.corner.bottomRight
             }
             PathArc {
-                relativeX: -root.radius
-                relativeY: root.radius
-                radiusX: root.radius
-                radiusY: root.radius
+                relativeX: -root.corner.bottomRight
+                relativeY: root.corner.bottomRight
+                radiusX: root.corner.bottomRight
+                radiusY: root.corner.bottomRight
             }
             PathLine {
-                x: root.radius
+                x: root.corner.bottomLeft
                 y: root.height
             }
             PathArc {
-                relativeX: -root.radius
-                relativeY: -root.radius
-                radiusX: root.radius
-                radiusY: root.radius
+                relativeX: -root.corner.bottomLeft
+                relativeY: -root.corner.bottomLeft
+                radiusX: root.corner.bottomLeft
+                radiusY: root.corner.bottomLeft
             }
             PathLine {
                 x: 0
-                y: root.radius
+                y: root.corner.topLeft
             }
             PathArc {
-                x: root.radius
+                x: root.corner.topLeft
                 y: 0
-                radiusX: root.radius
-                radiusY: root.radius
+                radiusX: root.corner.topLeft
+                radiusY: root.corner.topLeft
             }
         }
     }

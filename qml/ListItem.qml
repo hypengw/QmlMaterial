@@ -23,8 +23,10 @@ T.ItemDelegate {
     icon.width: 24
     icon.height: 24
 
-    readonly property int count: ListView.view?.count ?? 0
+    property int count: ListView.view?.count ?? 0
     readonly property int index_: index ? index : (model ? model.index : 0)
+    property alias mdState: m_sh.state
+
 
     property string supportText
     property int maximumLineCount: 1
@@ -32,6 +34,7 @@ T.ItemDelegate {
     property alias trailing: item_holder_trailing.contentItem
     property alias below: item_holder_below.contentItem
     property alias divider: holder_divider.item
+    property var radius: 0
 
     property int heightMode: {
         if (supportText)
@@ -41,6 +44,7 @@ T.ItemDelegate {
     }
 
     contentItem: ColumnLayout {
+        opacity: control.mdState.contentOpacity
         RowLayout {
             spacing: 16
 
@@ -64,7 +68,7 @@ T.ItemDelegate {
                     Layout.fillWidth: true
                     visible: text
                     text: control.supportText
-                    color: MD.MatProp.supportTextColor
+                    color: control.mdState.supportTextColor
                     typescale: MD.Token.typescale.body_medium
                     verticalAlignment: Qt.AlignVCenter
                 }
@@ -106,7 +110,7 @@ T.ItemDelegate {
         }
     }
 
-    background: Rectangle {
+    background: MD.Rectangle {
         implicitWidth: 64
         implicitHeight: {
             switch (control.heightMode) {
@@ -120,23 +124,25 @@ T.ItemDelegate {
             }
         }
 
-        radius: 0
-        color: control.MD.MatProp.backgroundColor
+        opacity: control.mdState.backgroundOpacity
+
+        radius: control.radius
+        color: control.mdState.backgroundColor
 
         layer.enabled: control.enabled && color.a > 0
         layer.effect: MD.RoundedElevationEffect {
-            elevation: control.MD.MatProp.elevation
+            elevation: control.mdState.elevation
         }
 
         MD.Ripple2 {
-            radius: parent.radius
+            radius: control.radius
             width: parent.width
             height: parent.height
             pressX: control.pressX
             pressY: control.pressY
             pressed: control.pressed
-            stateOpacity: item_state.stateLayerOpacity
-            color: item_state.stateLayerColor
+            stateOpacity: control.mdState.stateLayerOpacity
+            color: control.mdState.stateLayerColor
         }
 
         MD.ItemHolder {
@@ -144,50 +150,11 @@ T.ItemDelegate {
             visible: control.index_ + 1 !== control.count
         }
     }
-    MD.MatProp.elevation: item_state.elevation
-    MD.MatProp.textColor: item_state.textColor
-    MD.MatProp.supportTextColor: item_state.supportTextColor
-    MD.MatProp.backgroundColor: item_state.backgroundColor
-    MD.MatProp.stateLayerColor: item_state.stateLayerColor
 
-    MD.State {
-        id: item_state
-        item: control
-
-        elevation: MD.Token.elevation.level0
-        textColor: item_state.ctx.color.on_surface
-        backgroundColor: item_state.ctx.color.surface
-        supportTextColor: item_state.ctx.color.on_surface_variant
-        stateLayerOpacity: 0.0
-        stateLayerColor: item_state.ctx.color.on_surface
-
-        states: [
-            State {
-                name: "Disabled"
-                when: !control.enabled
-                PropertyChanges {
-                    item_state.elevation: MD.Token.elevation.level0
-                    item_state.textColor: item_state.ctx.color.on_surface
-                    item_state.supportTextColor: item_state.ctx.color.on_surface
-                    item_state.backgroundColor: item_state.ctx.color.on_surface
-                    control.contentItem.opacity: 0.38
-                    control.background.opacity: 0.38
-                }
-            },
-            State {
-                name: "Pressed"
-                when: control.pressed || control.visualFocus
-                PropertyChanges {
-                    item_state.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
-                }
-            },
-            State {
-                name: "Hovered"
-                when: control.hovered
-                PropertyChanges {
-                    item_state.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
-                }
-            }
-        ]
+    MD.StateHolder {
+        id: m_sh
+        state: MD.StateListItem {
+            item: control
+        }
     }
 }

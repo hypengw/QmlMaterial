@@ -105,10 +105,12 @@ set(QML_FILES
     qml/TabBar.qml
     qml/TabButton.qml
     qml/Tool.qml
+    qml/Rectangle.qml
     qml/state/State.qml
     qml/state/StateSnakeBar.qml
     qml/state/StateButton.qml
     qml/state/StateTabButton.qml
+    qml/state/StateListItem.qml
     qml/impl/BoxShadow.qml
     qml/impl/Shadow.qml
     qml/impl/ListBusyFooter.qml
@@ -151,8 +153,8 @@ qt_add_qml_module(
 set(SHADER_GLSLS
     "assets/shader/sdf.glsl")
 set(SHADER_SOURCES
-    "assets/shader/round.frag" "assets/shader/shadow.frag"
-    "assets/shader/rect_glow.frag")
+    "assets/shader/round_clip.frag" "assets/shader/round_rect.frag"
+    "assets/shader/shadow.frag" "assets/shader/rect_glow.frag")
 qt_add_shaders(${LIBNAME} "shader" PREFIX "/Qcm/Material" FILES
                ${SHADER_SOURCES})
 foreach(
@@ -177,5 +179,4 @@ add_subdirectory(example)
 target_link_libraries(
   ${LIBNAME}
   PUBLIC Qt6::Core Qt6::Quick Qt6::QuickControls2 Qt6::GuiPrivate core
-  PRIVATE material_color
-  )
+  PRIVATE material_color)

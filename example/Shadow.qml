@@ -4,6 +4,7 @@ import QtQuick.Controls as QC
 import QtQuick.Controls.Material.impl as MDImpl
 
 import Qcm.Material as MD
+
 //import org.kde.kirigami as Kirigami
 
 MD.Page {
@@ -12,7 +13,6 @@ MD.Page {
     MD.Flickable {
         id: flick
         anchors.fill: parent
-        clip: true
         contentHeight: content.implicitHeight
 
         ColumnLayout {
@@ -221,6 +221,25 @@ MD.Page {
                         to: 1
                         value: 0
                     }
+                }
+            }
+
+            RowLayout {
+                Layout.leftMargin: 32
+                Layout.topMargin: 32
+                Layout.bottomMargin: 32
+                spacing: 32
+                MD.Rectangle {
+                    width: 96
+                    height: 96
+                    radius: 16
+                    color: 'black'
+                }
+                Rectangle {
+                    width: 96
+                    height: 96
+                    radius: 16
+                    color: 'black'
                 }
             }
         }

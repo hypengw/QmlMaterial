@@ -5,7 +5,9 @@ import Qcm.Material as MD
 Flickable {
     id: root
 
+    // it's hard to avoid item around Flickable is not transparent
     clip: true
+
     contentHeight: contentItem.childrenRect.height
     contentWidth: width - rightMargin - leftMargin
     implicitHeight: contentHeight + topMargin + bottomMargin

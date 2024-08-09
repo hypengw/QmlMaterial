@@ -40,7 +40,6 @@ T.Menu {
         interactive: Window.window
                         ? contentHeight + control.topPadding + control.bottomPadding > Window.window.height
                         : false
-        clip: true
         currentIndex: control.currentIndex
 
         ScrollIndicator.vertical: ScrollIndicator {}

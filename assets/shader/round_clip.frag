@@ -12,8 +12,9 @@ layout(std140, binding = 0) uniform buf {
     // tl,tr,bl,br
     vec4 radius_;
     vec2 size;
-    // vec2  height;
+
     float smoothing;
+    float offset;
 };
 layout(binding = 1) uniform sampler2D source;
 
@@ -23,8 +24,10 @@ void main() {
     float sdf = sdf_rounded_rectangle(p, size / 2.0, radius_);
 
     // fragColor = sdf_render(sdf, vec4(0.0), texture(source, qt_TexCoord0), 1.0, smoothing, -1.0);
-    fragColor =
-        sdf_render_uv(sdf, p, vec4(0.0), texture(source, qt_TexCoord0), 1.0, smoothing, -1.0);
-    // fragColor = texture(source, qt_TexCoord0);
-    // fragColor.a = sdf_alpha_uv(sdf, p, smoothing, -1.0);
+    // fragColor = sdf_render_uv(sdf, p, vec4(0.0), texture(source, qt_TexCoord0), 1.0, smoothing,
+    // -1.0);
+    fragColor   = texture(source, qt_TexCoord0);
+    fragColor.a *= sdf_alpha_uv(sdf, p, smoothing, offset) * qt_Opacity;
+    // premultiplied
+    fragColor.xyz *= fragColor.a;
 }

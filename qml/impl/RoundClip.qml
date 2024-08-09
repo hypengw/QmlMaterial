@@ -7,5 +7,6 @@ ShaderEffect {
     property vector4d radius_: MD.Util.corner(radius).toVector4D()
     property vector2d size: Qt.vector2d(1,1)
     property real smoothing: 1.0
-    fragmentShader: 'qrc:/Qcm/Material/assets/shader/round.frag.qsb'
+    property real offset: -1.0
+    fragmentShader: 'qrc:/Qcm/Material/assets/shader/round_clip.frag.qsb'
 }

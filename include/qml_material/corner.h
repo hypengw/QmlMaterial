@@ -6,7 +6,7 @@ namespace qml_material
 {
 class CornersGroup {
     Q_GADGET
-    QML_VALUE_TYPE(corner_t)
+    QML_VALUE_TYPE(t_corner)
 
     Q_PROPERTY(qreal topLeft READ topLeft WRITE setTopLeft FINAL)
     Q_PROPERTY(qreal topRight READ topRight WRITE setTopRight FINAL)

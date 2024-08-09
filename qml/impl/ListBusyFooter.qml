@@ -8,7 +8,6 @@ MD.Pane {
     visible: running
     implicitHeight: m_busy.running ? m_busy.implicitHeight + 2 * padding : 0
     padding: 4
-    clip: true
 
     MD.CircularIndicator {
         id: m_busy
