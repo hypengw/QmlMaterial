@@ -97,5 +97,14 @@ public:
         SecondaryTab
     };
     Q_ENUM(TabType)
+
+    enum class ToastFlag
+    {
+        TFCloseable = 1,
+        TFSave = 1 << 1,
+    };
+    Q_ENUM(ToastFlag)
+    Q_DECLARE_FLAGS(ToastFlags, ToastFlag)
 };
+Q_DECLARE_OPERATORS_FOR_FLAGS(Enum::ToastFlags);
 } // namespace qml_material

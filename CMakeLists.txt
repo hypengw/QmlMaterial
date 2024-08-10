@@ -43,6 +43,7 @@ set(SOURCES
     include/qml_material/helper.h
     include/qml_material/type_scale.h
     include/qml_material/token.h
+    include/qml_material/snake_model.h
     include/qml_material/kirigami/wheelhandler.h
     src/kirigami/wheelhandler.cpp
     src/color.cpp
@@ -56,6 +57,7 @@ set(SOURCES
     src/theme.cpp
     src/helper.cpp
     src/state_holder.cpp
+    src/snake_model.cpp
     src/token.cpp
     src/type_scale.cpp
     src/round_item.cpp)

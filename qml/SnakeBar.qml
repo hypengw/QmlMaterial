@@ -70,6 +70,7 @@ T.Pane {
             spacing: 8
 
             contentItem: MD.IconLabel {
+                font.capitalization: Font.Capitalize
                 text: btn_action.text
                 color: control.mdState.textColor
                 typescale: MD.Token.typescale.label_large
