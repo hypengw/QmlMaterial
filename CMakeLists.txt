@@ -94,6 +94,7 @@ set(QML_FILES
     qml/Page.qml
     qml/PageIndicator.qml
     qml/Popup.qml
+    qml/Space.qml
     qml/SnakeBar.qml
     qml/StackView.qml
     qml/SplitView.qml

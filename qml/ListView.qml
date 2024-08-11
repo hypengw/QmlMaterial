@@ -30,6 +30,25 @@ ListView {
         onWheelMoved: root.wheelMoved()
     }
 
-    ScrollBar.vertical: MD.ScrollBar {
+    ScrollBar.vertical: MD.ScrollBar {}
+
+    Connections {
+        target: root
+        function onHeaderItemChanged() {
+            if (root.headerItem) {
+                let old = 0;
+                // keep top position
+                const slot = function () {
+                    const header = root.headerItem;
+                    const v = root;
+                    if (Math.abs(v.contentY + (old + v.topMargin)) < Number.EPSILON) {
+                        v.contentY = -(v.topMargin + header.implicitHeight);
+                    }
+                    old = header.implicitHeight;
+                };
+                root.headerItem.implicitHeightChanged.connect(slot);
+                slot();
+            }
+        }
     }
 }

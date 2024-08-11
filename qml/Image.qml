@@ -33,7 +33,7 @@ Item {
     }
     opacity: root.status === Image.Ready && root.paintedHeight > 0 ? 1 : 0
 
-    MD.MatProp.elevation: MD.Token.elevation.level0
+    property int elevation: MD.Token.elevation.level0
 
     Image {
         id: m_image
@@ -47,7 +47,7 @@ Item {
             size: Qt.vector2d(root.width, root.height)
             layer.enabled: true
             layer.effect: MD.RoundedElevationEffect {
-                elevation: root.opacity > 0 ? root.MD.MatProp.elevation : MD.Token.elevation.level0
+                elevation: root.opacity > 0 ? root.elevation : MD.Token.elevation.level0
             }
         }
     }
