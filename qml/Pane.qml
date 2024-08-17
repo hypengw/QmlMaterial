@@ -12,15 +12,16 @@ T.Pane {
 
     padding: 12
     property real radius
-    MD.MatProp.elevation: MD.Token.elevation.level0
+    property int elevation: MD.Token.elevation.level0
+    property color backgroundColor: MD.MatProp.color.background
 
     background: Rectangle {
-        color: control.MD.MatProp.backgroundColor
+        color: control.backgroundColor
         radius: control.radius
 
-        layer.enabled: control.enabled && control.MD.MatProp.elevation > 0
+        layer.enabled: control.enabled && control.elevation > 0
         layer.effect: MD.RoundedElevationEffect {
-            elevation: control.MD.MatProp.elevation
+            elevation: control.elevation
         }
     }
 }

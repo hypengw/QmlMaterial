@@ -10,6 +10,8 @@ T.Button {
     property int iconStyle: hasIcon ? MD.Enum.IconAndText : MD.Enum.TextOnly
     readonly property bool hasIcon: MD.Util.hasIcon(icon)
 
+    property alias mdState: item_state
+
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
@@ -42,7 +44,7 @@ T.Button {
                 implicitHeight: 32
                 name: control.icon.name
                 size: control.icon.width
-                color: control.MD.MatProp.supportTextColor
+                color: control.mdState.supportTextColor
             }
 
             MD.Text {
@@ -51,6 +53,7 @@ T.Button {
                 typescale: MD.Token.typescale.label_medium
                 text: control.text
                 prominent: control.checked
+                color: control.mdState.textColor
             }
         }
     }
@@ -74,11 +77,11 @@ T.Button {
             }
 
             radius: height / 2
-            color: control.MD.MatProp.backgroundColor
+            color: control.mdState.backgroundColor
 
             layer.enabled: true
             layer.effect: MD.RoundedElevationEffect {
-                elevation: control.MD.MatProp.elevation
+                elevation: control.mdState.elevation
             }
         }
         MD.Ripple2 {
@@ -95,11 +98,6 @@ T.Button {
             color: item_state.stateLayerColor
         }
     }
-
-    MD.MatProp.elevation: item_state.elevation
-    MD.MatProp.textColor: item_state.textColor
-    MD.MatProp.supportTextColor: item_state.supportTextColor // icon color
-    MD.MatProp.backgroundColor: item_state.backgroundColor
 
     MD.State {
         id: item_state

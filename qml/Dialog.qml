@@ -8,6 +8,7 @@ T.Dialog {
     id: control
 
     property int titleCapitalization: Font.Capitalize
+    property alias mdState: item_state
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding, implicitHeaderWidth, implicitFooterWidth)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding + (implicitHeaderHeight > 0 ? implicitHeaderHeight + spacing : 0) + (implicitFooterHeight > 0 ? implicitFooterHeight + spacing : 0))
@@ -56,11 +57,11 @@ T.Dialog {
     background: Rectangle {
         // FullScale doesn't make sense for Dialog.
         radius: MD.Token.shape.corner.extra_large
-        color: control.MD.MatProp.backgroundColor
+        color: control.mdState.backgroundColor
 
-        layer.enabled: control.MD.MatProp.elevation
+        layer.enabled: control.mdState.elevation
         layer.effect: MD.RoundedElevationEffect {
-            elevation: control.MD.MatProp.elevation
+            elevation: control.mdState.elevation
             roundedScale: control.background.radius
         }
     }
@@ -103,12 +104,6 @@ T.Dialog {
             }
         }
     }
-
-    MD.MatProp.elevation: item_state.elevation
-    MD.MatProp.textColor: item_state.textColor
-    MD.MatProp.supportTextColor: item_state.supportTextColor
-    MD.MatProp.backgroundColor: item_state.backgroundColor
-    MD.MatProp.stateLayerColor: item_state.stateLayerColor
 
     MD.State {
         id: item_state

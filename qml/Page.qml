@@ -16,16 +16,17 @@ T.Page {
                              + (implicitHeaderHeight > 0 ? implicitHeaderHeight + spacing : 0)
                              + (implicitFooterHeight > 0 ? implicitFooterHeight + spacing : 0))
     
-    MD.MatProp.elevation: MD.Token.elevation.level0
+    property int elevation: MD.Token.elevation.level0
+    property color backgroundColor: MD.MatProp.color.background
 
     font.capitalization: Font.Capitalize
 
     background: Rectangle {
-        color: control.MD.MatProp.backgroundColor
+        color: control.backgroundColor
 
-        layer.enabled: control.enabled && control.MD.MatProp.elevation > 0
+        layer.enabled: control.enabled && control.elevation > 0
         layer.effect: MD.RoundedElevationEffect {
-            elevation: control.MD.MatProp.elevation
+            elevation: control.elevation
         }
     }
 }

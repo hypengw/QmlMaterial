@@ -9,6 +9,7 @@ T.ComboBox {
     id: control
 
     property int type: MD.Enum.TextFieldOutlined
+    property alias mdState: item_state
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding, implicitIndicatorHeight + topPadding + bottomPadding)
@@ -63,7 +64,7 @@ T.ComboBox {
         implicitHeight: 56
 
         filled: control.type === MD.Enum.TextFieldFilled
-        fillColor: control.MD.MatProp.backgroundColor
+        fillColor: control.mdState.backgroundColor
         outlineColor: control.outlineColor
         focusedOutlineColor: control.outlineColor
         controlHasActiveFocus: control.activeFocus
@@ -82,13 +83,6 @@ T.ComboBox {
         bottomMargin: 12
         verticalPadding: 8
     }
-
-    MD.MatProp.elevation: item_state.elevation
-    MD.MatProp.textColor: item_state.textColor
-    MD.MatProp.supportTextColor: item_state.supportTextColor
-    MD.MatProp.backgroundColor: item_state.backgroundColor
-    MD.MatProp.stateLayerColor: item_state.stateLayerColor
-
     property color outlineColor: item_state.outlineColor
 
     MD.State {

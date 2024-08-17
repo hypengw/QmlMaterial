@@ -7,6 +7,8 @@ import Qcm.Material as MD
 T.Slider {
     id: control
 
+    property alias mdState: item_state
+
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitHandleWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitHandleHeight + topPadding + bottomPadding)
 
@@ -95,14 +97,8 @@ T.Slider {
     property color trackOverlayColor: item_state.trackOverlayColor
     property real trackOverlayOpacity: 0.12
 
-    property color trackMarkColor: MD.MatProp.supportTextColor
+    property color trackMarkColor: mdState.supportTextColor
     property color trackMarkInactiveColor: item_state.trackMarkInactiveColor
-
-    MD.MatProp.elevation: item_state.elevation
-    MD.MatProp.textColor: item_state.textColor
-    MD.MatProp.supportTextColor: item_state.supportTextColor
-    MD.MatProp.backgroundColor: item_state.backgroundColor
-    MD.MatProp.stateLayerColor: item_state.stateLayerColor
 
     MD.State {
         id: item_state
@@ -114,8 +110,8 @@ T.Slider {
         supportTextColor: item_state.ctx.color.on_primary
         stateLayerColor: "#00000000"
 
-        property color trackColor: MD.MatProp.backgroundColor
-        property color trackOverlayColor: MD.MatProp.backgroundColor
+        property color trackColor: item_state.ctx.backgroundColor
+        property color trackOverlayColor: item_state.ctx.backgroundColor
         property color trackInactiveColor: item_state.ctx.color.surface_container_highest
         property color trackMarkInactiveColor: item_state.ctx.color.on_surface_variant
 

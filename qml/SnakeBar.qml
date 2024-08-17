@@ -33,7 +33,7 @@ T.Pane {
         color: control.mdState.backgroundColor
         radius: control.radius
 
-        layer.enabled: control.enabled && control.MD.MatProp.elevation > 0
+        layer.enabled: control.enabled && control.mdState.elevation > 0
         layer.effect: MD.RoundedElevationEffect {
             elevation: control.mdState.elevation
         }

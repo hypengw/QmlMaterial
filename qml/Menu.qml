@@ -9,6 +9,8 @@ import Qcm.Material as MD
 T.Menu {
     id: control
 
+    property alias mdState: item_state
+
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)
 
@@ -49,11 +51,11 @@ T.Menu {
         implicitWidth: 200
         implicitHeight: 48
         radius: MD.Token.shape.corner.extra_small
-        color: control.MD.MatProp.backgroundColor
+        color: control.mdState.backgroundColor
 
-        layer.enabled: control.MD.MatProp.elevation > 0
+        layer.enabled: control.mdState.elevation > 0
         layer.effect: MD.RoundedElevationEffect {
-            elevation: control.MD.MatProp.elevation
+            elevation: control.mdState.elevation
         }
     }
 
@@ -66,12 +68,6 @@ T.Menu {
         color: MD.Util.transparent(MD.Token.color.scrim, 0.32)
         Behavior on opacity { NumberAnimation { duration: 150 } }
     }
-
-    MD.MatProp.elevation: item_state.elevation
-    MD.MatProp.textColor: item_state.textColor
-    MD.MatProp.supportTextColor: item_state.supportTextColor
-    MD.MatProp.backgroundColor: item_state.backgroundColor
-    MD.MatProp.stateLayerColor: item_state.stateLayerColor
 
     MD.State {
         id: item_state

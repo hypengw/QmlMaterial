@@ -6,6 +6,8 @@ import Qcm.Material as MD
 T.MenuItem {
     id: control
 
+    property alias mdState: item_state
+
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding, implicitIndicatorHeight + topPadding + bottomPadding)
 
@@ -15,7 +17,7 @@ T.MenuItem {
 
     icon.width: 24
     icon.height: 24
-    icon.color: MD.MatProp.textColor
+    icon.color: mdState.textColor
 
     /*
     indicator: CheckIndicator {
@@ -71,11 +73,6 @@ T.MenuItem {
             color: item_state.stateLayerColor
         }
     }
-
-    MD.MatProp.elevation: item_state.elevation
-    MD.MatProp.textColor: item_state.textColor
-    MD.MatProp.supportTextColor: item_state.supportTextColor
-    MD.MatProp.backgroundColor: item_state.backgroundColor
 
     property color leadingIconColor: item_state.leadingIconColor
     property color trailingIconColor: item_state.trailingIconColor

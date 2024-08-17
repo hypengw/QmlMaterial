@@ -27,7 +27,7 @@ T.Drawer {
         }
     }
 
-    MD.MatProp.elevation: !interactive && !dim ? MD.Token.elevation.level0 : MD.Token.elevation.level1
+    property int elevation: !interactive && !dim ? MD.Token.elevation.level0 : MD.Token.elevation.level1
 
     background: Item {
         implicitWidth: Math.min(200, control.Window.window?.width ?? 200)
@@ -40,9 +40,9 @@ T.Drawer {
                 size: Qt.vector2d(parent.width, parent.height)
             }
         }
-        //layer.enabled: control.position > 0 && control.MD.MatProp.elevation > 0
+        //layer.enabled: control.position > 0 && control.elevation > 0
         //layer.effect: MD.RoundedElevationEffect {
-        //    elevation: control.MD.MatProp.elevation
+        //    elevation: control.elevation
         //}
     }
 

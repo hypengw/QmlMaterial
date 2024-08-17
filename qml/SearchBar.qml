@@ -20,6 +20,8 @@ T.Button {
             item_input.text = '';
         }
     }
+    property alias mdState: item_state
+
     signal accepted
 
     text: item_input.text
@@ -46,7 +48,7 @@ T.Button {
         MD.TextFieldEmbed {
             id: item_input
             Layout.fillWidth: true
-            color: control.MD.MatProp.textColor
+            color: control.mdState.textColor
 
             Connections {
                 target: item_input
@@ -72,11 +74,11 @@ T.Button {
         implicitHeight: 56
 
         radius: height / 2
-        color: control.MD.MatProp.backgroundColor
+        color: control.mdState.backgroundColor
 
         layer.enabled: control.enabled && color.a > 0
         layer.effect: MD.RoundedElevationEffect {
-            elevation: control.MD.MatProp.elevation
+            elevation: control.mdState.elevation
         }
 
         MD.Ripple2 {
@@ -89,12 +91,6 @@ T.Button {
             color: item_state.stateLayerColor
         }
     }
-
-    MD.MatProp.elevation: item_state.elevation
-    MD.MatProp.textColor: item_state.textColor
-    MD.MatProp.supportTextColor: item_state.supportTextColor
-    MD.MatProp.backgroundColor: item_state.backgroundColor
-    MD.MatProp.stateLayerColor: item_state.stateLayerColor
 
     MD.State {
         id: item_state
@@ -111,7 +107,7 @@ T.Button {
         states: [
             State {
                 name: "Disabled"
-                when: !enabled
+                when: !control.enabled
                 PropertyChanges {
                     item_state.supportTextColor: item_state.ctx.color.on_surface
                     placeholder.opacity: 0.38

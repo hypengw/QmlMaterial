@@ -11,6 +11,7 @@ T.Button {
     property int type: MD.Enum.FABNormal
     property int color: MD.Enum.FABColorPrimary
     property QtObject flickable: null
+    property alias mdState: item_state
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
@@ -44,28 +45,25 @@ T.Button {
             anchors.centerIn: parent
             font: control.font
             text: control.icon.name
-            color: MD.MatProp.textColor
+            color: control.mdState.textColor
             lineHeight: font.pixelSize
             lineHeightMode: Text.FixedHeight
         }
     }
 
     background: Rectangle {
-        implicitWidth: _size(type, 40, 56, 96)
-        implicitHeight: _size(type, 40, 56, 96)
+        implicitWidth: control._size(control.type, 40, 56, 96)
+        implicitHeight: control._size(control.type, 40, 56, 96)
 
-        radius: _size(type, 12, 16, 28)
-        color: MD.MatProp.backgroundColor
+        radius: control._size(control.type, 12, 16, 28)
+        color: control.mdState.backgroundColor
 
         border.width: control.type == MD.Enum.BtOutlined ? 1 : 0
         border.color: item_state.ctx.color.outline
 
-        // The layer is disabled when the button color is transparent so you can do
-        // Material.background: "transparent" and get a proper flat button without needing
-        // to set Material.elevation as well
         layer.enabled: control.enabled && color.a > 0 && !control.flat
         layer.effect: MD.RoundedElevationEffect {
-            elevation: MD.MatProp.elevation
+            elevation: control.mdState.elevation
         }
 
         MD.Ripple2 {
@@ -82,12 +80,6 @@ T.Button {
     function _size(t, small, normal, large) {
         return t == MD.Enum.FABSmall ? small : (t == MD.Enum.FABLarge ? large : normal);
     }
-
-    MD.MatProp.elevation: item_state.elevation
-    MD.MatProp.textColor: item_state.textColor
-    MD.MatProp.supportTextColor: item_state.supportTextColor
-    MD.MatProp.backgroundColor: item_state.backgroundColor
-    MD.MatProp.stateLayerColor: item_state.stateLayerColor
 
     MD.State {
         id: item_state

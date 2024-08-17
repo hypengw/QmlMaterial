@@ -10,6 +10,7 @@ MD.TextFieldEmbed {
     property int type: MD.Enum.TextFieldOutlined
     property string leading_icon
     property string trailing_icon
+    property alias mdState: item_state
 
     font.capitalization: Font.MixedCase
 
@@ -77,7 +78,7 @@ MD.TextFieldEmbed {
         implicitHeight: 56
 
         filled: control.type === MD.Enum.TextFieldFilled
-        fillColor: control.MD.MatProp.backgroundColor
+        fillColor: control.mdState.backgroundColor
         outlineColor: control.outlineColor
         focusedOutlineColor: control.outlineColor
         placeholderTextWidth: Math.min(placeholder.width, placeholder.implicitWidth) * placeholder.scale
@@ -86,12 +87,6 @@ MD.TextFieldEmbed {
         placeholderHasText: placeholder.text.length > 0
         horizontalPadding: 16
     }
-
-    MD.MatProp.elevation: item_state.elevation
-    MD.MatProp.textColor: item_state.textColor
-    MD.MatProp.supportTextColor: item_state.supportTextColor
-    MD.MatProp.backgroundColor: item_state.backgroundColor
-    MD.MatProp.stateLayerColor: item_state.stateLayerColor
 
     color: item_state.textColor
     placeholderTextColor: item_state.placeholderColor
@@ -112,7 +107,7 @@ MD.TextFieldEmbed {
         states: [
             State {
                 name: "Disabled"
-                when: !enabled
+                when: !control.enabled
                 PropertyChanges {
                     item_state.placeholderColor: item_state.ctx.color.on_surface
                     item_state.supportTextColor: item_state.ctx.color.on_surface
