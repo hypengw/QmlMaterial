@@ -13,8 +13,6 @@
 #include <QQuickWindow>
 #include <QWheelEvent>
 
-#include <fmt/format.h>
-
 namespace
 {
 bool fuzzyLessThanOrEqualTo(qreal a, qreal b) {

@@ -5,21 +5,12 @@ project(
   VERSION 0.1
   LANGUAGES CXX)
 
-option(QM_BUILD_STATIC "build static plugin" OFF)
-
 set(CMAKE_CXX_STANDARD
     20)
 set(CMAKE_CXX_STANDARD_REQUIRED
     ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE
     ON)
-
-set(QM_BUILD
-    SHARED)
-if(QM_BUILD_STATIC)
-  set(QM_BUILD
-      STATIC)
-endif()
 
 find_package(
   Qt6 REQUIRED
@@ -144,7 +135,7 @@ qt_add_qml_module(
   ${LIBNAME}
   URI
   Qcm.Material
-  ${QM_BUILD}
+  SHARED
   RESOURCE_PREFIX
   /
   QML_FILES
@@ -185,3 +176,24 @@ target_link_libraries(
   ${LIBNAME}
   PUBLIC Qt6::Core Qt6::Quick Qt6::QuickControls2 Qt6::GuiPrivate
   PRIVATE material_color)
+
+function(qt_install_qml_module target_)
+  get_target_property(QML_TARGET_PATH ${target_} QT_QML_MODULE_TARGET_PATH)
+  get_target_property(QML_TYEPINFO ${target_} QT_QML_MODULE_TYPEINFO)
+  get_target_property(QML_PLUGIN_TARGET ${target_} QT_QML_MODULE_PLUGIN_TARGET)
+  set(QML_INSTALL_DIR
+      "${CMAKE_INSTALL_LIBDIR}/qml/${QML_TARGET_PATH}")
+
+  install(TARGETS ${target_})
+
+  install(
+    TARGETS ${QML_PLUGIN_TARGET}
+    LIBRARY DESTINATION ${QML_INSTALL_DIR})
+
+  install(
+    FILES "${QT_QML_OUTPUT_DIRECTORY}/${QML_TARGET_PATH}/qmldir"
+          "${QT_QML_OUTPUT_DIRECTORY}/${QML_TARGET_PATH}/${QML_TYEPINFO}"
+    DESTINATION ${QML_INSTALL_DIR})
+endfunction()
+
+qt_install_qml_module(${LIBNAME})
