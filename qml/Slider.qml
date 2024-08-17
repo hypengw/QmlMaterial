@@ -7,7 +7,7 @@ import Qcm.Material as MD
 T.Slider {
     id: control
 
-    property alias mdState: item_state
+    property alias mdState: m_sh.state
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitHandleWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitHandleHeight + topPadding + bottomPadding)
@@ -43,6 +43,7 @@ T.Slider {
         y: control.topPadding + (control.horizontal ? (control.availableHeight - height) / 2 : 0)
         implicitWidth: control.horizontal ? 200 : 4
         implicitHeight: control.horizontal ? 4 : 200
+        opacity: control.mdState.backgroundOpacity
 
         Rectangle {
             anchors.centerIn: parent
@@ -50,7 +51,7 @@ T.Slider {
             height: control.horizontal ? 4 : parent.height - (control.implicitHandleHeight - (control.__isDiscrete ? 4 : 0))
             scale: control.horizontal && control.mirrored ? -1 : 1
             radius: Math.min(width, height) / 2
-            color: control.trackInactiveColor
+            color: control.mdState.trackInactiveColor
 
             Rectangle {
                 visible: control.overlay.length() > 0
@@ -59,8 +60,8 @@ T.Slider {
                 width: control.horizontal ? (control.overlay.y - control.overlay.x) * parent.width : 4
                 height: control.horizontal ? 4 : (control.overlay.y - control.overlay.x) * parent.height
                 radius: Math.min(width, height) / 2
-                color: control.trackOverlayColor
-                opacity: control.trackOverlayOpacity
+                color: control.mdState.trackOverlayColor
+                opacity: control.mdState.trackOverlayOpacity
             }
 
             Rectangle {
@@ -69,7 +70,7 @@ T.Slider {
                 width: control.horizontal ? control.position * parent.width : 4
                 height: control.horizontal ? 4 : control.position * parent.height
                 radius: Math.min(width, height) / 2
-                color: control.trackColor
+                color: control.mdState.trackColor
             }
 
             // Declaring this as a property (in combination with the parent binding below) avoids ids,
@@ -83,7 +84,7 @@ T.Slider {
                     radius: 2
                     x: control.horizontal ? (parent.width - width * 2) * currentPosition + (width / 2) : (parent.width - width) / 2
                     y: control.horizontal ? (parent.height - height) / 2 : (parent.height - height * 2) * currentPosition + (height / 2)
-                    color: active ? control.trackMarkColor : control.trackMarkInactiveColor
+                    color: active ? control.mdState.trackMarkColor : control.mdState.trackMarkInactiveColor
 
                     required property int index
                     readonly property real currentPosition: index / (parent.repeater.count - 1)
@@ -92,61 +93,10 @@ T.Slider {
             }
         }
     }
-    property color trackColor: item_state.trackColor
-    property color trackInactiveColor: item_state.trackInactiveColor
-    property color trackOverlayColor: item_state.trackOverlayColor
-    property real trackOverlayOpacity: 0.12
-
-    property color trackMarkColor: mdState.supportTextColor
-    property color trackMarkInactiveColor: item_state.trackMarkInactiveColor
-
-    MD.State {
-        id: item_state
-        item: control
-
-        elevation: MD.Token.elevation.level0
-        textColor: item_state.ctx.color.on_primary
-        backgroundColor: item_state.ctx.color.primary
-        supportTextColor: item_state.ctx.color.on_primary
-        stateLayerColor: "#00000000"
-
-        property color trackColor: item_state.ctx.backgroundColor
-        property color trackOverlayColor: item_state.ctx.backgroundColor
-        property color trackInactiveColor: item_state.ctx.color.surface_container_highest
-        property color trackMarkInactiveColor: item_state.ctx.color.on_surface_variant
-
-        states: [
-            State {
-                name: "Disabled"
-                when: !control.enabled
-                PropertyChanges {
-                    item_state.textColor: item_state.ctx.color.on_surface
-                    item_state.backgroundColor: item_state.ctx.color.on_surface
-                    item_state.trackInactiveColor: item_state.ctx.color.on_surface
-
-                    control.background.opacity: 0.38
-                }
-            },
-            State {
-                name: "Pressed"
-                when: control.pressed || control.visualFocus
-                PropertyChanges {
-                    item_state.stateLayerColor: {
-                        const c = item_state.ctx.color.primary;
-                        return MD.Util.transparent(c, MD.Token.state.pressed.state_layer_opacity);
-                    }
-                }
-            },
-            State {
-                name: "Hovered"
-                when: control.hovered
-                PropertyChanges {
-                    item_state.stateLayerColor: {
-                        const c = item_state.ctx.color.primary;
-                        return MD.Util.transparent(c, MD.Token.state.hover.state_layer_opacity);
-                    }
-                }
-            }
-        ]
+    MD.StateHolder {
+        id: m_sh
+        state: MD.StateSlider {
+            item: control
+        }
     }
 }

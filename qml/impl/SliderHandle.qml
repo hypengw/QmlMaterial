@@ -19,7 +19,7 @@ Item {
         width: 20
         height: 20
         radius: width / 2
-        color: root.control ? root.control.MD.MatProp.backgroundColor : "transparent"
+        color: root.control ? root.control.mdState.backgroundColor : "transparent"
 
         layer.enabled: true
         layer.effect: MD.RoundedElevationEffect {
@@ -33,7 +33,7 @@ Item {
         height: 36
         radius: width / 2
         pressed: root.handlePressed || root.handleHasFocus
-        color: root.control.MD.MatProp.backgroundColor
+        color: root.control.mdState.backgroundColor
         stateOpacity: root.handleHovered ? MD.Token.state.hover.state_layer_opacity : "transparent"
     }
 }
