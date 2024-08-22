@@ -98,10 +98,19 @@ public:
     };
     Q_ENUM(TabType)
 
+    enum class AppBarType
+    {
+        AppBarCenterAligned,
+        AppBarSmall,
+        AppBarMedium,
+        AppBarlarge
+    };
+    Q_ENUM(AppBarType)
+
     enum class ToastFlag
     {
         TFCloseable = 1,
-        TFSave = 1 << 1,
+        TFSave      = 1 << 1,
     };
     Q_ENUM(ToastFlag)
     Q_DECLARE_FLAGS(ToastFlags, ToastFlag)

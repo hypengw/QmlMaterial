@@ -54,6 +54,7 @@ set(SOURCES
     src/round_item.cpp)
 set(QML_FILES
     qml/js/utils.mjs
+    qml/AppBar.qml
     qml/Button.qml
     qml/BarItem.qml
     qml/Control.qml
@@ -101,6 +102,7 @@ set(QML_FILES
     qml/Tool.qml
     qml/Rectangle.qml
     qml/state/State.qml
+    qml/state/StateAppBar.qml
     qml/state/StateSnakeBar.qml
     qml/state/StateButton.qml
     qml/state/StateTabButton.qml
