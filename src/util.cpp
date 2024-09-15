@@ -10,8 +10,11 @@
 #include <QStyleHints>
 #include <QGlobalStatic>
 
+#include "qml_material/log.h"
+
 Q_GLOBAL_STATIC(qml_material::Xdp, TheXdp)
 
+Q_LOGGING_CATEGORY(qml_material_logcat, "qcm.material")
 namespace
 {
 inline constexpr auto kService           = "org.freedesktop.portal.Desktop";
@@ -179,4 +182,64 @@ auto Util::token_elevation() -> token::Elevation { return token::Elevation(); }
 auto Util::token_shape() -> token::Shape { return token::Shape(); }
 auto Util::token_state() -> token::State { return token::State(); }
 
+QObject* Util::create_item(const QJSValue& url_or_comp, const QVariantMap& props, QObject* parent) {
+    return qcm::create_item(qmlEngine(this), url_or_comp, props, parent);
+}
+
 } // namespace qml_material
+
+namespace qcm
+{
+
+auto qml_dyn_count() -> std::atomic<i32>& {
+    static std::atomic<i32> n { 0 };
+    return n;
+}
+
+auto create_item(QQmlEngine* engine, const QJSValue& url_or_comp, const QVariantMap& props,
+                 QObject* parent) -> QObject* {
+    std::unique_ptr<QQmlComponent, void (*)(QQmlComponent*)> comp { nullptr, nullptr };
+    if (auto p = qobject_cast<QQmlComponent*>(url_or_comp.toQObject())) {
+        comp = decltype(comp)(p, [](QQmlComponent*) {
+        });
+    } else if (auto p = url_or_comp.toVariant(); ! p.isNull()) {
+        QUrl url;
+        if (p.canConvert<QUrl>()) {
+            url = p.toUrl();
+        } else if (p.canConvert<QString>()) {
+            url = p.toString();
+        }
+        comp = decltype(comp)(new QQmlComponent(engine, url, nullptr), [](QQmlComponent* q) {
+            delete q;
+        });
+    } else {
+        qCCritical(qml_material_logcat) << "url not valid";
+        return nullptr;
+    }
+
+    switch (comp->status()) {
+    case QQmlComponent::Status::Ready: {
+        auto obj = comp->createWithInitialProperties(props);
+        if (obj != nullptr) {
+            if (parent != nullptr) obj->setParent(parent);
+            QQmlEngine::setObjectOwnership(obj, QJSEngine::JavaScriptOwnership);
+            qml_dyn_count()++;
+            QObject::connect(obj, &QObject::destroyed, [](QObject*) {
+                qml_dyn_count()--;
+            });
+        } else {
+            qCCritical(qml_material_logcat) << comp->errorString();
+        }
+        return obj;
+        break;
+    }
+    case QQmlComponent::Status::Error: {
+        qCCritical(qml_material_logcat) << comp->errorString();
+        break;
+    }
+    default: break;
+    }
+    return nullptr;
+}
+
+} // namespace qcm

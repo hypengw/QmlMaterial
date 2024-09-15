@@ -107,7 +107,17 @@ public:
     Q_INVOKABLE token::Elevation token_elevation();
     Q_INVOKABLE token::Shape token_shape();
     Q_INVOKABLE token::State token_state();
+    Q_INVOKABLE QObject*     create_item(const QJSValue& url_or_comp, const QVariantMap& props,
+                                         QObject* parent = nullptr);
+
 private:
     usize m_tracked { 0 };
 };
 } // namespace qml_material
+
+namespace qcm
+{
+auto qml_dyn_count() -> std::atomic<i32>&;
+auto create_item(QQmlEngine* engine, const QJSValue& url_or_comp, const QVariantMap& props,
+                 QObject* parent) -> QObject*;
+} // namespace qcm

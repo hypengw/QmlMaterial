@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Layouts
 import Qcm.Material as MD
 
 Item {
@@ -14,7 +13,7 @@ Item {
 
     property int lineHeight: MD.Token.typescale.label_large.line_height
     property int iconStyle: MD.Enum.IconRound
-    property color color: MD.MatProp.textColor
+    property color color: MD.MatProp.color.on_background
 
     Text {
         id: item_text_icon

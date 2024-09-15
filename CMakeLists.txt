@@ -80,6 +80,7 @@ set(QML_FILES
     qml/Flickable.qml
     qml/GridView.qml
     qml/Icon.qml
+    qml/IconSvg.qml
     qml/Text.qml
     qml/TextEdit.qml
     qml/Pane.qml

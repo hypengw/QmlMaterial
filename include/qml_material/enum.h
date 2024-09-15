@@ -87,7 +87,7 @@ public:
     {
         ListItemOneLine = 0,
         ListItemTwoLine,
-        ListItemThreeine
+        ListItemThreeLine
     };
     Q_ENUM(ListItemHeightMode)
 
