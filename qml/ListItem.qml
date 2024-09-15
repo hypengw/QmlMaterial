@@ -27,7 +27,6 @@ T.ItemDelegate {
     readonly property int index_: index ? index : (model ? model.index : 0)
     property alias mdState: m_sh.state
 
-
     property string supportText
     property int maximumLineCount: 1
     property alias leader: item_holder_leader.contentItem
@@ -43,9 +42,15 @@ T.ItemDelegate {
             return MD.Enum.ListItemOneLine;
     }
 
+    function indexRadius(index, count, size) {
+        return [index === 0 ? size : 0, index + 1 === count ? size : 0];
+    }
+
     contentItem: ColumnLayout {
+        id: m_test
         opacity: control.mdState.contentOpacity
         RowLayout {
+            id: m_test2
             spacing: 16
 
             MD.Control {
@@ -64,9 +69,10 @@ T.ItemDelegate {
                     maximumLineCount: control.maximumLineCount
                     verticalAlignment: Qt.AlignVCenter
                 }
+
                 MD.Text {
                     Layout.fillWidth: true
-                    visible: text
+                    visible: text.length > 0
                     text: control.supportText
                     color: control.mdState.supportTextColor
                     typescale: MD.Token.typescale.body_medium
@@ -76,7 +82,7 @@ T.ItemDelegate {
             MD.Text {
                 id: item_text_trailing_support
                 Layout.alignment: Qt.AlignVCenter
-                visible: text
+                visible: text.length > 0
                 typescale: MD.Token.typescale.label_small
                 verticalAlignment: Qt.AlignVCenter
             }
@@ -97,6 +103,7 @@ T.ItemDelegate {
 
         RowLayout {
             spacing: 16
+            visible: item_holder_below.contentItem
             Item {
                 implicitWidth: item_holder_leader.height
                 visible: item_holder_leader.visible
@@ -105,7 +112,6 @@ T.ItemDelegate {
             MD.Control {
                 id: item_holder_below
                 Layout.fillWidth: true
-                visible: contentItem
             }
         }
     }
