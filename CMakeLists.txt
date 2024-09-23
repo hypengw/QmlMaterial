@@ -100,7 +100,6 @@ set(QML_FILES
     qml/TextField.qml
     qml/TabBar.qml
     qml/TabButton.qml
-    qml/Tool.qml
     qml/Rectangle.qml
     qml/state/State.qml
     qml/state/StateAppBar.qml
@@ -128,9 +127,6 @@ set(RESOURCES
 
 set_source_files_properties(
   qml/Token.qml
-  PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
-set_source_files_properties(
-  qml/Tool.qml
   PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 include_directories(include)
 

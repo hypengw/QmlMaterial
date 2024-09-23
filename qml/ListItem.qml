@@ -23,8 +23,9 @@ T.ItemDelegate {
     icon.width: 24
     icon.height: 24
 
-    property int count: ListView.view?.count ?? 0
-    readonly property int index_: index ? index : (model ? model.index : 0)
+    property int count: (ListView.view?.count ?? GridView.view?.count) ?? 0
+    property int dgIndex: index ?? 0
+
     property alias mdState: m_sh.state
 
     property string supportText
@@ -41,6 +42,8 @@ T.ItemDelegate {
         else
             return MD.Enum.ListItemOneLine;
     }
+
+    font.capitalization: Font.MixedCase
 
     function indexRadius(index, count, size) {
         return [index === 0 ? size : 0, index + 1 === count ? size : 0];
@@ -65,6 +68,7 @@ T.ItemDelegate {
                 MD.Text {
                     Layout.fillWidth: true
                     text: control.text
+                    font: control.font
                     typescale: MD.Token.typescale.body_large
                     maximumLineCount: control.maximumLineCount
                     verticalAlignment: Qt.AlignVCenter
@@ -153,7 +157,7 @@ T.ItemDelegate {
 
         MD.ItemHolder {
             id: holder_divider
-            visible: control.index_ + 1 !== control.count
+            visible: control.dgIndex + 1 !== control.count
         }
     }
 

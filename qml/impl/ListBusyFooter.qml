@@ -2,12 +2,12 @@ import QtQuick
 import QtQuick.Controls
 import Qcm.Material as MD
 
-MD.Pane {
+Item {
     property alias running: m_busy.running
 
     visible: running
-    implicitHeight: m_busy.running ? m_busy.implicitHeight + 2 * padding : 0
-    padding: 4
+    implicitHeight: visible ? m_busy.implicitHeight + 2 * padding : 0
+    property int padding: 4
 
     MD.CircularIndicator {
         id: m_busy

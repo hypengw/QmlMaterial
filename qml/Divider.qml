@@ -16,10 +16,6 @@ Rectangle {
     property int leftMargin: 0
     property int rightMargin: 0
 
-    onStateChanged: {
-        console.log(state, '-------');
-    }
-
     states: [
         State {
             name: "layout-h"

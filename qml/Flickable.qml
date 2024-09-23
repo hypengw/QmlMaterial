@@ -8,10 +8,11 @@ Flickable {
     // it's hard to avoid item around Flickable is not transparent
     clip: true
 
-    contentHeight: contentItem.childrenRect.height
+    // flickable not set contentHeight
+    contentHeight: contentItem.childrenRect.height + topMargin + bottomMargin
     contentWidth: width - rightMargin - leftMargin
-    implicitHeight: contentHeight + topMargin + bottomMargin
-    implicitWidth: contentWidth + rightMargin + leftMargin
+    implicitHeight: contentHeight
+
     leftMargin: 0
     rightMargin: 0
     topMargin: 0

@@ -13,6 +13,7 @@ T.Page {
     readonly property bool _canBack: canBack || (pageContext?.canBack ?? false)
 
     header: MD.AppBar {
+        visible: MD.Token.window_class.compact.contains(Window.window?.width)
         title: control.title
         leadingAction: QC.Action {
             icon.name: control._canBack ? MD.Token.icon.arrow_back : null

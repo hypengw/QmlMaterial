@@ -114,6 +114,16 @@ public:
     };
     Q_ENUM(ToastFlag)
     Q_DECLARE_FLAGS(ToastFlags, ToastFlag)
+
+    enum class WindowClassType
+    {
+        WindowClassCompact,
+        WindowClassMedium,
+        WindowClassExpanded,
+        WindowClassLarge,
+        WindowClassExtraLarge,
+    };
+    Q_ENUM(WindowClassType)
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(Enum::ToastFlags);
 } // namespace qml_material

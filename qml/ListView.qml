@@ -7,9 +7,20 @@ ListView {
     clip: true
 
     property bool busy: false
+    property bool expand: false
 
-    // contentHeight: contentItem.childrenRect.height
-    contentWidth: width - rightMargin - leftMargin
+    // contentHeight/width, managerd by listview itself
+    // only set one side
+    Binding on contentWidth {
+        when: root.orientation === ListView.Vertical
+        value: root.width - root.rightMargin - root.leftMargin
+    }
+    Binding on contentHeight {
+        when: root.orientation === ListView.Vertical
+        value: root.height - root.topMargin - root.bottomMargin
+    }
+
+    implicitHeight: expand ? contentHeight + topMargin + bottomMargin : 0
 
     leftMargin: 0
     rightMargin: 0
@@ -19,6 +30,7 @@ ListView {
     footer: MD.ListBusyFooter {
         running: root.busy
         width: ListView.view.width
+        height: implicitHeight
     }
 
     signal wheelMoved

@@ -1,6 +1,7 @@
 #include "qml_material/util.h"
 
 #include <format>
+#include <QQmlEngine>
 #include <QtDBus/QDBusConnection>
 #include <QtDBus/QDBusMessage>
 #include <QtDBus/QDBusReply>
@@ -184,6 +185,29 @@ auto Util::token_state() -> token::State { return token::State(); }
 
 QObject* Util::create_item(const QJSValue& url_or_comp, const QVariantMap& props, QObject* parent) {
     return qcm::create_item(qmlEngine(this), url_or_comp, props, parent);
+}
+QObject* Util::show_popup(const QJSValue& url_or_comp, const QVariantMap& props, QObject* parent,
+                          bool open_and_destry) {
+    auto popup = create_item(url_or_comp, props, parent);
+    if (open_and_destry) {
+        QObject::connect(
+            popup,
+            SIGNAL(closed()),
+            this,
+            SLOT(on_popup_closed()));
+        QMetaObject::invokeMethod(popup, "open");
+    }
+    return popup;
+}
+
+void Util::on_popup_closed() {
+    auto s = sender();
+    if (s != nullptr) {
+        auto js = qmlEngine(s)->toManagedValue(s);
+        if (auto p = js.property("destroy"); p.isCallable()) {
+            p.call({ 1000 });
+        }
+    }
 }
 
 } // namespace qml_material

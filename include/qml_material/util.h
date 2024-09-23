@@ -110,6 +110,12 @@ public:
     Q_INVOKABLE QObject*     create_item(const QJSValue& url_or_comp, const QVariantMap& props,
                                          QObject* parent = nullptr);
 
+    Q_INVOKABLE QObject* show_popup(const QJSValue& url_or_comp, const QVariantMap& props,
+                                    QObject* parent = nullptr, bool open_and_destry = true);
+
+private Q_SLOTS:
+    void on_popup_closed();
+
 private:
     usize m_tracked { 0 };
 };
