@@ -190,11 +190,7 @@ QObject* Util::show_popup(const QJSValue& url_or_comp, const QVariantMap& props,
                           bool open_and_destry) {
     auto popup = create_item(url_or_comp, props, parent);
     if (open_and_destry) {
-        QObject::connect(
-            popup,
-            SIGNAL(closed()),
-            this,
-            SLOT(on_popup_closed()));
+        QObject::connect(popup, SIGNAL(closed()), this, SLOT(on_popup_closed()));
         QMetaObject::invokeMethod(popup, "open");
     }
     return popup;
@@ -243,11 +239,15 @@ auto create_item(QQmlEngine* engine, const QJSValue& url_or_comp, const QVariant
 
     switch (comp->status()) {
     case QQmlComponent::Status::Ready: {
-        auto obj = comp->createWithInitialProperties(props);
+        QObject* obj { nullptr };
+        QMetaObject::invokeMethod(comp.get(),
+                                  "createObject",
+                                  Q_RETURN_ARG(QObject*, obj),
+                                  Q_ARG(QObject*, parent),
+                                  Q_ARG(const QVariantMap&, props));
         if (obj != nullptr) {
-            if (parent != nullptr) obj->setParent(parent);
-            QQmlEngine::setObjectOwnership(obj, QJSEngine::JavaScriptOwnership);
             qml_dyn_count()++;
+            auto name = obj->metaObject()->className();
             QObject::connect(obj, &QObject::destroyed, [](QObject*) {
                 qml_dyn_count()--;
             });

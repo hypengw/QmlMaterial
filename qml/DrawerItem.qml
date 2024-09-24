@@ -26,6 +26,8 @@ T.ItemDelegate {
     icon.width: 24
     icon.height: 24
 
+    font.capitalization: Font.Capitalize
+
     property alias trailing: item_holder_trailing.contentItem
 
     contentItem: RowLayout {

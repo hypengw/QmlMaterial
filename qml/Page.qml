@@ -15,8 +15,11 @@ T.Page {
     header: MD.AppBar {
         visible: MD.Token.window_class.compact.contains(Window.window?.width)
         title: control.title
-        leadingAction: QC.Action {
-            icon.name: control._canBack ? MD.Token.icon.arrow_back : null
+        leadingAction: control._canBack ? m_back_action : (Window.window?.barAction ?? null)
+
+        QC.Action {
+            id: m_back_action
+            icon.name: MD.Token.icon.arrow_back
             onTriggered: {
                 if (control.canBack) {
                     control.back();

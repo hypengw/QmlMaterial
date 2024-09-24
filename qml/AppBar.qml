@@ -35,6 +35,8 @@ T.Control {
 
             MD.IconButton {
                 id: m_leading
+                visible: action
+                action: Window.window?.barAction ?? null
             }
 
             MD.Text {
