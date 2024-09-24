@@ -16,7 +16,7 @@ ListView {
         value: root.width - root.rightMargin - root.leftMargin
     }
     Binding on contentHeight {
-        when: root.orientation === ListView.Vertical
+        when: root.orientation === ListView.Horizontal
         value: root.height - root.topMargin - root.bottomMargin
     }
 
