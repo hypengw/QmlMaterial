@@ -52,6 +52,7 @@ T.MenuItem {
         text: control.text
         font: control.font
         typescale: MD.Token.typescale.label_large
+        color: control.mdState.textColor
 
         icon_name: control.icon.name
         icon_size: control.icon.width
@@ -92,7 +93,7 @@ T.MenuItem {
         states: [
             State {
                 name: "Disabled"
-                when: !enabled
+                when: !control.enabled
                 PropertyChanges {
                     item_state.elevation: MD.Token.elevation.level0
                     control.contentItem.opacity: 0.38
