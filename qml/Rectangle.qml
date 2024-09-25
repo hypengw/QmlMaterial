@@ -17,6 +17,7 @@ Item {
         property color color: "#00000000"
         property real smoothing: 1.0
         property real offset: 0.0
+        vertexShader: 'qrc:/Qcm/Material/assets/shader/default.vert.qsb'
         fragmentShader: 'qrc:/Qcm/Material/assets/shader/round_rect.frag.qsb'
     }
 }

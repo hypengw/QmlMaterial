@@ -6,8 +6,10 @@ import Qcm.Material as MD
 
 T.Control {
     id: control
-    property alias mdState: m_sh.state
     property int type: MD.Enum.AppBarCenterAligned
+    property MD.StateAppBar mdState: MD.StateAppBar {
+        item: control
+    }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
@@ -44,7 +46,7 @@ T.Control {
                 Layout.fillWidth: true
                 horizontalAlignment: control.type == MD.Enum.AppBarCenterAligned ? Text.AlignHCenter : Text.AlignLeft
                 font.capitalization: Font.Capitalize
-                typescale: MD.Token.typescale.title_large
+                typescale: control.mdState.typescale
             }
 
             Item {
@@ -66,7 +68,7 @@ T.Control {
     }
 
     background: Rectangle {
-        implicitHeight: 64
+        implicitHeight: control.mdState.containerHeight
 
         radius: 0
         color: control.mdState.backgroundColor
@@ -80,8 +82,6 @@ T.Control {
 
     MD.StateHolder {
         id: m_sh
-        state: MD.StateAppBar {
-            item: control
-        }
+        state: control.mdState
     }
 }

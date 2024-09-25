@@ -42,5 +42,5 @@ RoundItem::RoundItem(QQuickItem* parent): QQuickItem(parent) {}
 RoundItem::~RoundItem() {}
 
 QSGNode* RoundItem::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData*) {
-
+    return nullptr;
 }

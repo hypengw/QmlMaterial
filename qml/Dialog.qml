@@ -8,7 +8,7 @@ T.Dialog {
     id: control
 
     property int titleCapitalization: Font.Capitalize
-    property alias mdState: m_sh.state_
+    property alias mdState: m_sh.state
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding, implicitHeaderWidth, implicitFooterWidth)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding + (implicitHeaderHeight > 0 ? implicitHeaderHeight + spacing : 0) + (implicitFooterHeight > 0 ? implicitFooterHeight + spacing : 0))
@@ -107,7 +107,7 @@ T.Dialog {
 
     MD.StateHolder {
         id: m_sh
-        property MD.State state_: MD.State {
+        state: MD.State {
             item: control
 
             elevation: MD.Token.elevation.level3
@@ -115,6 +115,5 @@ T.Dialog {
             backgroundColor: ctx.color.surface_container_high
             supportTextColor: ctx.color.on_surface_variant
         }
-        state: state_
     }
 }

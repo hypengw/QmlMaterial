@@ -15,19 +15,19 @@ T.Page {
     header: MD.AppBar {
         visible: MD.Token.window_class.compact.contains(Window.window?.width)
         title: control.title
-        leadingAction: control._canBack ? m_back_action : (Window.window?.barAction ?? null)
+        leadingAction: pageContext?.barAction ?? null //control._canBack ? m_back_action : (Window.window?.barAction ?? null)
 
-        QC.Action {
-            id: m_back_action
-            icon.name: MD.Token.icon.arrow_back
-            onTriggered: {
-                if (control.canBack) {
-                    control.back();
-                } else if (control.pageContext?.canBack) {
-                    control.pageContext.back();
-                }
-            }
-        }
+        //QC.Action {
+        //    id: m_back_action
+        //    icon.name: MD.Token.icon.arrow_back
+        //    onTriggered: {
+        //        if (control.canBack) {
+        //            control.back();
+        //        } else if (control.pageContext?.canBack) {
+        //            control.pageContext.back();
+        //        }
+        //    }
+        //}
     }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding, implicitHeaderWidth, implicitFooterWidth)

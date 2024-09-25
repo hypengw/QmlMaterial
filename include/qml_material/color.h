@@ -121,4 +121,8 @@ private:
     bool                                    m_use_sys_accent_color;
 };
 
+void sys_notify(MdColorMgr&);
+auto sysColorScheme() -> MdColorMgr::ColorSchemeEnum;
+auto sysAccentColor() -> QColor;
+
 } // namespace qml_material

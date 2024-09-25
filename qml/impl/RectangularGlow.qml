@@ -199,6 +199,7 @@ Item {
         property real spread: rootItem.spread / 2.0
         property real cornerRadius: clampedCornerRadius()
 
+        vertexShader: 'qrc:/Qcm/Material/assets/shader/default.vert.qsb'
         fragmentShader: 'qrc:/Qcm/Material/assets/shader/rect_glow.frag.qsb'
     }
 }

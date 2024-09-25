@@ -12,10 +12,33 @@ set(CMAKE_CXX_STANDARD_REQUIRED
 set(CMAKE_POSITION_INDEPENDENT_CODE
     ON)
 
+set(CMAKE_AUTOMOC
+    ON)
+
+# check lto
+include(CheckIPOSupported)
+check_ipo_supported(RESULT is_ipo_supported OUTPUT lto_error)
+if(is_ipo_supported)
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
+endif()
+
+if(UNIX AND NOT APPLE)
+  set(LINUX CACHE INTERNAL TRUE "")
+endif()
+
+include(GNUInstallDirs)
+
+
 find_package(
   Qt6 REQUIRED
-  COMPONENTS Core Quick QuickControls2 Gui)
+  COMPONENTS Core Quick QuickControls2 Gui ShaderTools)
 find_package(PkgConfig REQUIRED)
+
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE
+      Release)
+endif()
 
 set(LIBNAME
     qml_material)
@@ -30,7 +53,7 @@ set(SOURCES
     include/qml_material/item_holder.h
     include/qml_material/enum.h
     include/qml_material/round_item.h
-    include/qml_material/state_holder.h
+    include/qml_material/state.h
     include/qml_material/helper.h
     include/qml_material/type_scale.h
     include/qml_material/token.h
@@ -47,7 +70,6 @@ set(SOURCES
     src/state.cpp
     src/theme.cpp
     src/helper.cpp
-    src/state_holder.cpp
     src/snake_model.cpp
     src/token.cpp
     src/type_scale.cpp
@@ -101,7 +123,6 @@ set(QML_FILES
     qml/TabBar.qml
     qml/TabButton.qml
     qml/Rectangle.qml
-    qml/state/State.qml
     qml/state/StateAppBar.qml
     qml/state/StateSnakeBar.qml
     qml/state/StateButton.qml
@@ -125,6 +146,22 @@ set(RESOURCES
     assets/MaterialIconsRound-Regular.otf
     assets/MaterialIconsOutlined-Regular.otf)
 
+set(QML_MATERIAL_BUILD_TYPE
+    SHARED)
+
+if(UNIX
+   AND NOT EMSCRIPTEN)
+  list(APPEND SOURCES src/linux/xdp.h src/linux/xdp.cpp)
+endif()
+if(EMSCRIPTEN)
+  list(APPEND SOURCES src/wasm/wasm.cpp)
+
+  set(QML_MATERIAL_BUILD_TYPE
+      STATIC)
+  add_link_options("-sEXPORT_NAME=Something" -s FULL_ES3=1)
+  add_compile_options(-oz)
+endif()
+
 set_source_files_properties(
   qml/Token.qml
   PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
@@ -134,7 +171,7 @@ qt_add_qml_module(
   ${LIBNAME}
   URI
   Qcm.Material
-  SHARED
+  ${QML_MATERIAL_BUILD_TYPE}
   RESOURCE_PREFIX
   /
   QML_FILES
@@ -148,10 +185,18 @@ qt_add_qml_module(
 set(SHADER_GLSLS
     "assets/shader/sdf.glsl")
 set(SHADER_SOURCES
+    "assets/shader/default.vert"
     "assets/shader/round_clip.frag" "assets/shader/round_rect.frag"
     "assets/shader/shadow.frag" "assets/shader/rect_glow.frag")
-qt_add_shaders(${LIBNAME} "shader" PREFIX "/Qcm/Material" FILES
-               ${SHADER_SOURCES})
+qt_add_shaders(
+  ${LIBNAME}
+  "shader"
+  PREFIX
+  "/Qcm/Material"
+  GLSL
+  300es,330
+  FILES
+  ${SHADER_SOURCES})
 foreach(
   file
   ${SHADER_SOURCES})
@@ -166,7 +211,7 @@ endforeach()
 target_include_directories(
   ${LIBNAME}
   PUBLIC include
-  PRIVATE "include/${LIBNAME}" "include/${LIBNAME}/kirigami")
+  PRIVATE "include/${LIBNAME}" "include/${LIBNAME}/kirigami" src)
 
 add_subdirectory(third_party)
 add_subdirectory(example)

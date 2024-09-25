@@ -55,15 +55,7 @@ auto gen_on_map(const MdScheme& sh) -> std::map<QColor, QColor, QColorCompare> {
 }
 } // namespace
 
-static void convert_from(qml_material::MdColorMgr::ColorSchemeEnum& out,
-                         const Qt::ColorScheme&                     in) {
-    using out_type = qml_material::MdColorMgr::ColorSchemeEnum;
-    using in_type  = Qt::ColorScheme;
-    switch (in) {
-    case in_type::Dark: out = out_type::Dark; break;
-    default: out = out_type::Light;
-    }
-}
+
 
 MdColorMgr::MdColorMgr(QObject* parent)
     : QObject(parent),
@@ -75,18 +67,14 @@ MdColorMgr::MdColorMgr(QObject* parent)
     connect(this, &Self::colorSchemeChanged, this, &Self::gen_scheme);
     connect(this, &Self::accentColorChanged, this, &Self::gen_scheme);
 
-    connect(Xdp::insance(), &Xdp::colorSchemeChanged, this, &Self::refrehFromSystem);
-    connect(Xdp::insance(), &Xdp::accentColorChanged, this, &Self::refrehFromSystem);
+    sys_notify(*this);
+
     connect(this, &Self::useSysColorSMChanged, this, &Self::refrehFromSystem);
     connect(this, &Self::useSysAccentColorChanged, this, &Self::refrehFromSystem);
 }
 
-MdColorMgr::ColorSchemeEnum MdColorMgr::sysColorScheme() const {
-    ColorSchemeEnum out;
-    convert_from(out, Xdp::insance()->colorScheme());
-    return out;
-}
-QColor MdColorMgr::sysAccentColor() const { return Xdp::insance()->accentColor(); }
+MdColorMgr::ColorSchemeEnum MdColorMgr::sysColorScheme() const { return ::sysColorScheme(); }
+QColor                      MdColorMgr::sysAccentColor() const { return ::sysAccentColor(); }
 
 MdColorMgr::ColorSchemeEnum MdColorMgr::colorScheme() const { return m_color_scheme; }
 void                        MdColorMgr::set_colorScheme(ColorSchemeEnum v) {

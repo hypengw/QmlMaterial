@@ -23,6 +23,7 @@ Item {
         property real corner: root.corner
         property color color: root.color
 
+        vertexShader: 'qrc:/Qcm/Material/assets/shader/default.vert.qsb'
         fragmentShader: 'qrc:/Qcm/Material/assets/shader/shadow.frag.qsb'
     }
 }

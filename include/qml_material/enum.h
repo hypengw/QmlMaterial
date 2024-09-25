@@ -103,7 +103,7 @@ public:
         AppBarCenterAligned,
         AppBarSmall,
         AppBarMedium,
-        AppBarlarge
+        AppBarLarge
     };
     Q_ENUM(AppBarType)
 
@@ -124,6 +124,7 @@ public:
         WindowClassExtraLarge,
     };
     Q_ENUM(WindowClassType)
+
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(Enum::ToastFlags);
 } // namespace qml_material
