@@ -4,7 +4,7 @@ import QtQuick.Controls as QC
 import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.Control {
+T.ToolBar {
     id: control
     property int type: MD.Enum.AppBarCenterAligned
     property MD.StateAppBar mdState: MD.StateAppBar {
@@ -19,7 +19,8 @@ T.Control {
     leftInset: 0
     rightInset: 0
 
-    leftPadding: 16 - m_leading.leftInset
+    padding: 0
+    leftPadding: 16 - (m_leading.leftInset + m_leading.leftPadding)
     rightPadding: leftPadding
 
     property list<QC.Action> actions
@@ -31,38 +32,59 @@ T.Control {
         implicitWidth: children[0].implicitWidth
         implicitHeight: children[0].implicitHeight
 
+        MD.Text {
+            id: m_title
+            font.capitalization: Font.Capitalize
+            typescale: control.mdState.typescale
+            Binding {
+                when: control.type === MD.Enum.AppBarCenterAligned
+                restoreMode: Binding.RestoreNone
+                m_text_row.implicitWidth: 48 * 2.0 + m_title.implicitWidth / 2.0
+                m_title.x: m_bar_row.x + (m_bar_row.width - m_title.width) / 2.0
+                m_title.y: m_bar_row.y + (m_bar_row.height - m_title.height) / 2.0
+                m_title.horizontalAlignment: Text.AlignHCenter
+                m_title.width: m_text_row.width
+            }
+            Binding {
+                when: control.type === MD.Enum.AppBarSmall
+                restoreMode: Binding.RestoreNone
+                m_text_row.implicitWidth: m_title.implicitWidth
+                m_title.x: m_bar_row.x + m_text_row.x
+                m_title.y: m_bar_row.y + (m_bar_row.height - m_title.height) / 2.0
+                m_title.horizontalAlignment: Text.AlignLeft
+                m_title.width: m_text_row.width
+            }
+            Binding {
+                when: control.type >= MD.Enum.AppBarMedium
+                restoreMode: Binding.RestoreNone
+                m_text_row.implicitWidth: 0
+                m_title.x: 16 - root.leftPadding
+                m_title.y: m_title.parent.height - m_title.height - (control.type === MD.Enum.AppBarMedium ? 24 : 28)
+                m_title.horizontalAlignment: Text.AlignLeft
+                m_title.width: m_title.parent.width - 16*2
+            }
+        }
+
         RowLayout {
-            anchors.verticalCenter: parent.verticalCenter
+            id: m_bar_row
+            y: (64 - height) / 2.0
             width: parent.width
 
             MD.IconButton {
                 id: m_leading
                 visible: action
-                action: Window.window?.barAction ?? null
-            }
-
-            MD.Text {
-                id: m_title
-                Layout.fillWidth: true
-                horizontalAlignment: control.type == MD.Enum.AppBarCenterAligned ? Text.AlignHCenter : Text.AlignLeft
-                font.capitalization: Font.Capitalize
-                typescale: control.mdState.typescale
             }
 
             Item {
-                visible: control.actions.length === 0
-                implicitWidth: m_leading.implicitWidth
+                id: m_text_row
+                Layout.fillWidth: true
             }
 
-            RowLayout {
-                id: m_trailing
-                Repeater {
-                    model: control.actions
-                    MD.IconButton {
-                        required property QC.Action modelData
-                        action: modelData
-                    }
-                }
+            MD.ActionToolBar {
+                Layout.preferredWidth: 48 * 2
+                Layout.fillWidth: true
+                Layout.maximumWidth: maximumContentWidth + 2
+                actions: control.actions
             }
         }
     }

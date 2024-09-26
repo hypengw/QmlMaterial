@@ -7,27 +7,14 @@ T.Page {
     id: control
 
     property bool canBack: false
+    property T.Action leadingAction: pageContext?.barAction ?? null
     property QtObject pageContext: {
         StackView.view;
     }
-    readonly property bool _canBack: canBack || (pageContext?.canBack ?? false)
-
     header: MD.AppBar {
-        visible: MD.Token.window_class.compact.contains(Window.window?.width)
         title: control.title
-        leadingAction: pageContext?.barAction ?? null //control._canBack ? m_back_action : (Window.window?.barAction ?? null)
-
-        //QC.Action {
-        //    id: m_back_action
-        //    icon.name: MD.Token.icon.arrow_back
-        //    onTriggered: {
-        //        if (control.canBack) {
-        //            control.back();
-        //        } else if (control.pageContext?.canBack) {
-        //            control.pageContext.back();
-        //        }
-        //    }
-        //}
+        type: MD.Enum.AppBarSmall
+        leadingAction: control.leadingAction
     }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding, implicitHeaderWidth, implicitFooterWidth)

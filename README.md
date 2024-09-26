@@ -11,3 +11,7 @@ cmake -S . -B build -GNinja
 cmake --build build
 cmake --install build
 ```
+
+### Acknowledgements
+- [material-color-utilities](https://github.com/material-foundation/material-color-utilities)
+- [kirigmai](https://invent.kde.org/frameworks/kirigami)

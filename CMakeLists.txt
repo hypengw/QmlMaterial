@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 
 project(
   QmlMaterial
-  VERSION 0.1
+  VERSION 0.1.1
   LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD
@@ -11,24 +11,28 @@ set(CMAKE_CXX_STANDARD_REQUIRED
     ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE
     ON)
-
 set(CMAKE_AUTOMOC
     ON)
 
 # check lto
 include(CheckIPOSupported)
-check_ipo_supported(RESULT is_ipo_supported OUTPUT lto_error)
+check_ipo_supported(
+  RESULT is_ipo_supported
+  OUTPUT lto_error)
 if(is_ipo_supported)
-  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
-  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION
+      ON)
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG
+      OFF)
 endif()
 
-if(UNIX AND NOT APPLE)
-  set(LINUX CACHE INTERNAL TRUE "")
+if(UNIX
+   AND NOT APPLE)
+  set(LINUX
+      CACHE INTERNAL TRUE "")
 endif()
 
 include(GNUInstallDirs)
-
 
 find_package(
   Qt6 REQUIRED
@@ -58,7 +62,14 @@ set(SOURCES
     include/qml_material/type_scale.h
     include/qml_material/token.h
     include/qml_material/snake_model.h
+    include/qml_material/loggingcategory.h
+    include/qml_material/kirigami/displayhint.h
+    include/qml_material/kirigami/toolbarlayout.h
+    include/qml_material/kirigami/toolbarlayoutdelegate.h
     include/qml_material/kirigami/wheelhandler.h
+    src/kirigami/displayhint.cpp
+    src/kirigami/toolbarlayout.cpp
+    src/kirigami/toolbarlayoutdelegate.cpp
     src/kirigami/wheelhandler.cpp
     src/color.cpp
     src/corner.cpp
@@ -76,6 +87,8 @@ set(SOURCES
     src/round_item.cpp)
 set(QML_FILES
     qml/js/utils.mjs
+    qml/ActionMenu.qml
+    qml/ActionToolBar.qml
     qml/AppBar.qml
     qml/Button.qml
     qml/BarItem.qml
@@ -185,9 +198,9 @@ qt_add_qml_module(
 set(SHADER_GLSLS
     "assets/shader/sdf.glsl")
 set(SHADER_SOURCES
-    "assets/shader/default.vert"
-    "assets/shader/round_clip.frag" "assets/shader/round_rect.frag"
-    "assets/shader/shadow.frag" "assets/shader/rect_glow.frag")
+    "assets/shader/default.vert" "assets/shader/round_clip.frag"
+    "assets/shader/round_rect.frag" "assets/shader/shadow.frag"
+    "assets/shader/rect_glow.frag")
 qt_add_shaders(
   ${LIBNAME}
   "shader"
@@ -212,6 +225,10 @@ target_include_directories(
   ${LIBNAME}
   PUBLIC include
   PRIVATE "include/${LIBNAME}" "include/${LIBNAME}/kirigami" src)
+
+set_target_properties(
+  ${LIBNAME}
+  PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
 add_subdirectory(third_party)
 add_subdirectory(example)

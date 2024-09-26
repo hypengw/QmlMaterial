@@ -4,7 +4,7 @@
 #include <QQmlEngine>
 
 
-#include "qml_material/log.h"
+#include "qml_material/loggingcategory.h"
 
 Q_LOGGING_CATEGORY(qml_material_logcat, "qcm.material")
 namespace
