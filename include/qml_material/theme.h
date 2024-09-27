@@ -51,9 +51,7 @@ public:
     };
 
     ATTACH_PROPERTY(QColor, textColor)
-    ATTACH_PROPERTY(QColor, supportTextColor)
     ATTACH_PROPERTY(QColor, backgroundColor)
-    ATTACH_PROPERTY(QColor, stateLayerColor)
     ATTACH_PROPERTY(int, elevation)
     ATTACH_PROPERTY(MdColorMgr*, color)
 

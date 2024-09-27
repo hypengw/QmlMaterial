@@ -3,7 +3,6 @@
 #include <format>
 #include <QQmlEngine>
 
-
 #include "qml_material/loggingcategory.h"
 
 Q_LOGGING_CATEGORY(qml_material_logcat, "qcm.material")
@@ -119,8 +118,8 @@ QObject* Util::show_popup(const QJSValue& url_or_comp, const QVariantMap& props,
 
 void Util::on_popup_closed() {
     auto s = sender();
-    if (s != nullptr) {
-        auto js = qmlEngine(s)->toManagedValue(s);
+    if (auto engine = qmlEngine(s)) {
+        auto js = engine->toManagedValue(s);
         if (auto p = js.property("destroy"); p.isCallable()) {
             p.call({ 1000 });
         }

@@ -86,10 +86,8 @@ Theme* Theme::qmlAttachedProperties(QObject* object) { return new Theme(object);
     }
 
 IMPL_ATTACH_PROP(QColor, textColor, m_textColor)
-IMPL_ATTACH_PROP(QColor, supportTextColor, m_supportTextColor)
 IMPL_ATTACH_PROP(QColor, backgroundColor, m_backgroundColor)
 IMPL_ATTACH_PROP(int, elevation, m_elevation)
-IMPL_ATTACH_PROP(QColor, stateLayerColor, m_stateLayerColor)
 IMPL_ATTACH_PROP(MdColorMgr*, color, m_color)
 
 void Theme::attachedParentChange(QQuickAttachedPropertyPropagator* newParent,
@@ -99,9 +97,7 @@ void Theme::attachedParentChange(QQuickAttachedPropertyPropagator* newParent,
     if (attachedParentStyle) {
 #define X(_name_) inherit_attach_prop(this, &Theme::get_##_name_, attachedParentStyle->_name_())
         X(textColor);
-        X(supportTextColor);
         X(backgroundColor);
-        X(stateLayerColor);
         X(elevation);
         X(color);
 #undef X

@@ -3,7 +3,7 @@ import QtQuick.Templates as T
 import QtQuick.Controls.impl
 import Qcm.Material as MD
 
-import "js/utils.mjs" as UT
+import "js/jsUtils.mjs" as UT
 
 T.Button {
     id: control

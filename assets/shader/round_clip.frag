@@ -27,7 +27,7 @@ void main() {
     // fragColor = sdf_render_uv(sdf, p, vec4(0.0), texture(source, qt_TexCoord0), 1.0, smoothing,
     // -1.0);
     fragColor   = texture(source, qt_TexCoord0);
-    fragColor.a *= sdf_alpha_uv(sdf, p, smoothing, offset) * qt_Opacity;
+    float alpha = sdf_alpha_uv(sdf, p, smoothing, offset) * qt_Opacity;
     // premultiplied
-    fragColor.xyz *= fragColor.a;
+    fragColor *= alpha;
 }

@@ -19,7 +19,8 @@ include(CheckIPOSupported)
 check_ipo_supported(
   RESULT is_ipo_supported
   OUTPUT lto_error)
-if(is_ipo_supported)
+if(is_ipo_supported
+   AND NOT EMSCRIPTEN)
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION
       ON)
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG
@@ -86,7 +87,7 @@ set(SOURCES
     src/type_scale.cpp
     src/round_item.cpp)
 set(QML_FILES
-    qml/js/utils.mjs
+    qml/js/jsUtils.mjs
     qml/ActionMenu.qml
     qml/ActionToolBar.qml
     qml/AppBar.qml
@@ -171,8 +172,8 @@ if(EMSCRIPTEN)
 
   set(QML_MATERIAL_BUILD_TYPE
       STATIC)
-  add_link_options("-sEXPORT_NAME=Something" -s FULL_ES3=1)
-  add_compile_options(-oz)
+  add_compile_options(-flto)
+  add_link_options("-sEXPORT_NAME=qml_material" -s FULL_ES3=1 -flto)
 endif()
 
 set_source_files_properties(

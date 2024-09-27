@@ -1,6 +1,8 @@
 # Material Design 3 for Qml
 This is a library of Qml implementing Google's Material Design.
 
+## 🌐 [Live Demo](https://hypengw.github.io/QmlMaterialWeb/qmaterial_example.html)
+
 ### Dependencies
 
 - Qt 6.2+
