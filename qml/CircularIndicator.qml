@@ -11,9 +11,9 @@ T.BusyIndicator {
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
     padding: 6
+    clip: false
 
     contentItem: MDImpl.BusyIndicatorImpl {
-
         color: control.MD.MatProp.color.primary
 
         running: control.running
@@ -25,5 +25,8 @@ T.BusyIndicator {
         }
     }
 
-    background: Item {}
+    background: Item {
+        implicitHeight: 64
+        implicitWidth: 64
+    }
 }
