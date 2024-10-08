@@ -108,6 +108,7 @@ set(QML_FILES
     qml/Divider.qml
     qml/Drawer.qml
     qml/DrawerItem.qml
+    qml/DragHandle.qml
     qml/Token.qml
     qml/IconLabel.qml
     qml/IconButton.qml
@@ -122,6 +123,7 @@ set(QML_FILES
     qml/Label.qml
     qml/FontMetrics.qml
     qml/Flickable.qml
+    qml/FlickablePane.qml
     qml/GridView.qml
     qml/Icon.qml
     qml/IconSvg.qml
@@ -138,6 +140,7 @@ set(QML_FILES
     qml/Slider.qml
     qml/SearchBar.qml
     qml/ScrollBar.qml
+    qml/ScrollPage.qml
     qml/Switch.qml
     qml/RailItem.qml
     qml/TextInput.qml
@@ -145,13 +148,16 @@ set(QML_FILES
     qml/TabBar.qml
     qml/TabButton.qml
     qml/Rectangle.qml
+
     qml/state/StateAppBar.qml
     qml/state/StateSnakeBar.qml
     qml/state/StateButton.qml
+    qml/state/StateDragHandle.qml
     qml/state/StateTabButton.qml
     qml/state/StateListItem.qml
     qml/state/StateSlider.qml
     qml/state/StateIconButton.qml
+
     qml/impl/BoxShadow.qml
     qml/impl/Shadow.qml
     qml/impl/ListBusyFooter.qml
