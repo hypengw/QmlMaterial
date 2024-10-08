@@ -10,12 +10,13 @@ T.Pane {
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
                              contentHeight + topPadding + bottomPadding)
 
-    padding: 12
-    property real radius
+    padding: 0
+    property var radius: 0
     property int elevation: MD.Token.elevation.level0
     property color backgroundColor: MD.MatProp.color.background
+    property alias showBackground: control.background.visible
 
-    background: Rectangle {
+    background: MD.Rectangle {
         color: control.backgroundColor
         radius: control.radius
 

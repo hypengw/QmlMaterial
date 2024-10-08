@@ -9,7 +9,7 @@ Flickable {
     clip: true
 
     // flickable not set contentHeight
-    contentHeight: contentItem.childrenRect.height + topMargin + bottomMargin
+    contentHeight: contentItem.childrenRect.height// + topMargin + bottomMargin
     contentWidth: width - rightMargin - leftMargin
     implicitHeight: contentHeight
 

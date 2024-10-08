@@ -10,15 +10,19 @@ T.ItemDelegate {
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
+    property int leftMargin: 0
+    property int rightMargin: 0
+    
     topInset: 0
     bottomInset: 0
-    leftInset: 0
-    rightInset: 0
+    leftInset: leftMargin
+    rightInset: rightMargin
 
     verticalPadding: 8
-    leftPadding: 16
-    rightPadding: trailing ? 16 : 24
+    leftPadding: 16 + leftMargin
+    rightPadding: (trailing ? 16 : 24) + rightMargin
     spacing: 0
+    clip: false
 
     icon.width: 24
     icon.height: 24

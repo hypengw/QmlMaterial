@@ -6,6 +6,7 @@ T.TabBar {
     id: control
 
     property int type: MD.Enum.PrimaryTab
+    property var radius
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)
 
@@ -15,6 +16,9 @@ T.TabBar {
         id: m_view
         model: control.contentModel
         currentIndex: control.currentIndex
+
+        contentHeight: height - topMargin - bottomMargin
+        implicitWidth: contentWidth + leftMargin + rightMargin
 
         spacing: control.spacing
         orientation: ListView.Horizontal
@@ -54,8 +58,9 @@ T.TabBar {
         }
     }
 
-    background: Rectangle {
-        color: MD.Token.color.surface
+    background: MD.Rectangle {
+        color: control.MD.MatProp.backgroundColor
+        radius: control.radius
 
         //layer.enabled: control.Material.elevation > 0
         //layer.effect: MD.ElevationEffect {
@@ -65,6 +70,20 @@ T.TabBar {
 
         MD.Divider {
             anchors.bottom: parent.bottom
+        }
+    }
+
+    layer.enabled: true
+    layer.sourceRect: Qt.rect(0, 0, control.width, control.height + 20)
+    layer.textureSize: Qt.size(control.width, control.height + 20)
+    layer.effect: Item {
+        property var source
+        MD.RoundClip {
+            source: parent.source
+            width: parent.width
+            height: parent.height + 20
+            radius: control.radius
+            size: Qt.vector2d(control.width, control.height + 20)
         }
     }
 }

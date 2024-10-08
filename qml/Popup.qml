@@ -14,7 +14,7 @@ T.Popup {
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)
 
     margins: 0
-    verticalPadding: 8
+    verticalPadding: 0
 
     enter: Transition {
         // grow_fade_in
@@ -55,7 +55,7 @@ T.Popup {
     background: Rectangle {
         implicitWidth: 200
         implicitHeight: 48
-        radius: MD.Token.shape.corner.extra_small
+        radius: MD.Token.shape.corner.large
         color: control.mdState.backgroundColor
 
         layer.enabled: control.mdState.elevation > 0
