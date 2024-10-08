@@ -26,6 +26,26 @@ private:                                                                        
 namespace qml_material
 {
 
+class ThemeSize : public QObject {
+    Q_OBJECT
+    QML_ELEMENT
+public:
+    ThemeSize(QObject* parent = nullptr);
+    ~ThemeSize();
+    Q_PROPERTY(
+        qint32 windowClass READ windowClass WRITE setWindowClass NOTIFY windowClassChanged FINAL)
+    auto          windowClass() const -> qint32;
+    void          setWindowClass(qint32);
+    Q_SIGNAL void windowClassChanged();
+
+    Q_PROPERTY(qint32 verticalPadding READ verticalPadding NOTIFY verticalPaddingChanged FINAL)
+    auto          verticalPadding() const -> qint32;
+    Q_SIGNAL void verticalPaddingChanged();
+
+private:
+    qint32 m_window_class;
+};
+
 class Theme : public QQuickAttachedPropertyPropagator {
     Q_OBJECT
 
@@ -54,6 +74,7 @@ public:
     ATTACH_PROPERTY(QColor, backgroundColor)
     ATTACH_PROPERTY(int, elevation)
     ATTACH_PROPERTY(MdColorMgr*, color)
+    ATTACH_PROPERTY(ThemeSize*, size)
 
 public:
     Theme(QObject* parent);

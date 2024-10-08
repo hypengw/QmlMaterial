@@ -1,4 +1,5 @@
 #include "qml_material/theme.h"
+#include "qml_material/enum.h"
 
 using namespace qml_material;
 
@@ -64,6 +65,9 @@ struct GlobalTheme {
     int         elevation { 0 };
     MdColorMgr  color_;
     MdColorMgr* color { &color_ };
+
+    ThemeSize  size_;
+    ThemeSize* size { &size_ };
 };
 Q_GLOBAL_STATIC(GlobalTheme, theGlobalTheme)
 
@@ -89,6 +93,7 @@ IMPL_ATTACH_PROP(QColor, textColor, m_textColor)
 IMPL_ATTACH_PROP(QColor, backgroundColor, m_backgroundColor)
 IMPL_ATTACH_PROP(int, elevation, m_elevation)
 IMPL_ATTACH_PROP(MdColorMgr*, color, m_color)
+IMPL_ATTACH_PROP(ThemeSize*, size, m_size)
 
 void Theme::attachedParentChange(QQuickAttachedPropertyPropagator* newParent,
                                  QQuickAttachedPropertyPropagator* oldParent) {
@@ -100,6 +105,28 @@ void Theme::attachedParentChange(QQuickAttachedPropertyPropagator* newParent,
         X(backgroundColor);
         X(elevation);
         X(color);
+        X(size);
 #undef X
+    }
+}
+
+ThemeSize::ThemeSize(QObject* parent)
+    : QObject(parent), m_window_class((qint32)Enum::WindowClassType::WindowClassMedium) {}
+ThemeSize::~ThemeSize() {}
+
+auto ThemeSize::windowClass() const -> qint32 { return m_window_class; }
+void ThemeSize::setWindowClass(qint32 v) {
+    if (v != m_window_class) {
+        m_window_class = v;
+        windowClassChanged();
+
+        verticalPaddingChanged();
+    }
+}
+auto ThemeSize::verticalPadding() const -> qint32 {
+    using WT = Enum::WindowClassType;
+    switch ((WT)windowClass()) {
+    case WT::WindowClassCompact: return 8;
+    default: return 16;
     }
 }
