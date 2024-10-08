@@ -17,6 +17,7 @@ T.Page {
     property int radius: MD.MatProp.page.radius
     property int backgroundRadius: MD.MatProp.page.backgroundRadius
     property int headerBackgroundOpacity: MD.MatProp.page.headerBackgroundOpacity
+    property bool scrolling: false
 
     header: MD.AppBar {
         title: control.title
@@ -25,6 +26,7 @@ T.Page {
         visible: control.MD.MatProp.page.showHeader
         radius: control.backgroundRadius
         mdState.backgroundOpacity: control.headerBackgroundOpacity
+        scrolling: control.scrolling
     }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding, implicitHeaderWidth, implicitFooterWidth)

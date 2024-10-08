@@ -27,7 +27,7 @@ T.ToolBar {
     property list<QC.Action> actions
     property alias leadingAction: m_leading.action
     property alias title: m_title.text
-    property bool onSroll: false
+    property bool scrolling: false
 
     contentItem: Item {
         implicitWidth: children[0].implicitWidth
