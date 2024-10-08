@@ -9,6 +9,7 @@ T.Popup {
     id: control
 
     property alias mdState: item_state
+    property int radius: MD.Token.shape.corner.large
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)
@@ -55,7 +56,7 @@ T.Popup {
     background: Rectangle {
         implicitWidth: 200
         implicitHeight: 48
-        radius: MD.Token.shape.corner.large
+        radius: control.radius
         color: control.mdState.backgroundColor
 
         layer.enabled: control.mdState.elevation > 0

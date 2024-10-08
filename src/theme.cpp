@@ -68,6 +68,9 @@ struct GlobalTheme {
 
     ThemeSize  size_;
     ThemeSize* size { &size_ };
+
+    PageContext  page_;
+    PageContext* page { &page_ };
 };
 Q_GLOBAL_STATIC(GlobalTheme, theGlobalTheme)
 
@@ -94,6 +97,7 @@ IMPL_ATTACH_PROP(QColor, backgroundColor, m_backgroundColor)
 IMPL_ATTACH_PROP(int, elevation, m_elevation)
 IMPL_ATTACH_PROP(MdColorMgr*, color, m_color)
 IMPL_ATTACH_PROP(ThemeSize*, size, m_size)
+IMPL_ATTACH_PROP(PageContext*, page, m_page)
 
 void Theme::attachedParentChange(QQuickAttachedPropertyPropagator* newParent,
                                  QQuickAttachedPropertyPropagator* oldParent) {
@@ -106,6 +110,7 @@ void Theme::attachedParentChange(QQuickAttachedPropertyPropagator* newParent,
         X(elevation);
         X(color);
         X(size);
+        X(page);
 #undef X
     }
 }
@@ -114,6 +119,9 @@ ThemeSize::ThemeSize(QObject* parent)
     : QObject(parent), m_window_class((qint32)Enum::WindowClassType::WindowClassMedium) {}
 ThemeSize::~ThemeSize() {}
 
+auto ThemeSize::isCompact() const -> bool {
+    return m_window_class == (qint32)Enum::WindowClassType::WindowClassCompact;
+}
 auto ThemeSize::windowClass() const -> qint32 { return m_window_class; }
 void ThemeSize::setWindowClass(qint32 v) {
     if (v != m_window_class) {

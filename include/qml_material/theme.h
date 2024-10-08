@@ -8,6 +8,7 @@
 #include <QtQuickControls2/QQuickAttachedPropertyPropagator>
 
 #include "qml_material/color.h"
+#include "qml_material/page_context.h"
 
 #define ATTACH_PROPERTY(_type_, _name_)                                                 \
 private:                                                                                \
@@ -34,6 +35,9 @@ public:
     ~ThemeSize();
     Q_PROPERTY(
         qint32 windowClass READ windowClass WRITE setWindowClass NOTIFY windowClassChanged FINAL)
+    Q_PROPERTY(bool isCompact READ isCompact NOTIFY windowClassChanged FINAL)
+
+    auto          isCompact() const -> bool;
     auto          windowClass() const -> qint32;
     void          setWindowClass(qint32);
     Q_SIGNAL void windowClassChanged();
@@ -75,6 +79,7 @@ public:
     ATTACH_PROPERTY(int, elevation)
     ATTACH_PROPERTY(MdColorMgr*, color)
     ATTACH_PROPERTY(ThemeSize*, size)
+    ATTACH_PROPERTY(PageContext*, page)
 
 public:
     Theme(QObject* parent);

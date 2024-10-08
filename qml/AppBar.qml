@@ -6,7 +6,7 @@ import Qcm.Material as MD
 
 T.ToolBar {
     id: control
-    property int radius: MD.Token.shape.corner.large
+    property int radius: 0
     property int type: MD.Enum.AppBarCenterAligned
     property MD.StateAppBar mdState: MD.StateAppBar {
         item: control
@@ -90,10 +90,10 @@ T.ToolBar {
         }
     }
 
-    background: Rectangle {
+    background: MD.Rectangle {
         implicitHeight: control.mdState.containerHeight
 
-        radius: control.radius
+        radius: [control.radius, 0]
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
 

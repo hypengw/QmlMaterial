@@ -70,6 +70,7 @@ set(SOURCES
     include/qml_material/helper.h
     include/qml_material/type_scale.h
     include/qml_material/token.h
+    include/qml_material/page_context.h
     include/qml_material/snake_model.h
     include/qml_material/loggingcategory.h
     include/qml_material/kirigami/displayhint.h
@@ -90,6 +91,7 @@ set(SOURCES
     src/state.cpp
     src/theme.cpp
     src/helper.cpp
+    src/page_context.cpp
     src/snake_model.cpp
     src/token.cpp
     src/type_scale.cpp
