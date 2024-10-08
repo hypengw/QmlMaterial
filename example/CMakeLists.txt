@@ -7,6 +7,8 @@ qt_add_resources(
   FILES
   Color.qml
   Shadow.qml
+  Elevation.qml
+  Example.qml
   Typography.qml)
 
 qt_add_executable(qmaterial_example main.cpp)

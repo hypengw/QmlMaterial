@@ -97,7 +97,7 @@ T.ToolBar {
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
 
-        layer.enabled: control.enabled
+        layer.enabled: false
         layer.effect: MD.RoundedElevationEffect {
             elevation: control.mdState.elevation
         }
