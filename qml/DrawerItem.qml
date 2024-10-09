@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Templates as T
-import QtQuick.Controls.impl
 import Qcm.Material as MD
 
 T.ItemDelegate {
@@ -76,53 +75,8 @@ T.ItemDelegate {
         }
     }
 
-    MD.State {
+    MD.StateDrawerItem {
         id: item_state
-        visible: false
-
-        elevation: MD.Token.elevation.level0
-        textColor: control.checked ? on_secondary_container : MD.Token.color.on_surface_variant
-        backgroundColor: control.checked ? MD.Token.color.secondary_container : "transparent"
-        supportTextColor: MD.Token.color.on_surface_variant
-        stateLayerColor: "transparent"
-
-        states: [
-            State {
-                name: "Disabled"
-                when: !control.enabled
-                PropertyChanges {
-                    item_state.elevation: MD.Token.elevation.level0
-                    item_state.textColor: MD.Token.color.on_surface
-                    item_state.supportTextColor: MD.Token.color.on_surface
-                    item_state.backgroundColor: MD.Token.color.on_surface
-                    control.contentItem.opacity: 0.38
-                    control.background.opacity: 0.38
-                }
-            },
-            State {
-                name: "Pressed"
-                when: control.pressed || control.visualFocus
-                PropertyChanges {
-                    item_state.textColor: control.checked ? on_secondary_container : MD.Token.color.on_surface
-                    item_state.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
-                    item_state.stateLayerColor: {
-                        const c = MD.Token.color.on_secondary_container;
-                        return c;
-                    }
-                }
-            },
-            State {
-                name: "Hovered"
-                when: control.hovered
-                PropertyChanges {
-                    item_state.textColor: control.checked ? on_secondary_container : MD.Token.color.on_surface
-                    item_state.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
-                    item_state.stateLayerColor: {
-                        const c = control.checked ? MD.Token.color.on_secondary_container : MD.Token.color.on_surface;
-                        return c;
-                    }
-                }
-            }
-        ]
+        item: control
     }
 }

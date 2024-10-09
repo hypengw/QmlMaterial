@@ -109,6 +109,7 @@ set(QML_FILES
     qml/Dialog.qml
     qml/Divider.qml
     qml/Drawer.qml
+    qml/StandardDrawer.qml
     qml/DrawerItem.qml
     qml/DragHandle.qml
     qml/Token.qml
@@ -155,6 +156,7 @@ set(QML_FILES
     qml/state/StateSnakeBar.qml
     qml/state/StateButton.qml
     qml/state/StateDragHandle.qml
+    qml/state/StateDrawerItem.qml
     qml/state/StateTabButton.qml
     qml/state/StateListItem.qml
     qml/state/StateSlider.qml
