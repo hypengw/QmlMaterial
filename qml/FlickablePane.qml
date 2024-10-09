@@ -9,6 +9,8 @@ MD.Rectangle {
     property int excludeEnd: 0
     property int topMargin: 8
     property int bottomMargin: 8
+    property int contentWidth: view.contentItem.childrenRect.width
+    property int contentHeight: view.contentItem.childrenRect.height
 
     x: view.originX 
     y: -view.contentY + view.originY + excludeBegin - topMargin
@@ -16,6 +18,6 @@ MD.Rectangle {
     color: MD.MatProp.backgroundColor
     radius: MD.Token.shape.corner.large
 
-    implicitWidth: view.contentItem.childrenRect.width
-    implicitHeight: view.contentItem.childrenRect.height - excludeBegin + (topMargin + bottomMargin)
+    implicitWidth: contentWidth
+    implicitHeight: contentHeight - excludeBegin + (topMargin + bottomMargin)
 }
