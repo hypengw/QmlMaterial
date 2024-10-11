@@ -5,6 +5,7 @@ qt_add_resources(
   /Qcm/Material/Example
   # BASE <PATH>
   FILES
+  Components.qml
   Color.qml
   Shadow.qml
   Elevation.qml

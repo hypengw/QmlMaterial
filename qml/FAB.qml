@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Templates as T
-import QtQuick.Controls.impl
 import Qcm.Material as MD
 
 import "js/jsUtils.mjs" as UT
@@ -11,17 +10,12 @@ T.Button {
     property int type: MD.Enum.FABNormal
     property int color: MD.Enum.FABColorPrimary
     property QtObject flickable: null
-    property alias mdState: item_state
+    property alias mdState: m_state
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
     flat: false
-
-    anchors.right: parent.right
-    anchors.bottom: parent.bottom
-    anchors.rightMargin: 16
-    anchors.bottomMargin: 16
 
     topInset: 0
     bottomInset: 0
@@ -59,7 +53,7 @@ T.Button {
         color: control.mdState.backgroundColor
 
         border.width: control.type == MD.Enum.BtOutlined ? 1 : 0
-        border.color: item_state.ctx.color.outline
+        border.color: control.mdState.ctx.color.outline
 
         layer.enabled: control.enabled && color.a > 0 && !control.flat
         layer.effect: MD.RoundedElevationEffect {
@@ -72,8 +66,8 @@ T.Button {
             pressX: control.pressX
             pressY: control.pressY
             pressed: control.pressed
-            stateOpacity: item_state.stateLayerOpacity
-            color: item_state.stateLayerColor
+            stateOpacity: control.mdState.stateLayerOpacity
+            color: control.mdState.stateLayerColor
         }
     }
 
@@ -81,58 +75,11 @@ T.Button {
         return t == MD.Enum.FABSmall ? small : (t == MD.Enum.FABLarge ? large : normal);
     }
 
-    MD.State {
-        id: item_state
+    MD.StateFAB {
+        id: m_state
         item: control
-
-        elevation: MD.Token.elevation.level3
-        textColor: {
-            switch (control.color) {
-            case MD.Enum.FABColorSurfaec:
-                return item_state.ctx.color.primary;
-            case MD.Enum.FABColorSecondary:
-                return item_state.ctx.color.on_secondary_container;
-            case MD.Enum.FABColorTertiary:
-                return item_state.ctx.color.on_tertiary_container;
-            case MD.Enum.FABColorPrimary:
-            default:
-                return item_state.ctx.color.on_primary_container;
-            }
-        }
-        backgroundColor: {
-            switch (control.color) {
-            case MD.Enum.FABColorSurfaec:
-                return item_state.ctx.color.surface_container_high;
-            case MD.Enum.FABColorSecondary:
-                return item_state.ctx.color.secondary_container;
-            case MD.Enum.FABColorTertiary:
-                return item_state.ctx.color.tertiary_container;
-            case MD.Enum.FABColorPrimary:
-            default:
-                return item_state.ctx.color.primary_container;
-            }
-        }
-        stateLayerColor: textColor
-
-        states: [
-            State {
-                name: "Pressed"
-                when: control.pressed || control.visualFocus
-                PropertyChanges {
-                    item_state.elevation: MD.Token.elevation.level3
-                    item_state.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
-                }
-            },
-            State {
-                name: "Hovered"
-                when: control.hovered
-                PropertyChanges {
-                    item_state.elevation: MD.Token.elevation.level4
-                    item_state.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
-                }
-            }
-        ]
     }
+
 
     Item {
         visible: false

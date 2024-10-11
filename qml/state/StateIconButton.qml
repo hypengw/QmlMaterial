@@ -10,7 +10,7 @@ MD.State {
         switch (root.item.type) {
         case MD.Enum.iBtOutlined:
             if (root.item.checked)
-                return root.ctx.color.on_inverse_surface;
+                return root.ctx.color.inverse_on_surface;
             else
                 return root.ctx.color.on_surface_variant;
         case MD.Enum.IBtStandard:
@@ -37,7 +37,7 @@ MD.State {
             return "transparent";
         case MD.Enum.IBtOutlined:
             if (root.item.checked)
-                return root.ctx.color.inverse_surface2;
+                return root.ctx.color.inverse_surface;
             else
                 return "transparent";
         case MD.Enum.IBtFilledTonal:
@@ -60,7 +60,15 @@ MD.State {
             PropertyChanges {
                 root.elevation: MD.Token.elevation.level0
                 root.textColor: root.ctx.color.on_surface
-                root.backgroundColor: root.ctx.color.on_surface
+                root.backgroundColor: {
+                    switch (root.item.type) {
+                    case MD.Enum.IBtOutlined:
+                    case MD.Enum.IBtStandard:
+                        return "transparent";
+                    default:
+                        return root.ctx.color.on_surface;
+                    }
+                }
                 root.contentOpacity: 0.38
                 root.backgroundOpacity: 0.12
             }
@@ -88,7 +96,7 @@ MD.State {
                         break;
                     case MD.Enum.IBtOutlined:
                         if (root.item.checked)
-                            c = root.ctx.color.on_inverse_surface;
+                            c = root.ctx.color.inverse_on_surface;
                         else
                             c = root.ctx.color.on_surface;
                         break;
@@ -126,7 +134,7 @@ MD.State {
                         break;
                     case MD.Enum.IBtOutlined:
                         if (root.item.checked)
-                            c = root.ctx.color.on_inverse_surface;
+                            c = root.ctx.color.inverse_on_surface;
                         else
                             c = root.ctx.color.on_surface_variant;
                         break;

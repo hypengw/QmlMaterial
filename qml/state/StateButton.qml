@@ -7,8 +7,9 @@ MD.State {
     textColor: {
         switch (root.item.type) {
         case MD.Enum.BtFilled:
+            return ctx.color.on_primary;
         case MD.Enum.BtFilledTonal:
-            return ctx.color.getOn(root.item.MD.MatProp.backgroundColor);
+            return ctx.color.on_secondary_container;
         case MD.Enum.BtOutlined:
         case MD.Enum.BtText:
         case MD.Enum.BtElevated:
@@ -24,7 +25,7 @@ MD.State {
             return ctx.color.secondary_container;
         case MD.Enum.BtOutlined:
         case MD.Enum.BtText:
-            return ctx.color.surface;
+            return "transparent"
         case MD.Enum.BtElevated:
         default:
             return ctx.color.surface_container_low;
@@ -39,7 +40,15 @@ MD.State {
             PropertyChanges {
                 root.elevation: MD.Token.elevation.level0
                 root.textColor: root.ctx.color.on_surface
-                root.backgroundColor: root.ctx.color.on_surface
+                root.backgroundColor: {
+                    switch (root.item.type) {
+                    case MD.Enum.BtOutlined:
+                    case MD.Enum.BtText:
+                        return "transparent";
+                    default:
+                        return root.ctx.color.on_surface;
+                    }
+                }
                 root.contentOpacity: 0.38
                 root.backgroundOpacity: 0.12
             }
@@ -55,7 +64,7 @@ MD.State {
                     switch (root.item.type) {
                     case MD.Enum.BtFilled:
                     case MD.Enum.BtFilledTonal:
-                        c = root.ctx.color.getOn(root.ctx.backgroundColor);
+                        c = root.ctx.color.getOn(root.backgroundColor);
                         break;
                     case MD.Enum.BtOutlined:
                     case MD.Enum.BtText:
@@ -78,7 +87,7 @@ MD.State {
                     switch (root.item.type) {
                     case MD.Enum.BtFilled:
                     case MD.Enum.BtFilledTonal:
-                        c = root.ctx.color.getOn(root.ctx.backgroundColor);
+                        c = root.ctx.color.getOn(root.backgroundColor);
                         break;
                     case MD.Enum.BtOutlined:
                     case MD.Enum.BtText:
@@ -101,7 +110,7 @@ MD.State {
                     switch (root.item.type) {
                     case MD.Enum.BtFilled:
                     case MD.Enum.BtFilledTonal:
-                        c = root.ctx.color.getOn(root.ctx.backgroundColor);
+                        c = root.ctx.color.getOn(root.backgroundColor);
                         break;
                     case MD.Enum.BtOutlined:
                     case MD.Enum.BtText:

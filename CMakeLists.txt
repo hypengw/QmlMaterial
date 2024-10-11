@@ -161,6 +161,7 @@ set(QML_FILES
     qml/state/StateListItem.qml
     qml/state/StateSlider.qml
     qml/state/StateIconButton.qml
+    qml/state/StateFAB.qml
 
     qml/impl/BoxShadow.qml
     qml/impl/Shadow.qml
