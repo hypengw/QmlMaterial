@@ -9,11 +9,11 @@ Item {
     ShaderEffect {
         id: inner
         anchors.centerIn: parent
-        width: root.width + 16
-        height: root.height + 16
+        width: root.width
+        height: root.height
 
         property vector4d radius: MD.Util.corner(root.radius).toVector4D()
-        property vector4d size: Qt.vector4d(width, height, root.width, root.height)
+        property vector4d size: Qt.vector4d(width, height, root.width - 1, root.height - 1) // -1 to make edge keep same as qt's
         property color color: "#00000000"
         property real smoothing: 1.0
         property real offset: 0.0
