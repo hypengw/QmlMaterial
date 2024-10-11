@@ -13,7 +13,7 @@ Item {
         height: root.height
 
         property vector4d radius: MD.Util.corner(root.radius).toVector4D()
-        property vector4d size: Qt.vector4d(width, height, root.width - 1, root.height - 1) // -1 to make edge keep same as qt's
+        property vector4d size: Qt.vector4d(width, height, root.width - 2, root.height - 2) // -2 for better between round and straight
         property color color: "#00000000"
         property real smoothing: 1.0
         property real offset: 0.0
