@@ -10,7 +10,9 @@ qt_add_resources(
   Shadow.qml
   Elevation.qml
   Example.qml
-  Typography.qml)
+  Typography.qml
+  Shape.qml
+  )
 
 qt_add_executable(qmaterial_example main.cpp)
 qt_add_resources(

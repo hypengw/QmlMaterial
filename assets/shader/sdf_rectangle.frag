@@ -22,7 +22,8 @@ layout(std140, binding = 0) uniform buf {
 void main() {
     vec2 p = qt_TexCoord0 - vec2(0.5);
     p *= size.xy;
-    float sdf = sdf_rounded_rectangle(p, size.zw / 2.0, radius);
+    // br,tr,bl,tl
+    float sdf = sdf_rounded_rectangle(p, size.zw / 2.0, vec4(radius.w, radius.y, radius.z, radius.x));
 
     fragColor   = color;
     fragColor.a = sdf_alpha_uv(sdf, p, smoothing, offset) * qt_Opacity;

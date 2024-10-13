@@ -48,9 +48,18 @@ MD.Page {
             }
             MD.TabButton {
                 action: Action {
-                    text: 'typography'
+                    text: 'shape'
                     onTriggered: {
                         bar_test.currentIndex = 2;
+                        view_container.replace(view_container.currentItem, 'qrc:/Qcm/Material/Example/Shape.qml', {});
+                    }
+                }
+            }
+            MD.TabButton {
+                action: Action {
+                    text: 'typography'
+                    onTriggered: {
+                        bar_test.currentIndex = 3;
                         view_container.replace(view_container.currentItem, 'qrc:/Qcm/Material/Example/Typography.qml', {});
                     }
                 }
@@ -62,7 +71,7 @@ MD.Page {
             Layout.fillWidth: true
             padding: 0
 
-            StackView {
+            MD.StackView {
                 id: view_container
                 anchors.fill: parent
                 initialItem: Item {}

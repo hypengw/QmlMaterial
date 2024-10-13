@@ -55,7 +55,7 @@ T.Button {
 
         MD.Ripple2 {
             anchors.fill: parent
-            radius: parent.radius
+            radius: height / 2
             pressX: control.pressX
             pressY: control.pressY
             pressed: control.pressed

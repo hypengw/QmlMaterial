@@ -2,8 +2,6 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Templates as T
 import QtQuick.Controls as QC
-import QtQuick.Controls.impl
-import QtQuick.Controls.Material.impl as MDImpl
 import Qcm.Material as MD
 
 T.Button {

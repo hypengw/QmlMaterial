@@ -80,13 +80,18 @@ set(SOURCES
     include/qml_material/kirigami/wheelhandler.h
     include/qml_material/scenegraph/geometry.h
     include/qml_material/scenegraph/rectangle_material.h
+    include/qml_material/upstream/qquickmaterialtextcontainer_p.h
 
     src/scenegraph/geometry.cpp
     src/scenegraph/rectangle_material.cpp
+
     src/kirigami/displayhint.cpp
     src/kirigami/toolbarlayout.cpp
     src/kirigami/toolbarlayoutdelegate.cpp
     src/kirigami/wheelhandler.cpp
+
+    src/upstream/qquickmaterialtextcontainer.cpp
+
     src/color.cpp
     src/corner.cpp
     src/icon.cpp
@@ -168,13 +173,13 @@ set(QML_FILES
     qml/state/StateTabButton.qml
     qml/state/StateListItem.qml
     qml/state/StateSlider.qml
+    qml/state/StateSwitch.qml
     qml/state/StateIconButton.qml
     qml/state/StateFAB.qml
 
     qml/impl/BoxShadow.qml
     qml/impl/Shadow.qml
     qml/impl/ListBusyFooter.qml
-    qml/impl/Ripple.qml
     qml/impl/Ripple2.qml
     qml/impl/RectangularGlow.qml
     qml/impl/CursorDelegate.qml
@@ -255,7 +260,7 @@ endforeach()
 target_include_directories(
   ${LIBNAME}
   PUBLIC include
-  PRIVATE "include/${LIBNAME}" "include/${LIBNAME}/kirigami" src)
+  PRIVATE "include/${LIBNAME}" "include/${LIBNAME}/kirigami" "include/${LIBNAME}/upstream" src)
 
 set_target_properties(
   ${LIBNAME}

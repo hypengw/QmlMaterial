@@ -14,7 +14,7 @@ float sdf_rectangle(in vec2 p, in vec2 rect) {
     return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
 }
 
-// tr,br,bl,tl
+// br,tr,bl,tl
 float sdf_rounded_rectangle(in vec2 p, in vec2 rect, in vec4 r) {
     r.xy   = (p.x > 0.0) ? r.xy : r.zw;
     r.x    = (p.y > 0.0) ? r.x : r.y;

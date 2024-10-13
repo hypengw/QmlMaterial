@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Templates as T
-import QtQuick.Controls.impl
 import QtQuick.Controls.Material.impl as MDImpl
 import Qcm.Material as MD
 
@@ -73,7 +72,7 @@ MD.TextFieldEmbed {
 
     data: [placeholder, leading, trailing]
 
-    background: MDImpl.MaterialTextContainer {
+    background: MD.MaterialTextContainer {
         implicitWidth: 64
         implicitHeight: 56
 

@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Controls
 import Qcm.Material as MD
 
 Item {

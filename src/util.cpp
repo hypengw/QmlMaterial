@@ -64,7 +64,7 @@ auto Util::corner(qreal a, qreal b) -> CornersGroup {
     return out;
 }
 
-auto Util::corner(qreal br, qreal tr, qreal bl, qreal tl) -> CornersGroup {
+auto Util::corner(qreal tl, qreal tr, qreal bl, qreal br) -> CornersGroup {
     return CornersGroup(br, tr, bl, tl);
 }
 

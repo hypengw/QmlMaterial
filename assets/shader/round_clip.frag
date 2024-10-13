@@ -21,7 +21,8 @@ layout(binding = 1) uniform sampler2D source;
 void main() {
     vec2 p = qt_TexCoord0 - vec2(0.5);
     p *= size;
-    float sdf = sdf_rounded_rectangle(p, size / 2.0, radius_);
+    // br,tr,bl,tl
+    float sdf = sdf_rounded_rectangle(p, size / 2.0, vec4(radius_.w, radius_.y, radius_.z, radius_.x));
 
     // fragColor = sdf_render(sdf, vec4(0.0), texture(source, qt_TexCoord0), 1.0, smoothing, -1.0);
     // fragColor = sdf_render_uv(sdf, p, vec4(0.0), texture(source, qt_TexCoord0), 1.0, smoothing,

@@ -75,7 +75,7 @@ public:
     Q_INVOKABLE CornersGroup cornerArray(QVariant in);
     Q_INVOKABLE CornersGroup corner(qreal in);
     Q_INVOKABLE CornersGroup corner(qreal, qreal);
-    Q_INVOKABLE CornersGroup corner(qreal br, qreal tr, qreal bl, qreal tl);
+    Q_INVOKABLE CornersGroup corner(qreal tl, qreal tr, qreal bl, qreal br);
 
     QString          type_str(const QJSValue&);
     Q_INVOKABLE void print_parents(const QJSValue&);
