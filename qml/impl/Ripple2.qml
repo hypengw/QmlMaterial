@@ -10,8 +10,6 @@ MD.Rectangle {
     property real pressY: height / 2
 
     color: "transparent"
-    readonly property MD.t_corner corner: MD.Util.corner(radius)
-
     clip: false
     opacity: stateOpacity
 
@@ -44,49 +42,49 @@ MD.Rectangle {
                 }
             }
 
-            startX: root.corner.topLeft
+            startX: root.corners.topLeft
            
             startY: 0
 
             PathLine {
-                x: root.width - root.corner.topRight
+                x: root.width - root.corners.topRight
                 y: 0
             }
             PathArc {
-                relativeX: root.corner.topRight
-                relativeY: root.corner.topRight
-                radiusX: root.corner.topRight
-                radiusY: root.corner.topRight
+                relativeX: root.corners.topRight
+                relativeY: root.corners.topRight
+                radiusX: root.corners.topRight
+                radiusY: root.corners.topRight
             }
             PathLine {
                 x: root.width
-                y: root.height - root.corner.bottomRight
+                y: root.height - root.corners.bottomRight
             }
             PathArc {
-                relativeX: -root.corner.bottomRight
-                relativeY: root.corner.bottomRight
-                radiusX: root.corner.bottomRight
-                radiusY: root.corner.bottomRight
+                relativeX: -root.corners.bottomRight
+                relativeY: root.corners.bottomRight
+                radiusX: root.corners.bottomRight
+                radiusY: root.corners.bottomRight
             }
             PathLine {
-                x: root.corner.bottomLeft
+                x: root.corners.bottomLeft
                 y: root.height
             }
             PathArc {
-                relativeX: -root.corner.bottomLeft
-                relativeY: -root.corner.bottomLeft
-                radiusX: root.corner.bottomLeft
-                radiusY: root.corner.bottomLeft
+                relativeX: -root.corners.bottomLeft
+                relativeY: -root.corners.bottomLeft
+                radiusX: root.corners.bottomLeft
+                radiusY: root.corners.bottomLeft
             }
             PathLine {
                 x: 0
-                y: root.corner.topLeft
+                y: root.corners.topLeft
             }
             PathArc {
-                x: root.corner.topLeft
+                x: root.corners.topLeft
                 y: 0
-                radiusX: root.corner.topLeft
-                radiusY: root.corner.topLeft
+                radiusX: root.corners.topLeft
+                radiusY: root.corners.topLeft
             }
         }
     }

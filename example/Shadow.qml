@@ -46,7 +46,7 @@ MD.Page {
 
                     layer.enabled: true
                     layer.effect: MD.RoundClip {
-                        radius: [slider_c1.value, slider_c2.value, slider_c3.value, slider_c4.value]
+                        corners: MD.Util.corner(slider_c1.value, slider_c2.value, slider_c3.value, slider_c4.value)
                         size: rect_clip.height
                         smoothing: slider_smoothing.value
                     }

@@ -6,7 +6,8 @@ T.TabBar {
     id: control
 
     property int type: MD.Enum.PrimaryTab
-    property var radius
+    property int radius: 0
+    property MD.t_corner corners: MD.Util.corner(radius)
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)
 
@@ -60,7 +61,7 @@ T.TabBar {
 
     background: MD.Rectangle {
         color: control.MD.MatProp.backgroundColor
-        radius: control.radius
+        corners: control.corners
 
         //layer.enabled: control.Material.elevation > 0
         //layer.effect: MD.ElevationEffect {
@@ -82,7 +83,7 @@ T.TabBar {
             source: parent.source
             width: parent.width
             height: parent.height + 20
-            radius: control.radius
+            corners: control.corners
             size: Qt.vector2d(control.width, control.height + 20)
         }
     }

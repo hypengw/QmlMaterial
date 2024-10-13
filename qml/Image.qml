@@ -3,8 +3,9 @@ import Qcm.Material as MD
 
 Item {
     id: root
+    property int radius: 0
     // tl,tr,bl,br
-    property var radius: [0]
+    property MD.t_corner corners: MD.Util.corner(radius)
     property alias asynchronous: m_image.asynchronous
     property alias autoTransform: m_image.autoTransform
     property alias cache: m_image.cache
@@ -43,7 +44,8 @@ Item {
         fillMode: Image.PreserveAspectCrop
         layer.enabled: true
         layer.effect: MD.RoundClip {
-            radius: root.radius
+            radius: root.corners.radius()
+            corners: root.corners
             size: Qt.vector2d(root.width, root.height)
             layer.enabled: true
             layer.effect: MD.RoundedElevationEffect {

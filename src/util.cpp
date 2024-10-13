@@ -17,7 +17,7 @@ namespace qml_material
 Util::Util(QObject* parent): QObject(parent) {}
 Util::~Util() {}
 
-CornersGroup Util::corner(QVariant in) {
+auto Util::cornerArray(QVariant in) -> CornersGroup {
     CornersGroup out;
     if (in.canConvert<qreal>()) {
         out = CornersGroup(in.value<qreal>());
@@ -53,7 +53,18 @@ CornersGroup Util::corner(QVariant in) {
     return out;
 }
 
-CornersGroup Util::corner(qreal br, qreal tr, qreal bl, qreal tl) {
+auto Util::corner(qreal in) -> CornersGroup { return CornersGroup(in); }
+
+auto Util::corner(qreal a, qreal b) -> CornersGroup {
+    CornersGroup out;
+    out.setTopLeft(a);
+    out.setTopRight(a);
+    out.setBottomLeft(b);
+    out.setBottomRight(b);
+    return out;
+}
+
+auto Util::corner(qreal br, qreal tr, qreal bl, qreal tl) -> CornersGroup {
     return CornersGroup(br, tr, bl, tl);
 }
 

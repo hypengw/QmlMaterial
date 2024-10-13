@@ -21,6 +21,9 @@ public:
 
     Q_INVOKABLE CornersGroup& operator=(qreal) { return *this; }
 
+    Q_INVOKABLE qreal radius() const;
+    void setRadius(qreal);
+
     qreal topLeft() const;
     void  setTopLeft(qreal newTopLeft);
 
@@ -33,13 +36,14 @@ public:
     qreal bottomRight() const;
     void  setBottomRight(qreal newBottomRight);
 
-    Q_INVOKABLE QVector4D toVector4D() const;
+    Q_INVOKABLE QVector4D toVector4D() const noexcept;
+    operator QVector4D() const noexcept;
 
 private:
-    float m_bottomRight;
-    float m_topRight;
-    float m_bottomLeft;
-    float m_topLeft;
+    double m_bottomRight;
+    double m_topRight;
+    double m_bottomLeft;
+    double m_topLeft;
 };
 
 } // namespace qml_material

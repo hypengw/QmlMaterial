@@ -38,7 +38,8 @@ T.ItemDelegate {
     property alias trailing: item_holder_trailing.contentItem
     property alias below: item_holder_below.contentItem
     property alias divider: holder_divider.item
-    property var radius: 0
+    property int radius: 0
+    property MD.t_corner corners: MD.Util.corner(radius)
 
     property int heightMode: {
         if (supportText)
@@ -49,8 +50,8 @@ T.ItemDelegate {
 
     font.capitalization: Font.MixedCase
 
-    function indexRadius(index, count, size) {
-        return [index === 0 ? size : 0, index + 1 === count ? size : 0];
+    function indexCorners(index, count, size) {
+        return MD.Util.corner(index === 0 ? size : 0, index + 1 === count ? size : 0);
     }
 
     contentItem: ColumnLayout {
@@ -140,7 +141,7 @@ T.ItemDelegate {
 
         opacity: control.mdState.backgroundOpacity
 
-        radius: control.radius
+        corners: control.corners
         color: control.mdState.backgroundColor
 
         layer.enabled: control.enabled && color.a > 0
@@ -149,7 +150,7 @@ T.ItemDelegate {
         }
 
         MD.Ripple2 {
-            radius: control.radius
+            corners: control.corners
             width: parent.width
             height: parent.height
             pressX: control.pressX

@@ -11,14 +11,15 @@ T.Pane {
                              contentHeight + topPadding + bottomPadding)
 
     padding: 0
-    property var radius: 0
+    property int radius:0
+    property MD.t_corner corners: MD.Util.corner(radius)
     property int elevation: MD.Token.elevation.level0
     property color backgroundColor: MD.MatProp.color.background
     property alias showBackground: control.background.visible
 
     background: MD.Rectangle {
         color: control.backgroundColor
-        radius: control.radius
+        corners: control.corners
 
         layer.enabled: control.enabled && control.elevation > 0
         layer.effect: MD.RoundedElevationEffect {

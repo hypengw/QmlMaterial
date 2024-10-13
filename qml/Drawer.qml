@@ -34,7 +34,7 @@ T.Drawer {
             color: MD.Token.color.surface
             layer.enabled: true
             layer.effect: MD.RoundClip {
-                radius: [0, 16, 0, 16]
+                corners: MD.Util.corner(0, 16, 0, 16)
                 size: Qt.vector2d(parent.width, parent.height)
             }
         }

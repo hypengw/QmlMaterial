@@ -16,7 +16,6 @@ MD.Rectangle {
     y: -view.contentY + view.originY + excludeBegin - topMargin
 
     color: MD.MatProp.backgroundColor
-    radius: MD.Token.shape.corner.large
 
     implicitWidth: contentWidth
     implicitHeight: contentHeight - excludeBegin + (topMargin + bottomMargin)

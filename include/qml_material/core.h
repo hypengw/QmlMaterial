@@ -24,6 +24,9 @@ using byte        = std::byte;
 using voidp       = void*;
 using const_voidp = const void*;
 
+template<typename T, typename D = std::default_delete<T>>
+using up = std::unique_ptr<T, D>;
+
 namespace ycore 
 {
 

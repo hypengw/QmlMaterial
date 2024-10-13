@@ -72,8 +72,9 @@ public:
     }
 
     // tl tr bl br
-    Q_INVOKABLE CornersGroup corner(QVariant in);
-
+    Q_INVOKABLE CornersGroup cornerArray(QVariant in);
+    Q_INVOKABLE CornersGroup corner(qreal in);
+    Q_INVOKABLE CornersGroup corner(qreal, qreal);
     Q_INVOKABLE CornersGroup corner(qreal br, qreal tr, qreal bl, qreal tl);
 
     QString          type_str(const QJSValue&);

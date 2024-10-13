@@ -4,7 +4,6 @@ import QtQuick.Controls
 import Qcm.Material as MD
 
 MD.Page {
-    anchors.fill: parent
     padding: 8
 
     MD.MatProp.page: m_page_ctx
@@ -45,10 +44,6 @@ MD.Page {
                         bar_test.currentIndex = 1;
                         view_container.replace(view_container.currentItem, 'qrc:/Qcm/Material/Example/Color.qml', {});
                     }
-                }
-
-                Component.onCompleted: {
-                    action.trigger();
                 }
             }
             MD.TabButton {

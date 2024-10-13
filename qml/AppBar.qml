@@ -93,7 +93,7 @@ T.ToolBar {
     background: MD.Rectangle {
         implicitHeight: control.mdState.containerHeight
 
-        radius: [control.radius, 0]
+        corners: MD.Util.corner(control.radius, 0)
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
 

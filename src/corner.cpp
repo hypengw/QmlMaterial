@@ -13,44 +13,33 @@ CornersGroup::~CornersGroup() {}
 
 qreal CornersGroup::topLeft() const { return m_topLeft; }
 
-void CornersGroup::setTopLeft(qreal newTopLeft) {
-    if (newTopLeft == m_topLeft) {
-        return;
-    }
-
-    m_topLeft = newTopLeft;
+auto CornersGroup::radius() const -> qreal {
+    // return max
+    return std::max({ m_topLeft, m_topRight, m_bottomLeft, m_bottomRight });
 }
+void CornersGroup::setRadius(qreal v) {
+    m_topLeft     = v;
+    m_topRight    = v;
+    m_bottomLeft  = v;
+    m_bottomRight = v;
+}
+void CornersGroup::setTopLeft(qreal newTopLeft) { m_topLeft = newTopLeft; }
 
 qreal CornersGroup::topRight() const { return m_topRight; }
 
-void CornersGroup::setTopRight(qreal newTopRight) {
-    if (newTopRight == m_topRight) {
-        return;
-    }
-
-    m_topRight = newTopRight;
-}
+void CornersGroup::setTopRight(qreal newTopRight) { m_topRight = newTopRight; }
 
 qreal CornersGroup::bottomLeft() const { return m_bottomLeft; }
 
-void CornersGroup::setBottomLeft(qreal newBottomLeft) {
-    if (newBottomLeft == m_bottomLeft) {
-        return;
-    }
-
-    m_bottomLeft = newBottomLeft;
-}
+void CornersGroup::setBottomLeft(qreal newBottomLeft) { m_bottomLeft = newBottomLeft; }
 
 qreal CornersGroup::bottomRight() const { return m_bottomRight; }
 
-void CornersGroup::setBottomRight(qreal newBottomRight) {
-    if (newBottomRight == m_bottomRight) {
-        return;
-    }
+void CornersGroup::setBottomRight(qreal newBottomRight) { m_bottomRight = newBottomRight; }
 
-    m_bottomRight = newBottomRight;
+QVector4D CornersGroup::toVector4D() const noexcept {
+    return QVector4D {
+        (float)m_topLeft, (float)m_topRight, (float)m_bottomLeft, (float)m_bottomRight
+    };
 }
-
-QVector4D CornersGroup::toVector4D() const {
-    return QVector4D { m_bottomRight, m_topRight, m_bottomLeft, m_topLeft };
-}
+CornersGroup::operator QVector4D() const noexcept { return toVector4D(); }

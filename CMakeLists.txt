@@ -73,10 +73,16 @@ set(SOURCES
     include/qml_material/page_context.h
     include/qml_material/snake_model.h
     include/qml_material/loggingcategory.h
+    include/qml_material/rectangle.h
     include/qml_material/kirigami/displayhint.h
     include/qml_material/kirigami/toolbarlayout.h
     include/qml_material/kirigami/toolbarlayoutdelegate.h
     include/qml_material/kirigami/wheelhandler.h
+    include/qml_material/scenegraph/geometry.h
+    include/qml_material/scenegraph/rectangle_material.h
+
+    src/scenegraph/geometry.cpp
+    src/scenegraph/rectangle_material.cpp
     src/kirigami/displayhint.cpp
     src/kirigami/toolbarlayout.cpp
     src/kirigami/toolbarlayoutdelegate.cpp
@@ -95,7 +101,9 @@ set(SOURCES
     src/snake_model.cpp
     src/token.cpp
     src/type_scale.cpp
-    src/round_item.cpp)
+    src/round_item.cpp
+    src/rectangle.cpp
+    )
 set(QML_FILES
     qml/js/jsUtils.mjs
     qml/ActionMenu.qml
@@ -150,7 +158,7 @@ set(QML_FILES
     qml/TextField.qml
     qml/TabBar.qml
     qml/TabButton.qml
-    qml/Rectangle.qml
+    qml/SdfRectangle.qml
 
     qml/state/StateAppBar.qml
     qml/state/StateSnakeBar.qml
@@ -219,7 +227,10 @@ set(SHADER_GLSLS
     "assets/shader/sdf.glsl")
 set(SHADER_SOURCES
     "assets/shader/default.vert" "assets/shader/round_clip.frag"
-    "assets/shader/round_rect.frag" "assets/shader/shadow.frag"
+    "assets/shader/sdf_rectangle.frag" 
+    "assets/shader/shadow.frag"
+    "assets/shader/rectangle.vert"
+    "assets/shader/rectangle.frag"
     "assets/shader/rect_glow.frag")
 qt_add_shaders(
   ${LIBNAME}
