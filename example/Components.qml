@@ -243,6 +243,53 @@ MD.Page {
                     }
                 }
             }
+
+            MD.Pane {
+                Layout.alignment: Qt.AlignHCenter
+                ColumnLayout {
+                    spacing: 16
+                    MD.Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: 'Communication'
+                        typescale: MD.Token.typescale.title_large
+                    }
+
+                    ColumnLayout {
+                        Layout.alignment: Qt.AlignHCenter
+
+                        ColumnLayout {
+                            Layout.alignment: Qt.AlignHCenter
+                            MD.Text {
+                                Layout.alignment: Qt.AlignHCenter
+                                text: 'Propgress indicators'
+                                typescale: MD.Token.typescale.title_medium
+                            }
+                            MD.Pane {
+                                Layout.alignment: Qt.AlignHCenter
+                                Layout.preferredWidth: 400
+                                padding: 12
+                                radius: MD.Token.shape.corner.medium
+                                backgroundColor: MD.MatProp.color.surface_container
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    spacing: 12
+
+                                    MD.IconButton {
+                                        id: m_indicator_play
+                                        checkable: true
+                                        icon.name: checked ? MD.Token.icon.pause : MD.Token.icon.play_arrow
+                                    }
+
+                                    MD.CircularIndicator {
+                                        running: m_indicator_play.checked
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

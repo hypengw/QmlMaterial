@@ -20,10 +20,10 @@ struct RectangleVertex {
     float a;
 
     // circle edge
-    float ce_x;
-    float ce_y;
-    float ce_radius;
-    float ce_w;
+    float ce_x; // if in x edge
+    float ce_y; // if in y edge
+    float ce_distance_to_outter; // from inner rect
+    float ce_distance_to_inner;  // from inner rect
 
     operator QVector2D() const { return { x, y }; }
     operator QColor() const { return QColor::fromRgbF(r, g, b, a); }
