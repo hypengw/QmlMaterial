@@ -14,7 +14,7 @@ Shape {
     layer.enabled: true
     layer.mipmap: true
     layer.smooth: true
-    layer.samples: 4
+    layer.samples: 8
 
     ShapePath {
         capStyle: ShapePath.RoundCap
