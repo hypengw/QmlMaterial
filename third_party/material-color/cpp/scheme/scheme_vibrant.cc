@@ -16,10 +16,12 @@
 
 #include "cpp/scheme/scheme_vibrant.h"
 
+#include <vector>
+
 #include "cpp/cam/hct.h"
+#include "cpp/dynamiccolor/dynamic_scheme.h"
+#include "cpp/dynamiccolor/variant.h"
 #include "cpp/palettes/tones.h"
-#include "cpp/scheme/dynamic_scheme.h"
-#include "cpp/scheme/variant.h"
 
 namespace material_color_utilities {
 
@@ -34,7 +36,7 @@ const std::vector<double> kTertiaryRotations = {35, 30, 20, 25, 30,
 SchemeVibrant::SchemeVibrant(Hct set_source_color_hct, bool set_is_dark,
                              double set_contrast_level)
     : DynamicScheme(
-          /*source_color_argb:*/ set_source_color_hct.ToInt(),
+          /*set_source_color_hct:*/ set_source_color_hct,
           /*variant:*/ Variant::kVibrant,
           /*contrast_level:*/ set_contrast_level,
           /*is_dark:*/ set_is_dark,

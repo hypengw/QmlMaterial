@@ -22,49 +22,17 @@
 namespace material_color_utilities {
 
 /**
- * An intermediate concept between the key color for a UI theme, and a full
- * color scheme. 5 tonal palettes are generated, all except one use the same
- * hue as the key color, and all vary in chroma.
- */
-class CorePalette {
- public:
-  /**
-   * Creates a CorePalette from a hue and a chroma.
-   */
-  static CorePalette Of(double hue, double chroma);
-
-  /**
-   * Creates a CorePalette from a source color in ARGB format.
-   */
-  static CorePalette Of(int argb);
-
-  /**
-   * Creates a content CorePalette from a hue and a chroma.
-   */
-  static CorePalette ContentOf(double hue, double chroma);
-
-  /**
-   * Creates a content CorePalette from a source color in ARGB format.
-   */
-  static CorePalette ContentOf(int argb);
-
-  TonalPalette primary();
-  TonalPalette secondary();
-  TonalPalette tertiary();
-  TonalPalette neutral();
-  TonalPalette neutral_variant();
-  TonalPalette error();
-
- private:
-  CorePalette(double hue, double chroma, bool is_content);
-
-  TonalPalette primary_;
-  TonalPalette secondary_;
-  TonalPalette tertiary_;
-  TonalPalette neutral_;
-  TonalPalette neutral_variant_;
-  TonalPalette error_;
-};
+ * Comprises foundational palettes to build a color scheme. Generated from a
+ * source color, these palettes will then be part of a [DynamicScheme] together
+ * with appearance preferences.
+*/
+typedef struct {
+    TonalPalette primary;
+    TonalPalette secondary;
+    TonalPalette tertiary;
+    TonalPalette neutral;
+    TonalPalette neutral_variant;
+} CorePalettes;
 
 }  // namespace material_color_utilities
 

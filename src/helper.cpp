@@ -1,6 +1,8 @@
 #include "qml_material/helper.h"
 
-#include "cpp/scheme/scheme.h"
+#include "cpp/scheme/scheme_content.h"
+#include "cpp/scheme/scheme_neutral.h"
+#include "cpp/scheme/scheme_tonal_spot.h"
 #include "cpp/blend/blend.h"
 
 #include "qml_material/core.h"
@@ -22,78 +24,65 @@ QRgb blend(QRgb a, QRgb b, double t) {
 }
 } // namespace
 
-static void convert_from(MdScheme& out, const md::Scheme& in) {
-    out.primary                = in.primary;
-    out.on_primary             = in.on_primary;
-    out.primary_container      = in.primary_container;
-    out.on_primary_container   = in.on_primary_container;
-    out.secondary              = in.secondary;
-    out.on_secondary           = in.on_secondary;
-    out.secondary_container    = in.secondary_container;
-    out.on_secondary_container = in.on_secondary_container;
-    out.tertiary               = in.tertiary;
-    out.on_tertiary            = in.on_tertiary;
-    out.tertiary_container     = in.tertiary_container;
-    out.on_tertiary_container  = in.on_tertiary_container;
-    out.error                  = in.error;
-    out.on_error               = in.on_error;
-    out.error_container        = in.error_container;
-    out.on_error_container     = in.on_error_container;
-    out.background             = in.background;
-    out.on_background          = in.on_background;
-    out.surface                = in.surface;
-    out.on_surface             = in.on_surface;
-    out.surface_variant        = in.surface_variant;
-    out.on_surface_variant     = in.on_surface_variant;
-    out.outline                = in.outline;
-    out.outline_variant        = in.outline_variant;
-    out.shadow                 = in.shadow;
-    out.scrim                  = in.scrim;
-    out.inverse_surface        = in.inverse_surface;
-    out.inverse_on_surface     = in.inverse_on_surface;
-    out.inverse_primary        = in.inverse_primary;
-    out.surface_1              = blend(out.surface, out.primary, 0.05);
-    out.surface_2              = blend(out.surface, out.primary, 0.08);
-    out.surface_3              = blend(out.surface, out.primary, 0.11);
-    out.surface_4              = blend(out.surface, out.primary, 0.12);
-    out.surface_5              = blend(out.surface, out.primary, 0.14);
+static void convert_from(MdScheme& out, const md::DynamicScheme& in) {
+    out.primary                = in.GetPrimary();
+    out.on_primary             = in.GetOnPrimary();
+    out.primary_container      = in.GetPrimaryContainer();
+    out.on_primary_container   = in.GetOnPrimaryContainer();
+    out.secondary              = in.GetSecondary();
+    out.on_secondary           = in.GetOnSecondary();
+    out.secondary_container    = in.GetSecondaryContainer();
+    out.on_secondary_container = in.GetOnSecondaryContainer();
+    out.tertiary               = in.GetTertiary();
+    out.on_tertiary            = in.GetOnTertiary();
+    out.tertiary_container     = in.GetTertiaryContainer();
+    out.on_tertiary_container  = in.GetOnTertiaryContainer();
+    out.error                  = in.GetError();
+    out.on_error               = in.GetOnError();
+    out.error_container        = in.GetErrorContainer();
+    out.on_error_container     = in.GetOnErrorContainer();
+    out.background             = in.GetBackground();
+    out.on_background          = in.GetOnBackground();
+    out.surface                = in.GetSurface();
+    out.on_surface             = in.GetOnSurface();
+    out.surface_variant        = in.GetSurfaceVariant();
+    out.on_surface_variant     = in.GetOnSurfaceVariant();
+    out.outline                = in.GetOutline();
+    out.outline_variant        = in.GetOutlineVariant();
+    out.shadow                 = in.GetShadow();
+    out.scrim                  = in.GetScrim();
+    out.inverse_surface        = in.GetInverseSurface();
+    out.inverse_on_surface     = in.GetInverseOnSurface();
+    out.inverse_primary        = in.GetInversePrimary();
+
+    out.surface_dim               = in.GetSurfaceDim();
+    out.surface_bright            = in.GetSurfaceBright();
+    out.surface_container         = in.GetSurfaceContainer();
+    out.surface_container_low     = in.GetSurfaceContainerLow();
+    out.surface_container_lowest  = in.GetSurfaceContainerLowest();
+    out.surface_container_high    = in.GetSurfaceContainerHigh();
+    out.surface_container_highest = in.GetSurfaceContainerHighest();
+
+    out.surface_1 = blend(out.surface, out.primary, 0.05);
+    out.surface_2 = blend(out.surface, out.primary, 0.08);
+    out.surface_3 = blend(out.surface, out.primary, 0.11);
+    out.surface_4 = blend(out.surface, out.primary, 0.12);
+    out.surface_5 = blend(out.surface, out.primary, 0.14);
 }
 
 MdScheme qcm::MaterialLightColorScheme(QRgb rgb) {
-    auto palette         = md::CorePalette::Of(rgb);
+    md::Hct  hct(rgb);
+    auto     scheme_content = md::SchemeTonalSpot(hct, false, 0.0);
     MdScheme scheme;
-    convert_from(scheme, md::MaterialLightColorSchemeFromPalette(palette));
-    scheme.background    = palette.neutral().get(98);
-    scheme.on_background = palette.neutral().get(10);
-
-    scheme.surface                   = palette.neutral().get(98);
-    scheme.surface_dim               = palette.neutral().get(87);
-    scheme.surface_bright            = palette.neutral().get(98);
-    scheme.surface_container         = palette.neutral().get(94);
-    scheme.surface_container_low     = palette.neutral().get(96);
-    scheme.surface_container_lowest  = palette.neutral().get(100);
-    scheme.surface_container_high    = palette.neutral().get(92);
-    scheme.surface_container_highest = palette.neutral().get(90);
-
+    convert_from(scheme, scheme_content);
     return scheme;
 }
 
 MdScheme qcm::MaterialDarkColorScheme(QRgb rgb) {
-    auto palette         = md::CorePalette::Of(rgb);
+    md::Hct  hct(rgb);
+    auto     scheme_content = md::SchemeTonalSpot(hct, true);
     MdScheme scheme;
-    convert_from(scheme, md::MaterialDarkColorSchemeFromPalette(palette));
-    scheme.background    = palette.neutral().get(6);
-    scheme.on_background = palette.neutral().get(90);
-
-    scheme.surface                   = palette.neutral().get(6);
-    scheme.surface_dim               = palette.neutral().get(6);
-    scheme.surface_bright            = palette.neutral().get(24);
-    scheme.surface_container         = palette.neutral().get(12);
-    scheme.surface_container_low     = palette.neutral().get(10);
-    scheme.surface_container_lowest  = palette.neutral().get(4);
-    scheme.surface_container_high    = palette.neutral().get(17);
-    scheme.surface_container_highest = palette.neutral().get(22);
-
+    convert_from(scheme, scheme_content);
     return scheme;
 }
 

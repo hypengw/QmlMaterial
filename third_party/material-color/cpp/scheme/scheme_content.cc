@@ -16,11 +16,13 @@
 
 #include "cpp/scheme/scheme_content.h"
 
+#include <cmath>
+
 #include "cpp/cam/hct.h"
 #include "cpp/dislike/dislike.h"
+#include "cpp/dynamiccolor/dynamic_scheme.h"
+#include "cpp/dynamiccolor/variant.h"
 #include "cpp/palettes/tones.h"
-#include "cpp/scheme/dynamic_scheme.h"
-#include "cpp/scheme/variant.h"
 #include "cpp/temperature/temperature_cache.h"
 
 namespace material_color_utilities {
@@ -28,7 +30,7 @@ namespace material_color_utilities {
 SchemeContent::SchemeContent(Hct set_source_color_hct, bool set_is_dark,
                              double set_contrast_level)
     : DynamicScheme(
-          /*source_color_argb:*/ set_source_color_hct.ToInt(),
+          /*set_source_color_hct:*/ set_source_color_hct,
           /*variant:*/ Variant::kContent,
           /*contrast_level:*/ set_contrast_level,
           /*is_dark:*/ set_is_dark,
