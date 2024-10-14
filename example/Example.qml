@@ -57,9 +57,18 @@ MD.Page {
             }
             MD.TabButton {
                 action: Action {
-                    text: 'typography'
+                    text: 'elevation'
                     onTriggered: {
                         bar_test.currentIndex = 3;
+                        view_container.replace(view_container.currentItem, 'qrc:/Qcm/Material/Example/Elevation.qml', {});
+                    }
+                }
+            }
+            MD.TabButton {
+                action: Action {
+                    text: 'typography'
+                    onTriggered: {
+                        bar_test.currentIndex = 4;
                         view_container.replace(view_container.currentItem, 'qrc:/Qcm/Material/Example/Typography.qml', {});
                     }
                 }

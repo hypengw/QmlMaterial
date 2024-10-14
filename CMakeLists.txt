@@ -235,10 +235,13 @@ set(SHADER_GLSLS
 set(SHADER_SOURCES
     "assets/shader/default.vert" "assets/shader/round_clip.frag"
     "assets/shader/sdf_rectangle.frag" 
-    "assets/shader/shadow.frag"
+    "assets/shader/shadow_.frag"
     "assets/shader/rectangle.vert"
     "assets/shader/rectangle.frag"
-    "assets/shader/rect_glow.frag")
+    "assets/shader/shadow.vert"
+    "assets/shader/shadow.frag"
+    "assets/shader/rect_glow.frag"
+    )
 qt_add_shaders(
   ${LIBNAME}
   "shader"

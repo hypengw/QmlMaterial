@@ -24,6 +24,6 @@ Item {
         property color color: root.color
 
         vertexShader: 'qrc:/Qcm/Material/assets/shader/default.vert.qsb'
-        fragmentShader: 'qrc:/Qcm/Material/assets/shader/shadow.frag.qsb'
+        fragmentShader: 'qrc:/Qcm/Material/assets/shader/shadow_.frag.qsb'
     }
 }
