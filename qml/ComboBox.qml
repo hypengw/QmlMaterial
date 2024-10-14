@@ -1,8 +1,6 @@
 import QtQuick
 import QtQuick.Window
-import QtQuick.Controls.impl
 import QtQuick.Templates as T
-import QtQuick.Controls.Material.impl as MDImpl
 import Qcm.Material as MD
 
 T.ComboBox {
@@ -59,7 +57,7 @@ T.ComboBox {
         selectedTextColor: item_state.ctx.color.getOn(selectionColor)
         verticalAlignment: TextInput.AlignVCenter
     }
-    background: MDImpl.MaterialTextContainer {
+    background: MD.MaterialTextContainer {
         implicitWidth: 64
         implicitHeight: 56
 

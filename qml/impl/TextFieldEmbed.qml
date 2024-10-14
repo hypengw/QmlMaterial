@@ -13,10 +13,10 @@ T.TextField {
     font.capitalization: Font.MixedCase
 
     Binding {
-        when: typescale
-        root.font.pixelSize: typescale.size
-        root.font.weight: root.prominent && typescale.weight_prominent ? typescale.weight_prominent : typescale.weight
-        root.font.letterSpacing: typescale.tracking
+        when: root.typescale
+        root.font.pixelSize: root.typescale.size
+        root.font.weight: root.prominent && root.typescale.weight_prominent ? root.typescale.weight_prominent : root.typescale.weight
+        root.font.letterSpacing: root.typescale.tracking
         restoreMode: Binding.RestoreNone
     }
 

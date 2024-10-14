@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Templates as T
-import QtQuick.Controls.Material.impl as MDImpl
 import Qcm.Material as MD
 
 MD.TextFieldEmbed {
@@ -34,22 +33,24 @@ MD.TextFieldEmbed {
     //    // otherwise the text will be too close to the background.
     //    : Material.textFieldVerticalPadding + topInset
 
-    MDImpl.FloatingPlaceholderText {
+    MD.FloatingPlaceholderText {
         id: placeholder
         x: control.leftPadding
         width: control.width - (control.leftPadding + control.rightPadding)
         text: control.placeholderText
         font: control.font
         color: control.placeholderTextColor
+        useTypescale: false
         elide: Text.ElideRight
         renderType: control.renderType
 
-        filled: control.type === MD.Enum.TextFieldFilled
-        verticalPadding: 8
-        controlHasActiveFocus: control.activeFocus
-        controlHasText: control.length > 0
-        controlImplicitBackgroundHeight: control.implicitBackgroundHeight
+        controlFocus: control.activeFocus
         controlHeight: control.height
+        verticalPadding: 8
+
+        filled: control.type === MD.Enum.TextFieldFilled
+        controlHasText: control.length > 0
+        //controlImplicitBackgroundHeight: control.implicitBackgroundHeight
     }
 
     property Item leading: MD.Icon {
@@ -80,7 +81,7 @@ MD.TextFieldEmbed {
         fillColor: control.mdState.backgroundColor
         outlineColor: control.outlineColor
         focusedOutlineColor: control.outlineColor
-        placeholderTextWidth: Math.min(placeholder.width, placeholder.implicitWidth) * placeholder.scale
+        placeholderTextWidth: Math.min(placeholder.width, placeholder.implicitWidth) * 0.8 //placeholder.scale
         controlHasActiveFocus: control.activeFocus
         controlHasText: control.length > 0
         placeholderHasText: placeholder.text.length > 0

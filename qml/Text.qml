@@ -5,9 +5,10 @@ Text {
     id: root
     property MD.t_typescale typescale: MD.Token.typescale.label_medium
     property bool prominent: false
+    property bool useTypescale: true
 
     Binding {
-        when: root.typescale
+        when: root.useTypescale
         root.lineHeight: root.typescale ? root.typescale?.line_height : 16
         root.font.pixelSize: root.typescale ? root.typescale?.size : 16
         root.font.weight: root.typescale ? (root.prominent ? root.typescale.weight_prominent : typescale.weight) : Font.Normal
