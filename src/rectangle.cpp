@@ -27,8 +27,8 @@ public:
         for (int i = 0; i < 4; i++) {
             radius[i] = std::min<float>(radius[i], rect.height() / 2.0f);
         }
-        update_rectangle_geometry(
-            vertices, { (float)rect.size().width(), (float)rect.size().height() }, color, radius);
+        QVector2D size = { (float)rect.size().width(), (float)rect.size().height() };
+        update_rectangle_geometry(vertices, size, color, radius);
         markDirty(QSGNode::DirtyGeometry);
     }
 

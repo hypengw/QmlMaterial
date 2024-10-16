@@ -22,21 +22,17 @@ T.Pane {
     property bool showClose: false
     property real radius: MD.Token.shape.corner.extra_small
 
-    signal closed()
+    signal closed
 
     padding: 0
     leftPadding: 16
     rightPadding: showClose ? 8 : (action ? 8 : 16)
 
-    background: Rectangle {
+    background: MD.ElevationRectangle {
         implicitHeight: 48
         color: control.mdState.backgroundColor
         radius: control.radius
-
-        layer.enabled: control.enabled && control.mdState.elevation > 0
-        layer.effect: MD.RoundedElevationEffect {
-            elevation: control.mdState.elevation
-        }
+        elevation: control.mdState.elevation
     }
     RowLayout {
         id: icon_layout

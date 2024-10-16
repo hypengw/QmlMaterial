@@ -7,7 +7,6 @@ qt_add_resources(
   FILES
   Components.qml
   Color.qml
-  Shadow.qml
   Elevation.qml
   Example.qml
   Typography.qml

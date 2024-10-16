@@ -16,6 +16,7 @@ T.Popup {
 
     margins: 0
     verticalPadding: 0
+    horizontalPadding: 1
 
     enter: Transition {
         // grow_fade_in
@@ -53,16 +54,12 @@ T.Popup {
         }
     }
 
-    background: Rectangle {
+    background: MD.ElevationRectangle {
         implicitWidth: 200
         implicitHeight: 48
         radius: control.radius
         color: control.mdState.backgroundColor
-
-        layer.enabled: control.mdState.elevation > 0
-        layer.effect: MD.RoundedElevationEffect {
-            elevation: control.mdState.elevation
-        }
+        elevation: control.mdState.elevation
     }
 
     T.Overlay.modal: Rectangle {

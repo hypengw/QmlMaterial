@@ -10,9 +10,9 @@ namespace qml_material
 
 class Elevation : public QQuickItem {
     Q_OBJECT
-    QML_ELEMENT
+    QML_NAMED_ELEMENT(ElevationImpl)
 
-    Q_PROPERTY(qint32 level READ level WRITE setLevel NOTIFY levelChanged FINAL)
+    Q_PROPERTY(qint32 elevation READ elevation WRITE setelevation NOTIFY elevationChanged FINAL)
     Q_PROPERTY(qreal radius READ radius WRITE setRadius NOTIFY radiusChanged FINAL)
     Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY colorChanged FINAL)
     Q_PROPERTY(CornersGroup corners READ corners WRITE setCorners NOTIFY cornersChanged FINAL)
@@ -20,9 +20,9 @@ public:
     Elevation(QQuickItem* parent = nullptr);
     ~Elevation() override;
 
-    auto          level() const -> qint32;
-    void          setLevel(qint32);
-    Q_SIGNAL void levelChanged();
+    auto          elevation() const -> qint32;
+    void          setelevation(qint32);
+    Q_SIGNAL void elevationChanged();
 
     auto          corners() const -> const CornersGroup&;
     void          setCorners(const CornersGroup&);
@@ -44,7 +44,7 @@ protected:
     QSGNode* updatePaintNode(QSGNode* node, QQuickItem::UpdatePaintNodeData* data) override;
 
 private:
-    qint32       m_level;
+    qint32       m_elevation;
     CornersGroup m_corners;
     qreal        m_radius;
     QColor       m_color;

@@ -55,16 +55,11 @@ T.Dialog {
         }
     }
 
-    background: Rectangle {
+    background: MD.ElevationRectangle {
         // FullScale doesn't make sense for Dialog.
         radius: MD.Token.shape.corner.extra_large
         color: control.mdState.backgroundColor
-
-        layer.enabled: control.mdState.elevation
-        layer.effect: MD.RoundedElevationEffect {
-            elevation: control.mdState.elevation
-            roundedScale: control.background.radius
-        }
+        elevation: control.mdState.elevation
     }
 
     header: MD.Control {

@@ -48,7 +48,7 @@ T.Button {
             background: Item {
                 implicitWidth: 56
                 implicitHeight: 32
-                Rectangle {
+                MD.ElevationRectangle {
                     anchors.centerIn: parent
                     height: parent.height
                     width: 56
@@ -63,11 +63,7 @@ T.Button {
 
                     radius: height / 2
                     color: control.mdState.backgroundColor
-
-                    layer.enabled: true
-                    layer.effect: MD.RoundedElevationEffect {
-                        elevation: control.mdState.elevation
-                    }
+                    elevation: control.mdState.elevation
                 }
                 MD.Ripple2 {
                     readonly property point p: control.mapToItem(this, control.pressX, control.pressY)

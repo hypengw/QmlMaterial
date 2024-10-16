@@ -1,4 +1,4 @@
-#include "qml_material/util.h"
+#include "qml_material/qml_util.h"
 #include "qml_material/color.h"
 
 namespace qml_material

@@ -52,17 +52,15 @@ T.ItemDelegate {
         }
     }
 
-    background: Rectangle {
+    background: MD.ElevationRectangle {
         implicitWidth: 336
         implicitHeight: 56
 
         radius: 28
         color: control.mdState.backgroundColor
 
-        layer.enabled: control.enabled && color.a > 0
-        layer.effect: MD.RoundedElevationEffect {
-            elevation: control.mdState.elevation
-        }
+        elevationVisible: control.enabled && color.a > 0
+        elevation: control.mdState.elevation
 
         MD.Ripple2 {
             anchors.fill: parent

@@ -67,17 +67,15 @@ T.Button {
         }
     }
 
-    background: Rectangle {
+    background: MD.ElevationRectangle {
         implicitWidth: 200
         implicitHeight: 56
 
         radius: height / 2
         color: control.mdState.backgroundColor
 
-        layer.enabled: control.enabled && color.a > 0
-        layer.effect: MD.RoundedElevationEffect {
-            elevation: control.mdState.elevation
-        }
+        elevationVisible: elevation && color.a > 0
+        elevation: control.mdState.elevation
 
         MD.Ripple2 {
             anchors.fill: parent

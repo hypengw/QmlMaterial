@@ -21,7 +21,7 @@ T.Button {
 
     contentItem: Item {}
 
-    background: Rectangle {
+    background: MD.ElevationRectangleBorder {
         implicitWidth: 64
         implicitHeight: 64
 
@@ -31,10 +31,8 @@ T.Button {
         border.width: control.type == MD.Enum.CardOutlined ? 1 : 0
         border.color: item_state.ctx.color.outline
 
-        layer.enabled: control.enabled && color.a > 0 && !control.flat
-        layer.effect: MD.RoundedElevationEffect {
-            elevation: control.mdState.elevation
-        }
+        elevationVisible: elevation && color.a > 0 && !control.flat
+        elevation: control.mdState.elevation
     }
 
     Binding {

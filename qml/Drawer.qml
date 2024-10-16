@@ -38,10 +38,7 @@ T.Drawer {
                 size: Qt.vector2d(parent.width, parent.height)
             }
         }
-        //layer.enabled: control.position > 0 && control.elevation > 0
-        //layer.effect: MD.RoundedElevationEffect {
         //    elevation: control.elevation
-        //}
     }
 
     T.Overlay.modal: Rectangle {

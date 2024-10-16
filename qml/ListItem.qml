@@ -12,7 +12,7 @@ T.ItemDelegate {
 
     property int leftMargin: 0
     property int rightMargin: 0
-    
+
     topInset: 0
     bottomInset: 0
     leftInset: leftMargin
@@ -125,7 +125,7 @@ T.ItemDelegate {
         }
     }
 
-    background: MD.Rectangle {
+    background: MD.ElevationRectangle {
         implicitWidth: 64
         implicitHeight: {
             switch (control.heightMode) {
@@ -144,10 +144,8 @@ T.ItemDelegate {
         corners: control.corners
         color: control.mdState.backgroundColor
 
-        layer.enabled: control.enabled && color.a > 0
-        layer.effect: MD.RoundedElevationEffect {
-            elevation: control.mdState.elevation
-        }
+        elevationVisible: elevation && color.a > 0
+        elevation: control.mdState.elevation
 
         MD.Ripple2 {
             corners: control.corners

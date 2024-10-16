@@ -22,54 +22,44 @@ MD.Page {
             Layout.fillWidth: true
             spacing: 0
             clip: true
+            currentIndex: 0
 
-            MD.TabButton {
-                action: Action {
-                    text: 'components'
-                    onTriggered: {
-                        bar_test.currentIndex = 0;
-                        view_container.replace(view_container.currentItem, 'qrc:/Qcm/Material/Example/Components.qml', {});
-                    }
-                }
-
-                Component.onCompleted: {
-                    action.trigger();
-                }
+            onCurrentIndexChanged: {
+                view_container.replace(view_container.currentItem, m_repeat.model[currentIndex].source, {});
             }
 
-            MD.TabButton {
-                action: Action {
-                    text: 'color'
-                    onTriggered: {
-                        bar_test.currentIndex = 1;
-                        view_container.replace(view_container.currentItem, 'qrc:/Qcm/Material/Example/Color.qml', {});
+            Component.onCompleted: currentIndexChanged()
+
+            Repeater {
+                id: m_repeat
+                model: [
+                    {
+                        name: 'components',
+                        source: 'qrc:/Qcm/Material/Example/Components.qml'
+                    },
+                    {
+                        name: 'color',
+                        source: 'qrc:/Qcm/Material/Example/Color.qml'
+                    },
+                    {
+                        name: 'shape',
+                        source: 'qrc:/Qcm/Material/Example/Shape.qml'
+                    },
+                    {
+                        name: 'elevation',
+                        source: 'qrc:/Qcm/Material/Example/Elevation.qml'
+                    },
+                    {
+                        name: 'typography',
+                        source: 'qrc:/Qcm/Material/Example/Typography.qml'
                     }
-                }
-            }
-            MD.TabButton {
-                action: Action {
-                    text: 'shape'
-                    onTriggered: {
-                        bar_test.currentIndex = 2;
-                        view_container.replace(view_container.currentItem, 'qrc:/Qcm/Material/Example/Shape.qml', {});
-                    }
-                }
-            }
-            MD.TabButton {
-                action: Action {
-                    text: 'elevation'
-                    onTriggered: {
-                        bar_test.currentIndex = 3;
-                        view_container.replace(view_container.currentItem, 'qrc:/Qcm/Material/Example/Elevation.qml', {});
-                    }
-                }
-            }
-            MD.TabButton {
-                action: Action {
-                    text: 'typography'
-                    onTriggered: {
-                        bar_test.currentIndex = 4;
-                        view_container.replace(view_container.currentItem, 'qrc:/Qcm/Material/Example/Typography.qml', {});
+                ]
+                MD.TabButton {
+                    action: Action {
+                        text: modelData.name
+                        onTriggered: {
+                            bar_test.currentIndex = index;
+                        }
                     }
                 }
             }

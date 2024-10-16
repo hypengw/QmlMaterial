@@ -41,68 +41,49 @@ inline void set_rect(T* v, T* lt, T* rt, T* lb, T* rb) {
 
 // four points
 
-template<typename T>
-inline void set_corner(T* v, QVector2D o, QVector2D s, float outter, float inner) {
-    auto helper = [](T*        v,
-                     QVector2D lt,
-                     QVector2D rt,
-                     QVector2D lb,
-                     QVector2D rb,
-                     float     outter,
-                     float     inner) {
-        v[0].x    = lt.x();
-        v[0].y    = lt.y();
-        v[0].ce_x = 0;
-        v[0].ce_y = 0;
-        if constexpr (std::same_as<T, RectangleVertex>) {
-            v[0].ce_distance_to_outter = outter;
-            v[0].ce_distance_to_inner  = inner;
-        }
+inline void set_corner(RectangleVertex* v, QVector2D o, QVector2D s, float outter, float inner) {
+    auto helper = [](RectangleVertex* v,
+                     QVector2D        lt,
+                     QVector2D        rt,
+                     QVector2D        lb,
+                     QVector2D        rb,
+                     float            outter,
+                     float            inner) {
+        v[0].set_point(lt);
+        v[0].ce_x                  = 0;
+        v[0].ce_y                  = 0;
+        v[0].ce_distance_to_outter = outter;
+        v[0].ce_distance_to_inner  = inner;
 
-        v[1].x    = rt.x();
-        v[1].y    = rt.y();
-        v[1].ce_x = 0;
-        v[1].ce_y = 0;
-        if constexpr (std::same_as<T, RectangleVertex>) {
-            v[1].ce_distance_to_outter = outter;
-            v[1].ce_distance_to_inner  = inner;
-        }
+        v[1].set_point(rt);
+        v[1].ce_x                  = 0;
+        v[1].ce_y                  = 0;
+        v[1].ce_distance_to_outter = outter;
+        v[1].ce_distance_to_inner  = inner;
 
-        v[2].x    = lb.x();
-        v[2].y    = lb.y();
-        v[2].ce_x = 0;
-        v[2].ce_y = 0;
-        if constexpr (std::same_as<T, RectangleVertex>) {
-            v[2].ce_distance_to_outter = outter;
-            v[2].ce_distance_to_inner  = inner;
-        }
+        v[2].set_point(lb);
+        v[2].ce_x                  = 0;
+        v[2].ce_y                  = 0;
+        v[2].ce_distance_to_outter = outter;
+        v[2].ce_distance_to_inner  = inner;
 
-        v[3].x    = lb.x();
-        v[3].y    = lb.y();
-        v[3].ce_x = 0;
-        v[3].ce_y = 0;
-        if constexpr (std::same_as<T, RectangleVertex>) {
-            v[3].ce_distance_to_outter = outter;
-            v[3].ce_distance_to_inner  = inner;
-        }
+        v[3].set_point(lb);
+        v[3].ce_x                  = 0;
+        v[3].ce_y                  = 0;
+        v[3].ce_distance_to_outter = outter;
+        v[3].ce_distance_to_inner  = inner;
 
-        v[4].x    = rb.x();
-        v[4].y    = rb.y();
-        v[4].ce_x = 0;
-        v[4].ce_y = 0;
-        if constexpr (std::same_as<T, RectangleVertex>) {
-            v[4].ce_distance_to_outter = outter;
-            v[4].ce_distance_to_inner  = inner;
-        }
+        v[4].set_point(rb);
+        v[4].ce_x                  = 0;
+        v[4].ce_y                  = 0;
+        v[4].ce_distance_to_outter = outter;
+        v[4].ce_distance_to_inner  = inner;
 
-        v[5].x    = rt.x();
-        v[5].y    = rt.y();
-        v[5].ce_x = 0;
-        v[5].ce_y = 0;
-        if constexpr (std::same_as<T, RectangleVertex>) {
-            v[5].ce_distance_to_outter = outter;
-            v[5].ce_distance_to_inner  = inner;
-        }
+        v[5].set_point(rt);
+        v[5].ce_x                  = 0;
+        v[5].ce_y                  = 0;
+        v[5].ce_distance_to_outter = outter;
+        v[5].ce_distance_to_inner  = inner;
     };
     QVector2D lt = o;
     QVector2D rt = o + QVector2D { s.x(), 0 };
@@ -227,14 +208,13 @@ auto sg::create_shadow_geometry() -> up<QSGGeometry> {
     out->setDrawingMode(QSGGeometry::DrawTriangles);
     return out;
 }
-void sg::update_shadow_geometry(QSGGeometry* geo, const ShadowParams& params,
-                                const QRectF& rect) {
+void sg::update_shadow_geometry(QSGGeometry* geo, const ShadowParams& params, const QRectF& rect) {
     float occluderHeight = params.z_plane_params.z();
     bool  transparent    = (params.flags & ShadowFlags::TransparentOccluder_ShadowFlag);
     bool  directional    = (params.flags & ShadowFlags::DirectionalLight_ShadowFlag);
     auto  devLightPos    = params.light_pos;
     auto  max_radius     = std::min(rect.height(), rect.height()) / 2.0;
-    bool  is_oval        = params.radius.x() >= max_radius;
+    bool  is_oval = params.radius.x() >= max_radius && qFuzzyCompare(rect.width(), rect.height());
 
     std::array<std::optional<sk::ShadowCircularRRectOp>, 2> ops;
 

@@ -37,11 +37,11 @@ public:
         auto             vertices = static_cast<ShadowVertex*>(geometry()->vertexData());
         sg::ShadowParams params;
         {
-            params.z_plane_params = QVector3D(0, 0, level);
+            params.z_plane_params = QVector3D(0, 0, elevation);
             params.light_pos      = kLightPos;
             params.light_radius   = kShadowLightRadius / kShadowLightHeight;
             params.radius         = radius;
-            if (level == 0) {
+            if (elevation == 0) {
                 params.flags |= sg::ShadowFlags::TransparentOccluder_ShadowFlag;
             }
             params.flags |= sg::ShadowFlags::DirectionalLight_ShadowFlag;
@@ -55,12 +55,12 @@ public:
                 params.radius[i] = std::min<float>(params.radius[i], rect.height() / 2.0f);
             }
         }
-        update_shadow_geometry(geometry(), params,  rect);
+        update_shadow_geometry(geometry(), params, rect);
 
         markDirty(QSGNode::DirtyGeometry);
     }
 
-    qint32    level;
+    qint32    elevation;
     QRectF    rect;
     QColor    color;
     QVector4D radius;
@@ -68,20 +68,20 @@ public:
 } // namespace sg
 
 Elevation::Elevation(QQuickItem* parentItem)
-    : QQuickItem(parentItem), m_level(0), m_corners(), m_color(Qt::black) {
+    : QQuickItem(parentItem), m_elevation(0), m_corners(), m_color(Qt::black) {
     setFlag(QQuickItem::ItemHasContents, true);
-    connect(this, &Elevation::levelChanged, this, &Elevation::update);
+    connect(this, &Elevation::elevationChanged, this, &Elevation::update);
     connect(this, &Elevation::colorChanged, this, &Elevation::update);
     connect(this, &Elevation::cornersChanged, this, &Elevation::update);
 }
 
 Elevation::~Elevation() {}
 
-auto Elevation::level() const -> qint32 { return m_level; }
-void Elevation::setLevel(qint32 l) {
-    if (l != m_level) {
-        m_level = l;
-        levelChanged();
+auto Elevation::elevation() const -> qint32 { return m_elevation; }
+void Elevation::setelevation(qint32 l) {
+    if (l != m_elevation) {
+        m_elevation = l;
+        elevationChanged();
     }
 }
 auto Elevation::corners() const -> const CornersGroup& { return m_corners; }
@@ -135,10 +135,10 @@ QSGNode* Elevation::updatePaintNode(QSGNode* node, QQuickItem::UpdatePaintNodeDa
         shadowNode = new sg::ElevationNode {};
         shadowNode->init(this);
     }
-    shadowNode->rect   = boundingRect();
-    shadowNode->level  = m_level;
-    shadowNode->radius = m_corners.toVector4D();
-    shadowNode->color  = m_color.rgb();
+    shadowNode->rect      = boundingRect();
+    shadowNode->elevation = m_elevation;
+    shadowNode->radius    = m_corners.toVector4D();
+    shadowNode->color     = m_color.rgb();
     shadowNode->updateGeometry();
     return shadowNode;
 }

@@ -36,6 +36,12 @@ Item {
 
     property int elevation: MD.Token.elevation.level0
 
+    MD.Elevation {
+        anchors.fill: parent
+        elevation: root.elevation
+        corners: root.corners
+    }
+
     Image {
         id: m_image
         anchors.fill: parent
@@ -44,13 +50,8 @@ Item {
         fillMode: Image.PreserveAspectCrop
         layer.enabled: true
         layer.effect: MD.RoundClip {
-            radius: root.corners.radius()
             corners: root.corners
             size: Qt.vector2d(root.width, root.height)
-            layer.enabled: true
-            layer.effect: MD.RoundedElevationEffect {
-                elevation: root.opacity > 0 ? root.elevation : MD.Token.elevation.level0
-            }
         }
     }
 }

@@ -39,6 +39,9 @@ find_package(
   Qt6 REQUIRED
   COMPONENTS Core Quick QuickControls2 Gui ShaderTools)
 find_package(PkgConfig REQUIRED)
+if(QT_KNOWN_POLICY_QTP0004)
+    qt_policy(SET QTP0004 NEW)
+endif()
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE
@@ -188,11 +191,12 @@ set(QML_FILES
     qml/impl/RectangularGlow.qml
     qml/impl/CursorDelegate.qml
     qml/impl/SliderHandle.qml
-    qml/impl/RoundedElevationEffect.qml
-    qml/impl/ElevationEffect.qml
     qml/impl/FloatingPlaceholderText.qml
     qml/impl/TextFieldEmbed.qml
     qml/impl/RoundClip.qml
+    qml/impl/Elevation.qml
+    qml/impl/ElevationRectangle.qml
+    qml/impl/ElevationRectangleBorder.qml
     )
 set(RESOURCES
     assets/MaterialIconsRound-Regular.otf

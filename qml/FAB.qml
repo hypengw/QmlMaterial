@@ -45,7 +45,7 @@ T.Button {
         }
     }
 
-    background: Rectangle {
+    background: MD.ElevationRectangleBorder {
         implicitWidth: control._size(control.type, 40, 56, 96)
         implicitHeight: control._size(control.type, 40, 56, 96)
 
@@ -55,10 +55,8 @@ T.Button {
         border.width: control.type == MD.Enum.BtOutlined ? 1 : 0
         border.color: control.mdState.ctx.color.outline
 
-        layer.enabled: control.enabled && color.a > 0 && !control.flat
-        layer.effect: MD.RoundedElevationEffect {
-            elevation: control.mdState.elevation
-        }
+        elevationVisible: elevation && color.a > 0 && !control.flat
+        elevation: control.mdState.elevation
 
         MD.Ripple2 {
             anchors.fill: parent
@@ -79,7 +77,6 @@ T.Button {
         id: m_state
         item: control
     }
-
 
     Item {
         visible: false

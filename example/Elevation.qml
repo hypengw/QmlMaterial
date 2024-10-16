@@ -5,6 +5,7 @@ import QtQuick.Controls as QC
 import Qcm.Material as MD
 
 MD.Page {
+    id: root
     title: 'Components'
     padding: 0
 
@@ -17,9 +18,11 @@ MD.Page {
             width: parent.width
 
             MD.Pane {
+                Layout.fillWidth: parent.width <= implicitWidth
                 Layout.alignment: Qt.AlignHCenter
 
                 ColumnLayout {
+                    anchors.fill: parent
                     spacing: 16
                     MD.Text {
                         Layout.alignment: Qt.AlignHCenter
@@ -36,7 +39,7 @@ MD.Page {
                             typescale: MD.Token.typescale.title_medium
                         }
                         MD.Pane {
-                            Layout.alignment: Qt.AlignHCenter
+                            Layout.fillWidth: true
                             padding: 36
                             radius: MD.Token.shape.corner.medium
 
@@ -52,28 +55,29 @@ MD.Page {
                                 }
 
                                 RowLayout {
-                                    Layout.alignment: Qt.AlignHCenter
+                                    Layout.fillWidth: true
                                     spacing: 36
                                     Elevation {
-                                        level: MD.Token.elevation.level0
+                                        elevation: MD.Token.elevation.level0
                                     }
                                     Elevation {
-                                        level: MD.Token.elevation.level1
+                                        elevation: MD.Token.elevation.level1
                                     }
                                     Elevation {
-                                        level: MD.Token.elevation.level2
+                                        elevation: MD.Token.elevation.level2
                                     }
                                 }
                                 RowLayout {
+                                    Layout.fillWidth: true
                                     spacing: 36
                                     Elevation {
-                                        level: MD.Token.elevation.level3
+                                        elevation: MD.Token.elevation.level3
                                     }
                                     Elevation {
-                                        level: MD.Token.elevation.level4
+                                        elevation: MD.Token.elevation.level4
                                     }
                                     Elevation {
-                                        level: MD.Token.elevation.level5
+                                        elevation: MD.Token.elevation.level5
                                     }
                                 }
                             }
@@ -85,8 +89,14 @@ MD.Page {
     }
     component Elevation: MD.Elevation {
         radius: m_slider_radius.value
-        implicitWidth: 160
-        implicitHeight: 160
+        Layout.fillWidth: true
+        Layout.preferredWidth: 160
+        Layout.preferredHeight: width / 2.0
+        Layout.maximumWidth: 160
+        Layout.maximumHeight: 160
+        implicitWidth: 40
+        implicitHeight: width
+        visible: true
 
         MD.Rectangle {
             anchors.fill: parent

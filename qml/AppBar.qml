@@ -62,7 +62,7 @@ T.ToolBar {
                 m_title.x: 16 - root.leftPadding
                 m_title.y: m_title.parent.height - m_title.height - (control.type === MD.Enum.AppBarMedium ? 24 : 28)
                 m_title.horizontalAlignment: Text.AlignLeft
-                m_title.width: m_title.parent.width - 16*2
+                m_title.width: m_title.parent.width - 16 * 2
             }
         }
 
@@ -90,17 +90,17 @@ T.ToolBar {
         }
     }
 
-    background: MD.Rectangle {
+    background: MD.ElevationRectangle {
         implicitHeight: control.mdState.containerHeight
+
+        elevation: control.mdState.elevation
+        elevationItem.height: height - control.radius
+        elevationItem.y: control.radius
+        elevationItem.corners: MD.Util.corner(0)
 
         corners: MD.Util.corner(control.radius, 0)
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
-
-        layer.enabled: false
-        layer.effect: MD.RoundedElevationEffect {
-            elevation: control.mdState.elevation
-        }
     }
 
     MD.StateHolder {

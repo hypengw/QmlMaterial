@@ -35,7 +35,7 @@ T.Page {
     // bottomPadding: header.visible ? radius : 0
     font.capitalization: Font.Capitalize
 
-    background: Rectangle {
+    background: MD.Rectangle {
         color: control.backgroundColor
         radius: control.backgroundRadius
         visible: control.MD.MatProp.page.showBackground

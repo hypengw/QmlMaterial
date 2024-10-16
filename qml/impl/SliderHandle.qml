@@ -13,18 +13,14 @@ Item {
     readonly property int initialSize: 4
     readonly property var control: parent
 
-    Rectangle {
+    MD.ElevationRectangle {
         id: handleRect
         anchors.centerIn: parent
         width: 20
         height: 20
         radius: width / 2
         color: root.control ? root.control.mdState.backgroundColor : "transparent"
-
-        layer.enabled: true
-        layer.effect: MD.RoundedElevationEffect {
-            elevation: MD.Token.elevation.level1
-        }
+        elevation: MD.Token.elevation.level1
     }
 
     MD.Ripple2 {
