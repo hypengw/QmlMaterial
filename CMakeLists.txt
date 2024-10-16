@@ -185,7 +185,7 @@ set(QML_FILES
     qml/state/StateFAB.qml
 
     qml/impl/BoxShadow.qml
-    qml/impl/Shadow.qml
+    qml/impl/CircleProgressShape.qml
     qml/impl/ListBusyFooter.qml
     qml/impl/Ripple2.qml
     qml/impl/RectangularGlow.qml
@@ -202,6 +202,8 @@ set(RESOURCES
     assets/MaterialIconsRound-Regular.otf
     assets/MaterialIconsOutlined-Regular.otf)
 
+set(SHADER_DEFINES)
+
 set(QML_MATERIAL_BUILD_TYPE
     SHARED)
 
@@ -209,8 +211,10 @@ if(UNIX
    AND NOT EMSCRIPTEN)
   list(APPEND SOURCES src/linux/xdp.h src/linux/xdp.cpp)
 endif()
+
 if(EMSCRIPTEN)
   list(APPEND SOURCES src/wasm/wasm.cpp)
+  list(APPEND SHADER_DEFINES WEBGL)
 
   set(QML_MATERIAL_BUILD_TYPE
       STATIC)
@@ -239,9 +243,12 @@ qt_add_qml_module(
   NO_PLUGIN_OPTIONAL)
 
 set(SHADER_GLSLS
-    "assets/shader/sdf.glsl")
+    "assets/shader/common.glsl"
+    "assets/shader/sdf.glsl"
+    )
 set(SHADER_SOURCES
-    "assets/shader/default.vert" "assets/shader/round_clip.frag"
+    "assets/shader/default.vert" 
+    "assets/shader/round_clip.frag"
     "assets/shader/sdf_rectangle.frag" 
     "assets/shader/shadow_.frag"
     "assets/shader/rectangle.vert"
@@ -249,7 +256,6 @@ set(SHADER_SOURCES
     "assets/shader/shadow.vert"
     "assets/shader/shadow.frag"
     "assets/shader/rect_glow.frag"
-
     )
 set(SHADER_OPT
 BATCHABLE
@@ -270,8 +276,11 @@ qt_add_shaders(
   GLSL
   "300es,330"
   ${SHADER_OPT}
+  DEFINES
+  ${SHADER_DEFINES}
   FILES
   ${SHADER_SOURCES})
+
 foreach(
   file
   ${SHADER_SOURCES})
