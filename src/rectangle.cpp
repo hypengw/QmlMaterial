@@ -16,20 +16,24 @@ namespace sg
 class RectangleNode : public QSGGeometryNode {
 public:
     RectangleNode() {
-        setGeometry(create_rectangle_geomery().release());
+        setGeometry(create_rectangle_geometry().release());
         setMaterial(new RectangleMaterial {});
         setFlags(QSGNode::OwnsGeometry | QSGNode::OwnsMaterial);
     }
 
     void updateGeometry() {
         auto vertices = static_cast<RectangleVertex*>(geometry()->vertexData());
-        update_rectangle_geomery(
+
+        for (int i = 0; i < 4; i++) {
+            radius[i] = std::min<float>(radius[i], rect.height() / 2.0f);
+        }
+        update_rectangle_geometry(
             vertices, { (float)rect.size().width(), (float)rect.size().height() }, color, radius);
         markDirty(QSGNode::DirtyGeometry);
     }
 
     QRectF    rect;
-    QColor    color;
+    QRgb      color;
     QVector4D radius = QVector4D { 0.0, 0.0, 0.0, 0.0 };
 };
 } // namespace sg
@@ -89,13 +93,12 @@ QSGNode* Rectangle::updatePaintNode(QSGNode* node, QQuickItem::UpdatePaintNodeDa
     }
 
     auto shadowNode = static_cast<sg::RectangleNode*>(node);
-
     if (! shadowNode) {
         shadowNode = new sg::RectangleNode {};
     }
     shadowNode->rect   = boundingRect();
     shadowNode->radius = m_corners.toVector4D();
-    shadowNode->color  = m_color;
+    shadowNode->color  = m_color.rgba();
     shadowNode->updateGeometry();
     return shadowNode;
 }

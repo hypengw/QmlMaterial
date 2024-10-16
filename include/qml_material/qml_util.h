@@ -34,7 +34,7 @@ public:
     Q_INVOKABLE bool hasIcon(const QJSValue& v) {
         auto name   = v.property("name");
         auto source = v.property("source");
-        if (name.isString() && source.isVariant()) {
+        if (name.isString() && source.toVariant().isValid()) {
             return ! name.toString().isEmpty() || ! source.toString().isEmpty();
         }
         return false;

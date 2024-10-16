@@ -16,16 +16,6 @@ QSGMaterialType* RectangleMaterial::type() const {
 
 int RectangleMaterial::compare(const QSGMaterial* other) const {
     auto material = static_cast<const RectangleMaterial*>(other);
-    /* clang-format off */
-    if (material->color == color
-        && material->shadowColor == shadowColor
-        && material->offset == offset
-        && material->aspect == aspect
-        && qFuzzyCompare(material->size, size)
-        && qFuzzyCompare(material->radius, radius)) { /* clang-format on */
-        return 0;
-    }
-
     return QSGMaterial::compare(other);
 }
 

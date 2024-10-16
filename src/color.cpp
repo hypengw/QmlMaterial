@@ -4,7 +4,7 @@
 #include <QStyleHints>
 
 #include "qml_material/helper.h"
-#include "qml_material/util.h"
+#include "qml_material/qml_util.h"
 
 using namespace qcm;
 using namespace qml_material;
