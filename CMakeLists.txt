@@ -57,7 +57,7 @@ set(LIBNAME
     qml_material)
 
 set(SOURCES
-    include/qml_material/util.h
+    include/qml_material/qml_util.h
     include/qml_material/theme.h
     include/qml_material/color.h
     include/qml_material/corner.h
@@ -74,16 +74,19 @@ set(SOURCES
     include/qml_material/snake_model.h
     include/qml_material/loggingcategory.h
     include/qml_material/rectangle.h
+    include/qml_material/elevation.h
     include/qml_material/kirigami/displayhint.h
     include/qml_material/kirigami/toolbarlayout.h
     include/qml_material/kirigami/toolbarlayoutdelegate.h
     include/qml_material/kirigami/wheelhandler.h
     include/qml_material/scenegraph/geometry.h
     include/qml_material/scenegraph/rectangle_material.h
+    include/qml_material/scenegraph/elevation_material.h
     include/qml_material/upstream/qquickmaterialtextcontainer_p.h
 
     src/scenegraph/geometry.cpp
     src/scenegraph/rectangle_material.cpp
+    src/scenegraph/elevation_material.cpp
 
     src/kirigami/displayhint.cpp
     src/kirigami/toolbarlayout.cpp
@@ -98,7 +101,7 @@ set(SOURCES
     src/input_block.cpp
     src/item_holder.cpp
     src/image.cpp
-    src/util.cpp
+    src/qml_util.cpp
     src/state.cpp
     src/theme.cpp
     src/helper.cpp
@@ -108,6 +111,7 @@ set(SOURCES
     src/type_scale.cpp
     src/round_item.cpp
     src/rectangle.cpp
+    src/elevation.cpp
     )
 set(QML_FILES
     qml/js/jsUtils.mjs
@@ -241,14 +245,27 @@ set(SHADER_SOURCES
     "assets/shader/shadow.vert"
     "assets/shader/shadow.frag"
     "assets/shader/rect_glow.frag"
+
     )
+set(SHADER_OPT
+BATCHABLE
+OPTIMIZED
+)
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+list(APPEND SHADER_OPT DEBUGINFO)
+endif()
+if(NOT WIN32)
+list(APPEND SHADER_OPT NOHLSL)
+endif()
+
 qt_add_shaders(
   ${LIBNAME}
   "shader"
   PREFIX
   "/Qcm/Material"
   GLSL
-  300es,330
+  "300es,330"
+  ${SHADER_OPT}
   FILES
   ${SHADER_SOURCES})
 foreach(
