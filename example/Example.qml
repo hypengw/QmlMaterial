@@ -23,6 +23,7 @@ MD.Page {
             spacing: 0
             clip: true
             currentIndex: 0
+            readonly property int tabWidth: parent.width / m_repeat.model.length
 
             onCurrentIndexChanged: {
                 view_container.replace(view_container.currentItem, m_repeat.model[currentIndex].source, {});
@@ -55,6 +56,7 @@ MD.Page {
                     }
                 ]
                 MD.TabButton {
+                    width: Math.max(TabBar.tabBar.tabWidth, implicitWidth)
                     action: Action {
                         text: modelData.name
                         onTriggered: {

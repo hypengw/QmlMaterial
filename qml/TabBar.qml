@@ -41,6 +41,12 @@ T.TabBar {
                 height: control.type == MD.Enum.PrimaryTab ? 3 : 2
                 width: control.type == MD.Enum.PrimaryTab ? (m_view.currentItem?.implicitContentWidth ?? 0) : parent.width
                 clip: true
+
+                Behavior on width {
+                    NumberAnimation {
+                        duration: 250
+                    }
+                }
                 Rectangle {
                     height: parent.height * 2
                     width: parent.width
