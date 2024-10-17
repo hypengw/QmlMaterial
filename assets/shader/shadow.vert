@@ -1,5 +1,8 @@
 #version 440
 
+#extension GL_GOOGLE_include_directive : enable
+#include "common.glsl"
+
 layout(location = 0) in vec2 in_position;
 layout(location = 1) in vec4 in_color;
 layout(location = 2) in vec3 in_shadow_params;

@@ -91,7 +91,7 @@ MD.Page {
         radius: m_slider_radius.value
         Layout.fillWidth: true
         Layout.preferredWidth: 160
-        Layout.preferredHeight: width / 2.0
+        Layout.preferredHeight: width
         Layout.maximumWidth: 160
         Layout.maximumHeight: 160
         implicitWidth: 40

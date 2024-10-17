@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Templates as T
-import QtQuick.Controls.impl
 import Qcm.Material as MD
 
 T.Button {
@@ -57,7 +56,7 @@ T.Button {
                         alwaysRunToEnd: true
                         from: 48
                         to: 56
-                        duration: 100
+                        duration: 200
                         running: control.checked
                     }
 

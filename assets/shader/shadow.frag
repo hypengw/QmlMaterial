@@ -1,5 +1,8 @@
 #version 440
 
+#extension GL_GOOGLE_include_directive : enable
+#include "common.glsl"
+
 layout(location = 0) out vec4 fragColor;
 
 layout(location = 0) noperspective in vec3 out_shadow_params;

@@ -74,17 +74,17 @@ T.TabBar {
         }
     }
 
-    layer.enabled: true
-    layer.sourceRect: Qt.rect(0, 0, control.width, control.height + 20)
-    layer.textureSize: Qt.size(control.width, control.height + 20)
+    layer.enabled: false
+    layer.sourceRect: Qt.rect(0, 0, control.width, control.height + 8)
+    layer.textureSize: Qt.size(control.width, control.height + 8)
     layer.effect: Item {
         property var source
         MD.RoundClip {
             source: parent.source
             width: parent.width
-            height: parent.height + 20
+            height: parent.height + 8
             corners: control.corners
-            size: Qt.vector2d(control.width, control.height + 20)
+            size: Qt.vector2d(control.width, control.height + 8)
         }
     }
 }

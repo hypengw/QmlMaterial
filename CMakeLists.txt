@@ -125,7 +125,9 @@ set(QML_FILES
     qml/BarItem.qml
     qml/Control.qml
     qml/ComboBox.qml
-    qml/CircleProgress.qml
+    qml/Card.qml
+    qml/CircleProgressBar.qml
+    qml/CircularIndicator.qml
     qml/Dialog.qml
     qml/Divider.qml
     qml/Drawer.qml
@@ -136,8 +138,6 @@ set(QML_FILES
     qml/IconLabel.qml
     qml/IconButton.qml
     qml/FAB.qml
-    qml/Card.qml
-    qml/CircularIndicator.qml
     qml/Menu.qml
     qml/MenuItem.qml
     qml/Image.qml
@@ -186,6 +186,7 @@ set(QML_FILES
 
     qml/impl/BoxShadow.qml
     qml/impl/CircleProgressShape.qml
+    qml/impl/CircleIndicatorShape.qml
     qml/impl/ListBusyFooter.qml
     qml/impl/Ripple2.qml
     qml/impl/RectangularGlow.qml
@@ -197,6 +198,7 @@ set(QML_FILES
     qml/impl/Elevation.qml
     qml/impl/ElevationRectangle.qml
     qml/impl/ElevationRectangleBorder.qml
+    qml/impl/Shape.qml
     )
 set(RESOURCES
     assets/MaterialIconsRound-Regular.otf
@@ -214,7 +216,7 @@ endif()
 
 if(EMSCRIPTEN)
   list(APPEND SOURCES src/wasm/wasm.cpp)
-  list(APPEND SHADER_DEFINES WEBGL)
+  list(APPEND SHADER_DEFINES "WEBGL=1")
 
   set(QML_MATERIAL_BUILD_TYPE
       STATIC)
