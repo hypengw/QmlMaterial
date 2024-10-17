@@ -78,7 +78,14 @@ T.Button {
         item: control
     }
 
+    MD.InputBlock {
+        id: m_input_block
+        when: m_show_state.state == 'hide'
+        target: control
+    }
+
     Item {
+        id: m_show_state
         visible: false
         state: "show"
         states: [
@@ -106,14 +113,49 @@ T.Button {
 
         transitions: [
             Transition {
-                to: "*"
-                ScaleAnimator {
-                    target: control
-                    duration: 100
+                to: 'show'
+                ParallelAnimation {
+                    XAnimator {
+                        target: control
+                        from: control.x + 16
+                        to: control.x
+                        duration: 200
+                    }
+                    YAnimator {
+                        target: control
+                        from: control.y + 16
+                        to: control.y
+                        duration: 200
+                    }
+                    ScaleAnimator {
+                        duration: 200
+                    }
+                    OpacityAnimator {
+                        duration: 200
+                    }
                 }
-                OpacityAnimator {
-                    target: control
-                    duration: 100
+            },
+            Transition {
+                to: 'hide'
+                ParallelAnimation {
+                    XAnimator {
+                        target: control
+                        from: control.x
+                        to: control.x + 16
+                        duration: 200
+                    }
+                    YAnimator {
+                        target: control
+                        from: control.y
+                        to: control.y + 16
+                        duration: 200
+                    }
+                    ScaleAnimator {
+                        duration: 200
+                    }
+                    OpacityAnimator {
+                        duration: 200
+                    }
                 }
             }
         ]

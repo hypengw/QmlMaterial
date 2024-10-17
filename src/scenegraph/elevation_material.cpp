@@ -44,7 +44,7 @@ void ElevationMaterial::init_fadeoff_texture(QQuickWindow* win) {
 
     // Create the texture from the grayscale image
     QSGTexture* texture = win->createTextureFromImage(image);
-    m_fadeoff_texture  = texture;
+    m_fadeoff_texture   = texture;
 }
 
 ElevationShader::ElevationShader() {
@@ -69,7 +69,7 @@ bool ElevationShader::updateUniformData(RenderState& state, QSGMaterial* newMate
     }
 
     if (state.isOpacityDirty()) {
-        const float opacity = state.opacity();
+        const float opacity = std::pow(state.opacity(), 3);
         memcpy(buf->data() + 64, &opacity, 4);
         changed = true;
     }
