@@ -19,7 +19,7 @@ public:
     Rectangle(QQuickItem* parent = nullptr);
     ~Rectangle() override;
 
-    auto          corners() const -> const CornersGroup&;
+    auto          corners() const -> CornersGroup;
     void          setCorners(const CornersGroup&);
     Q_SIGNAL void cornersChanged();
 

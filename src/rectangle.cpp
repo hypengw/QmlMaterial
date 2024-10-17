@@ -25,7 +25,7 @@ public:
         auto vertices = static_cast<RectangleVertex*>(geometry()->vertexData());
 
         for (int i = 0; i < 4; i++) {
-            radius[i] = std::min<float>(radius[i], rect.height() / 2.0f);
+            radius[i] = std::min<float>(radius[i], rect.size().height() / 2.0f);
         }
         QVector2D size = { (float)rect.size().width(), (float)rect.size().height() };
         update_rectangle_geometry(vertices, size, color, radius);
@@ -33,12 +33,13 @@ public:
     }
 
     QRectF    rect;
-    QRgb      color;
-    QVector4D radius = QVector4D { 0.0, 0.0, 0.0, 0.0 };
+    QRgb      color { 0 };
+    QVector4D radius;
 };
 } // namespace sg
 
-Rectangle::Rectangle(QQuickItem* parentItem): QQuickItem(parentItem), m_corners() {
+Rectangle::Rectangle(QQuickItem* parentItem)
+    : QQuickItem(parentItem), m_radius(0), m_color(Qt::transparent), m_corners() {
     setFlag(QQuickItem::ItemHasContents, true);
     connect(this, &Rectangle::colorChanged, this, &Rectangle::update);
     connect(this, &Rectangle::cornersChanged, this, &Rectangle::update);
@@ -46,7 +47,7 @@ Rectangle::Rectangle(QQuickItem* parentItem): QQuickItem(parentItem), m_corners(
 
 Rectangle::~Rectangle() {}
 
-auto Rectangle::corners() const -> const CornersGroup& { return m_corners; }
+auto Rectangle::corners() const -> CornersGroup { return m_corners; }
 void Rectangle::setCorners(const CornersGroup& c) {
     m_corners = c;
     cornersChanged();
