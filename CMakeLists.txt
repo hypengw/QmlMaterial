@@ -14,6 +14,8 @@ set(CMAKE_POSITION_INDEPENDENT_CODE
 set(CMAKE_AUTOMOC
     ON)
 
+option(QM_BUILD_EXAMPLE ON)
+
 # check lto
 include(CheckIPOSupported)
 check_ipo_supported(
@@ -209,14 +211,18 @@ set(SHADER_DEFINES)
 set(QML_MATERIAL_BUILD_TYPE
     SHARED)
 
-if(UNIX
-   AND NOT EMSCRIPTEN)
-  list(APPEND SOURCES src/linux/xdp.h src/linux/xdp.cpp)
+if(UNIX AND NOT EMSCRIPTEN)
+  if(ANDROID)
+    list(APPEND SOURCES src/android/android.cpp)
+    list(APPEND SHADER_DEFINES "GLES=1")
+  else()
+    list(APPEND SOURCES src/linux/xdp.h src/linux/xdp.cpp)
+  endif()
 endif()
 
 if(EMSCRIPTEN)
   list(APPEND SOURCES src/wasm/wasm.cpp)
-  list(APPEND SHADER_DEFINES "WEBGL=1")
+  list(APPEND SHADER_DEFINES "GLES=1")
 
   set(QML_MATERIAL_BUILD_TYPE
       STATIC)
@@ -304,7 +310,9 @@ set_target_properties(
   PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
 add_subdirectory(third_party)
-add_subdirectory(example)
+if(QM_BUILD_EXAMPLE)
+  add_subdirectory(example)
+endif()
 
 target_link_libraries(
   ${LIBNAME}
