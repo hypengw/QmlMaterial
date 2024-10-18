@@ -13,6 +13,14 @@ Flickable {
     contentWidth: width - rightMargin - leftMargin
     implicitHeight: contentHeight
 
+    synchronousDrag: true
+    pressDelay: 100
+    maximumFlickVelocity: 999999
+    flickDeceleration: 1000
+    boundsBehavior: Flickable.StopAtBounds
+    boundsMovement: Flickable.StopAtBounds
+    rebound: Transition {}
+
     leftMargin: 0
     rightMargin: 0
     topMargin: 0

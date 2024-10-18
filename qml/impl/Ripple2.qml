@@ -13,7 +13,7 @@ MD.Rectangle {
     clip: false
     opacity: stateOpacity
 
-    Shape {
+    MD.Shape {
         id: circle
         anchors.fill: parent
         property real radius: 0.0

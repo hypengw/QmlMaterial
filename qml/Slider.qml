@@ -1,7 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Templates as T
-import QtQuick.Controls.impl
+import QtQuick.Controls.Basic.impl
 import Qcm.Material as MD
 
 T.Slider {

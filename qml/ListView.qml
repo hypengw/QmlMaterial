@@ -8,6 +8,16 @@ ListView {
 
     property bool busy: false
     property bool expand: false
+    reuseItems: true
+    synchronousDrag: true
+    pressDelay: 100
+    maximumFlickVelocity: 999999
+    flickDeceleration: 1000
+    boundsBehavior: Flickable.StopAtBounds
+    boundsMovement: Flickable.StopAtBounds
+    cacheBuffer: 96
+    rebound: Transition {}
+    populate: Transition {}
 
     // contentHeight/width, managerd by listview itself
     // only set one side

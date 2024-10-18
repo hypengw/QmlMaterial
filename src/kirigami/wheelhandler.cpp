@@ -93,6 +93,9 @@ WheelHandler::~WheelHandler() {}
 QQuickItem* WheelHandler::target() const { return m_target; }
 
 void WheelHandler::setTarget(QQuickItem* target) {
+#ifdef __ANDROID__
+    return;
+#endif
     if (m_target == target) {
         return;
     }
@@ -510,7 +513,7 @@ bool WheelHandler::eventFilter(QObject* watched, QEvent* event) {
             ! (wheelEvent->source() == Qt::MouseEventNotSynthesized ||
                wheelEvent->pixelDelta().isNull());
 
-        if(scrolled) {
+        if (scrolled) {
             Q_EMIT wheelMoved();
         }
 

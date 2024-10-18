@@ -1,5 +1,5 @@
 import QtQuick
-import QtQuick.Controls as QC
+import QtQuick.Controls.Basic as QC
 import QtQuick.Templates as T
 import Qcm.Material as MD
 

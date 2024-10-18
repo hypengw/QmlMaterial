@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Templates as T
-import QtQuick.Controls as QC
+import QtQuick.Controls.Basic as QC
 import Qcm.Material as MD
 
 T.Button {

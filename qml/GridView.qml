@@ -1,11 +1,19 @@
 import QtQuick
-import QtQuick.Controls
+import QtQuick.Controls.Basic
 import Qcm.Material as MD
 
 GridView {
     id: root
 
     clip: true
+
+    synchronousDrag: true
+    pressDelay: 100
+    maximumFlickVelocity: 999999
+    flickDeceleration: 1000
+    boundsBehavior: Flickable.StopAtBounds
+    boundsMovement: Flickable.StopAtBounds
+    rebound: Transition {}
 
     signal wheelMoved
     MD.WheelHandler {
