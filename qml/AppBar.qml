@@ -90,14 +90,12 @@ T.ToolBar {
         }
     }
 
-    background: MD.ElevationRectangle {
+    background: MD.Rectangle {
         implicitHeight: control.mdState.containerHeight
-
-        elevation: control.mdState.elevation
-        elevationItem.height: height - control.radius
-        elevationItem.y: control.radius
-        elevationItem.corners: MD.Util.corner(0)
-
+        //elevation: control.mdState.elevation
+        //elevationItem.height: height - control.radius
+        //elevationItem.y: control.radius
+        //elevationItem.corners: MD.Util.corner(0)
         corners: MD.Util.corner(control.radius, 0)
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
