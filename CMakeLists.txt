@@ -120,6 +120,8 @@ set(SOURCES
     )
 set(QML_FILES
     qml/js/jsUtils.mjs
+    qml/Action.qml
+    qml/ActionGroup.qml
     qml/ActionMenu.qml
     qml/ActionToolBar.qml
     qml/AppBar.qml
@@ -131,6 +133,7 @@ set(QML_FILES
     qml/CircleProgressBar.qml
     qml/CircularIndicator.qml
     qml/Dialog.qml
+    qml/DialogButtonBox.qml
     qml/Divider.qml
     qml/Drawer.qml
     qml/StandardDrawer.qml
@@ -169,6 +172,7 @@ set(QML_FILES
     qml/Switch.qml
     qml/RailItem.qml
     qml/TextInput.qml
+    qml/TextMetrics.qml
     qml/TextField.qml
     qml/TabBar.qml
     qml/TabButton.qml

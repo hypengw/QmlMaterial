@@ -16,7 +16,7 @@ struct WindowClassItem {
 
     Q_PROPERTY(qint32 min_width MEMBER min_width CONSTANT FINAL)
     Q_PROPERTY(qint32 max_width MEMBER max_width CONSTANT FINAL)
-    Q_PROPERTY(Enum::WindowClassType type MEMBER type CONSTANT FINAL)
+    Q_PROPERTY(qml_material::Enum::WindowClassType type MEMBER type CONSTANT FINAL)
 
 public:
     Q_INVOKABLE bool      contains(i32 w) const { return w >= min_width && w < max_width; }
@@ -29,11 +29,11 @@ struct WindowClass {
     Q_GADGET
     QML_UNCREATABLE("")
 
-    Q_PROPERTY(WindowClassItem compact MEMBER compact CONSTANT FINAL)
-    Q_PROPERTY(WindowClassItem medium MEMBER medium CONSTANT FINAL)
-    Q_PROPERTY(WindowClassItem expanded MEMBER expanded CONSTANT FINAL)
-    Q_PROPERTY(WindowClassItem large MEMBER large CONSTANT FINAL)
-    Q_PROPERTY(WindowClassItem extra_large MEMBER extra_large CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::WindowClassItem compact MEMBER compact CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::WindowClassItem medium MEMBER medium CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::WindowClassItem expanded MEMBER expanded CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::WindowClassItem large MEMBER large CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::WindowClassItem extra_large MEMBER extra_large CONSTANT FINAL)
 
 public:
     using Type = Enum::WindowClassType;
@@ -122,14 +122,38 @@ struct State {
     Q_GADGET
     QML_UNCREATABLE("")
     QML_VALUE_TYPE(md_token_state)
-    Q_PROPERTY(StateItem hover MEMBER hover CONSTANT FINAL)
-    Q_PROPERTY(StateItem pressed MEMBER pressed CONSTANT FINAL)
-    Q_PROPERTY(StateItem focus MEMBER focus CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::StateItem hover MEMBER hover CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::StateItem pressed MEMBER pressed CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::StateItem focus MEMBER focus CONSTANT FINAL)
 
 public:
     StateItem hover { 0.08 };
     StateItem pressed { 0.1 };
     StateItem focus { 0.1 };
+};
+
+class Flick : public QObject {
+    Q_OBJECT
+    Q_PROPERTY(qint32 pressDelay READ pressDelay NOTIFY pressDelayChanged FINAL)
+    Q_PROPERTY(
+        double flickDeceleration READ flickDeceleration NOTIFY flickDecelerationChanged FINAL)
+    Q_PROPERTY(double maximumFlickVelocity READ maximumFlickVelocity NOTIFY
+                   maximumFlickVelocityChanged FINAL)
+public:
+    Flick(QObject* parent = nullptr);
+    ~Flick();
+    auto pressDelay() const -> qint32;
+    auto flickDeceleration() const -> double;
+    auto maximumFlickVelocity() const -> double;
+
+    Q_SIGNAL void pressDelayChanged();
+    Q_SIGNAL void flickDecelerationChanged();
+    Q_SIGNAL void maximumFlickVelocityChanged();
+
+private:
+    qint32 m_press_delay;
+    double m_flick_deceleration;
+    double m_maximum_flickVelocity;
 };
 
 class Token : public QObject {
@@ -138,16 +162,18 @@ class Token : public QObject {
     Q_CLASSINFO("DefaultProperty", "datas")
     QML_NAMED_ELEMENT(TokenImpl)
 
-    Q_PROPERTY(TypeScale* typescale READ typescale CONSTANT FINAL)
-    Q_PROPERTY(Elevation elevation READ elevation CONSTANT FINAL)
-    Q_PROPERTY(State state READ state CONSTANT FINAL)
-    Q_PROPERTY(Shape shape READ shape CONSTANT FINAL)
-    Q_PROPERTY(WindowClass window_class READ window_class CONSTANT FINAL)
+    Q_PROPERTY(qml_material::TypeScale* typescale READ typescale CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::Flick* flick READ flick CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::Elevation elevation READ elevation CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::State state READ state CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::Shape shape READ shape CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::WindowClass window_class READ window_class CONSTANT FINAL)
 public:
     Token(QObject* = nullptr);
     ~Token();
 
     auto typescale() const -> TypeScale*;
+    auto flick() const -> Flick*;
     auto elevation() const -> const Elevation&;
     auto state() const -> const State&;
     auto shape() const -> const Shape&;
@@ -157,6 +183,7 @@ public:
 
 private:
     TypeScale*  m_typescale;
+    Flick*      m_flick;
     Elevation   m_elevation;
     State       m_state;
     Shape       m_shape;

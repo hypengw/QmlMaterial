@@ -35,10 +35,12 @@ T.ScrollBar {
         visible: control.interactive
     }
 
-    states: State {
-        name: "active"
-        when: control.policy === T.ScrollBar.AlwaysOn || (control.active && control.size < 1.0)
-    }
+    states: [
+        State {
+            name: "active"
+            when: control.policy === T.ScrollBar.AlwaysOn || (control.active && control.size < 1.0)
+        }
+    ]
 
     transitions: [
         Transition {

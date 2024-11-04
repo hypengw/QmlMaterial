@@ -65,7 +65,7 @@ WheelFilterItem::WheelFilterItem(QQuickItem* parent): QQuickItem(parent) { setEn
 
 ///////////////////////////////
 
-WheelHandler::WheelHandler(QObject* parent): QObject(parent) {
+WheelHandler::WheelHandler(QObject* parent): QObject(parent), m_active(true) {
     m_wheelScrollingTimer.setSingleShot(true);
     m_wheelScrollingTimer.setInterval(m_wheelScrollingDuration);
     m_wheelScrollingTimer.callOnTimeout([this]() {
@@ -196,7 +196,13 @@ void WheelHandler::rebindScrollBar(ScrollBar& scrollBar) {
             item->metaObject()->method(item->metaObject()->indexOfMethod("increase()"));
     }
 }
-
+auto WheelHandler::active() const -> bool { return m_active; }
+void WheelHandler::setActive(bool v) {
+    if (m_active != v) {
+        m_active = v;
+        activeChanged();
+    }
+}
 qreal WheelHandler::verticalStepSize() const { return m_verticalStepSize; }
 
 void WheelHandler::setVerticalStepSize(qreal stepSize) {
@@ -437,7 +443,7 @@ bool WheelHandler::scrollRight(qreal stepSize) {
 
 bool WheelHandler::eventFilter(QObject* watched, QEvent* event) {
     auto item = qobject_cast<QQuickItem*>(watched);
-    if (! item || ! item->isEnabled()) {
+    if (! item || ! item->isEnabled() || ! m_active) {
         return false;
     }
 

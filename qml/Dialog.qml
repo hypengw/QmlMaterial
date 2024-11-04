@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Templates as T
-import QtQuick.Controls.Basic.impl
 import Qcm.Material as MD
 
 T.Dialog {
@@ -13,11 +12,17 @@ T.Dialog {
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding, implicitHeaderWidth, implicitFooterWidth)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding + (implicitHeaderHeight > 0 ? implicitHeaderHeight + spacing : 0) + (implicitFooterHeight > 0 ? implicitFooterHeight + spacing : 0))
 
-    topPadding: 24
-    bottomPadding: MD.Token.shape.corner.extra_large + 2
+    width: Math.min(implicitWidth, 560)
+
+    x: (parent.width - width) / 2
+    y: (parent.height - height) / 2
+
+    spacing: 0
+    topPadding: 16
+    bottomPadding: 24
+    horizontalPadding: 24
 
     modal: true
-    clip: false
 
     enter: Transition {
         // grow_fade_in
@@ -56,6 +61,7 @@ T.Dialog {
     }
 
     background: MD.ElevationRectangle {
+        implicitWidth: 280
         // FullScale doesn't make sense for Dialog.
         radius: MD.Token.shape.corner.extra_large
         color: control.mdState.backgroundColor
@@ -66,6 +72,7 @@ T.Dialog {
         topPadding: 24
         horizontalPadding: 24
         contentItem: ColumnLayout {
+            spacing: 0
             MD.Text {
                 visible: control.title
                 text: control.title
@@ -73,14 +80,17 @@ T.Dialog {
                 color: control.mdState.ctx.color.on_surface
                 font.capitalization: control.titleCapitalization
             }
+
+            MD.Space {
+                spacing: 16
+            }
         }
     }
 
-    footer: Item {}
-
-    //    DialogButtonBox {
-    //        visible: count > 0
-    //    }
+    footer: MD.DialogButtonBox {
+        bottomPadding: 24
+        visible: count > 0
+    }
 
     T.Overlay.modal: Rectangle {
         color: MD.Util.transparent(control.mdState.ctx.color.scrim, 0.32)

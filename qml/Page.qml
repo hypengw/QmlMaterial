@@ -8,6 +8,7 @@ T.Page {
 
     property bool canBack: false
     property T.Action leadingAction: MD.MatProp.page.leadingAction
+    property list<QC.Action> actions
 
     property alias showHeader: control.header.visible
     property alias showBackground: control.background.visible
@@ -27,6 +28,7 @@ T.Page {
         radius: control.backgroundRadius
         mdState.backgroundOpacity: control.headerBackgroundOpacity
         scrolling: control.scrolling
+        actions: control.actions
     }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding, implicitHeaderWidth, implicitFooterWidth)

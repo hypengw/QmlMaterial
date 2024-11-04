@@ -15,9 +15,11 @@ T.Button {
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
     flat: type == MD.Enum.BtText || type == MD.Enum.BtOutlined
-    topInset: 6
-    bottomInset: 6
-    verticalPadding: 14
+    leftInset: 0
+    rightInset: 0
+    topInset: 0
+    bottomInset: 0
+    verticalPadding: 0
     // https://m3.material.io/components/buttons/specs#256326ad-f934-40e7-b05f-0bcb41aa4382
     leftPadding: flat ? 12 : (hasIcon ? 16 : 24)
     rightPadding: flat ? (hasIcon ? 16 : 12) : 24

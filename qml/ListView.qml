@@ -10,9 +10,9 @@ ListView {
     property bool expand: false
     reuseItems: true
     synchronousDrag: true
-    pressDelay: 100
-    maximumFlickVelocity: 999999
-    flickDeceleration: 1000
+    pressDelay: MD.Token.flick.pressDelay
+    maximumFlickVelocity: MD.Token.flick.maximumFlickVelocity
+    flickDeceleration: MD.Token.flick.flickDeceleration
     boundsBehavior: Flickable.StopAtBounds
     boundsMovement: Flickable.StopAtBounds
     cacheBuffer: 96

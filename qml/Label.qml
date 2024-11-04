@@ -1,22 +1,24 @@
 import QtQuick
-import QtQuick.Controls.Basic.impl
 import QtQuick.Templates as T
 
 import Qcm.Material as MD
 
 T.Label {
-    id: control
+    id: root
 
-    linkColor: control.palette.link
+    linkColor: root.palette.link
 
     property MD.t_typescale typescale: MD.Token.typescale.label_medium
+    property bool prominent: false
+    property bool useTypescale: true
 
     Binding {
-        when: typescale
-        root.lineHeight: typescale.line_height
-        root.font.pixelSize: typescale.size
-        root.font.weight: typescale.weight
-        root.font.letterSpacing: typescale.tracking
+        when: root.useTypescale
+        root.lineHeight: root.typescale ? root.typescale?.line_height : 16
+        root.font.pixelSize: root.typescale ? root.typescale?.size : 16
+        root.font.weight: root.typescale ? (root.prominent ? root.typescale.weight_prominent : typescale.weight) : Font.Normal
+        root.font.letterSpacing: root.typescale ? root.typescale.tracking : 1
+        restoreMode: Binding.RestoreNone
     }
 
     color: MD.MatProp.textColor

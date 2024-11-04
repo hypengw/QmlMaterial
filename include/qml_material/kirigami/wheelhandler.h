@@ -186,6 +186,8 @@ class WheelHandler : public QObject, public QQmlParserStatus {
      */
     Q_PROPERTY(QQuickItem* target READ target WRITE setTarget NOTIFY targetChanged FINAL)
 
+    Q_PROPERTY(bool active READ active WRITE setActive NOTIFY activeChanged FINAL)
+
     /**
      * @brief This property holds the vertical step size.
      *
@@ -296,6 +298,8 @@ public:
     QQuickItem* target() const;
     void        setTarget(QQuickItem* target);
 
+    auto active() const -> bool;
+    void setActive(bool);
     qreal verticalStepSize() const;
     void  setVerticalStepSize(qreal stepSize);
     void  resetVerticalStepSize();
@@ -325,6 +329,7 @@ public:
 
 Q_SIGNALS:
     void targetChanged();
+    void activeChanged();
     void verticalStepSizeChanged();
     void horizontalStepSizeChanged();
     void pageScrollModifiersChanged();
@@ -365,6 +370,7 @@ private:
 
     QPointer<QQuickItem> m_target;
 
+    bool m_active;
     QMetaObject::Connection m_verticalChangedConnection;
     QMetaObject::Connection m_horizontalChangedConnection;
 

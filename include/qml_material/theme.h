@@ -77,9 +77,9 @@ public:
     ATTACH_PROPERTY(QColor, textColor)
     ATTACH_PROPERTY(QColor, backgroundColor)
     ATTACH_PROPERTY(int, elevation)
-    ATTACH_PROPERTY(MdColorMgr*, color)
-    ATTACH_PROPERTY(ThemeSize*, size)
-    ATTACH_PROPERTY(PageContext*, page)
+    ATTACH_PROPERTY(qml_material::MdColorMgr*, color)
+    ATTACH_PROPERTY(qml_material::ThemeSize*, size)
+    ATTACH_PROPERTY(qml_material::PageContext*, page)
 
 public:
     Theme(QObject* parent);

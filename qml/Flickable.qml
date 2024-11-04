@@ -14,9 +14,9 @@ Flickable {
     implicitHeight: contentHeight
 
     synchronousDrag: true
-    pressDelay: 100
-    maximumFlickVelocity: 999999
-    flickDeceleration: 1000
+    pressDelay: MD.Token.flick.pressDelay
+    maximumFlickVelocity: MD.Token.flick.maximumFlickVelocity
+    flickDeceleration: MD.Token.flick.flickDeceleration
     boundsBehavior: Flickable.StopAtBounds
     boundsMovement: Flickable.StopAtBounds
     rebound: Transition {}
@@ -34,7 +34,5 @@ Flickable {
         filterMouseEvents: false
         onWheelMoved: root.wheelMoved()
     }
-    ScrollBar.vertical: MD.ScrollBar {
-    }
+    ScrollBar.vertical: MD.ScrollBar {}
 }
-

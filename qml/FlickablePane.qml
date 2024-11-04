@@ -1,5 +1,5 @@
 import QtQuick
-import QtQuick.Controls.Basic as QC
+import QtQml
 import Qcm.Material as MD
 
 MD.Rectangle {
@@ -7,8 +7,10 @@ MD.Rectangle {
     required property Flickable view
     property int excludeBegin: 0
     property int excludeEnd: 0
-    property int topMargin: 8
-    property int bottomMargin: 8
+    property int topMargin: view.topMargin
+    property int bottomMargin: view.bottomMargin
+    property int leftMargin: view.leftMargin
+    property int rightMargin: view.rightMargin
     property int contentWidth: view.contentItem.childrenRect.width
     property int contentHeight: view.contentItem.childrenRect.height
 
@@ -17,6 +19,6 @@ MD.Rectangle {
 
     color: MD.MatProp.backgroundColor
 
-    implicitWidth: contentWidth
+    implicitWidth: contentWidth + leftMargin + rightMargin
     implicitHeight: contentHeight - excludeBegin + (topMargin + bottomMargin)
 }
