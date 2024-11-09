@@ -95,17 +95,18 @@ QString Util::type_str(const QJSValue& obj) {
 }
 
 void Util::print_parents(const QJSValue& obj) {
-    auto cur           = obj;
-    //auto format_parent = ycore::y_combinator {
-    //    [this](auto format_parent, const QJSValue& cur, i32 level) -> std::string {
-    //        if (! cur.isNull()) {
-    //            return std::format(
-    //                "    {}\n{}", type_str(cur), format_parent(cur.property("parent"), level + 1));
-    //        }
-    //        return {};
-    //    }
-    //};
-    // DEBUG_LOG("{}\n{}", type_str(obj), format_parent(obj.property("parent"), 1));
+    auto cur = obj;
+    // auto format_parent = ycore::y_combinator {
+    //     [this](auto format_parent, const QJSValue& cur, i32 level) -> std::string {
+    //         if (! cur.isNull()) {
+    //             return std::format(
+    //                 "    {}\n{}", type_str(cur), format_parent(cur.property("parent"), level +
+    //                 1));
+    //         }
+    //         return {};
+    //     }
+    // };
+    //  DEBUG_LOG("{}\n{}", type_str(obj), format_parent(obj.property("parent"), 1));
 }
 
 auto Util::lightness(QColor color) -> qreal { return color.lightnessF(); }

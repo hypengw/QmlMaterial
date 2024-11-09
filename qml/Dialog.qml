@@ -80,10 +80,6 @@ T.Dialog {
                 color: control.mdState.ctx.color.on_surface
                 font.capitalization: control.titleCapitalization
             }
-
-            MD.Space {
-                spacing: 16
-            }
         }
     }
 
