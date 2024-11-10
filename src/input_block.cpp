@@ -2,7 +2,7 @@
 
 using namespace qml_material;
 
-InputBlock::InputBlock(QObject* parent): QObject(parent), mWhen(false), mTarget(nullptr) {
+InputBlock::InputBlock(QObject* parent): QObject(parent), mWhen(true), mTarget(nullptr) {
     connect(this, &InputBlock::whenChanged, this, &InputBlock::trigger, Qt::QueuedConnection);
     connect(this, &InputBlock::targetChanged, this, &InputBlock::trigger, Qt::QueuedConnection);
     connect(this, &InputBlock::acceptMouseButtonsChanged, this, &InputBlock::trigger, Qt::QueuedConnection);
