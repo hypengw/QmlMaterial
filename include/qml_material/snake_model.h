@@ -42,15 +42,12 @@ public:
     bool removeRows(int row, int count, const QModelIndex& parent = QModelIndex()) override;
     auto findById(qint32 id) -> iterator;
 
-public Q_SLOTS:
-    void showSnake(const SnakeModelItem&);
-    void removeById(qint32 id);
-
-private Q_SLOTS:
-    void onRemovePriv(const QModelIndex& parent, int first, int last);
+    Q_SLOT void showSnake(const SnakeModelItem&);
+    Q_SLOT void removeById(qint32 id);
 
 private:
-    qint32 removeExtra(qint32 id);
+    Q_SLOT void onRemovePriv(const QModelIndex& parent, int first, int last);
+    qint32      removeExtra(qint32 id);
 
     std::int32_t                m_snake_id;
     std::vector<SnakeModelItem> m_items;

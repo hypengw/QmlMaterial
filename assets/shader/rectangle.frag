@@ -14,7 +14,9 @@ layout(std140, binding = 0) uniform buf {
 
 void main() {
     // d is zero, if not in round edge
-    float d                 = length(out_circle_edge.xy);
+    float d = length(out_circle_edge.xy);
+    // this will always keep 1px for circle edge
+    // works for (1 - d) <= 1 / out_circle_edge.z
     float distance_to_outer = out_circle_edge.z * (1.0 - d);
     // edge filter at 0-1
     float edge_alpha = clamp(distance_to_outer, 0.0, 1.0);

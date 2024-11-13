@@ -10,14 +10,14 @@ class InputBlock : public QObject {
     Q_OBJECT
     QML_ELEMENT
 
-    Q_PROPERTY(bool when READ when WRITE setWhen NOTIFY whenChanged)
-    Q_PROPERTY(QQuickItem* target READ target WRITE setTarget NOTIFY targetChanged)
+    Q_PROPERTY(bool when READ when WRITE setWhen NOTIFY whenChanged FINAL)
+    Q_PROPERTY(QQuickItem* target READ target WRITE setTarget NOTIFY targetChanged FINAL)
     Q_PROPERTY(Qt::MouseButtons acceptMouseButtons READ acceptMouseButtons WRITE
-                   setAcceptMouseButtons NOTIFY acceptMouseButtonsChanged)
+                   setAcceptMouseButtons NOTIFY acceptMouseButtonsChanged FINAL)
     Q_PROPERTY(bool acceptHover READ acceptHoverEvents WRITE setAcceptHoverEvents NOTIFY
-                   acceptHoverEventsChanged)
+                   acceptHoverEventsChanged FINAL)
     Q_PROPERTY(bool acceptTouch READ acceptTouchEvents WRITE setAcceptTouchEvents NOTIFY
-                   acceptTouchEventsChanged)
+                   acceptTouchEventsChanged FINAL)
 
 public:
     InputBlock(QObject* parent = nullptr);
@@ -35,15 +35,13 @@ public:
     bool             acceptTouchEvents() const;
     void             setAcceptTouchEvents(bool accept);
 
-signals:
-    void whenChanged();
-    void targetChanged();
-    void acceptMouseButtonsChanged();
-    void acceptHoverEventsChanged();
-    void acceptTouchEventsChanged();
+    Q_SIGNAL void whenChanged();
+    Q_SIGNAL void targetChanged();
+    Q_SIGNAL void acceptMouseButtonsChanged();
+    Q_SIGNAL void acceptHoverEventsChanged();
+    Q_SIGNAL void acceptTouchEventsChanged();
 
-public slots:
-    void trigger();
+    Q_SLOT void trigger();
 
 private:
     struct State {

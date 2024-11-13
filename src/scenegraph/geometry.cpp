@@ -38,6 +38,15 @@ inline void set_rect(T* v, T* lt, T* rt, T* lb, T* rb) {
     v[4] = *rb;
     v[5] = *rt;
 }
+template<typename T>
+inline void set_rect_flip(T* v, T* lt, T* rt, T* lb, T* rb) {
+    v[0] = *lt;
+    v[1] = *rt;
+    v[2] = *rb;
+    v[3] = *rb;
+    v[4] = *lt;
+    v[5] = *lb;
+}
 
 // four points
 
@@ -94,11 +103,13 @@ inline void set_corner(RectangleVertex* v, QVector2D o, QVector2D s, float outte
 template<typename T>
 inline void set_right_bottom_corner(T* v, QVector2D size, float r, float outter, float inner) {
     set_corner(v, { size.x() - r, size.y() - r }, { r, r }, outter, inner);
-    v[1].ce_x = 1;
-    v[5].ce_x = 1;
 
-    v[2].ce_y = 1;
-    v[3].ce_y = 1;
+    float offset = 1.0;
+    v[1].ce_x    = offset;
+    v[5].ce_x    = offset;
+
+    v[2].ce_y = offset;
+    v[3].ce_y = offset;
 
     v[4].ce_x = 1;
     v[4].ce_y = 1;
@@ -106,8 +117,9 @@ inline void set_right_bottom_corner(T* v, QVector2D size, float r, float outter,
 template<typename T>
 inline void set_right_top_corner(T* v, QVector2D size, float r, float outter, float inner) {
     set_corner(v, { size.x() - r, 0 }, { r, r }, outter, inner);
-    v[4].ce_x = 1;
-    v[0].ce_y = 1;
+    float offset = 1.0;
+    v[4].ce_x    = offset;
+    v[0].ce_y    = offset;
 
     v[1].ce_x = 1;
     v[1].ce_y = 1;
@@ -117,8 +129,9 @@ inline void set_right_top_corner(T* v, QVector2D size, float r, float outter, fl
 template<typename T>
 inline void set_left_bottom_corner(T* v, QVector2D size, float r, float outter, float inner) {
     set_corner(v, { 0, size.y() - r }, { r, r }, outter, inner);
-    v[0].ce_x = 1;
-    v[4].ce_y = 1;
+    float offset = 1.0;
+    v[0].ce_x    = offset;
+    v[4].ce_y    = offset;
 
     v[2].ce_x = 1;
     v[2].ce_y = 1;
@@ -128,11 +141,12 @@ inline void set_left_bottom_corner(T* v, QVector2D size, float r, float outter, 
 template<typename T>
 inline void set_left_top_corner(T* v, QVector2D, float r, float outter, float inner) {
     set_corner(v, {}, { r, r }, outter, inner);
-    v[2].ce_x = 1;
-    v[3].ce_x = 1;
+    float offset = 1.0;
+    v[2].ce_x    = offset;
+    v[3].ce_x    = offset;
 
-    v[1].ce_y = 1;
-    v[5].ce_y = 1;
+    v[1].ce_y = offset;
+    v[5].ce_y = offset;
 
     v[0].ce_x = 1;
     v[0].ce_y = 1;
@@ -170,10 +184,10 @@ void sg::update_rectangle_geometry(RectangleVertex* v, QVector2D size, QRgb colo
     auto outter = std::max({ radius[0], radius[1], radius[2], radius[3], 2.0f });
     auto inner  = -1.0f / outter;
 
-    set_left_top_corner(lt, size, radius[0], outter, inner);
-    set_right_top_corner(rt, size, radius[1], outter, inner);
-    set_left_bottom_corner(lb, size, radius[2], outter, inner);
-    set_right_bottom_corner(rb, size, radius[3], outter, inner);
+    set_left_top_corner(lt, size, radius[0], std::max(radius[0], 2.0f), inner);
+    set_right_top_corner(rt, size, radius[1], std::max(radius[1], 2.0f), inner);
+    set_left_bottom_corner(lb, size, radius[2], std::max(radius[2], 2.0f), inner);
+    set_right_bottom_corner(rb, size, radius[3], std::max(radius[3], 2.0f), inner);
 
     auto top    = v + u * 4;
     auto left   = v + u * 5;
@@ -182,9 +196,21 @@ void sg::update_rectangle_geometry(RectangleVertex* v, QVector2D size, QRgb colo
     auto middle = v + u * 8;
 
     set_rect(top, lt + 5, rt + 0, lt + 4, rt + 2);
+    if (top[0].ce_distance_to_outter - top[1].ce_distance_to_outter > 0.1f) {
+        top[1].ce_distance_to_outter = top[0].ce_distance_to_outter * 10.0f;
+    }
+    set_rect_flip(bottom, lb + 1, rb + 0, lb + 4, rb + 2);
+    if (bottom[0].ce_distance_to_outter - bottom[1].ce_distance_to_outter > 0.1f) {
+        bottom[1].ce_distance_to_outter = bottom[0].ce_distance_to_outter * 10.0f;
+    }
     set_rect(left, lt + 3, lt + 4, lb + 0, lb + 1);
-    set_rect(bottom, lb + 1, rb + 0, lb + 4, rb + 2);
-    set_rect(right, rt + 2, rt + 4, rb + 0, rb + 1);
+    if (left[0].ce_distance_to_outter - left[2].ce_distance_to_outter > 0.1f) {
+        left[2].ce_distance_to_outter = left[0].ce_distance_to_outter * 10.0f;
+    }
+    set_rect_flip(right, rt + 2, rt + 4, rb + 0, rb + 1);
+    if (right[0].ce_distance_to_outter - right[2].ce_distance_to_outter > 0.1f) {
+        right[2].ce_distance_to_outter = right[0].ce_distance_to_outter * 10.0f;
+    }
     set_rect(middle, lt + 4, rt + 2, lb + 1, rb + 0);
 
     for (int i = 0; i < u * 9; i++) {
