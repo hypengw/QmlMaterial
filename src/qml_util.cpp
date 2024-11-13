@@ -2,6 +2,8 @@
 
 #include <format>
 #include <QQmlEngine>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 #include "qml_material/loggingcategory.h"
 
@@ -136,6 +138,21 @@ void Util::on_popup_closed() {
             p.call({ 1000 });
         }
     }
+}
+
+auto Util::params_string(const QVariantMap& in_props) -> QString {
+    auto props = in_props;
+    for (const auto& el : props.keys()) {
+        auto val = props.value(el);
+        if (auto pp = get_if<QObject*>(&val)) {
+            props[el] = QString::number((std::intptr_t)(*pp));
+        } else if (auto pp = get_if<QVariantMap>(&val)) {
+            props[el] = params_string(*pp);
+        }
+    }
+    QJsonDocument doc;
+    doc.setObject(QJsonObject::fromVariantMap(props));
+    return doc.toJson(QJsonDocument::Compact);
 }
 
 } // namespace qml_material
