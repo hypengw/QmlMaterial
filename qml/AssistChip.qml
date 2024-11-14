@@ -5,56 +5,56 @@ import Qcm.Material as MD
 T.Button {
     id: control
 
-    property int type: MD.Enum.IBtStandard
-    property MD.StateIconButton mdState: MD.StateIconButton {
+    readonly property bool hasIcon: MD.Util.hasIcon(icon)
+    property MD.StateAssistChip mdState: MD.StateAssistChip {
         item: control
     }
+
+    property alias elevated: control.mdState.elevated
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
-    flat: type == MD.Enum.IBtStandard || (type == MD.Enum.IBtOutlined && !control.checked)
-    topInset: 4
-    bottomInset: 4
-    leftInset: 4
-    rightInset: 4
+    flat: true
+    leftInset: 0
+    rightInset: 0
+    topInset: 0
+    bottomInset: 0
+    verticalPadding: 0
+    leftPadding: hasIcon ? 8 : 16
+    rightPadding: 16
+    spacing: 8
 
-    padding: 8
-    spacing: 0
+    icon.width: 18
+    icon.height: 18
+    font.capitalization: Font.Capitalize
 
-    icon.width: 24
-    icon.height: 24
+    contentItem: MD.IconLabel {
+        text: control.text
+        typescale: MD.Token.typescale.label_large
+        color: control.mdState.textColor
 
-    contentItem: Item {
-        implicitWidth: control.icon.width
-        implicitHeight: control.icon.height
+        icon_color: control.mdState.iconColor
+        icon_name: control.icon.name
+        icon_size: control.icon.width
         opacity: control.mdState.contentOpacity
-
-        MD.Icon {
-            anchors.centerIn: parent
-            name: control.icon.name
-            size: Math.min(control.icon.width, control.icon.height)
-            color: control.mdState.textColor
-        }
     }
 
     background: MD.ElevationRectangleBorder {
-        implicitWidth: 40
-        implicitHeight: 40
+        implicitWidth: 32
+        implicitHeight: 32
 
-        radius: height / 2
+        radius: 8
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
 
-        border.width: control.type == MD.Enum.IBtOutlined ? 1 : 0
-        border.color: control.mdState.ctx.color.outline
-
-        elevationVisible: elevation && color.a > 0 && !control.flat
+        border.width: 1
+        border.color: control.mdState.outlineColor
         elevation: control.mdState.elevation
 
         MD.Ripple2 {
             anchors.fill: parent
-            radius: height / 2
+            radius: parent.radius
             pressX: control.pressX
             pressY: control.pressY
             pressed: control.pressed

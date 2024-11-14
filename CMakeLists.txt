@@ -130,6 +130,10 @@ set(QML_FILES
     qml/Control.qml
     qml/ComboBox.qml
     qml/Card.qml
+    qml/AssistChip.qml
+    qml/FilterChip.qml
+    qml/InputChip.qml
+    qml/SuggestionChip.qml
     qml/CircleProgressBar.qml
     qml/CircularIndicator.qml
     qml/Dialog.qml
@@ -142,6 +146,7 @@ set(QML_FILES
     qml/Token.qml
     qml/IconLabel.qml
     qml/IconButton.qml
+    qml/StandardIconButton.qml
     qml/FAB.qml
     qml/Menu.qml
     qml/MenuItem.qml
@@ -181,6 +186,7 @@ set(QML_FILES
     qml/state/StateAppBar.qml
     qml/state/StateSnakeBar.qml
     qml/state/StateButton.qml
+    qml/state/StateCard.qml
     qml/state/StateDragHandle.qml
     qml/state/StateDrawerItem.qml
     qml/state/StateTabButton.qml
@@ -188,7 +194,13 @@ set(QML_FILES
     qml/state/StateSlider.qml
     qml/state/StateSwitch.qml
     qml/state/StateIconButton.qml
+    qml/state/StateStandardIconButton.qml
     qml/state/StateFAB.qml
+    qml/state/StateAssistChip.qml
+    qml/state/StateFilterChip.qml
+    qml/state/StateInputChip.qml
+    qml/state/StateSuggestionChip.qml
+    qml/state/StateBarItem.qml
 
     qml/impl/BoxShadow.qml
     qml/impl/CircleProgressShape.qml

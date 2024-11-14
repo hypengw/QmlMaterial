@@ -1,13 +1,14 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Templates as T
-import QtQuick.Controls.Basic.impl
 import Qcm.Material as MD
 
 T.Slider {
     id: control
 
-    property alias mdState: m_sh.state
+    property MD.StateSlider mdState: MD.StateSlider {
+        item: control
+    }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitHandleWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitHandleHeight + topPadding + bottomPadding)
@@ -94,9 +95,6 @@ T.Slider {
         }
     }
     MD.StateHolder {
-        id: m_sh
-        state: MD.StateSlider {
-            item: control
-        }
+        state: control.mdState
     }
 }

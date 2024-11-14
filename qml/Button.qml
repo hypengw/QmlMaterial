@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Templates as T
-import QtQuick.Controls.Basic.impl
 import Qcm.Material as MD
 
 T.Button {
@@ -9,7 +8,9 @@ T.Button {
     property int type: MD.Enum.BtElevated
     property int iconStyle: hasIcon ? MD.Enum.IconAndText : MD.Enum.TextOnly
     readonly property bool hasIcon: MD.Util.hasIcon(icon)
-    property alias mdState: m_sh.state
+    property MD.StateButton mdState: MD.StateButton {
+        item: control
+    }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
@@ -30,7 +31,6 @@ T.Button {
     font.capitalization: Font.Capitalize
 
     contentItem: MD.IconLabel {
-        font: control.font
         text: control.text
         typescale: MD.Token.typescale.label_large
         color: control.mdState.textColor
@@ -66,9 +66,6 @@ T.Button {
     }
 
     MD.StateHolder {
-        id: m_sh
-        state: MD.StateButton {
-            item: control
-        }
+        state: control.mdState
     }
 }

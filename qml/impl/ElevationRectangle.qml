@@ -13,5 +13,6 @@ MD.Rectangle {
         corners: root.corners
         width: root.width
         height: root.height
+        visible: elevation != MD.Token.elevation.level0 && root.color.a > 0
     }
 }

@@ -5,15 +5,14 @@ import Qcm.Material as MD
 T.Button {
     id: control
 
-    property int type: MD.Enum.IBtStandard
-    property MD.StateIconButton mdState: MD.StateIconButton {
+    property MD.StateStandardIconButton mdState: MD.StateStandardIconButton {
         item: control
     }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
-    flat: type == MD.Enum.IBtStandard || (type == MD.Enum.IBtOutlined && !control.checked)
+    flat: true
     topInset: 4
     bottomInset: 4
     leftInset: 4
@@ -24,6 +23,8 @@ T.Button {
 
     icon.width: 24
     icon.height: 24
+
+    property int implicitBackgroundSize: 40
 
     contentItem: Item {
         implicitWidth: control.icon.width
@@ -38,9 +39,9 @@ T.Button {
         }
     }
 
-    background: MD.ElevationRectangleBorder {
-        implicitWidth: 40
-        implicitHeight: 40
+    background: Rectangle {
+        implicitWidth: control.implicitBackgroundSize
+        implicitHeight: control.implicitBackgroundSize
 
         radius: height / 2
         color: control.mdState.backgroundColor
@@ -48,9 +49,6 @@ T.Button {
 
         border.width: control.type == MD.Enum.IBtOutlined ? 1 : 0
         border.color: control.mdState.ctx.color.outline
-
-        elevationVisible: elevation && color.a > 0 && !control.flat
-        elevation: control.mdState.elevation
 
         MD.Ripple2 {
             anchors.fill: parent

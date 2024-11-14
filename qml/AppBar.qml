@@ -102,7 +102,6 @@ T.ToolBar {
     }
 
     MD.StateHolder {
-        id: m_sh
         state: control.mdState
     }
 }

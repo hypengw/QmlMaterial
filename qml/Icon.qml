@@ -9,14 +9,15 @@ Item {
 
     property string name
     property int size: 24
-    property alias horizontalAlignment: item_text_icon.horizontalAlignment
+    property alias horizontalAlignment: m_text_icon.horizontalAlignment
+    property alias verticalAlignment: m_text_icon.verticalAlignment
 
     property int lineHeight: MD.Token.typescale.label_large.line_height
     property int iconStyle: MD.Enum.IconRound
     property color color: MD.MatProp.color.on_background
 
     Text {
-        id: item_text_icon
+        id: m_text_icon
         anchors.centerIn: parent
 
         font.family: {
@@ -27,6 +28,8 @@ Item {
             }
         }
 
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
         font.pixelSize: root.size
         text: root.name
         color: root.color

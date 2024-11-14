@@ -10,6 +10,7 @@ State::State(QQuickItem* parent)
       m_item(nullptr),
       m_elevation(0),
       m_text_color(),
+      m_outline_color(),
       m_background_color(),
       m_support_text_color(),
       m_state_layer_color("transparent"),
@@ -43,6 +44,7 @@ void State::on_item_changed() { ctxChanged(); }
 X(QObject*, item, itemChanged)
 X(qint32, elevation, elevationChanged)
 X(QColor, text_color, textColorChanged)
+X(QColor, outline_color, outlineColorChanged)
 X(QColor, background_color, backgroundColorChanged)
 X(QColor, support_text_color, supportTextColorChanged)
 X(QColor, state_layer_color, stateLayerColorChanged)

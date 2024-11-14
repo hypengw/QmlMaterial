@@ -37,7 +37,7 @@ Item {
             // font.family: MD.Token.font.icon_round.family
         }
 
-        MD.Text {
+        MD.Label {
             id: item_label_text
             Layout.alignment: root.horizontalAlignment | Qt.AlignVCenter
             verticalAlignment: Text.AlignVCenter
