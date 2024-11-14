@@ -91,7 +91,7 @@ T.ComboBox {
         textColor: item_state.ctx.color.on_surface
         backgroundColor: "transparent"
         supportTextColor: item_state.ctx.color.on_surface_variant
-        property color outlineColor: item_state.ctx.color.outline
+        outlineColor: item_state.ctx.color.outline
 
         states: [
             State {

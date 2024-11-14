@@ -101,8 +101,8 @@ MD.TextFieldEmbed {
         textColor: item_state.ctx.color.on_surface
         backgroundColor: "transparent"
         supportTextColor: item_state.ctx.color.on_surface_variant
+        outlineColor: item_state.ctx.color.outline
         property color placeholderColor: item_state.ctx.color.on_surface_variant
-        property color outlineColor: item_state.ctx.color.outline
 
         states: [
             State {

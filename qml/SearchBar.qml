@@ -98,7 +98,7 @@ T.Button {
         supportTextColor: item_state.ctx.color.on_surface_variant
         stateLayerColor: "transparent"//item_state.ctx.color.surface_tint
 
-        property color outlineColor: item_state.ctx.color.outline
+        outlineColor: item_state.ctx.color.outline
 
         states: [
             State {
