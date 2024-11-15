@@ -18,7 +18,9 @@ T.Button {
             item_input.text = '';
         }
     }
-    property alias mdState: item_state
+    property MD.StateSearchBar mdState: MD.StateSearchBar {
+        item: control
+    }
 
     signal accepted
 
@@ -73,8 +75,6 @@ T.Button {
 
         radius: height / 2
         color: control.mdState.backgroundColor
-
-        elevationVisible: elevation && color.a > 0
         elevation: control.mdState.elevation
 
         MD.Ripple2 {
@@ -83,49 +83,12 @@ T.Button {
             pressX: control.pressX
             pressY: control.pressY
             pressed: control.pressed
-            stateOpacity: item_state.stateLayerOpacity
-            color: item_state.stateLayerColor
+            stateOpacity: control.mdState.stateLayerOpacity
+            color: control.mdState.stateLayerColor
         }
     }
 
-    MD.State {
-        id: item_state
-        item: control
-
-        elevation: MD.Token.elevation.level2
-        textColor: item_state.ctx.color.on_surface
-        backgroundColor: item_state.ctx.color.surface_container_highest
-        supportTextColor: item_state.ctx.color.on_surface_variant
-        stateLayerColor: "transparent"//item_state.ctx.color.surface_tint
-
-        outlineColor: item_state.ctx.color.outline
-
-        states: [
-            State {
-                name: "Disabled"
-                when: !control.enabled
-                PropertyChanges {
-                    item_state.supportTextColor: item_state.ctx.color.on_surface
-                    placeholder.opacity: 0.38
-                    control.background.opacity: 0.12
-                }
-            },
-            State {
-                name: "Pressed"
-                when: control.pressed || control.visualFocus
-                PropertyChanges {
-                    item_state.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
-                    item_state.stateLayerColor: item_state.ctx.color.on_surface
-                }
-            },
-            State {
-                name: "Hovered"
-                when: control.hovered
-                PropertyChanges {
-                    item_state.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
-                    item_state.stateLayerColor: item_state.ctx.color.on_surface
-                }
-            }
-        ]
+    MD.StateHolder {
+        state: control.mdState
     }
 }

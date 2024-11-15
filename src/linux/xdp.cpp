@@ -5,8 +5,8 @@
 #include <QtDBus/QDBusReply>
 #include <QGlobalStatic>
 #include <QGuiApplication>
-#include <QtGui/qpa/qwindowsysteminterface.h>
-#include <QtGui/qpa/qplatformtheme.h>
+//#include <QtGui/qpa/qwindowsysteminterface.h>
+//#include <QtGui/qpa/qplatformtheme.h>
 #include <QStyleHints>
 
 #include "qml_material/color.h"

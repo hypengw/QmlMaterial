@@ -201,6 +201,7 @@ set(QML_FILES
     qml/state/StateInputChip.qml
     qml/state/StateSuggestionChip.qml
     qml/state/StateBarItem.qml
+    qml/state/StateSearchBar.qml
 
     qml/impl/BoxShadow.qml
     qml/impl/CircleProgressShape.qml
@@ -332,7 +333,7 @@ endif()
 
 target_link_libraries(
   ${LIBNAME}
-  PUBLIC Qt6::Core Qt6::Quick Qt6::QuickControls2 Qt6::GuiPrivate
+  PUBLIC Qt6::Core Qt6::Quick Qt6::QuickControls2
   PRIVATE material_color)
 
 function(qt_install_qml_module target_)
