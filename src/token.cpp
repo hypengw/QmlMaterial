@@ -3,9 +3,13 @@
 namespace qml_material::token
 {
 Token::Token(QObject* parent)
-    : QObject(parent), m_typescale(new TypeScale(this)), m_flick(new Flick(this)) {}
+    : QObject(parent),
+      m_typescale(new TypeScale(this)),
+      m_icon(create_icon_token()),
+      m_flick(new Flick(this)) {}
 Token::~Token() {}
 auto Token::typescale() const -> TypeScale* { return m_typescale; }
+auto Token::icon() const -> IconToken* { return m_icon; }
 auto Token::flick() const -> Flick* { return m_flick; }
 auto Token::elevation() const -> const Elevation& { return m_elevation; }
 auto Token::state() const -> const State& { return m_state; }

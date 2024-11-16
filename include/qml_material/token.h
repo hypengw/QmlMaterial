@@ -5,14 +5,17 @@
 #include "qml_material/core.h"
 #include "qml_material/type_scale.h"
 #include "qml_material/enum.h"
+Q_MOC_INCLUDE("qml_material/icon.h")
 
 namespace qml_material::token
 {
 
+class IconToken;
+auto create_icon_token() -> IconToken*;
+
 struct WindowClassItem {
     Q_GADGET
-    QML_UNCREATABLE("")
-    QML_VALUE_TYPE(md_token_window_class)
+    QML_ANONYMOUS
 
     Q_PROPERTY(qint32 min_width MEMBER min_width CONSTANT FINAL)
     Q_PROPERTY(qint32 max_width MEMBER max_width CONSTANT FINAL)
@@ -27,7 +30,7 @@ public:
 
 struct WindowClass {
     Q_GADGET
-    QML_UNCREATABLE("")
+    QML_ANONYMOUS
 
     Q_PROPERTY(qml_material::token::WindowClassItem compact MEMBER compact CONSTANT FINAL)
     Q_PROPERTY(qml_material::token::WindowClassItem medium MEMBER medium CONSTANT FINAL)
@@ -62,8 +65,8 @@ public:
 };
 struct Elevation {
     Q_GADGET
-    QML_UNCREATABLE("")
-    QML_VALUE_TYPE(md_token_elevation)
+    QML_ANONYMOUS
+
     Q_PROPERTY(qint32 level0 MEMBER level0 CONSTANT FINAL)
     Q_PROPERTY(qint32 level1 MEMBER level1 CONSTANT FINAL)
     Q_PROPERTY(qint32 level2 MEMBER level2 CONSTANT FINAL)
@@ -81,8 +84,7 @@ public:
 
 struct ShapeCorner {
     Q_GADGET
-    QML_UNCREATABLE("")
-    QML_VALUE_TYPE(md_token_shape_corner)
+    QML_ANONYMOUS
     Q_PROPERTY(qint32 none MEMBER none CONSTANT FINAL)
     Q_PROPERTY(qint32 extra_small MEMBER extra_small CONSTANT FINAL)
     Q_PROPERTY(qint32 small MEMBER small CONSTANT FINAL)
@@ -103,8 +105,7 @@ public:
 
 struct Shape {
     Q_GADGET
-    QML_UNCREATABLE("")
-    QML_VALUE_TYPE(md_token_shape)
+    QML_ANONYMOUS
     Q_PROPERTY(ShapeCorner corner MEMBER corner CONSTANT FINAL)
 public:
     ShapeCorner corner;
@@ -112,7 +113,7 @@ public:
 
 struct StateItem {
     Q_GADGET
-    QML_UNCREATABLE("")
+    QML_ANONYMOUS
     Q_PROPERTY(double state_layer_opacity MEMBER state_layer_opacity CONSTANT FINAL)
 public:
     double state_layer_opacity;
@@ -120,8 +121,7 @@ public:
 
 struct State {
     Q_GADGET
-    QML_UNCREATABLE("")
-    QML_VALUE_TYPE(md_token_state)
+    QML_ANONYMOUS
     Q_PROPERTY(qml_material::token::StateItem hover MEMBER hover CONSTANT FINAL)
     Q_PROPERTY(qml_material::token::StateItem pressed MEMBER pressed CONSTANT FINAL)
     Q_PROPERTY(qml_material::token::StateItem focus MEMBER focus CONSTANT FINAL)
@@ -134,6 +134,7 @@ public:
 
 class Flick : public QObject {
     Q_OBJECT
+    QML_ANONYMOUS
     Q_PROPERTY(qint32 pressDelay READ pressDelay NOTIFY pressDelayChanged FINAL)
     Q_PROPERTY(
         double flickDeceleration READ flickDeceleration NOTIFY flickDecelerationChanged FINAL)
@@ -162,7 +163,8 @@ class Token : public QObject {
     Q_CLASSINFO("DefaultProperty", "datas")
     QML_NAMED_ELEMENT(TokenImpl)
 
-    Q_PROPERTY(qml_material::TypeScale* typescale READ typescale CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::TypeScale* typescale READ typescale CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::IconToken* icon READ icon CONSTANT FINAL)
     Q_PROPERTY(qml_material::token::Flick* flick READ flick CONSTANT FINAL)
     Q_PROPERTY(qml_material::token::Elevation elevation READ elevation CONSTANT FINAL)
     Q_PROPERTY(qml_material::token::State state READ state CONSTANT FINAL)
@@ -173,6 +175,7 @@ public:
     ~Token();
 
     auto typescale() const -> TypeScale*;
+    auto icon() const -> IconToken*;
     auto flick() const -> Flick*;
     auto elevation() const -> const Elevation&;
     auto state() const -> const State&;
@@ -183,6 +186,7 @@ public:
 
 private:
     TypeScale*  m_typescale;
+    IconToken*  m_icon;
     Flick*      m_flick;
     Elevation   m_elevation;
     State       m_state;

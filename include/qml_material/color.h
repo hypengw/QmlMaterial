@@ -97,20 +97,18 @@ public:
 
     Q_INVOKABLE QColor getOn(QColor) const;
 
-public slots:
-    void set_colorScheme(ColorSchemeEnum);
-    void set_accentColor(QColor);
-    void set_useSysColorSM(bool);
-    void set_useSysAccentColor(bool);
-    void gen_scheme();
-    void refrehFromSystem();
+    Q_SLOT void set_colorScheme(ColorSchemeEnum);
+    Q_SLOT void set_accentColor(QColor);
+    Q_SLOT void set_useSysColorSM(bool);
+    Q_SLOT void set_useSysAccentColor(bool);
+    Q_SLOT void gen_scheme();
+    Q_SLOT void refrehFromSystem();
 
-signals:
-    void colorSchemeChanged();
-    void schemeChanged();
-    void accentColorChanged();
-    void useSysColorSMChanged();
-    void useSysAccentColorChanged();
+    Q_SIGNAL void colorSchemeChanged();
+    Q_SIGNAL void schemeChanged();
+    Q_SIGNAL void accentColorChanged();
+    Q_SIGNAL void useSysColorSMChanged();
+    Q_SIGNAL void useSysAccentColorChanged();
 
 private:
     QColor                                  m_accent_color;

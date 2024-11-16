@@ -4,7 +4,7 @@
 #include <QFont>
 #include "qml_material/core.h"
 
-namespace qml_material
+namespace qml_material::token
 {
 //  Font.Thin	0
 //  Font.ExtraLight	12
@@ -53,12 +53,12 @@ class TypeScale : public QObject {
 public:
     using QObject::QObject;
 
-#define X(NAME, ...)                                                       \
-    Q_PROPERTY(qml_material::TypeScaleItem NAME READ NAME NOTIFY typescaleChanged FINAL) \
-public:                                                                    \
-    TypeScaleItem NAME() const { return m_##NAME; }                        \
-                                                                           \
-private:                                                                   \
+#define X(NAME, ...)                                                                            \
+    Q_PROPERTY(qml_material::token::TypeScaleItem NAME READ NAME NOTIFY typescaleChanged FINAL) \
+public:                                                                                         \
+    TypeScaleItem NAME() const { return m_##NAME; }                                             \
+                                                                                                \
+private:                                                                                        \
     TypeScaleItem m_##NAME { __VA_ARGS__ };
     // clang-format off
     X(display_large  , 57, 64, QFont::Normal, QFont::Normal, -0.25)
@@ -80,8 +80,7 @@ private:                                                                   \
 
 #undef X
 
-Q_SIGNALS:
-    void typescaleChanged();
+    Q_SIGNAL void typescaleChanged();
 };
 
-} // namespace qml_material
+} // namespace qml_material::token

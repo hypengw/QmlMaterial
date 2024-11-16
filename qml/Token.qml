@@ -7,7 +7,6 @@ MD.TokenImpl {
     id: root
     readonly property MD.MdColorMgr color: root.MD.MatProp.color
     property int theme: root.color.colorScheme
-    readonly property var icon: MD.IconToken.codeMap
     readonly property bool is_dark_theme: Number(theme) == MD.MdColorMgr.Dark
 
     readonly property QtObject font: QtObject {
