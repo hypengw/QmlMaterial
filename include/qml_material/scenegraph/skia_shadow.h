@@ -240,7 +240,7 @@ public:
         case kStroke_RRectType: return kVertsPerStrokeRRect;
         case kOverstroke_RRectType: return kVertsPerOverstrokeRRect;
         }
-        Q_ASSERT(false);
+        Q_UNREACHABLE();
     }
 
     static int rrect_type_to_index_count(RRectType type) {
@@ -249,7 +249,7 @@ public:
         case kStroke_RRectType: return kIndicesPerStrokeRRect;
         case kOverstroke_RRectType: return kIndicesPerOverstrokeRRect;
         }
-        Q_ASSERT(false);
+        Q_UNREACHABLE();
     }
 
     static const uint16_t* rrect_type_to_indices(RRectType type) {
@@ -258,7 +258,7 @@ public:
         case kStroke_RRectType: return gRRectIndices + 6 * 4;
         case kOverstroke_RRectType: return gRRectIndices;
         }
-        Q_ASSERT(false);
+        Q_UNREACHABLE();
     }
 
 public:
