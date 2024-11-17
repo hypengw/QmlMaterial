@@ -2295,7 +2295,7 @@ public:
     CODE(zoom_out_map, "\ue56b");
 };
 
-auto create_icon_token() -> IconToken*;
+auto create_icon_token(QObject* parent) -> IconToken*;
 } // namespace qml_material::token
 
 #undef CODE

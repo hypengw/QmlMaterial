@@ -7,6 +7,7 @@ Item {
     // tl,tr,bl,br
     property MD.t_corner corners: MD.Util.corner(radius)
     property alias asynchronous: m_image.asynchronous
+    property alias retainWhileLoading: m_image.retainWhileLoading
     property alias autoTransform: m_image.autoTransform
     property alias cache: m_image.cache
     property alias currentFrame: m_image.currentFrame
@@ -32,7 +33,6 @@ Item {
     implicitWidth: {
         return sourceSize.width;
     }
-    opacity: root.status === Image.Ready && root.paintedHeight > 0 ? 1 : 0
 
     property int elevation: MD.Token.elevation.level0
 
@@ -40,11 +40,14 @@ Item {
         anchors.fill: parent
         elevation: root.elevation
         corners: root.corners
+        opacity: root.status === Image.Ready && root.paintedHeight > 0 ? 1 : 0
+
     }
 
     Image {
         id: m_image
         anchors.fill: parent
+        retainWhileLoading: true
         cache: true
         smooth: true
         fillMode: Image.PreserveAspectCrop

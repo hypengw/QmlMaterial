@@ -5,7 +5,7 @@ This is a library of Qml implementing Google's Material Design.
 
 ### Dependencies
 
-- Qt 6.2+
+- Qt 6.8+
 
 ### Installation
 ```bash

@@ -127,6 +127,7 @@ set(QML_FILES
     qml/ActionToolBar.qml
     qml/AppBar.qml
     qml/Button.qml
+    qml/ButtonGroup.qml
     qml/BarItem.qml
     qml/Control.qml
     qml/ComboBox.qml

@@ -11,7 +11,7 @@ namespace qml_material::token
 {
 
 class IconToken;
-auto create_icon_token() -> IconToken*;
+auto create_icon_token(QObject* parent) -> IconToken*;
 
 struct WindowClassItem {
     Q_GADGET

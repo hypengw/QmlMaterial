@@ -56,10 +56,11 @@ public:
 #define X(NAME, ...)                                                                            \
     Q_PROPERTY(qml_material::token::TypeScaleItem NAME READ NAME NOTIFY typescaleChanged FINAL) \
 public:                                                                                         \
-    TypeScaleItem NAME() const { return m_##NAME; }                                             \
+    const TypeScaleItem& NAME() const { return m_##NAME; }                                      \
                                                                                                 \
 private:                                                                                        \
     TypeScaleItem m_##NAME { __VA_ARGS__ };
+
     // clang-format off
     X(display_large  , 57, 64, QFont::Normal, QFont::Normal, -0.25)
     X(display_medium , 45, 52, QFont::Normal, QFont::Normal, 0.0  )

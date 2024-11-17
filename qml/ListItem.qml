@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Templates as T
-import QtQuick.Controls.Basic.impl
 import Qcm.Material as MD
 
 T.ItemDelegate {
@@ -30,7 +29,9 @@ T.ItemDelegate {
     property int count: (ListView.view?.count ?? GridView.view?.count) ?? 0
     property int dgIndex: index ?? 0
 
-    property alias mdState: m_sh.state
+    property MD.StateListItem mdState: MD.StateListItem {
+        item: control
+    }
 
     property string supportText
     property int maximumLineCount: 1
@@ -165,9 +166,6 @@ T.ItemDelegate {
     }
 
     MD.StateHolder {
-        id: m_sh
-        state: MD.StateListItem {
-            item: control
-        }
+        state: control.mdState
     }
 }

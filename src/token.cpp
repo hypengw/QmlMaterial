@@ -5,7 +5,7 @@ namespace qml_material::token
 Token::Token(QObject* parent)
     : QObject(parent),
       m_typescale(new TypeScale(this)),
-      m_icon(create_icon_token()),
+      m_icon(create_icon_token(this)),
       m_flick(new Flick(this)) {}
 Token::~Token() {}
 auto Token::typescale() const -> TypeScale* { return m_typescale; }
