@@ -39,7 +39,7 @@ public:
 } // namespace sg
 
 Rectangle::Rectangle(QQuickItem* parentItem)
-    : QQuickItem(parentItem), m_radius(0), m_color(Qt::transparent), m_corners() {
+    : QQuickItem(parentItem), m_corners(), m_radius(0), m_color(Qt::transparent) {
     setFlag(QQuickItem::ItemHasContents, true);
     connect(this, &Rectangle::colorChanged, this, &Rectangle::update);
     connect(this, &Rectangle::cornersChanged, this, &Rectangle::update);

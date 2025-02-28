@@ -3,6 +3,7 @@ import Qcm.Material as MD
 
 Text {
     id: root
+    antialiasing: true
     property MD.t_typescale typescale: MD.Token.typescale.label_medium
     property bool prominent: false
     property bool useTypescale: true

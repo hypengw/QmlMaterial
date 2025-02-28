@@ -68,7 +68,7 @@ public:
 } // namespace sg
 
 Elevation::Elevation(QQuickItem* parentItem)
-    : QQuickItem(parentItem), m_elevation(0), m_radius(0), m_corners(), m_color(Qt::black) {
+    : QQuickItem(parentItem),  m_elevation(0), m_corners(), m_radius(0), m_color(Qt::black) {
     setFlag(QQuickItem::ItemHasContents, true);
     connect(this, &Elevation::elevationChanged, this, &Elevation::update);
     connect(this, &Elevation::colorChanged, this, &Elevation::update);

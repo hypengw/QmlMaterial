@@ -40,11 +40,11 @@ struct TypeScaleItem {
 public:
     Q_INVOKABLE TypeScaleItem fresh() const { return *this; }
 
-    i32           size;
-    i32           line_height;
-    QFont::Weight weight;
-    QFont::Weight weight_prominent;
-    qreal         tracking;
+    i32           size { 14 };
+    i32           line_height { 24 };
+    QFont::Weight weight { QFont::Weight::Normal };
+    QFont::Weight weight_prominent { QFont::Weight::Normal };
+    qreal         tracking { 0 };
 };
 
 class TypeScale : public QObject {

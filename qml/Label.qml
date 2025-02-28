@@ -7,6 +7,7 @@ T.Label {
     id: root
 
     linkColor: root.palette.link
+    antialiasing: true
 
     property MD.t_typescale typescale: MD.Token.typescale.label_medium
     property bool prominent: false
