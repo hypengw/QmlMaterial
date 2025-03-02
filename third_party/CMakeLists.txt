@@ -24,4 +24,6 @@ add_library(
   ${md_dir}/cam/hct_solver.cc
   ${md_dir}/cam/viewing_conditions.cc
   ${md_dir}/blend/blend.cc)
+
+target_compile_options(material_color PRIVATE -w)
 target_include_directories(material_color PUBLIC material-color)

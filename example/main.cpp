@@ -6,6 +6,8 @@
 
 #include <QtQml/QQmlExtensionPlugin>
 
+using namespace Qt::StringLiterals;
+
 #ifdef QML_STATIC
 Q_IMPORT_QML_PLUGIN(Qcm_MaterialPlugin)
 #endif
@@ -24,7 +26,7 @@ int main(int argc, char* argv[]) {
     QQmlApplicationEngine engine;
 
     engine.addImportPath("qrc:/");
-    engine.load(u"qrc:/main.qml"_qs);
+    engine.load(u"qrc:/main.qml"_s);
 
     return gui_app.exec();
 }
