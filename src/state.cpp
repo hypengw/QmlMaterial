@@ -59,6 +59,7 @@ auto State::ctx() const -> Theme* {
         if (auto a = qobject_cast<Theme*>(qmlAttachedPropertiesObject<Theme>(item, true))) {
             return a;
         }
+    } else {
     }
     return nullptr;
 }

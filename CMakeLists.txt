@@ -204,6 +204,7 @@ set(QML_FILES
     qml/state/StateSuggestionChip.qml
     qml/state/StateBarItem.qml
     qml/state/StateSearchBar.qml
+    qml/state/StateTextField.qml
 
     qml/impl/BoxShadow.qml
     qml/impl/CircleProgressShape.qml

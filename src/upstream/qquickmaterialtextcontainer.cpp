@@ -1,5 +1,6 @@
 // Copyright (C) 2023 The Qt Company Ltd.
-// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR
+// GPL-3.0-only
 
 #include "qml_material/upstream/qquickmaterialtextcontainer_p.h"
 
@@ -8,7 +9,8 @@
 #include <QtGui/qpainterpath.h>
 #include <QtQml/qqmlinfo.h>
 
-namespace qml_material {
+namespace qml_material
+{
 /*
     This class exists because:
 
@@ -28,118 +30,82 @@ namespace qml_material {
     and would have been harder to maintain, as well as having more overhead.
 */
 
-QQuickMaterialTextContainer::QQuickMaterialTextContainer(QQuickItem *parent)
-    : QQuickPaintedItem(parent)
-{
-}
+QQuickMaterialTextContainer::QQuickMaterialTextContainer(QQuickItem* parent)
+    : QQuickPaintedItem(parent) {}
 
-bool QQuickMaterialTextContainer::isFilled() const
-{
-    return m_filled;
-}
+bool QQuickMaterialTextContainer::isFilled() const { return m_filled; }
 
-void QQuickMaterialTextContainer::setFilled(bool filled)
-{
-    if (filled == m_filled)
-        return;
+void QQuickMaterialTextContainer::setFilled(bool filled) {
+    if (filled == m_filled) return;
 
     m_filled = filled;
     update();
 }
 
-QColor QQuickMaterialTextContainer::fillColor() const
-{
-    return m_fillColor;
-}
+QColor QQuickMaterialTextContainer::fillColor() const { return m_fillColor; }
 
-void QQuickMaterialTextContainer::setFillColor(const QColor &fillColor)
-{
-    if (fillColor == m_fillColor)
-        return;
+void QQuickMaterialTextContainer::setFillColor(const QColor& fillColor) {
+    if (fillColor == m_fillColor) return;
 
     m_fillColor = fillColor;
     update();
 }
 
-QColor QQuickMaterialTextContainer::outlineColor() const
-{
-    return m_outlineColor;
-}
+QColor QQuickMaterialTextContainer::outlineColor() const { return m_outlineColor; }
 
-void QQuickMaterialTextContainer::setOutlineColor(const QColor &outlineColor)
-{
-    if (outlineColor == m_outlineColor)
-        return;
+void QQuickMaterialTextContainer::setOutlineColor(const QColor& outlineColor) {
+    if (outlineColor == m_outlineColor) return;
 
     m_outlineColor = outlineColor;
     update();
 }
 
-QColor QQuickMaterialTextContainer::focusedOutlineColor() const
-{
-    return m_outlineColor;
-}
+QColor QQuickMaterialTextContainer::focusedOutlineColor() const { return m_outlineColor; }
 
-void QQuickMaterialTextContainer::setFocusedOutlineColor(const QColor &focusedOutlineColor)
-{
-    if (focusedOutlineColor == m_focusedOutlineColor)
-        return;
+void QQuickMaterialTextContainer::setFocusedOutlineColor(const QColor& focusedOutlineColor) {
+    if (focusedOutlineColor == m_focusedOutlineColor) return;
 
     m_focusedOutlineColor = focusedOutlineColor;
     update();
 }
 
-qreal QQuickMaterialTextContainer::focusAnimationProgress() const
-{
+qreal QQuickMaterialTextContainer::focusAnimationProgress() const {
     return m_focusAnimationProgress;
 }
 
-void QQuickMaterialTextContainer::setFocusAnimationProgress(qreal progress)
-{
-    if (qFuzzyCompare(progress, m_focusAnimationProgress))
-        return;
+void QQuickMaterialTextContainer::setFocusAnimationProgress(qreal progress) {
+    if (qFuzzyCompare(progress, m_focusAnimationProgress)) return;
 
     m_focusAnimationProgress = progress;
     update();
 }
 
-qreal QQuickMaterialTextContainer::placeholderTextWidth() const
-{
-    return m_placeholderTextWidth;
-}
+qreal QQuickMaterialTextContainer::placeholderTextWidth() const { return m_placeholderTextWidth; }
 
-void QQuickMaterialTextContainer::setPlaceholderTextWidth(qreal placeholderTextWidth)
-{
-    if (qFuzzyCompare(placeholderTextWidth, m_placeholderTextWidth))
-        return;
+void QQuickMaterialTextContainer::setPlaceholderTextWidth(qreal placeholderTextWidth) {
+    if (qFuzzyCompare(placeholderTextWidth, m_placeholderTextWidth)) return;
 
     m_placeholderTextWidth = placeholderTextWidth;
     update();
 }
 
-QQuickMaterialTextContainer::PlaceHolderHAlignment QQuickMaterialTextContainer::placeholderTextHAlign() const
-{
+QQuickMaterialTextContainer::PlaceHolderHAlignment
+QQuickMaterialTextContainer::placeholderTextHAlign() const {
     return m_placeholderTextHAlign;
 }
 
-void QQuickMaterialTextContainer::setPlaceholderTextHAlign(PlaceHolderHAlignment placeholderTextHAlign)
-{
-    if (m_placeholderTextHAlign == placeholderTextHAlign)
-        return;
+void QQuickMaterialTextContainer::setPlaceholderTextHAlign(
+    PlaceHolderHAlignment placeholderTextHAlign) {
+    if (m_placeholderTextHAlign == placeholderTextHAlign) return;
 
     m_placeholderTextHAlign = placeholderTextHAlign;
     update();
 }
 
-bool QQuickMaterialTextContainer::controlHasActiveFocus() const
-{
-    return m_controlHasActiveFocus;
-}
+bool QQuickMaterialTextContainer::controlHasActiveFocus() const { return m_controlHasActiveFocus; }
 
-void QQuickMaterialTextContainer::setControlHasActiveFocus(bool controlHasActiveFocus)
-{
-    if (m_controlHasActiveFocus == controlHasActiveFocus)
-        return;
+void QQuickMaterialTextContainer::setControlHasActiveFocus(bool controlHasActiveFocus) {
+    if (m_controlHasActiveFocus == controlHasActiveFocus) return;
 
     m_controlHasActiveFocus = controlHasActiveFocus;
     if (m_controlHasActiveFocus)
@@ -149,15 +115,10 @@ void QQuickMaterialTextContainer::setControlHasActiveFocus(bool controlHasActive
     emit controlHasActiveFocusChanged();
 }
 
-bool QQuickMaterialTextContainer::controlHasText() const
-{
-    return m_controlHasText;
-}
+bool QQuickMaterialTextContainer::controlHasText() const { return m_controlHasText; }
 
-void QQuickMaterialTextContainer::setControlHasText(bool controlHasText)
-{
-    if (m_controlHasText == controlHasText)
-        return;
+void QQuickMaterialTextContainer::setControlHasText(bool controlHasText) {
+    if (m_controlHasText == controlHasText) return;
 
     m_controlHasText = controlHasText;
     // TextArea's text length is updated after component completion,
@@ -167,15 +128,10 @@ void QQuickMaterialTextContainer::setControlHasText(bool controlHasText)
     emit controlHasTextChanged();
 }
 
-bool QQuickMaterialTextContainer::placeholderHasText() const
-{
-    return m_placeholderHasText;
-}
+bool QQuickMaterialTextContainer::placeholderHasText() const { return m_placeholderHasText; }
 
-void QQuickMaterialTextContainer::setPlaceholderHasText(bool placeholderHasText)
-{
-    if (m_placeholderHasText == placeholderHasText)
-        return;
+void QQuickMaterialTextContainer::setPlaceholderHasText(bool placeholderHasText) {
+    if (m_placeholderHasText == placeholderHasText) return;
 
     m_placeholderHasText = placeholderHasText;
     maybeSetFocusAnimationProgress();
@@ -183,10 +139,7 @@ void QQuickMaterialTextContainer::setPlaceholderHasText(bool placeholderHasText)
     emit placeholderHasTextChanged();
 }
 
-int QQuickMaterialTextContainer::horizontalPadding() const
-{
-    return m_horizontalPadding;
-}
+int QQuickMaterialTextContainer::horizontalPadding() const { return m_horizontalPadding; }
 
 /*!
     \internal
@@ -196,21 +149,17 @@ int QQuickMaterialTextContainer::horizontalPadding() const
     We need this to be a property so that the QML can set it, since we can't
     access QQuickMaterialStyle's C++ API from this plugin.
 */
-void QQuickMaterialTextContainer::setHorizontalPadding(int horizontalPadding)
-{
-    if (m_horizontalPadding == horizontalPadding)
-        return;
+void QQuickMaterialTextContainer::setHorizontalPadding(int horizontalPadding) {
+    if (m_horizontalPadding == horizontalPadding) return;
     m_horizontalPadding = horizontalPadding;
     update();
     emit horizontalPaddingChanged();
 }
 
-void QQuickMaterialTextContainer::paint(QPainter *painter)
-{
+void QQuickMaterialTextContainer::paint(QPainter* painter) {
     qreal w = width();
     qreal h = height();
-    if (w <= 0 || h <= 0)
-        return;
+    if (w <= 0 || h <= 0) return;
 
     // Account for pen width.
     const qreal penWidth = m_filled ? 1 : (m_controlHasActiveFocus ? 2 : 1);
@@ -229,15 +178,11 @@ void QQuickMaterialTextContainer::paint(QPainter *painter)
     // Take care of different Alignment cases for the placeholder text.
     qreal gapCenterX;
     switch (m_placeholderTextHAlign) {
-    case PlaceHolderHAlignment::AlignHCenter:
-        gapCenterX = width() / 2;
-        break;
+    case PlaceHolderHAlignment::AlignHCenter: gapCenterX = width() / 2; break;
     case PlaceHolderHAlignment::AlignRight:
-        gapCenterX = width()  - halfPlaceholderWidth - m_horizontalPadding;
+        gapCenterX = width() - halfPlaceholderWidth - m_horizontalPadding;
         break;
-    default:
-        gapCenterX = m_horizontalPadding + halfPlaceholderWidth;
-        break;
+    default: gapCenterX = m_horizontalPadding + halfPlaceholderWidth; break;
     }
 
     QPainterPath path;
@@ -250,10 +195,13 @@ void QQuickMaterialTextContainer::paint(QPainter *painter)
     } else {
         // Start at the center of the gap and animate outwards towards the left-hand side.
         // Subtract gapPadding to account for the gap between the line and the placeholder text.
-        // Also subtract the pen width because otherwise it extends by that distance too much to the right.
-        // Changing the cap style to Qt::FlatCap would only fix this by half the pen width,
-        // but it has no effect anyway (perhaps it literally only affects end points and not "start" points?).
-        startPos = QPointF(gapCenterX - (m_focusAnimationProgress * halfPlaceholderWidth) - gapPadding - penWidth, 0);
+        // Also subtract the pen width because otherwise it extends by that distance too much to the
+        // right. Changing the cap style to Qt::FlatCap would only fix this by half the pen width,
+        // but it has no effect anyway (perhaps it literally only affects end points and not "start"
+        // points?).
+        startPos = QPointF(gapCenterX - (m_focusAnimationProgress * halfPlaceholderWidth) -
+                               gapPadding - penWidth,
+                           0);
     }
     path.moveTo(startPos);
     path.arcTo(0, 0, cornerRadius * 2, cornerRadius * 2, 90, 90);
@@ -271,7 +219,12 @@ void QQuickMaterialTextContainer::paint(QPainter *painter)
         path.lineTo(w, h);
     } else {
         path.lineTo(w - cornerRadius * 2, h);
-        path.arcTo(w - cornerRadius * 2, h - cornerRadius * 2, cornerRadius * 2, cornerRadius * 2, 270, 90);
+        path.arcTo(w - cornerRadius * 2,
+                   h - cornerRadius * 2,
+                   cornerRadius * 2,
+                   cornerRadius * 2,
+                   270,
+                   90);
     }
 
     // Top-right rounded corner.
@@ -282,7 +235,8 @@ void QQuickMaterialTextContainer::paint(QPainter *painter)
         // Back to the start.
         path.lineTo(startPos.x(), startPos.y());
     } else {
-        path.lineTo(gapCenterX + (m_focusAnimationProgress * halfPlaceholderWidth) + gapPadding, startPos.y());
+        path.lineTo(gapCenterX + (m_focusAnimationProgress * halfPlaceholderWidth) + gapPadding,
+                    startPos.y());
     }
 
     // Account for pen width.
@@ -290,7 +244,7 @@ void QQuickMaterialTextContainer::paint(QPainter *painter)
 
     painter->setRenderHint(QPainter::Antialiasing, true);
 
-    auto control = textControl();
+    auto       control = textControl();
     const bool focused = control && control->hasActiveFocus();
     // We still want to draw the stroke when it's filled, otherwise it will be a pixel
     // (the pen width) too narrow on either side.
@@ -298,8 +252,7 @@ void QQuickMaterialTextContainer::paint(QPainter *painter)
     pen.setColor(m_filled ? m_fillColor : (focused ? m_focusedOutlineColor : m_outlineColor));
     pen.setWidthF(penWidth);
     painter->setPen(pen);
-    if (m_filled)
-        painter->setBrush(QBrush(m_fillColor));
+    if (m_filled) painter->setBrush(QBrush(m_fillColor));
 
     // Fill or stroke the container's shape.
     // If not filling, the default brush will be used, which is Qt::NoBrush.
@@ -307,33 +260,35 @@ void QQuickMaterialTextContainer::paint(QPainter *painter)
 
     // Draw the focus line at the bottom for filled containers.
     if (m_filled) {
-        if (!qFuzzyCompare(m_focusAnimationProgress, 1.0)) {
-            // Draw the enabled active indicator line (#10) that's at the bottom when it's not focused:
+        if (! qFuzzyCompare(m_focusAnimationProgress, 1.0) || !m_controlHasActiveFocus) {
+            // Draw the enabled active indicator line (#10) that's at the bottom when it's not
+            // focused:
             // https://m3.material.io/components/text-fields/specs#6d654d1d-262e-4697-858c-9a75e8e7c81d
-            // Don't bother drawing it when the animation has finished, as the focused active indicator
-            // line below will obscure it.
+            // Don't bother drawing it when the animation has finished, as the focused active
+            // indicator line below will obscure it.
             pen.setColor(m_outlineColor);
             painter->setPen(pen);
             painter->drawLine(0, h, w, h);
         }
 
-        if (!qFuzzyIsNull(m_focusAnimationProgress)) {
+        if (! qFuzzyIsNull(m_focusAnimationProgress) && m_controlHasActiveFocus) {
             // Draw the focused active indicator line (#6) that's at the bottom when it's focused.
             // Start at the center and expand outwards.
-            const int lineLength = m_focusAnimationProgress * w;
+            const int lineLength       = m_focusAnimationProgress * w;
             const int horizontalCenter = w / 2;
             pen.setColor(m_focusedOutlineColor);
-            pen.setWidth(2);
+            pen.setWidth(4);
             painter->setPen(pen);
-            painter->drawLine(horizontalCenter - (lineLength / 2), h,
-                horizontalCenter + (lineLength / 2) + pen.width() / 2, h);
+            painter->drawLine(horizontalCenter - (lineLength / 2),
+                              h,
+                              horizontalCenter + (lineLength / 2) + pen.width() / 2,
+                              h);
         }
     }
 }
 
-bool QQuickMaterialTextContainer::shouldAnimateOutline() const
-{
-    return !m_controlHasText && m_placeholderHasText;
+bool QQuickMaterialTextContainer::shouldAnimateOutline() const {
+    return ! m_controlHasText && m_placeholderHasText;
 }
 
 /*!
@@ -341,15 +296,13 @@ bool QQuickMaterialTextContainer::shouldAnimateOutline() const
 
     \sa QQuickPlaceholderText::textControl().
 */
-QQuickItem *QQuickMaterialTextContainer::textControl() const
-{
-    return qobject_cast<QQuickItem *>(parent());
+QQuickItem* QQuickMaterialTextContainer::textControl() const {
+    return qobject_cast<QQuickItem*>(parent());
 }
 
-void QQuickMaterialTextContainer::controlGotActiveFocus()
-{
-    const bool shouldAnimate = m_filled ? !m_controlHasText : shouldAnimateOutline();
-    if (!shouldAnimate) {
+void QQuickMaterialTextContainer::controlGotActiveFocus() {
+    const bool shouldAnimate = m_filled ? ! m_controlHasText : shouldAnimateOutline();
+    if (! shouldAnimate) {
         // It does have focus, but sometimes we don't need to animate anything, just change colors.
         if (m_filled && m_controlHasText) {
             // When a filled container has text already entered, we should just immediately change
@@ -363,59 +316,52 @@ void QQuickMaterialTextContainer::controlGotActiveFocus()
     startFocusAnimation();
 }
 
-void QQuickMaterialTextContainer::controlLostActiveFocus()
-{
+void QQuickMaterialTextContainer::controlLostActiveFocus() {
     // We don't want to animate the active indicator line (at the bottom) of filled containers
     // when the control loses focus, only when it gets it.
-    if (m_filled || !shouldAnimateOutline()) {
+    if (m_filled || ! shouldAnimateOutline()) {
         // Ensure that we set this so that filled containers go back to a non-accent-colored
         // active indicator line when losing focus.
-        if (m_filled)
-            m_focusAnimationProgress = 0;
+        if (m_filled) m_focusAnimationProgress = 0;
         update();
         return;
     }
 
-    QPropertyAnimation *animation = new QPropertyAnimation(this, "focusAnimationProgress", this);
+    QPropertyAnimation* animation = new QPropertyAnimation(this, "focusAnimationProgress", this);
     animation->setDuration(300);
     animation->setStartValue(1);
     animation->setEndValue(0);
     animation->start(QAbstractAnimation::DeleteWhenStopped);
 }
 
-void QQuickMaterialTextContainer::startFocusAnimation()
-{
+void QQuickMaterialTextContainer::startFocusAnimation() {
     // Each time setFocusAnimationProgress is called by the animation, it'll call update(),
     // which will cause us to be re-rendered.
-    QPropertyAnimation *animation = new QPropertyAnimation(this, "focusAnimationProgress", this);
+    QPropertyAnimation* animation = new QPropertyAnimation(this, "focusAnimationProgress", this);
     animation->setDuration(300);
     animation->setStartValue(0);
     animation->setEndValue(1);
     animation->start(QAbstractAnimation::DeleteWhenStopped);
 }
 
-void QQuickMaterialTextContainer::maybeSetFocusAnimationProgress()
-{
-    if (m_filled)
-        return;
+void QQuickMaterialTextContainer::maybeSetFocusAnimationProgress() {
+    if (m_filled) return;
 
     if (m_controlHasText && m_placeholderHasText) {
         // Show the interrupted outline when there is text.
         setFocusAnimationProgress(1);
-    } else if (!m_controlHasText && !m_controlHasActiveFocus) {
+    } else if (! m_controlHasText && ! m_controlHasActiveFocus) {
         // If the text was cleared while it didn't have focus, don't animate, just close the gap.
         setFocusAnimationProgress(0);
     }
 }
 
-void QQuickMaterialTextContainer::componentComplete()
-{
+void QQuickMaterialTextContainer::componentComplete() {
     QQuickPaintedItem::componentComplete();
 
-    if (!parentItem())
-        qmlWarning(this) << "Expected parent item by component completion!";
+    if (! parentItem()) qmlWarning(this) << "Expected parent item by component completion!";
 
     maybeSetFocusAnimationProgress();
 }
 
-}
+} // namespace qml_material
