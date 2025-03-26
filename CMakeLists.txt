@@ -5,62 +5,48 @@ project(
   VERSION 0.1.1
   LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD
-    20)
-set(CMAKE_CXX_STANDARD_REQUIRED
-    ON)
-set(CMAKE_POSITION_INDEPENDENT_CODE
-    ON)
-set(CMAKE_AUTOMOC
-    ON)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOMOC_PATH_PREFIX ON)
 
 option(QM_BUILD_EXAMPLE ON)
 
 # check lto
 include(CheckIPOSupported)
-check_ipo_supported(
-  RESULT is_ipo_supported
-  OUTPUT lto_error)
-if(is_ipo_supported
-   AND NOT EMSCRIPTEN)
-  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION
-      ON)
-  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG
-      OFF)
+check_ipo_supported(RESULT is_ipo_supported OUTPUT lto_error)
+if(is_ipo_supported AND NOT EMSCRIPTEN)
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
 endif()
 
-if(UNIX
-   AND NOT APPLE)
-  set(LINUX
-      CACHE INTERNAL TRUE "")
+if(UNIX AND NOT APPLE)
+  set(LINUX CACHE INTERNAL TRUE "")
 endif()
 
 include(GNUInstallDirs)
 
-find_package(
-  Qt6 REQUIRED
-  COMPONENTS Core Quick QuickControls2 Gui ShaderTools)
+find_package(Qt6 REQUIRED COMPONENTS Core Quick QuickControls2 Gui ShaderTools)
 find_package(PkgConfig REQUIRED)
 if(QT_KNOWN_POLICY_QTP0004)
-    qt_policy(SET QTP0004 NEW)
+  qt_policy(SET QTP0004 NEW)
 endif()
 
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE
-      Release)
+  set(CMAKE_BUILD_TYPE Release)
 endif()
 
 if("${QT_INSTALL_QML}" STREQUAL "")
-set(QT_INSTALL_QML "${CMAKE_INSTALL_LIBDIR}/qt6/qml")
+  set(QT_INSTALL_QML "${CMAKE_INSTALL_LIBDIR}/qt6/qml")
 endif()
 
-set(QML_INSTALL_DIR "${QT_INSTALL_QML}" CACHE STRING "")
+set(QML_INSTALL_DIR
+    "${QT_INSTALL_QML}"
+    CACHE STRING "")
 message("QML_INSTALL_DIR: ${QML_INSTALL_DIR}")
 
-
-set(LIBNAME
-    qml_material)
+set(LIBNAME qml_material)
 
 set(SOURCES
     include/qml_material/qml_util.h
@@ -89,18 +75,14 @@ set(SOURCES
     include/qml_material/scenegraph/rectangle_material.h
     include/qml_material/scenegraph/elevation_material.h
     include/qml_material/upstream/qquickmaterialtextcontainer_p.h
-
     src/scenegraph/geometry.cpp
     src/scenegraph/rectangle_material.cpp
     src/scenegraph/elevation_material.cpp
-
     src/kirigami/displayhint.cpp
     src/kirigami/toolbarlayout.cpp
     src/kirigami/toolbarlayoutdelegate.cpp
     src/kirigami/wheelhandler.cpp
-
     src/upstream/qquickmaterialtextcontainer.cpp
-
     src/color.cpp
     src/corner.cpp
     src/icon.cpp
@@ -117,8 +99,7 @@ set(SOURCES
     src/type_scale.cpp
     src/round_item.cpp
     src/rectangle.cpp
-    src/elevation.cpp
-    )
+    src/elevation.cpp)
 set(QML_FILES
     qml/js/jsUtils.mjs
     qml/Action.qml
@@ -184,7 +165,6 @@ set(QML_FILES
     qml/TabBar.qml
     qml/TabButton.qml
     qml/SdfRectangle.qml
-
     qml/state/StateAppBar.qml
     qml/state/StateSnakeBar.qml
     qml/state/StateButton.qml
@@ -205,7 +185,6 @@ set(QML_FILES
     qml/state/StateBarItem.qml
     qml/state/StateSearchBar.qml
     qml/state/StateTextField.qml
-
     qml/impl/BoxShadow.qml
     qml/impl/CircleProgressShape.qml
     qml/impl/CircleIndicatorShape.qml
@@ -220,16 +199,13 @@ set(QML_FILES
     qml/impl/Elevation.qml
     qml/impl/ElevationRectangle.qml
     qml/impl/ElevationRectangleBorder.qml
-    qml/impl/Shape.qml
-    )
-set(RESOURCES
-    assets/MaterialIconsRound-Regular.otf
-    assets/MaterialIconsOutlined-Regular.otf)
+    qml/impl/Shape.qml)
+set(RESOURCES assets/MaterialIconsRound-Regular.otf
+              assets/MaterialIconsOutlined-Regular.otf)
 
 set(SHADER_DEFINES)
 
-set(QML_MATERIAL_BUILD_TYPE
-    SHARED)
+set(QML_MATERIAL_BUILD_TYPE SHARED)
 
 if(UNIX AND NOT EMSCRIPTEN)
   if(ANDROID)
@@ -244,15 +220,12 @@ if(EMSCRIPTEN)
   list(APPEND SOURCES src/wasm/wasm.cpp)
   list(APPEND SHADER_DEFINES "GLES=1")
 
-  set(QML_MATERIAL_BUILD_TYPE
-      STATIC)
+  set(QML_MATERIAL_BUILD_TYPE STATIC)
   add_compile_options(-flto)
   add_link_options("-sEXPORT_NAME=qml_material" -s FULL_ES3=1 -flto)
 endif()
 
-set_source_files_properties(
-  qml/Token.qml
-  PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+set_source_files_properties(qml/Token.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 include_directories(include)
 
 qt_add_qml_module(
@@ -269,31 +242,25 @@ qt_add_qml_module(
   RESOURCES
   ${RESOURCES}
   NO_PLUGIN_OPTIONAL)
+add_library("${LIBNAME}::${LIBNAME}" ALIAS ${LIBNAME})
 
-set(SHADER_GLSLS
-    "assets/shader/common.glsl"
-    "assets/shader/sdf.glsl"
-    )
+set(SHADER_GLSLS "assets/shader/common.glsl" "assets/shader/sdf.glsl")
 set(SHADER_SOURCES
-    "assets/shader/default.vert" 
+    "assets/shader/default.vert"
     "assets/shader/round_clip.frag"
-    "assets/shader/sdf_rectangle.frag" 
+    "assets/shader/sdf_rectangle.frag"
     "assets/shader/shadow_.frag"
     "assets/shader/rectangle.vert"
     "assets/shader/rectangle.frag"
     "assets/shader/shadow.vert"
     "assets/shader/shadow.frag"
-    "assets/shader/rect_glow.frag"
-    )
-set(SHADER_OPT
-BATCHABLE
-OPTIMIZED
-)
+    "assets/shader/rect_glow.frag")
+set(SHADER_OPT BATCHABLE OPTIMIZED)
 if(CMAKE_BUILD_TYPE MATCHES Debug)
-list(APPEND SHADER_OPT DEBUGINFO)
+  list(APPEND SHADER_OPT DEBUGINFO)
 endif()
 if(NOT WIN32)
-list(APPEND SHADER_OPT NOHLSL)
+  list(APPEND SHADER_OPT NOHLSL)
 endif()
 
 qt_add_shaders(
@@ -309,11 +276,8 @@ qt_add_shaders(
   FILES
   ${SHADER_SOURCES})
 
-foreach(
-  file
-  ${SHADER_SOURCES})
-  set(output_file
-      ".qsb/${file}.qsb")
+foreach(file ${SHADER_SOURCES})
+  set(output_file ".qsb/${file}.qsb")
   add_custom_command(
     OUTPUT ${output_file}
     DEPENDS ${SHADER_GLSLS}
@@ -323,11 +287,10 @@ endforeach()
 target_include_directories(
   ${LIBNAME}
   PUBLIC include
-  PRIVATE "include/${LIBNAME}" "include/${LIBNAME}/kirigami" "include/${LIBNAME}/upstream" src)
+  PRIVATE "include/${LIBNAME}" "include/${LIBNAME}/kirigami"
+          "include/${LIBNAME}/upstream" src)
 
-set_target_properties(
-  ${LIBNAME}
-  PROPERTIES CXX_VISIBILITY_PRESET hidden)
+set_target_properties(${LIBNAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
 add_subdirectory(third_party)
 if(QM_BUILD_EXAMPLE)
@@ -347,14 +310,12 @@ function(qt_install_qml_module target_)
 
   install(TARGETS ${target_})
 
-  install(
-    TARGETS ${QML_PLUGIN_TARGET}
-    LIBRARY DESTINATION ${QML_TARGET_INSTALL_DIR})
+  install(TARGETS ${QML_PLUGIN_TARGET}
+          LIBRARY DESTINATION ${QML_TARGET_INSTALL_DIR})
 
-  install(
-    FILES "${QT_QML_OUTPUT_DIRECTORY}/${QML_TARGET_PATH}/qmldir"
-          "${QT_QML_OUTPUT_DIRECTORY}/${QML_TARGET_PATH}/${QML_TYEPINFO}"
-    DESTINATION ${QML_TARGET_INSTALL_DIR})
+  install(FILES "${QT_QML_OUTPUT_DIRECTORY}/${QML_TARGET_PATH}/qmldir"
+                "${QT_QML_OUTPUT_DIRECTORY}/${QML_TARGET_PATH}/${QML_TYEPINFO}"
+          DESTINATION ${QML_TARGET_INSTALL_DIR})
 endfunction()
 
 qt_install_qml_module(${LIBNAME})
