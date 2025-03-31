@@ -11,6 +11,7 @@ Item {
     property string name
     property int size: 24
     property int weight: Font.Normal
+    property real fill: 0
     property alias horizontalAlignment: m_text_icon.horizontalAlignment
     property alias verticalAlignment: m_text_icon.verticalAlignment
 
@@ -32,7 +33,7 @@ Item {
         }
         font.weight: root.weight
         font.variableAxes: {
-            "FILL": 0,
+            "FILL": root.fill,
             "GRAD": 0,
             "opsz": root.size,
             "wght": root.weight

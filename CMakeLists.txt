@@ -5,7 +5,6 @@ project(
   VERSION 0.1.1
   LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_AUTOMOC ON)
@@ -233,6 +232,7 @@ qt_add_qml_module(
   NO_PLUGIN_OPTIONAL)
 add_library("${LIBNAME}::${LIBNAME}" ALIAS ${LIBNAME})
 
+target_compile_features(${LIBNAME} PRIVATE cxx_std_20)
 target_compile_definitions(${LIBNAME} PRIVATE QML_MATERIAL_EXPORT)
 set_source_files_properties(
   "${CMAKE_CURRENT_BINARY_DIR}/${LIBNAME}_qmltyperegistrations.cpp"

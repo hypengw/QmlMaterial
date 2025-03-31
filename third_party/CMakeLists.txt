@@ -25,5 +25,6 @@ add_library(
   ${md_dir}/cam/viewing_conditions.cc
   ${md_dir}/blend/blend.cc)
 
+target_compile_features(material_color PRIVATE cxx_std_20)
 target_compile_options(material_color PRIVATE -w)
 target_include_directories(material_color PUBLIC material-color)
