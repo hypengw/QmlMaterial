@@ -99,7 +99,7 @@ T.Button {
                 spacing: 0
                 MD.Icon {
                     Layout.alignment: Qt.AlignVCenter
-                    name: control.checked ? MD.Token.icon.check : null
+                    name: MD.Token.icon.check
                     size: control.icon.width
                     color: control.mdState.leadingIconColor
                 }
