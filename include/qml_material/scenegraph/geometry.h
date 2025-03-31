@@ -3,7 +3,7 @@
 #include <QColor>
 #include <QVector4D>
 
-#include "qml_material/core.h"
+#include "qml_material/core.hpp"
 
 namespace qml_material::sg
 {

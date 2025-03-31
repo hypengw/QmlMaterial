@@ -1,11 +1,11 @@
-#include "qml_material/helper.h"
+#include "qml_material/helper.hpp"
 
 #include "cpp/scheme/scheme_content.h"
 #include "cpp/scheme/scheme_neutral.h"
 #include "cpp/scheme/scheme_tonal_spot.h"
 #include "cpp/blend/blend.h"
 
-#include "qml_material/core.h"
+#include "qml_material/core.hpp"
 
 #include "cpp/palettes/core.h"
 

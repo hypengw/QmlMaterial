@@ -1,6 +1,6 @@
 #include "qml_material/scenegraph/geometry.h"
 #include "qml_material/scenegraph/skia_shadow.h"
-#include "qml_material/loggingcategory.h"
+#include "qml_material/util/loggingcategory.hpp"
 
 namespace qml_material
 {

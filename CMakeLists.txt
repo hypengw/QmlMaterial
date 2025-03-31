@@ -49,28 +49,8 @@ message("QML_INSTALL_DIR: ${QML_INSTALL_DIR}")
 set(LIBNAME qml_material)
 
 set(SOURCES
-    include/qml_material/qml_util.h
-    include/qml_material/theme.h
-    include/qml_material/color.h
-    include/qml_material/corner.h
-    include/qml_material/icon.h
-    include/qml_material/input_block.h
-    include/qml_material/item_holder.h
-    include/qml_material/enum.h
-    include/qml_material/round_item.h
-    include/qml_material/state.h
-    include/qml_material/helper.h
-    include/qml_material/type_scale.h
-    include/qml_material/token.h
-    include/qml_material/page_context.h
-    include/qml_material/snake_model.h
-    include/qml_material/loggingcategory.h
-    include/qml_material/rectangle.h
-    include/qml_material/elevation.h
-    include/qml_material/kirigami/displayhint.h
-    include/qml_material/kirigami/toolbarlayout.h
-    include/qml_material/kirigami/toolbarlayoutdelegate.h
-    include/qml_material/kirigami/wheelhandler.h
+    include/qml_material/helper.hpp
+    include/qml_material/util/loggingcategory.hpp
     include/qml_material/scenegraph/geometry.h
     include/qml_material/scenegraph/rectangle_material.h
     include/qml_material/scenegraph/elevation_material.h
@@ -83,23 +63,26 @@ set(SOURCES
     src/kirigami/toolbarlayoutdelegate.cpp
     src/kirigami/wheelhandler.cpp
     src/upstream/qquickmaterialtextcontainer.cpp
-    src/color.cpp
-    src/corner.cpp
-    src/icon.cpp
-    src/input_block.cpp
-    src/item_holder.cpp
-    src/image.cpp
-    src/qml_util.cpp
-    src/state.cpp
+    src/enum.cpp
     src/theme.cpp
     src/helper.cpp
-    src/page_context.cpp
-    src/snake_model.cpp
-    src/token.cpp
-    src/type_scale.cpp
-    src/round_item.cpp
-    src/rectangle.cpp
-    src/elevation.cpp)
+    src/util/corner.cpp
+    src/util/input_block.cpp
+    src/util/item_holder.cpp
+    src/util/item_holder.cpp
+    src/util/image.cpp
+    src/util/qml_util.cpp
+    src/util/page_context.cpp
+    src/model/snake_model.cpp
+    src/token/color.cpp
+    src/token/icon.cpp
+    src/token/token.cpp
+    src/token/type_scale.cpp
+    src/item/round_item.cpp
+    src/item/state.cpp
+    src/item/rectangle.cpp
+    src/item/elevation.cpp)
+
 set(QML_FILES
     qml/js/jsUtils.mjs
     qml/Action.qml
@@ -203,16 +186,22 @@ set(QML_FILES
 set(RESOURCES assets/MaterialSymbolsRounded[FILL,GRAD,opsz,wght].woff2
               assets/MaterialSymbolsOutlined[FILL,GRAD,opsz,wght].woff2)
 
+set(QML_REG_INCLUDE_DIRS
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/item"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/token"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/model"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/util")
+
 set(SHADER_DEFINES)
 
 set(QML_MATERIAL_BUILD_TYPE SHARED)
 
 if(UNIX AND NOT EMSCRIPTEN)
   if(ANDROID)
-    list(APPEND SOURCES src/android/android.cpp)
+    list(APPEND SOURCES src/platform/android/android.cpp)
     list(APPEND SHADER_DEFINES "GLES=1")
   else()
-    list(APPEND SOURCES src/linux/xdp.h src/linux/xdp.cpp)
+    list(APPEND SOURCES src/platform/linux/xdp.cpp)
   endif()
 endif()
 
@@ -243,6 +232,12 @@ qt_add_qml_module(
   ${RESOURCES}
   NO_PLUGIN_OPTIONAL)
 add_library("${LIBNAME}::${LIBNAME}" ALIAS ${LIBNAME})
+
+target_compile_definitions(${LIBNAME} PRIVATE QML_MATERIAL_EXPORT)
+set_source_files_properties(
+  "${CMAKE_CURRENT_BINARY_DIR}/${LIBNAME}_qmltyperegistrations.cpp"
+  TARGET_DIRECTORY "${LIBNAME}" PROPERTIES INCLUDE_DIRECTORIES
+                                           "${QML_REG_INCLUDE_DIRS}")
 
 set(SHADER_GLSLS "assets/shader/common.glsl" "assets/shader/sdf.glsl")
 set(SHADER_SOURCES

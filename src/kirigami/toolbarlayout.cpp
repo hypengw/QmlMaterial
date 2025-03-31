@@ -13,7 +13,7 @@
 #include <QQmlComponent>
 #include <QTimer>
 
-#include "loggingcategory.h"
+#include "util/loggingcategory.hpp"
 #include "toolbarlayoutdelegate.h"
 
 ToolBarLayoutAttached::ToolBarLayoutAttached(QObject* parent): QObject(parent) {}

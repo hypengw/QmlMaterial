@@ -1,5 +1,5 @@
-#include "qml_material/theme.h"
-#include "qml_material/enum.h"
+#include "qml_material/theme.hpp"
+#include "qml_material/enum.hpp"
 
 using namespace qml_material;
 
@@ -138,3 +138,5 @@ auto ThemeSize::verticalPadding() const -> qint32 {
     default: return 16;
     }
 }
+
+#include <qml_material/moc_theme.cpp>

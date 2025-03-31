@@ -582,4 +582,4 @@ void WheelHandler::setUseAnimation(bool v) {
 void WheelHandler::rebindScrollBarV() { rebindScrollBar(m_scrollBarV); }
 void WheelHandler::rebindScrollBarH() { rebindScrollBar(m_scrollBarH); }
 
-// #include "moc_wheelhandler.cpp"
+#include "moc_wheelhandler.cpp"

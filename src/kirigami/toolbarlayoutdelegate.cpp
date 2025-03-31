@@ -6,7 +6,7 @@
 
 #include "toolbarlayoutdelegate.h"
 
-#include "loggingcategory.h"
+#include "util/loggingcategory.hpp"
 #include "toolbarlayout.h"
 
 ToolBarDelegateIncubator::ToolBarDelegateIncubator(QQmlComponent *component, QQmlContext *context)
