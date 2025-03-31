@@ -200,8 +200,8 @@ set(QML_FILES
     qml/impl/ElevationRectangle.qml
     qml/impl/ElevationRectangleBorder.qml
     qml/impl/Shape.qml)
-set(RESOURCES assets/MaterialIconsRound-Regular.otf
-              assets/MaterialIconsOutlined-Regular.otf)
+set(RESOURCES assets/MaterialSymbolsRounded[FILL,GRAD,opsz,wght].woff2
+              assets/MaterialSymbolsOutlined[FILL,GRAD,opsz,wght].woff2)
 
 set(SHADER_DEFINES)
 

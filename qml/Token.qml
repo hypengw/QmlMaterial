@@ -9,16 +9,25 @@ MD.TokenImpl {
     property int theme: root.color.colorScheme
     readonly property bool is_dark_theme: Number(theme) == MD.MdColorMgr.Dark
 
-    readonly property QtObject font: QtObject {
-        readonly property var default_font: Qt.application.font
-        readonly property FontLoader fontload_material_outline: FontLoader {
-            source: 'qrc:/Qcm/Material/assets/MaterialIconsOutlined-Regular.otf'
-        }
-        readonly property FontLoader fontload_material_round: FontLoader {
-            source: 'qrc:/Qcm/Material/assets/MaterialIconsRound-Regular.otf'
-        }
-        readonly property var icon_outline: this.fontload_material_outline.font
-        readonly property var icon_round: this.fontload_material_round.font
+    component FontComp: QtObject {
+        property font default_font
+        property font icon_round
+        property font icon_outline
+    }
+
+    readonly property FontComp font: FontComp {
+        default_font: Qt.application.font
+        icon_round: m_fontload_material_round.font
+        icon_outline: m_fontload_material_outline.font
+    }
+
+    FontLoader {
+        id: m_fontload_material_outline
+        source: 'qrc:/Qcm/Material/assets/MaterialSymbolsOutlined[FILL,GRAD,opsz,wght].woff2'
+    }
+    FontLoader {
+        id: m_fontload_material_round
+        source: 'qrc:/Qcm/Material/assets/MaterialSymbolsRounded[FILL,GRAD,opsz,wght].woff2'
     }
 
     // seems icon font size need map

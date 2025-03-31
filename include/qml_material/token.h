@@ -1,7 +1,9 @@
 #pragma once
 
-#include <QQmlEngine>
-#include <QFont>
+#include <QtGui/QFont>
+#include <QtQml/QQmlEngine>
+#include <QtQuick/QQuickWindow>
+
 #include "qml_material/core.h"
 #include "qml_material/type_scale.h"
 #include "qml_material/enum.h"
@@ -183,6 +185,8 @@ public:
     auto window_class() const -> const WindowClass&;
 
     auto datas() -> QQmlListProperty<QObject>;
+
+    Q_INVOKABLE double cal_curve_scale(double dpr) const;
 
 private:
     TypeScale*  m_typescale;

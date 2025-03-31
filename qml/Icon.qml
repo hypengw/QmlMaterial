@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Window
 import Qcm.Material as MD
 
 Item {
@@ -9,6 +10,7 @@ Item {
 
     property string name
     property int size: 24
+    property int weight: Font.Normal
     property alias horizontalAlignment: m_text_icon.horizontalAlignment
     property alias verticalAlignment: m_text_icon.verticalAlignment
 
@@ -19,6 +21,7 @@ Item {
     Text {
         id: m_text_icon
         anchors.centerIn: parent
+        renderType: Text.CurveRendering
 
         font.family: {
             switch (root.iconStyle) {
@@ -27,10 +30,18 @@ Item {
                 return MD.Token.font.icon_round.family;
             }
         }
+        font.weight: root.weight
+        font.variableAxes: {
+            "FILL": 0,
+            "GRAD": 0,
+            "opsz": root.size,
+            "wght": root.weight
+        }
+        font.pixelSize: root.size / scale
+        scale: 1.0 / MD.Token.cal_curve_scale(Screen.devicePixelRatio)
 
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-        font.pixelSize: root.size
         text: root.name
         color: root.color
         lineHeight: root.lineHeight
