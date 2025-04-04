@@ -112,5 +112,4 @@ void sys_notify(MdColorMgr& mgr) {
 
 } // namespace qml_material
 
-
-#include <platform/linux/moc_xdp.cpp>
+#include <moc_xdp.cpp>
