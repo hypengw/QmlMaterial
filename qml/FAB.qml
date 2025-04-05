@@ -30,7 +30,7 @@ T.Button {
 
     font.weight: MD.Token.typescale.label_large.weight
     font.pixelSize: Math.min(icon.width, icon.height)
-    font.family: MD.Token.font.icon_round_family
+    font.family: MD.Token.font.icon_family
 
     contentItem: Item {
         implicitWidth: control.icon.width
@@ -93,7 +93,7 @@ T.Button {
                 name: "hide"
                 when: {
                     const fk = control.flickable;
-                    const fk_end = fk && !UT.epsilon_equal(fk.visibleArea.heightRatio, 1.0) && (1.0 - fk.visibleArea.heightRatio - fk.visibleArea.yPosition) * fk.height < 4.0;
+                    const fk_end = fk && !UT.epsilonEqual(fk.visibleArea.heightRatio, 1.0) && (1.0 - fk.visibleArea.heightRatio - fk.visibleArea.yPosition) * fk.height < 4.0;
                     return !control.visible || fk_end;
                 }
                 PropertyChanges {

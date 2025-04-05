@@ -29,7 +29,7 @@ MD.Shape {
             sweepAngle: {
                 const p = m_active_arc.sweepAngle;
                 let out = 0;
-                if (isNaN(p) || Util.epsilon_equal(p, 0)) {
+                if (isNaN(p) || Util.epsilonEqual(p, 0)) {
                     out = -360 + root.spacingAngle;
                 } else {
                     out = -360 + 2 * root.spacingAngle + p;

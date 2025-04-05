@@ -42,6 +42,7 @@ T.Button {
                 name: control.icon.name
                 size: control.icon.width
                 color: control.mdState.supportTextColor
+                fill: control.checked
             }
 
             background: Item {

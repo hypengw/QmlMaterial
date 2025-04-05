@@ -18,13 +18,6 @@ public:
     };
     Q_ENUM(ColorScheme)
 
-    enum class IconStyle
-    {
-        IconRound = 0,
-        IconFilled
-    };
-    Q_ENUM(IconStyle)
-
     enum class IconLabelStyle
     {
         IconAndText = 0,

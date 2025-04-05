@@ -12,15 +12,17 @@ MD.TokenImpl {
 
     component FontComp: QtObject {
         property font default_font
-        property string icon_round_family
-        property string icon_round_fill_family
+        property string icon_family
+        property string icon_fill_family
+        property bool is_vf_icon
         // property font icon_outline
     }
 
     property FontComp font: FontComp {
         default_font: Qt.application.font
-        icon_round_family: ''
-        icon_round_fill_family: ''
+        is_vf_icon: false
+        icon_family: ''
+        icon_fill_family: ''
     }
 
     Loader {
@@ -31,10 +33,16 @@ MD.TokenImpl {
         id: m_material_round_vf
         FontLoader {
             source: root.iconFontUrl
-            onStatusChanged: if (status == FontLoader.Ready) {
-                root.font.icon_round = font;
-                root.font.icon_round_fill = font;
+            function init() {
+                if (status == FontLoader.Ready) {
+                    root.font.icon_family = font.family;
+                    root.font.icon_fill_family = font.family;
+                    root.font.is_vf_icon = true;
+                }
+                console.error(root.font.icon_family);
             }
+            onStatusChanged: init()
+            Component.onCompleted: init()
         }
     }
 
@@ -42,15 +50,15 @@ MD.TokenImpl {
         id: m_material_round_static
         Item {
             FontLoader {
-                source: 'qrc:/Qcm/Material/assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2'
-                onStatusChanged: if (status == FontLoader.Ready) {
-                    root.font.icon_round = font.family;
+                source: 'qrc:/Qcm/Material/assets/MaterialSymbolsRounded.wght_400.opsz_24.ttf'
+                Component.onCompleted: {
+                    root.font.icon_family = font.family;
                 }
             }
             FontLoader {
                 source: 'qrc:/Qcm/Material/assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_1.ttf'
-                onStatusChanged: if (status == FontLoader.Ready) {
-                    root.font.icon_round_fill = font.family;
+                Component.onCompleted: {
+                    root.font.icon_fill_family = font.family;
                 }
             }
         }

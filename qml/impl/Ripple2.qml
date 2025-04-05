@@ -1,22 +1,24 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Shapes
 import Qcm.Material as MD
 
 MD.Rectangle {
     id: root
-    property real stateOpacity: 0.0
+    property real stateOpacity: 0
     property bool pressed: false
     property real pressX: width / 2
     property real pressY: height / 2
 
+    property real _circle_radius: 0
+
     color: "transparent"
     clip: false
-    opacity: stateOpacity
+    opacity: 0
 
     MD.Shape {
-        id: circle
+        id: m_circle
         anchors.fill: parent
-        property real radius: 0.0
         ShapePath {
             strokeWidth: 0
             strokeColor: "transparent"
@@ -24,7 +26,7 @@ MD.Rectangle {
             fillGradient: RadialGradient {
                 centerX: root.pressX
                 centerY: root.pressY
-                centerRadius: circle.radius
+                centerRadius: root._circle_radius
                 focalX: centerX
                 focalY: centerY
 
@@ -43,7 +45,7 @@ MD.Rectangle {
             }
 
             startX: root.corners.topLeft
-           
+
             startY: 0
 
             PathLine {
@@ -91,22 +93,28 @@ MD.Rectangle {
 
     state: "normal"
 
-    property real endRadius: Math.sqrt(root.height * root.height + root.width * root.width) * 1.3
+    readonly property real endRadius: Math.sqrt(root.height * root.height + root.width * root.width) * 1.3
 
     states: [
         State {
             name: "active"
             when: root.pressed
             PropertyChanges {
-                circle.radius: endRadius
+                restoreEntryValues: false
+                root._circle_radius: endRadius
             }
         },
         State {
             name: "normal"
             when: true
             PropertyChanges {
-                circle.opacity: 0.0
-                circle.radius: 0.0
+                restoreEntryValues: false
+                m_circle.opacity: 0.0
+            }
+            PropertyChanges {
+                restoreEntryValues: false
+                // eval after animation
+                root.opacity: root.stateOpacity
             }
         }
     ]
@@ -115,10 +123,17 @@ MD.Rectangle {
         Transition {
             from: "normal"
             to: "active"
-            ParallelAnimation {
+            SequentialAnimation {
+                ScriptAction {
+                    script: {
+                        root.opacity = root.stateOpacity;
+                        root._circle_radius = 0.0;
+                        m_circle.opacity = 1.0;
+                    }
+                }
                 NumberAnimation {
-                    target: circle
-                    property: 'radius'
+                    target: root
+                    property: '_circle_radius'
                     duration: 500
                 }
             }
@@ -126,18 +141,16 @@ MD.Rectangle {
         Transition {
             from: "active"
             to: "normal"
-            ParallelAnimation {
-                SequentialAnimation {
-                    NumberAnimation {
-                        target: circle
-                        property: 'radius'
-                        to: root.endRadius
-                        duration: 200
-                    }
-                    OpacityAnimator {
-                        target: circle
-                        duration: 200
-                    }
+            SequentialAnimation {
+                NumberAnimation {
+                    target: root
+                    property: '_circle_radius'
+                    to: root.endRadius
+                    duration: 200
+                }
+                OpacityAnimator {
+                    target: m_circle
+                    duration: 200
                 }
             }
         }
