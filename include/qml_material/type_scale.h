@@ -32,11 +32,11 @@ struct TypeScaleItem {
     QML_ELEMENT
     QML_VALUE_TYPE(t_typescale)
 
-    Q_PROPERTY(qint32 size MEMBER size CONSTANT FINAL)
-    Q_PROPERTY(qint32 line_height MEMBER line_height CONSTANT FINAL)
-    Q_PROPERTY(qint32 weight MEMBER weight CONSTANT FINAL)
-    Q_PROPERTY(qint32 weight_prominent MEMBER weight_prominent CONSTANT FINAL)
-    Q_PROPERTY(qreal tracking MEMBER tracking CONSTANT FINAL)
+    Q_PROPERTY(qint32 size MEMBER size FINAL)
+    Q_PROPERTY(qint32 line_height MEMBER line_height FINAL)
+    Q_PROPERTY(QFont::Weight weight MEMBER weight FINAL)
+    Q_PROPERTY(QFont::Weight weight_prominent MEMBER weight_prominent FINAL)
+    Q_PROPERTY(qreal tracking MEMBER tracking FINAL)
 public:
     Q_INVOKABLE TypeScaleItem fresh() const { return *this; }
 
