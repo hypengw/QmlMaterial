@@ -12,6 +12,19 @@ set(CMAKE_AUTOMOC_PATH_PREFIX ON)
 
 option(QM_BUILD_EXAMPLE ON)
 
+set(QM_ICON_FONT_URL
+    ""
+    CACHE STRING "default empty, there is an already embed file: qrc:/Qcm/Material/assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2")
+
+if("${QT_INSTALL_QML}" STREQUAL "")
+  set(QT_INSTALL_QML "${CMAKE_INSTALL_LIBDIR}/qt6/qml")
+endif()
+
+set(QML_INSTALL_DIR
+    "${QT_INSTALL_QML}"
+    CACHE STRING "")
+message("QML_INSTALL_DIR: ${QML_INSTALL_DIR}")
+
 # check lto
 include(CheckIPOSupported)
 check_ipo_supported(RESULT is_ipo_supported OUTPUT lto_error)
@@ -36,14 +49,6 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-if("${QT_INSTALL_QML}" STREQUAL "")
-  set(QT_INSTALL_QML "${CMAKE_INSTALL_LIBDIR}/qt6/qml")
-endif()
-
-set(QML_INSTALL_DIR
-    "${QT_INSTALL_QML}"
-    CACHE STRING "")
-message("QML_INSTALL_DIR: ${QML_INSTALL_DIR}")
 
 set(LIBNAME qml_material)
 
@@ -183,7 +188,10 @@ set(QML_FILES
     qml/impl/ElevationRectangleBorder.qml
     qml/impl/Shape.qml)
 
-set(RESOURCES assets/MaterialSymbolsRounded.wght_400.opsz_24.ttf)
+set(RESOURCES
+    assets/MaterialSymbolsRounded.wght_400.opsz_24.ttf
+    assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2
+    assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_1.ttf)
 
 set(QML_REG_INCLUDE_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/item"
@@ -238,6 +246,9 @@ set_source_files_properties(
   "${CMAKE_CURRENT_BINARY_DIR}/${LIBNAME}_qmltyperegistrations.cpp"
   TARGET_DIRECTORY "${LIBNAME}" PROPERTIES INCLUDE_DIRECTORIES
                                            "${QML_REG_INCLUDE_DIRS}")
+set_source_files_properties(
+  src/token/token.cpp PROPERTIES COMPILE_DEFINITIONS
+                                 QM_ICON_FONT_URL="${QM_ICON_FONT_URL}")
 
 set(SHADER_GLSLS "assets/shader/common.glsl" "assets/shader/sdf.glsl")
 set(SHADER_SOURCES

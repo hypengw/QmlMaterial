@@ -8,6 +8,10 @@ Token::Token(QObject* parent)
       m_icon(create_icon_token(this)),
       m_flick(new Flick(this)) {}
 Token::~Token() {}
+
+auto Token::icon_font_url() const -> QString {
+  return QM_ICON_FONT_URL;
+}
 auto Token::typescale() const -> TypeScale* { return m_typescale; }
 auto Token::icon() const -> IconToken* { return m_icon; }
 auto Token::flick() const -> Flick* { return m_flick; }

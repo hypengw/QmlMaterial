@@ -1,4 +1,5 @@
 pragma Singleton
+pragma ComponentBehavior: Bound
 import QtQml
 import QtQuick
 import Qcm.Material as MD
@@ -11,18 +12,48 @@ MD.TokenImpl {
 
     component FontComp: QtObject {
         property font default_font
-        property font icon_round
-        property font icon_outline
+        property string icon_round_family
+        property string icon_round_fill_family
+        // property font icon_outline
     }
 
-    readonly property FontComp font: FontComp {
+    property FontComp font: FontComp {
         default_font: Qt.application.font
-        icon_round: m_fontload_material_round.font
+        icon_round_family: ''
+        icon_round_fill_family: ''
     }
 
-    FontLoader {
-        id: m_fontload_material_round
-        source: 'qrc:/Qcm/Material/assets/MaterialSymbolsRounded.wght_400.opsz_24.ttf'
+    Loader {
+        sourceComponent: root.iconFontUrl ? m_material_round_vf : m_material_round_static
+    }
+
+    Component {
+        id: m_material_round_vf
+        FontLoader {
+            source: root.iconFontUrl
+            onStatusChanged: if (status == FontLoader.Ready) {
+                root.font.icon_round = font;
+                root.font.icon_round_fill = font;
+            }
+        }
+    }
+
+    Component {
+        id: m_material_round_static
+        Item {
+            FontLoader {
+                source: 'qrc:/Qcm/Material/assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2'
+                onStatusChanged: if (status == FontLoader.Ready) {
+                    root.font.icon_round = font.family;
+                }
+            }
+            FontLoader {
+                source: 'qrc:/Qcm/Material/assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_1.ttf'
+                onStatusChanged: if (status == FontLoader.Ready) {
+                    root.font.icon_round_fill = font.family;
+                }
+            }
+        }
     }
 
     // seems icon font size need map

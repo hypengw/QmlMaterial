@@ -28,7 +28,7 @@ Item {
             switch (root.iconStyle) {
             case MD.Enum.IconRound:
             default:
-                return MD.Token.font.icon_round.family;
+                return MD.Token.font.icon_round_family;
             }
         }
         font.weight: root.weight

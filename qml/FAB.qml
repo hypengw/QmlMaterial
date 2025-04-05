@@ -30,7 +30,7 @@ T.Button {
 
     font.weight: MD.Token.typescale.label_large.weight
     font.pixelSize: Math.min(icon.width, icon.height)
-    font.family: MD.Token.font.icon_round.family
+    font.family: MD.Token.font.icon_round_family
 
     contentItem: Item {
         implicitWidth: control.icon.width

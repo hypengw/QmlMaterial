@@ -34,7 +34,6 @@ Item {
             Layout.alignment: root.horizontalAlignment | Qt.AlignVCenter
             visible: root.icon_style != MD.Enum.TextOnly && name.length > 0
             color: root.color
-            // font.family: MD.Token.font.icon_round.family
         }
 
         MD.Label {
