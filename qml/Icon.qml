@@ -32,12 +32,12 @@ Item {
             }
         }
         font.weight: root.weight
-        font.variableAxes: {
-            "FILL": root.fill,
-            "GRAD": 0,
-            "opsz": root.size,
-            "wght": root.weight
-        }
+        // font.variableAxes: {
+        //     "FILL": root.fill,
+        //     "GRAD": 0,
+        //     "opsz": root.size,
+        //     "wght": root.weight
+        // }
         font.pixelSize: root.size / scale
         scale: 1.0 / MD.Token.cal_curve_scale(Screen.devicePixelRatio)
 

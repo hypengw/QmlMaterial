@@ -18,16 +18,11 @@ MD.TokenImpl {
     readonly property FontComp font: FontComp {
         default_font: Qt.application.font
         icon_round: m_fontload_material_round.font
-        icon_outline: m_fontload_material_outline.font
     }
 
     FontLoader {
-        id: m_fontload_material_outline
-        source: 'qrc:/Qcm/Material/assets/MaterialSymbolsOutlined[FILL,GRAD,opsz,wght].woff2'
-    }
-    FontLoader {
         id: m_fontload_material_round
-        source: 'qrc:/Qcm/Material/assets/MaterialSymbolsRounded[FILL,GRAD,opsz,wght].woff2'
+        source: 'qrc:/Qcm/Material/assets/MaterialSymbolsRounded.wght_400.opsz_24.ttf'
     }
 
     // seems icon font size need map

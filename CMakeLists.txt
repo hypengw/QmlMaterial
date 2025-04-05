@@ -182,8 +182,8 @@ set(QML_FILES
     qml/impl/ElevationRectangle.qml
     qml/impl/ElevationRectangleBorder.qml
     qml/impl/Shape.qml)
-set(RESOURCES assets/MaterialSymbolsRounded[FILL,GRAD,opsz,wght].woff2
-              assets/MaterialSymbolsOutlined[FILL,GRAD,opsz,wght].woff2)
+
+set(RESOURCES assets/MaterialSymbolsRounded.wght_400.opsz_24.ttf)
 
 set(QML_REG_INCLUDE_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/item"
