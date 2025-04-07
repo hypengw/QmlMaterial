@@ -41,7 +41,7 @@ MD.Page {
         }
     }
 
-    contentItem: MD.Flickable {
+    contentItem: MD.VerticalFlickable {
         id: flick
         topMargin: 8
         bottomMargin: 8

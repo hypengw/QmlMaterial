@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Controls.Basic
 import QtQuick.Templates as T
 import QtQuick.Window
 
@@ -65,7 +64,7 @@ T.Menu {
         interactive: Window.window ? contentHeight + control.topPadding + control.bottomPadding > Window.window.height : false
         currentIndex: control.currentIndex
 
-        ScrollIndicator.vertical: ScrollIndicator {}
+        T.ScrollIndicator.vertical: MD.ScrollIndicator {}
     }
 
     background: MD.ElevationRectangle {

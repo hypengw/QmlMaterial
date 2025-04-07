@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Templates as T
-import QtQuick.Controls.Basic.impl
 import Qcm.Material as MD
 
 T.MenuItem {

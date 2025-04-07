@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls.Basic as QC
 import QtQuick.Templates as T
 
 import Qcm.Material as MD
@@ -18,7 +17,7 @@ T.Pane {
     readonly property alias actionControl: btn_action
     readonly property alias iconControl: btn_icon
 
-    property QC.Action action: null
+    property MD.Action action: null
     property bool showClose: false
     property real radius: MD.Token.shape.corner.extra_small
 

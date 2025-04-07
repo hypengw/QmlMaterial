@@ -14,7 +14,10 @@ option(QM_BUILD_EXAMPLE ON)
 
 set(QM_ICON_FONT_URL
     ""
-    CACHE STRING "default empty, there is an already embed file: qrc:/Qcm/Material/assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2")
+    CACHE
+      STRING
+      "default empty, there is an already embed file: qrc:/Qcm/Material/assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2"
+)
 
 if("${QT_INSTALL_QML}" STREQUAL "")
   set(QT_INSTALL_QML "${CMAKE_INSTALL_LIBDIR}/qt6/qml")
@@ -48,7 +51,6 @@ endif()
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
-
 
 set(LIBNAME qml_material)
 
@@ -89,8 +91,6 @@ set(SOURCES
 
 set(QML_FILES
     qml/js/jsUtils.mjs
-    qml/Action.qml
-    qml/ActionGroup.qml
     qml/ActionMenu.qml
     qml/ActionToolBar.qml
     qml/AppBar.qml
@@ -121,13 +121,8 @@ set(QML_FILES
     qml/Menu.qml
     qml/MenuItem.qml
     qml/Image.qml
-    qml/ListItem.qml
-    qml/ListView.qml
     qml/Label.qml
     qml/FontMetrics.qml
-    qml/Flickable.qml
-    qml/FlickablePane.qml
-    qml/GridView.qml
     qml/Icon.qml
     qml/IconSvg.qml
     qml/Text.qml
@@ -142,8 +137,6 @@ set(QML_FILES
     qml/SplitView.qml
     qml/Slider.qml
     qml/SearchBar.qml
-    qml/ScrollBar.qml
-    qml/ScrollPage.qml
     qml/Switch.qml
     qml/RailItem.qml
     qml/TextInput.qml
@@ -152,6 +145,21 @@ set(QML_FILES
     qml/TabBar.qml
     qml/TabButton.qml
     qml/SdfRectangle.qml
+    qml/control/Action.qml
+    qml/control/ActionGroup.qml
+    qml/control/MenuSeparator.qml
+    qml/control/ToolSeparator.qml
+    qml/control/ApplicationWindow.qml
+    qml/delegate/ListItem.qml
+    qml/scroll/ScrollBar.qml
+    qml/scroll/ScrollIndicator.qml
+    qml/flickable/Flickable.qml
+    qml/flickable/VerticalFlickable.qml
+    qml/flickable/VerticalGridView.qml
+    qml/flickable/VerticalListView.qml
+    qml/flickable/FlickablePane.qml
+    qml/flickable/GridView.qml
+    qml/flickable/ListView.qml
     qml/state/StateAppBar.qml
     qml/state/StateSnakeBar.qml
     qml/state/StateButton.qml
@@ -305,7 +313,8 @@ endif()
 
 target_link_libraries(
   ${LIBNAME}
-  PUBLIC Qt6::Core Qt6::Quick Qt6::QuickControls2
+  PUBLIC Qt6::Core Qt6::Quick
+         Qt6::QuickControls2 # QQuickAttachedPropertyPropagator
   PRIVATE material_color)
 
 function(qt_install_qml_module target_)

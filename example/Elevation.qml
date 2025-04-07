@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls.Basic as QC
 
 import Qcm.Material as MD
 
@@ -9,7 +8,7 @@ MD.Page {
     title: 'Components'
     padding: 0
 
-    MD.Flickable {
+    MD.VerticalFlickable {
         anchors.fill: parent
         topMargin: 16
         bottomMargin: 16

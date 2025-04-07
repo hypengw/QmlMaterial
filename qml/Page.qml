@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Controls.Basic as QC
 import QtQuick.Templates as T
 import Qcm.Material as MD
 
@@ -7,8 +6,8 @@ T.Page {
     id: control
 
     property bool canBack: false
-    property T.Action leadingAction: MD.MatProp.page.leadingAction
-    property list<QC.Action> actions
+    property MD.Action leadingAction: MD.MatProp.page.leadingAction
+    property list<MD.Action> actions
 
     property alias showHeader: control.header.visible
     property alias showBackground: control.background.visible

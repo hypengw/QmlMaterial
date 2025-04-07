@@ -1,18 +1,17 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Templates as T
-import QtQuick.Controls.Basic as QC
 import Qcm.Material as MD
 
 T.Button {
     id: control
 
     property bool leading_input: false
-    property QC.Action leading_action: QC.Action {
+    property MD.Action leading_action: MD.Action {
         icon.name: MD.Token.icon.search
     }
     property bool trailing_input: control.text
-    property QC.Action trailing_action: QC.Action {
+    property MD.Action trailing_action: MD.Action {
         icon.name: control.text ? MD.Token.icon.close : ''
         onTriggered: {
             item_input.text = '';

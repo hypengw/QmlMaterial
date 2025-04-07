@@ -1,30 +1,11 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Templates as T
 import Qcm.Material as MD
 
-GridView {
+MD.GridView {
     id: root
 
-    clip: true
-
-    synchronousDrag: true
-    reuseItems: true
-    pressDelay: MD.Token.flick.pressDelay
-    maximumFlickVelocity: MD.Token.flick.maximumFlickVelocity
-    flickDeceleration: MD.Token.flick.flickDeceleration
-    boundsBehavior: Flickable.StopAtBounds
-    boundsMovement: Flickable.StopAtBounds
-    rebound: Transition {}
-
-    // property alias hookWheel: wheel.active
-    // signal wheelMoved
-    // MD.WheelHandler {
-    //     id: wheel
-    //     target: root
-    //     filterMouseEvents: false
-    //     onWheelMoved: root.wheelMoved()
-    // }
-    // ScrollBar.vertical: MD.ScrollBar {}
+    T.ScrollBar.vertical: MD.ScrollBar {}
 
     signal calMaxCellHeight
     property bool enabledCalMaxCellHeight: false

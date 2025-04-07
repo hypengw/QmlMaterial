@@ -18,7 +18,33 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(qml_material)
 ```
 
-## Variation Icon
+## Usage
+```qml
+import Qcm.Material as MD
+
+MD.Text {
+  text: 'hello world'
+}
+```
+> [!NOTE]
+> Never import `Qcm.Material` without `as`, unless you know what you are doing.  
+
+### No QtQuick.Controls
+This library only use `QtQuick.Templates`.  
+No needs to import `QtQuick.Controls`, unless you need control from Quick Control Style.  
+
+Some type annotations:  
+- not accept `Action`, use `MD.Action` instead
+- not accept Attached Properties/Signals form `QtQuick.Controls`, use `QtQuick.Templates as T`
+  ```qml
+    import QtQuick.Templates as T
+
+    T.Overlay.modal: ...
+    T.ScrollBar.vertical: ...
+    ...
+  ```
+
+### Variation Icon
 CMake option: `QM_ICON_FONT_URL`  
 The default is embedded static round icon with `wght=400 opsz=24 GRAD=0 FILL=0/1`.  
 There is also an embedded partial variation one: `qrc:/Qcm/Material/assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2`.  

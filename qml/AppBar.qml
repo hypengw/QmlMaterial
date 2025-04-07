@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls.Basic as QC
 import QtQuick.Templates as T
 import Qcm.Material as MD
 
@@ -24,7 +23,7 @@ T.ToolBar {
     leftPadding: 16 - (m_leading.visible ? m_leading.leftInset + m_leading.leftPadding : 0)
     rightPadding: leftPadding
 
-    property list<QC.Action> actions
+    property list<MD.Action> actions
     property alias leadingAction: m_leading.action
     property alias title: m_title.text
     property bool scrolling: false

@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Controls.Basic as QC
 import QtQuick.Templates as T
 
 import Qcm.Material as MD
@@ -11,13 +10,13 @@ MD.Menu {
 
     property Component submenuComponent
     property Component itemDelegate: MD.MenuItem {}
-    property Component separatorDelegate: QC.MenuSeparator {
-        property T.Action action
+    property Component separatorDelegate: MD.MenuSeparator {
+        property MD.Action action
     }
     property Component loaderDelegate: Loader {
-        property T.Action action
+        property MD.Action action
     }
-    property T.Action parentAction
+    property MD.Action parentAction
     property T.MenuItem parentItem
 
     Instantiator {
@@ -25,7 +24,7 @@ MD.Menu {
 
         active: root.visible
         delegate: QtObject {
-            readonly property T.Action action: modelData
+            readonly property MD.Action action: modelData
 
             property QtObject item: null
             property bool isSubMenu: false

@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls.Basic as QC
 import QtQuick.Templates as T
 
 import Qcm.Material as MD
@@ -9,7 +8,7 @@ T.Control {
     id: root
 
     readonly property alias actions: m_layout.actions
-    property int display: QC.Button.IconOnly
+    property int display: T.Button.IconOnly
     property alias alignment: m_layout.alignment
     readonly property alias maximumContentWidth: m_layout.implicitWidth
 
@@ -57,7 +56,7 @@ T.Control {
         id: m_layout
         maxShowActionNum: 2
 
-        separatorDelegate: QC.ToolSeparator {}
+        separatorDelegate: MD.ToolSeparator {}
 
         fullDelegate: MD.IconButton {
             action: MD.ToolBarLayout.action
