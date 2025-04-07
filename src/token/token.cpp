@@ -9,9 +9,7 @@ Token::Token(QObject* parent)
       m_flick(new Flick(this)) {}
 Token::~Token() {}
 
-auto Token::icon_font_url() const -> QString {
-  return QM_ICON_FONT_URL;
-}
+auto Token::icon_font_url() const -> QString { return QM_ICON_FONT_URL; }
 auto Token::typescale() const -> TypeScale* { return m_typescale; }
 auto Token::icon() const -> IconToken* { return m_icon; }
 auto Token::flick() const -> Flick* { return m_flick; }
@@ -26,8 +24,13 @@ auto Token::datas() -> QQmlListProperty<QObject> { return { this, &m_datas }; }
 Flick::Flick(QObject* parent)
     : QObject(parent),
       m_press_delay(100),
-      m_flick_deceleration(1000),
-      m_maximum_flickVelocity(std::numeric_limits<float>::max()) {}
+      m_flick_deceleration(5000),
+      m_maximum_flickVelocity(2500) {
+    const char* whell_flick_deceleration = "QT_QUICK_FLICKABLE_WHEEL_DECELERATION";
+    if (qgetenv(whell_flick_deceleration).size() == 0) {
+        qputenv(whell_flick_deceleration, "5000");
+    }
+}
 Flick::~Flick() {}
 auto Flick::pressDelay() const -> qint32 { return m_press_delay; }
 auto Flick::flickDeceleration() const -> double { return m_flick_deceleration; }

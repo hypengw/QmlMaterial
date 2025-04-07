@@ -13,7 +13,7 @@ T.Button {
     }
     property bool trailing_input: control.text
     property QC.Action trailing_action: QC.Action {
-        icon.name: control.text ? MD.Token.icon.close : null
+        icon.name: control.text ? MD.Token.icon.close : ''
         onTriggered: {
             item_input.text = '';
         }

@@ -35,6 +35,7 @@ T.Button {
             name: control.icon.name
             size: Math.min(control.icon.width, control.icon.height)
             color: control.mdState.textColor
+            fill: control.checked
         }
     }
 

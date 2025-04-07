@@ -43,14 +43,13 @@ ListView {
         height: implicitHeight
     }
 
-    signal wheelMoved
-
-    MD.WheelHandler {
-        id: wheel
-        target: root
-        filterMouseEvents: false
-        onWheelMoved: root.wheelMoved()
-    }
+    // signal wheelMoved
+    // MD.WheelHandler {
+    //     id: wheel
+    //     target: root
+    //     filterMouseEvents: false
+    //     onWheelMoved: root.wheelMoved()
+    // }
 
     ScrollBar.vertical: MD.ScrollBar {}
 

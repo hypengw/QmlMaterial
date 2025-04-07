@@ -15,16 +15,16 @@ GridView {
     boundsBehavior: Flickable.StopAtBounds
     boundsMovement: Flickable.StopAtBounds
     rebound: Transition {}
-    property alias hookWheel: wheel.active
 
-    signal wheelMoved
-    MD.WheelHandler {
-        id: wheel
-        target: root
-        filterMouseEvents: false
-        onWheelMoved: root.wheelMoved()
-    }
-    ScrollBar.vertical: MD.ScrollBar {}
+    // property alias hookWheel: wheel.active
+    // signal wheelMoved
+    // MD.WheelHandler {
+    //     id: wheel
+    //     target: root
+    //     filterMouseEvents: false
+    //     onWheelMoved: root.wheelMoved()
+    // }
+    // ScrollBar.vertical: MD.ScrollBar {}
 
     signal calMaxCellHeight
     property bool enabledCalMaxCellHeight: false

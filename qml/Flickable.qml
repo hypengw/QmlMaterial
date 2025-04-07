@@ -26,13 +26,12 @@ Flickable {
     topMargin: 0
     bottomMargin: 0
 
-    signal wheelMoved
-
-    MD.WheelHandler {
-        id: wheel
-        target: root
-        filterMouseEvents: false
-        onWheelMoved: root.wheelMoved()
-    }
+    // signal wheelMoved
+    // MD.WheelHandler {
+    //     id: wheel
+    //     target: root
+    //     filterMouseEvents: false
+    //     onWheelMoved: root.wheelMoved()
+    // }
     ScrollBar.vertical: MD.ScrollBar {}
 }
