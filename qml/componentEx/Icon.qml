@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Window
 import Qcm.Material as MD
-import "js/jsUtils.mjs" as UT
+import "qrc:/Qcm/Material/qml/js/jsUtils.mjs" as UT
 
 Item {
     id: root

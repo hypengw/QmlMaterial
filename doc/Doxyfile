@@ -1,0 +1,16 @@
+PROJECT_NAME           = "QmlMaterial"
+HIDE_UNDOC_CLASSES     = YES
+HIDE_UNDOC_MEMBERS     = YES
+HIDE_UNDOC_NAMESPACES  = YES
+SHOW_ENUM_VALUES       = YES
+PROJECT_NUMBER         = 0.1.0
+OUTPUT_DIRECTORY       = doxy
+INPUT                  = ../include ../src ../qml
+RECURSIVE              = YES
+STRIP_FROM_INC_PATH    = ../include ../src
+WARN_IF_UNDOC_ENUM_VAL = YES
+
+
+FILTER_PATTERNS        = *.qml=doxyqml 
+FILE_PATTERNS          = *.qml *.cpp *.hpp
+EXTENSION_MAPPING      = qml=C++ cpp=c++ hpp=c++

@@ -5,7 +5,20 @@ import QtQuick
 import Qcm.Material as MD
 
 /**
- * @brief Matieral Token singleton
+ * @defgroup qml
+ * @brief qml
+ */
+
+/**
+ * @defgroup singleton
+ * @ingroup qml
+ * @brief
+ */
+
+
+/**
+ * @brief Matieral Token
+ * @ingroup singleton
  */
 MD.TokenImpl {
     id: root
@@ -14,8 +27,17 @@ MD.TokenImpl {
      * @brief global color token
      */
     readonly property MD.MdColorMgr color: root.MD.MatProp.color
-    property MD.Enum.ThemeMode themeMode: root.color.mode
+    /**
+     * @brief global themeMode
+     */
+    property int themeMode: {
+        return root.themeMode = root.color.mode;
+    }
     readonly property bool isDarkTheme: themeMode == MD.Enum.Dark
+
+    Binding {
+        root.color.mode: root.themeMode
+    }
 
     component FontComp: QtObject {
         property font default_font
@@ -87,3 +109,27 @@ MD.TokenImpl {
         return fn_inverse(th === MdColorMgr.Dark, inverse) ? Material.Dark : Material.Light;
     }
 }
+
+/**
+ * @defgroup control
+ * @ingroup qml
+ * @brief
+ */
+
+/**
+ * @defgroup component
+ * @ingroup qml
+ * @brief
+ */
+
+/**
+ * @defgroup delegate
+ * @ingroup qml
+ * @brief
+ */
+
+/**
+ * @defgroup impl
+ * @ingroup qml
+ * @brief
+ */

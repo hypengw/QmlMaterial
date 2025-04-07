@@ -90,69 +90,69 @@ set(SOURCES
     src/item/elevation.cpp)
 
 set(QML_FILES
-    qml/js/jsUtils.mjs
-    qml/ActionMenu.qml
-    qml/ActionToolBar.qml
-    qml/AppBar.qml
-    qml/Button.qml
-    qml/ButtonGroup.qml
-    qml/BarItem.qml
-    qml/Control.qml
-    qml/ComboBox.qml
-    qml/Card.qml
-    qml/AssistChip.qml
-    qml/FilterChip.qml
-    qml/InputChip.qml
-    qml/SuggestionChip.qml
-    qml/CircleProgressBar.qml
-    qml/CircularIndicator.qml
-    qml/Dialog.qml
-    qml/DialogButtonBox.qml
-    qml/Divider.qml
-    qml/Drawer.qml
-    qml/StandardDrawer.qml
-    qml/DrawerItem.qml
-    qml/DragHandle.qml
     qml/Token.qml
-    qml/IconLabel.qml
-    qml/IconButton.qml
-    qml/StandardIconButton.qml
-    qml/FAB.qml
-    qml/Menu.qml
-    qml/MenuItem.qml
-    qml/Image.qml
-    qml/Label.qml
-    qml/FontMetrics.qml
-    qml/Icon.qml
-    qml/IconSvg.qml
-    qml/Text.qml
-    qml/TextEdit.qml
-    qml/Pane.qml
-    qml/Page.qml
-    qml/PageIndicator.qml
-    qml/Popup.qml
-    qml/Space.qml
-    qml/SnakeBar.qml
-    qml/StackView.qml
-    qml/SplitView.qml
-    qml/Slider.qml
-    qml/SearchBar.qml
-    qml/Switch.qml
-    qml/RailItem.qml
-    qml/TextInput.qml
-    qml/TextMetrics.qml
-    qml/TextField.qml
-    qml/TabBar.qml
-    qml/TabButton.qml
-    qml/SdfRectangle.qml
+    qml/js/jsUtils.mjs
+    qml/control/Button.qml
+    qml/control/Control.qml
+    qml/control/ComboBox.qml
+    qml/control/ButtonGroup.qml
+    qml/control/Dialog.qml
+    qml/control/DialogButtonBox.qml
+    qml/control/Drawer.qml
+    qml/control/StackView.qml
+    qml/control/SplitView.qml
+    qml/control/Slider.qml
+    qml/control/Menu.qml
+    qml/control/MenuItem.qml
+    qml/control/Pane.qml
+    qml/control/Page.qml
+    qml/control/PageIndicator.qml
     qml/control/Action.qml
     qml/control/ActionGroup.qml
     qml/control/MenuSeparator.qml
     qml/control/ToolSeparator.qml
     qml/control/ApplicationWindow.qml
+    qml/control/Popup.qml
+    qml/control/Switch.qml
+    qml/control/TabBar.qml
+    qml/control/TabButton.qml
+    qml/control/ScrollBar.qml
+    qml/control/ScrollIndicator.qml
+    qml/controlEx/RailItem.qml
+    qml/controlEx/SearchBar.qml
+    qml/controlEx/ActionMenu.qml
+    qml/controlEx/ActionToolBar.qml
+    qml/controlEx/AppBar.qml
+    qml/controlEx/BarItem.qml
+    qml/controlEx/Card.qml
+    qml/controlEx/AssistChip.qml
+    qml/controlEx/FilterChip.qml
+    qml/controlEx/InputChip.qml
+    qml/controlEx/SuggestionChip.qml
+    qml/controlEx/CircleProgressBar.qml
+    qml/controlEx/CircularIndicator.qml
+    qml/controlEx/SnakeBar.qml
+    qml/controlEx/StandardDrawer.qml
+    qml/controlEx/DrawerItem.qml
+    qml/controlEx/IconButton.qml
+    qml/controlEx/StandardIconButton.qml
+    qml/controlEx/FAB.qml
+    qml/component/Image.qml
+    qml/component/Label.qml
+    qml/component/FontMetrics.qml
+    qml/component/Text.qml
+    qml/component/TextEdit.qml
+    qml/component/TextInput.qml
+    qml/component/TextMetrics.qml
+    qml/component/TextField.qml
+    qml/componentEx/Divider.qml
+    qml/componentEx/DragHandle.qml
+    qml/componentEx/IconLabel.qml
+    qml/componentEx/Icon.qml
+    qml/componentEx/IconSvg.qml
+    qml/componentEx/Space.qml
+    qml/componentEx/SdfRectangle.qml
     qml/delegate/ListItem.qml
-    qml/scroll/ScrollBar.qml
-    qml/scroll/ScrollIndicator.qml
     qml/flickable/Flickable.qml
     qml/flickable/VerticalFlickable.qml
     qml/flickable/VerticalGridView.qml
