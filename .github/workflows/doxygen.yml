@@ -20,7 +20,9 @@ jobs:
         run: git clone --depth 1 https://github.com/jothepro/doxygen-awesome-css.git doc/doxygen-awesome-css
       - name: Build Doc
         run: |
-          sudo apt install -y doxygen graphviz
+          sudo apt install -y graphviz
+          curl -L https://github.com/doxygen/doxygen/releases/download/Release_1_12_0/doxygen-1.12.0.linux.bin.tar.gz | tar -xz
+          export PATH="$PWD/doxygen-1.12.0/bin:$PATH"
           pushd doc
             doxygen
           popd
