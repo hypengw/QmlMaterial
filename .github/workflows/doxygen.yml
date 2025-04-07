@@ -2,11 +2,9 @@ on:
   push:
     branches:
       - main
-permissions:
-  contents: write
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -20,11 +18,26 @@ jobs:
       - name: Clone doxygen-awesome-css
         run: git clone --depth 1 https://github.com/jothepro/doxygen-awesome-css.git doc/doxygen-awesome-css
       - name: Action Doxygen and GitHub Pages
-        id: ghaction
-        uses: AgarwalSaurav/ghaction-doxygen-ghpages@release/v2
+        uses: mattnotmitt/doxygen-action@v1.9.5
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          working-directory: .
-          doxyfile-path: doc/Doxyfile
-          html-output-folder: doc/html
-          branch: gh-pages
+          working-directory: './doc'
+          doxyfile-path: './Doxyfile'
+      - name: Upload static files as artifact
+        id: deployment
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: doc/html/
+
+  deploy:
+    needs: build
+    permissions:
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
