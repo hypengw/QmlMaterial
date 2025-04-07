@@ -3,7 +3,7 @@
 
 namespace qml_material
 {
-void sys_notify(MdColorMgr&) {}
+void sysNotifyInit(MdColorMgr&) {}
 auto sysColorScheme() -> MdColorMgr::ColorSchemeEnum { return {}; }
 auto sysAccentColor() -> QColor { return {}; }
 

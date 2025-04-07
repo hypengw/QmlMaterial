@@ -119,7 +119,7 @@ private:
     bool                                    m_use_sys_accent_color;
 };
 
-void sys_notify(MdColorMgr&);
+void sysNotifyInit(MdColorMgr&);
 auto sysColorScheme() -> MdColorMgr::ColorSchemeEnum;
 auto sysAccentColor() -> QColor;
 

@@ -105,7 +105,7 @@ auto sysColorScheme() -> MdColorMgr::ColorSchemeEnum {
 }
 auto sysAccentColor() -> QColor { return Xdp::insance()->accentColor(); }
 
-void sys_notify(MdColorMgr& mgr) {
+void sysNotifyInit(MdColorMgr& mgr) {
     QObject::connect(Xdp::insance(), &Xdp::colorSchemeChanged, &mgr, &MdColorMgr::refrehFromSystem);
     QObject::connect(Xdp::insance(), &Xdp::accentColorChanged, &mgr, &MdColorMgr::refrehFromSystem);
 }

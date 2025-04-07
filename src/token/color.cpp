@@ -67,7 +67,7 @@ MdColorMgr::MdColorMgr(QObject* parent)
     connect(this, &Self::colorSchemeChanged, this, &Self::gen_scheme);
     connect(this, &Self::accentColorChanged, this, &Self::gen_scheme);
 
-    sys_notify(*this);
+    sysNotifyInit(*this);
 
     connect(this, &Self::useSysColorSMChanged, this, &Self::refrehFromSystem);
     connect(this, &Self::useSysAccentColorChanged, this, &Self::refrehFromSystem);
