@@ -11,12 +11,12 @@ class QML_MATERIAL_API Enum : public QObject {
 public:
     using QObject::QObject;
 
-    enum class ColorScheme
+    enum class ThemeMode
     {
-        Light,
+        Light = 0,
         Dark
     };
-    Q_ENUM(ColorScheme)
+    Q_ENUM(ThemeMode)
 
     enum class IconLabelStyle
     {

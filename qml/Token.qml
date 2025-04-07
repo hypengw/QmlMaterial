@@ -4,11 +4,18 @@ import QtQml
 import QtQuick
 import Qcm.Material as MD
 
+/**
+ * @brief Matieral Token singleton
+ */
 MD.TokenImpl {
     id: root
+
+    /**
+     * @brief global color token
+     */
     readonly property MD.MdColorMgr color: root.MD.MatProp.color
-    property int theme: root.color.colorScheme
-    readonly property bool is_dark_theme: Number(theme) == MD.MdColorMgr.Dark
+    property MD.Enum.ThemeMode themeMode: root.color.mode
+    readonly property bool isDarkTheme: themeMode == MD.Enum.Dark
 
     component FontComp: QtObject {
         property font default_font

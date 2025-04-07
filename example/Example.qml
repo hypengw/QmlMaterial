@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.Page {
@@ -55,8 +56,8 @@ MD.Page {
                     }
                 ]
                 MD.TabButton {
-                    width: Math.max(TabBar.tabBar.tabWidth, implicitWidth)
-                    action: Action {
+                    width: Math.max(T.TabBar.tabBar.tabWidth, implicitWidth)
+                    action: MD.Action {
                         text: modelData.name
                         onTriggered: {
                             bar_test.currentIndex = index;

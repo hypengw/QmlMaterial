@@ -6,6 +6,7 @@
 #include <QtGui/QColor>
 
 #include "qml_material/core.hpp"
+#include "qml_material/enum.hpp"
 #include "qml_material/helper.hpp"
 
 namespace qml_material
@@ -24,20 +25,13 @@ public:
 
     MdColorMgr(QObject* = nullptr);
 
-    enum ColorSchemeEnum
-    {
-        Light,
-        Dark
-    };
-    Q_ENUMS(ColorSchemeEnum)
-
-    Q_PROPERTY(ColorSchemeEnum colorScheme READ colorScheme WRITE set_colorScheme NOTIFY
-                   colorSchemeChanged)
-    Q_PROPERTY(QColor accentColor READ accentColor WRITE set_accentColor NOTIFY accentColorChanged)
+    Q_PROPERTY(qml_material::Enum::ThemeMode mode READ mode WRITE setMode NOTIFY modeChanged FINAL)
     Q_PROPERTY(
-        bool useSysColorSM READ useSysColorSM WRITE set_useSysColorSM NOTIFY useSysColorSMChanged)
-    Q_PROPERTY(bool useSysAccentColor READ useSysAccentColor WRITE set_useSysAccentColor NOTIFY
-                   useSysAccentColorChanged)
+        QColor accentColor READ accentColor WRITE setAccentColor NOTIFY accentColorChanged FINAL)
+    Q_PROPERTY(bool useSysColorSM READ useSysColorSM WRITE setUseSysColorSM NOTIFY
+                   useSysColorSMChanged FINAL)
+    Q_PROPERTY(bool useSysAccentColor READ useSysAccentColor WRITE setUseSysAccentColor NOTIFY
+                   useSysAccentColorChanged FINAL)
 
 #define X(_n_)                                           \
     Q_PROPERTY(QColor _n_ READ _n_ NOTIFY schemeChanged) \
@@ -87,8 +81,8 @@ public:
 #undef X
 
 public:
-    ColorSchemeEnum colorScheme() const;
-    ColorSchemeEnum sysColorScheme() const;
+    auto mode() const -> Enum::ThemeMode;
+    auto sysColorScheme() const -> Enum::ThemeMode;
 
     QColor sysAccentColor() const;
     QColor accentColor() const;
@@ -97,22 +91,22 @@ public:
 
     Q_INVOKABLE QColor getOn(QColor) const;
 
-    Q_SLOT void set_colorScheme(ColorSchemeEnum);
-    Q_SLOT void set_accentColor(QColor);
-    Q_SLOT void set_useSysColorSM(bool);
-    Q_SLOT void set_useSysAccentColor(bool);
-    Q_SLOT void gen_scheme();
+    Q_SLOT void setMode(Enum::ThemeMode);
+    Q_SLOT void setAccentColor(QColor);
+    Q_SLOT void setUseSysColorSM(bool);
+    Q_SLOT void setUseSysAccentColor(bool);
+    Q_SLOT void genScheme();
     Q_SLOT void refrehFromSystem();
 
-    Q_SIGNAL void colorSchemeChanged();
+    Q_SIGNAL void modeChanged(Enum::ThemeMode);
     Q_SIGNAL void schemeChanged();
-    Q_SIGNAL void accentColorChanged();
+    Q_SIGNAL void accentColorChanged(QColor);
     Q_SIGNAL void useSysColorSMChanged();
     Q_SIGNAL void useSysAccentColorChanged();
 
 private:
     QColor                                  m_accent_color;
-    ColorSchemeEnum                         m_color_scheme;
+    Enum::ThemeMode                         m_mode;
     qcm::MdScheme                           m_scheme;
     std::map<QColor, QColor, QColorCompare> m_on_map;
     bool                                    m_use_sys_color_scheme;
@@ -120,7 +114,7 @@ private:
 };
 
 void sysNotifyInit(MdColorMgr&);
-auto sysColorScheme() -> MdColorMgr::ColorSchemeEnum;
+auto sysColorScheme() -> Enum::ThemeMode;
 auto sysAccentColor() -> QColor;
 
 } // namespace qml_material

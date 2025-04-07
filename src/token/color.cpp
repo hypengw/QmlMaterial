@@ -55,17 +55,15 @@ auto gen_on_map(const MdScheme& sh) -> std::map<QColor, QColor, QColorCompare> {
 }
 } // namespace
 
-
-
 MdColorMgr::MdColorMgr(QObject* parent)
     : QObject(parent),
       m_accent_color(BASE_COLOR),
-      m_color_scheme(sysColorScheme()),
+      m_mode(sysColorScheme()),
       m_use_sys_color_scheme(true),
       m_use_sys_accent_color(false) {
-    gen_scheme();
-    connect(this, &Self::colorSchemeChanged, this, &Self::gen_scheme);
-    connect(this, &Self::accentColorChanged, this, &Self::gen_scheme);
+    genScheme();
+    connect(this, &Self::modeChanged, this, &Self::genScheme);
+    connect(this, &Self::accentColorChanged, this, &Self::genScheme);
 
     sysNotifyInit(*this);
 
@@ -73,13 +71,13 @@ MdColorMgr::MdColorMgr(QObject* parent)
     connect(this, &Self::useSysAccentColorChanged, this, &Self::refrehFromSystem);
 }
 
-MdColorMgr::ColorSchemeEnum MdColorMgr::sysColorScheme() const { return ::sysColorScheme(); }
-QColor                      MdColorMgr::sysAccentColor() const { return ::sysAccentColor(); }
+Enum::ThemeMode MdColorMgr::sysColorScheme() const { return ::sysColorScheme(); }
+QColor          MdColorMgr::sysAccentColor() const { return ::sysAccentColor(); }
 
-MdColorMgr::ColorSchemeEnum MdColorMgr::colorScheme() const { return m_color_scheme; }
-void                        MdColorMgr::set_colorScheme(ColorSchemeEnum v) {
-    if (std::exchange(m_color_scheme, v) != v) {
-        emit colorSchemeChanged();
+Enum::ThemeMode MdColorMgr::mode() const { return m_mode; }
+void            MdColorMgr::setMode(Enum::ThemeMode v) {
+    if (std::exchange(m_mode, v) != v) {
+        Q_EMIT modeChanged(m_mode);
     }
 }
 
@@ -88,21 +86,21 @@ QColor MdColorMgr::accentColor() const { return m_accent_color; }
 bool MdColorMgr::useSysColorSM() const { return m_use_sys_color_scheme; };
 bool MdColorMgr::useSysAccentColor() const { return m_use_sys_accent_color; };
 
-void MdColorMgr::set_accentColor(QColor v) {
+void MdColorMgr::setAccentColor(QColor v) {
     if (std::exchange(m_accent_color, v) != v) {
-        emit accentColorChanged();
+        Q_EMIT accentColorChanged(m_accent_color);
     }
 }
 
-void MdColorMgr::set_useSysColorSM(bool v) {
+void MdColorMgr::setUseSysColorSM(bool v) {
     if (std::exchange(m_use_sys_color_scheme, v) != v) {
-        emit useSysColorSMChanged();
+        Q_EMIT useSysColorSMChanged();
     }
 }
 
-void MdColorMgr::set_useSysAccentColor(bool v) {
+void MdColorMgr::setUseSysAccentColor(bool v) {
     if (std::exchange(m_use_sys_accent_color, v) != v) {
-        emit useSysAccentColorChanged();
+        Q_EMIT useSysAccentColorChanged();
     }
 }
 
@@ -113,26 +111,25 @@ QColor MdColorMgr::getOn(QColor in) const {
     return m_scheme.on_background;
 }
 
-void MdColorMgr::gen_scheme() {
-    auto cs = colorScheme();
-    if (cs == ColorSchemeEnum::Light)
+void MdColorMgr::genScheme() {
+    auto cs = mode();
+    if (cs == Enum::ThemeMode::Light)
         m_scheme = MaterialLightColorScheme(m_accent_color.rgb());
     else
         m_scheme = MaterialDarkColorScheme(m_accent_color.rgb());
 
     m_on_map = gen_on_map(m_scheme);
-    emit schemeChanged();
+    Q_EMIT schemeChanged();
 }
 
 void MdColorMgr::refrehFromSystem() {
     if (useSysColorSM()) {
-        set_colorScheme(sysColorScheme());
+        setMode(sysColorScheme());
     }
 
     if (useSysAccentColor()) {
-        set_accentColor(sysAccentColor());
+        setAccentColor(sysAccentColor());
     }
 }
-
 
 #include <qml_material/token/moc_color.cpp>
