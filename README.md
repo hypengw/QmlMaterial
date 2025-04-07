@@ -7,6 +7,9 @@ This is a library of Qml implementing Google's Material Design.
 
 - Qt 6.8+
 
+## [Doc](https://hypengw.github.io/QmlMaterial/index.html)
+Work in progress
+
 ## Installation
 ```cmake
 FetchContent_Declare(
