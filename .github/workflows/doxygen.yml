@@ -1,0 +1,30 @@
+on:
+  push:
+    branches:
+      - arch
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install doxyqml
+        run: pip3 install doxyqml
+      - name: Clone doxygen-awesome-css
+        run: git clone --depth 1 https://github.com/jothepro/doxygen-awesome-css.git doc/doxygen-awesome-css
+      - name: Action Doxygen and GitHub Pages
+        id: ghaction
+        uses: AgarwalSaurav/ghaction-doxygen-ghpages@release/v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          working-directory: .
+          doxyfile-path: doc/Doxyfile
+          html-output-folder: doc/html
+          branch: gh-pages

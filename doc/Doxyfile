@@ -1,16 +1,23 @@
 PROJECT_NAME           = "QmlMaterial"
+PROJECT_NUMBER         = 0.1.0
+GENERATE_LATEX         = NO
 HIDE_UNDOC_CLASSES     = YES
 HIDE_UNDOC_MEMBERS     = YES
 HIDE_UNDOC_NAMESPACES  = YES
 SHOW_ENUM_VALUES       = YES
-PROJECT_NUMBER         = 0.1.0
-OUTPUT_DIRECTORY       = doxy
-INPUT                  = ../include ../src ../qml
 RECURSIVE              = YES
+INPUT                  = ../include ../src ../qml
 STRIP_FROM_INC_PATH    = ../include ../src
+IMAGE_PATH             = img
 WARN_IF_UNDOC_ENUM_VAL = YES
+MACRO_EXPANSION = YES
+
+HTML_EXTRA_STYLESHEET  = doxygen-awesome-css/doxygen-awesome.css
+
+PREDEFINED += QML_ANONYMOUS
+PREDEFINED += QML_ELEMENT
 
 
 FILTER_PATTERNS        = *.qml=doxyqml 
-FILE_PATTERNS          = *.qml *.cpp *.hpp
-EXTENSION_MAPPING      = qml=C++ cpp=c++ hpp=c++
+FILE_PATTERNS          = *.qml *.cpp *.hpp *.inl
+EXTENSION_MAPPING      = qml=C++ cpp=C++ hpp=C++ inl=C++
