@@ -14,7 +14,9 @@ jobs:
         with:
           python-version: '3.x'
       - name: Install doxyqml
-        run: pip3 install doxyqml
+        run: |
+          pip3 install doxyqml
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Clone doxygen-awesome-css
         run: git clone --depth 1 https://github.com/jothepro/doxygen-awesome-css.git doc/doxygen-awesome-css
       - name: Action Doxygen and GitHub Pages
