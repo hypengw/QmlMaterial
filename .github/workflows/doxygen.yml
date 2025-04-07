@@ -16,15 +16,14 @@ jobs:
       - name: Install doxyqml
         run: |
           pip3 install doxyqml
-          which doxyqml
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Clone doxygen-awesome-css
         run: git clone --depth 1 https://github.com/jothepro/doxygen-awesome-css.git doc/doxygen-awesome-css
-      - name: Action Doxygen and GitHub Pages
-        uses: mattnotmitt/doxygen-action@v1.12
-        with:
-          working-directory: './doc'
-          doxyfile-path: './Doxyfile'
+      - name: Build Doc
+        run: |
+          sudo apt install -y doxygen
+          pushd doc
+            doxygen
+          popd
       - name: Upload static files as artifact
         id: deployment
         uses: actions/upload-pages-artifact@v3
