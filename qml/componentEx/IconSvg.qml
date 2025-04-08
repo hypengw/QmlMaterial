@@ -9,12 +9,14 @@ Image {
     property bool colorOverlay: false
     property color color: MD.MatProp.color.on_background
     property int size: 24
+    property string sourceData
 
     sourceSize.width: size
     sourceSize.height: size
     mipmap: true
     smooth: true
     cache: true
+    source: 'data:image/svg+xml;utf8,' + sourceData
 
     layer.enabled: colorOverlay
     layer.effect: MultiEffect {
