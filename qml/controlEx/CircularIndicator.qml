@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Shapes
 import QtQuick.Templates as T
 
 import Qcm.Material as MD
@@ -7,12 +6,33 @@ import Qcm.Material as MD
 T.BusyIndicator {
     id: control
     readonly property real arcDuration: 1333
+    readonly property real fullArcDuration: 4 * 1333
+    readonly property real fullDuration: 17 * 4 * 1333
+    property real _progress: 0
+
+    // duration: (4 * control.arcDuration) / 360 * 306 -> 4532 -> 0.85 (360)
+    // duration: (4 * control.arcDuration)             -> 5332 -> 1.0  (1080)
+    // LCM -> 6041156, 17
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
     padding: 0
     clip: false
+
+    NumberAnimation {
+        id: m_anim
+        loops: Animation.Infinite
+        target: control
+        property: '_progress'
+        from: 0
+        to: 1
+        duration: control.fullDuration
+
+        function reset() {
+            control._progress = 0;
+        }
+    }
 
     contentItem: Item {
         implicitHeight: 32
@@ -21,76 +41,56 @@ T.BusyIndicator {
             id: m_shape
             anchors.fill: parent
 
-            function reset() {
-                const p = m_shape;
-                p.startAngle = (p.startAngle + p.sweepAngle) % 360;
-                p.sweepAngle = -p.sweepAngle;
-            }
+            Connections {
+                target: control
+                readonly property var _cal: (function () {
+                        let lastStart = 0;
+                        let lastEnd = 20;
+                        return function () {
+                            m_shape.rotation = control._progress * 17 * 360 * 3;
+                            control.rotation = control._progress * 20 * 360;
 
-            ParallelAnimation {
-                running: control.running
-                loops: Animation.Infinite
-                RotationAnimator {
-                    target: control
-                    from: 0
-                    to: 360
-                    duration: (4 * control.arcDuration) / 360 * 306
+                            const s = m_shape;
+                            const p = (control._progress * 17 * 2) % 1;
+
+                            if (p < 0.25) {
+                                const t = p * 4;
+                                s.endAngle = lastEnd + t * 300;
+                            } else if (p >= 0.25 && p < 0.5) {
+                                if (s.startAngle > 360 * 2) {
+                                    s.startAngle = s.startAngle % 360;
+                                    s.endAngle = s.startAngle + 320;
+                                }
+                                lastEnd = s.endAngle;
+                                lastStart = s.startAngle;
+                            } else if (p >= 0.5 && p < 0.75) {
+                                const t = (p - 0.5) * 4;
+                                s.startAngle = lastStart + t * 300;
+                            } else {
+                                if (s.startAngle > 360 * 2) {
+                                    s.startAngle = s.startAngle % 360;
+                                    s.endAngle = s.startAngle + 20;
+                                }
+                                lastEnd = s.endAngle;
+                                lastStart = s.startAngle;
+                            }
+                        };
+                    })()
+
+                function on_ProgressChanged() {
+                    _cal();
                 }
-                RotationAnimator {
-                    target: m_shape
-                    from: 0
-                    to: 1080
-                    duration: 4 * control.arcDuration
-                }
-                SequentialAnimation {
-                    ExpandArc {}
-                    ContractArc {}
-                    ExpandArc {}
-                    ContractArc {}
+
+                function onRunningChanged() {
+                    m_anim.running = true;
+                    if (control.running) {
+                        m_anim.paused = false;
+                    } else {
+                        m_anim.paused = true;
+                    }
                 }
             }
         }
-    }
-    component ExpandArc: SequentialAnimation {
-        ScriptAction {
-            script: m_shape.reset()
-        }
-        NumberAnimation {
-            target: m_shape
-            property: 'sweepAngle'
-            to: 270
-            duration: 0.5 * control.arcDuration
-            easing.type: Easing.BezierSpline
-            easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1]
-        }
-        NumberAnimation {
-            duration: 0.5 * control.arcDuration
-        }
-    }
-    component ContractArc: SequentialAnimation {
-        ScriptAction {
-            script: m_shape.reset()
-        }
-        NumberAnimation {
-            target: m_shape
-            property: 'sweepAngle'
-            to: -10
-            duration: 0.5 * control.arcDuration
-            easing.type: Easing.BezierSpline
-            easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1]
-        }
-        NumberAnimation {
-            duration: 0.5 * control.arcDuration
-        }
-    }
-    ScriptAction {
-        script: m_shape.reset()
-    }
-    NumberAnimation {
-        target: m_shape
-        property: 'sweepAngle'
-        to: -10
-        duration: 0.5 * control.arcDuration
     }
 
     background: Item {

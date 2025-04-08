@@ -222,18 +222,41 @@ MD.Page {
                                 radius: MD.Token.shape.corner.medium
                                 backgroundColor: MD.MatProp.color.surface_container
 
-                                RowLayout {
+                                ColumnLayout {
                                     anchors.fill: parent
-                                    spacing: 12
+                                    RowLayout {
+                                        spacing: 0
+                                        Item {
+                                            MD.IconButton {
+                                                id: m_indicator_play
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                checkable: true
+                                                icon.name: checked ? MD.Token.icon.pause : MD.Token.icon.play_arrow
+                                            }
+                                        }
 
-                                    MD.IconButton {
-                                        id: m_indicator_play
-                                        checkable: true
-                                        icon.name: checked ? MD.Token.icon.pause : MD.Token.icon.play_arrow
+                                        Item {
+                                            Layout.fillWidth: true
+                                            implicitHeight: children[0].implicitHeight
+                                            MD.CircularIndicator {
+                                                anchors.centerIn: parent
+                                                running: m_indicator_play.checked
+                                            }
+                                        }
                                     }
+                                    RowLayout {
+                                        spacing: 0
+                                        MD.IconButton {
+                                            id: m_linear_indicator_play
+                                            checkable: true
+                                            icon.name: checked ? MD.Token.icon.pause : MD.Token.icon.play_arrow
+                                        }
 
-                                    MD.CircularIndicator {
-                                        running: m_indicator_play.checked
+                                        MD.LinearIndicator {
+                                            Layout.fillWidth: true
+                                            Layout.alignment: Qt.AlignVCenter
+                                            running: m_linear_indicator_play.checked
+                                        }
                                     }
                                 }
                             }

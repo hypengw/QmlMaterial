@@ -131,6 +131,7 @@ set(QML_FILES
     qml/controlEx/SuggestionChip.qml
     qml/controlEx/CircleProgressBar.qml
     qml/controlEx/CircularIndicator.qml
+    qml/controlEx/LinearIndicator.qml
     qml/controlEx/SnakeBar.qml
     qml/controlEx/StandardDrawer.qml
     qml/controlEx/DrawerItem.qml
@@ -184,6 +185,7 @@ set(QML_FILES
     qml/impl/BoxShadow.qml
     qml/impl/CircleProgressShape.qml
     qml/impl/CircleIndicatorShape.qml
+    qml/impl/LinearIndicatorShape.qml
     qml/impl/ListBusyFooter.qml
     qml/impl/Ripple2.qml
     qml/impl/RectangularGlow.qml

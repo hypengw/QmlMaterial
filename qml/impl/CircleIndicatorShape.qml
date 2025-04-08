@@ -7,9 +7,9 @@ MD.Shape {
     property int strokeWidth: 4
     readonly property int radius: height / 2
     readonly property vector2d center: Qt.vector2d(radius, radius)
-    property real sweepAngle: 0
-    property real startAngle: -90
-    asynchronous: false
+    property real startAngle: 0
+    property real endAngle: 0
+    asynchronous: true
 
     ShapePath {
         capStyle: ShapePath.RoundCap
@@ -25,7 +25,7 @@ MD.Shape {
             radiusX: 16
             radiusY: radiusX
             startAngle: root.startAngle
-            sweepAngle: root.sweepAngle
+            sweepAngle: root.endAngle - root.startAngle
         }
     }
 }
