@@ -8,7 +8,7 @@ T.Button {
 
     property int iconStyle: hasIcon ? MD.Enum.IconAndText : MD.Enum.TextOnly
     readonly property bool hasIcon: MD.Util.hasIcon(icon)
-    property alias mdState: item_state
+    property alias mdState: m_sh.state
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
@@ -72,8 +72,8 @@ T.Button {
                     pressX: p.x
                     pressY: p.y
                     pressed: control.pressed
-                    stateOpacity: item_state.stateLayerOpacity
-                    color: item_state.stateLayerColor
+                    stateOpacity: control.mdState.stateLayerOpacity
+                    color: control.mdState.stateLayerColor
                 }
             }
         }
@@ -88,38 +88,10 @@ T.Button {
     }
 
     background: Item {}
-
-    MD.State {
-        id: item_state
-        item: control
-
-        elevation: MD.Token.elevation.level0
-        textColor: control.checked ? item_state.ctx.color.on_surface : item_state.ctx.color.on_surface_variant
-        backgroundColor: control.checked ? item_state.ctx.color.secondary_container : "transparent"
-        supportTextColor: control.checked ? item_state.ctx.color.on_secondary_container : item_state.ctx.color.on_surface_variant
-        stateLayerColor: "transparent"
-
-        states: [
-            State {
-                name: "Pressed"
-                when: control.down || control.visualFocus
-                PropertyChanges {
-                    item_state.textColor: item_state.ctx.color.on_surface
-                    item_state.supportTextColor: control.checked ? item_state.ctx.color.on_secondary_container : item_state.ctx.color.on_surface
-                    item_state.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
-                    item_state.stateLayerColor: item_state.ctx.color.on_surface
-                }
-            },
-            State {
-                name: "Hovered"
-                when: control.hovered
-                PropertyChanges {
-                    item_state.textColor: item_state.ctx.color.on_surface
-                    item_state.supportTextColor: control.checked ? item_state.ctx.color.on_secondary_container : item_state.ctx.color.on_surface
-                    item_state.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
-                    item_state.stateLayerColor: item_state.ctx.color.on_surface
-                }
-            }
-        ]
+    MD.StateHolder {
+        id: m_sh
+        state: MD.StateRailItem {
+            item: control
+        }
     }
 }

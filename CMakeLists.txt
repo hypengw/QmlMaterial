@@ -180,6 +180,7 @@ set(QML_FILES
     qml/state/StateBarItem.qml
     qml/state/StateSearchBar.qml
     qml/state/StateTextField.qml
+    qml/state/StateRailItem.qml
     qml/impl/BoxShadow.qml
     qml/impl/CircleProgressShape.qml
     qml/impl/CircleIndicatorShape.qml

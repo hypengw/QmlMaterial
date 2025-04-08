@@ -14,7 +14,7 @@ MD.Rectangle {
 
     color: "transparent"
     clip: false
-    opacity: 0
+    opacity: stateOpacity
 
     MD.Shape {
         id: m_circle
@@ -107,15 +107,6 @@ MD.Rectangle {
         State {
             name: "normal"
             when: true
-            PropertyChanges {
-                restoreEntryValues: false
-                m_circle.opacity: 0.0
-            }
-            PropertyChanges {
-                restoreEntryValues: false
-                // eval after animation
-                root.opacity: root.stateOpacity
-            }
         }
     ]
 
@@ -126,6 +117,7 @@ MD.Rectangle {
             SequentialAnimation {
                 ScriptAction {
                     script: {
+                        m_fade.stop();
                         root.opacity = root.stateOpacity;
                         root._circle_radius = 0.0;
                         m_circle.opacity = 1.0;
@@ -148,11 +140,35 @@ MD.Rectangle {
                     to: root.endRadius
                     duration: 200
                 }
-                OpacityAnimator {
-                    target: m_circle
-                    duration: 200
+
+                ScriptAction {
+                    script: {
+                        m_fade.start();
+                    }
                 }
             }
         }
     ]
+
+    // for tracking root.stateOpacity, need to be top-level
+    SequentialAnimation {
+        id: m_fade
+        running: false
+        onFinished: {
+            root.opacity = Qt.binding(function () {
+                return root.stateOpacity;
+            });
+        }
+
+        OpacityAnimator {
+            target: root
+            to: root.stateOpacity
+            duration: 200
+        }
+        OpacityAnimator {
+            target: m_circle
+            to: 0
+            duration: 100
+        }
+    }
 }
