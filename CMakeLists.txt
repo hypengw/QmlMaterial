@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.14)
 
+set(QM_VERSION 0.1.1)
 project(
   QmlMaterial
-  VERSION 0.1.1
+  VERSION ${QM_VERSION}
   LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -154,6 +155,7 @@ set(QML_FILES
     qml/componentEx/IconSvg.qml
     qml/componentEx/Space.qml
     qml/componentEx/SdfRectangle.qml
+    qml/componentEx/SnakeView.qml
     qml/delegate/ListItem.qml
     qml/flickable/Flickable.qml
     qml/flickable/VerticalFlickable.qml
@@ -277,7 +279,9 @@ set_source_files_properties(
 set(TOKEN_COMPILE_DEFINITIONS
     QM_ICON_FONT_URL="${QM_ICON_FONT_URL}"
     QM_ICON_FILL_0_FONT_URL="qrc:/Qcm/Material/${QM_ICON_FILL_0_FONT_FILE}"
-    QM_ICON_FILL_1_FONT_URL="qrc:/Qcm/Material/${QM_ICON_FILL_1_FONT_FILE}")
+    QM_ICON_FILL_1_FONT_URL="qrc:/Qcm/Material/${QM_ICON_FILL_1_FONT_FILE}"
+    QM_VERSION="${QM_VERSION}"
+    )
 
 set_source_files_properties(
   src/token/token.cpp PROPERTIES COMPILE_DEFINITIONS

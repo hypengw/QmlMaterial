@@ -10,7 +10,8 @@ qt_add_resources(
   Elevation.qml
   Example.qml
   Typography.qml
-  Shape.qml)
+  Shape.qml
+  About.qml)
 
 qt_add_executable(qm_example main.cpp)
 qt_add_resources(

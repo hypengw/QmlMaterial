@@ -247,6 +247,7 @@ class Token : public QObject {
     Q_CLASSINFO("DefaultProperty", "datas")
     QML_NAMED_ELEMENT(TokenImpl)
 
+    Q_PROPERTY(QString version READ version CONSTANT FINAL)
     Q_PROPERTY(QString iconFontUrl READ icon_font_url CONSTANT FINAL)
     Q_PROPERTY(QString iconFill0FontUrl READ icon_fill_0_font_url CONSTANT FINAL)
     Q_PROPERTY(QString iconFill1FontUrl READ icon_fill_1_font_url CONSTANT FINAL)
@@ -269,6 +270,7 @@ public:
     Token(QObject* = nullptr);
     ~Token();
 
+    auto version() const -> QString;
     auto icon_font_url() const -> QString;
     auto icon_fill_0_font_url() const -> QString;
     auto icon_fill_1_font_url() const -> QString;

@@ -34,13 +34,13 @@ MD.Page {
                 MD.VerticalFlickable {
                     Layout.fillHeight: true
                     Layout.fillWidth: true
+
                     topMargin: 0
                     bottomMargin: 12
 
                     ColumnLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 12
-                        anchors.rightMargin: 12
+                        height: implicitHeight
+                        width: parent.width
                         spacing: 0
 
                         Repeater {
@@ -70,7 +70,12 @@ MD.Page {
                                     name: 'typography',
                                     source: 'qrc:/Qcm/Material/Example/Typography.qml',
                                     icon: MD.Token.icon.description
-                                }
+                                },
+                                {
+                                    name: 'about',
+                                    source: 'qrc:/Qcm/Material/Example/About.qml',
+                                    icon: MD.Token.icon.info
+                                },
                             ]
                             MD.DrawerItem {
                                 Layout.fillWidth: true

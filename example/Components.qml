@@ -263,6 +263,18 @@ MD.Page {
                             }
                         }
                     }
+                    ComponentCard {
+                        title: 'SnakeBar'
+
+                        MD.Button {
+                            Layout.alignment: Qt.AlignHCenter
+                            type: MD.Enum.BtText
+                            text: 'Show snakeBar'
+                            onClicked: {
+                                m_snake.show("test");
+                            }
+                        }
+                    }
                 }
             }
 
@@ -515,6 +527,15 @@ MD.Page {
                     spacing: 8
                 }
             }
+        }
+    }
+
+    MD.SnakeView {
+        id: m_snake
+        parent: T.Overlay.overlay
+        anchors.fill: parent
+        MD.InputBlock {
+            target: m_snake
         }
     }
 }
