@@ -146,6 +146,7 @@ set(QML_FILES
     qml/component/TextInput.qml
     qml/component/TextMetrics.qml
     qml/component/TextField.qml
+    qml/componentEx/ColorRadio.qml
     qml/componentEx/Divider.qml
     qml/componentEx/DragHandle.qml
     qml/componentEx/IconLabel.qml
@@ -215,7 +216,7 @@ set(SHADER_DEFINES)
 set(QML_MATERIAL_BUILD_TYPE SHARED)
 
 if(EMSCRIPTEN)
-  list(APPEND SOURCES src/wasm/wasm.cpp)
+  list(APPEND SOURCES src/platform/wasm/wasm.cpp)
   list(APPEND SHADER_DEFINES "GLES=1")
 
   set(QML_MATERIAL_BUILD_TYPE STATIC)

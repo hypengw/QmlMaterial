@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.Page {
@@ -317,6 +318,169 @@ MD.Page {
                                 text: 'Suggestion'
                                 enabled: false
                             }
+                        }
+                    }
+
+                    ComponentCard {
+                        title: 'Text Inputs'
+                        MD.TextField {
+                            Layout.fillWidth: true
+                            type: MD.Enum.TextFieldFilled
+                            placeholderText: 'Filled'
+                        }
+                        MD.TextField {
+                            Layout.fillWidth: true
+                            type: MD.Enum.TextFieldOutlined
+                            placeholderText: 'Outlined'
+                        }
+                    }
+                    ComponentCard {
+                        title: 'Sliders'
+                        MD.Slider {
+                            Layout.alignment: Qt.AlignHCenter
+                        }
+                        MD.Slider {
+                            Layout.alignment: Qt.AlignHCenter
+                            snapMode: T.Slider.SnapAlways
+                            from: 0
+                            stepSize: 20
+                            to: 100
+                        }
+                    }
+                    ComponentCard {
+                        title: 'Switches'
+                        MD.Switch {
+                            Layout.alignment: Qt.AlignHCenter
+                        }
+                        MD.Switch {
+                            Layout.alignment: Qt.AlignHCenter
+                            enabled: false
+                        }
+                    }
+                }
+            }
+            MD.Pane {
+                Layout.alignment: Qt.AlignHCenter
+                ColumnLayout {
+                    spacing: 16
+                    MD.Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: 'Navigation'
+                        typescale: MD.Token.typescale.title_large
+                    }
+
+                    ComponentCard {
+                        title: 'Navigation Bar'
+                        MD.Pane {
+                            id: m_nav_bar
+                            Layout.fillWidth: true
+                            padding: 0
+                            backgroundColor: MD.MatProp.color.surface_container
+                            property int idx: 1
+                            RowLayout {
+                                anchors.fill: parent
+                                MD.BarItem {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    icon.name: MD.Token.icon.explore
+                                    text: 'explore'
+                                    checked: m_nav_bar.idx == 1
+                                    onClicked: {
+                                        m_nav_bar.idx = 1;
+                                    }
+                                }
+                                MD.BarItem {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    icon.name: MD.Token.icon.pets
+                                    text: 'pets'
+                                    checked: m_nav_bar.idx == 2
+                                    onClicked: {
+                                        m_nav_bar.idx = 2;
+                                    }
+                                }
+                                MD.BarItem {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    icon.name: MD.Token.icon.person
+                                    text: 'account'
+                                    checked: m_nav_bar.idx == 3
+                                    onClicked: {
+                                        m_nav_bar.idx = 3;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    ComponentCard {
+                        title: 'Tabs'
+                        MD.TabBar {
+                            Layout.fillWidth: true
+                            MD.TabButton {
+                                text: 'Video'
+                            }
+                            MD.TabButton {
+                                text: 'Photos'
+                            }
+                            MD.TabButton {
+                                text: 'Audio'
+                            }
+                        }
+                    }
+                    ComponentCard {
+                        title: 'Top app bars'
+                        MD.AppBar {
+                            Layout.fillWidth: true
+                            title: 'Center-aligned'
+                            mdState.backgroundColor: MD.MatProp.color.surface_container_highest
+                            leadingAction: MD.Action {
+                                icon.name: MD.Token.icon.arrow_back
+                            }
+                            actions: [
+                                MD.Action {
+                                    icon.name: MD.Token.icon.more_vert
+                                }
+                            ]
+                        }
+                        MD.AppBar {
+                            Layout.fillWidth: true
+                            type: MD.Enum.AppBarSmall
+                            title: 'Small'
+                            mdState.backgroundColor: MD.MatProp.color.surface_container_highest
+                            leadingAction: MD.Action {
+                                icon.name: MD.Token.icon.arrow_back
+                            }
+                            actions: [
+                                MD.Action {
+                                    icon.name: MD.Token.icon.more_vert
+                                }
+                            ]
+                        }
+                        MD.AppBar {
+                            id: m_app_bar_1
+                            Layout.fillWidth: true
+                            type: MD.Enum.AppBarMedium
+                            title: 'Medium'
+                            mdState.backgroundColor: MD.MatProp.color.surface_container_highest
+                            leadingAction: MD.Action {
+                                icon.name: MD.Token.icon.arrow_back
+                            }
+                            actions: [
+                                MD.Action {
+                                    icon.name: MD.Token.icon.more_vert
+                                }
+                            ]
+                        }
+                        MD.AppBar {
+                            Layout.fillWidth: true
+                            type: MD.Enum.AppBarLarge
+                            title: 'Large'
+                            mdState.backgroundColor: MD.MatProp.color.surface_container_highest
+                            leadingAction: MD.Action {
+                                icon.name: MD.Token.icon.arrow_back
+                            }
+                            actions: [
+                                MD.Action {
+                                    icon.name: MD.Token.icon.more_vert
+                                }
+                            ]
                         }
                     }
                 }

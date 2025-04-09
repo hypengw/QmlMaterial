@@ -21,8 +21,8 @@ MD.State {
                 root.elevation: MD.Token.elevation.level0
                 root.textColor: root.ctx.color.on_surface
                 root.backgroundColor: root.ctx.color.on_surface
-                root.item.contentItem.opacity: 0.38
-                root.item.background.opacity: 0.12
+                root.contentOpacity: 0.38
+                root.backgroundOpacity: 0.12
             }
         },
         State {

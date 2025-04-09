@@ -30,6 +30,7 @@ T.Switch {
         color: control.mdState.backgroundColor
         border.width: 2
         border.color: control.mdState.ctx.color.outline
+        opacity: control.mdState.backgroundOpacity
 
         Behavior on color {
             ColorAnimation {
@@ -44,6 +45,7 @@ T.Switch {
 
         Rectangle {
             id: handle
+            opacity: control.mdState.contentOpacity
             x: Math.max(offset, Math.min(parent.width - offset - width, control.visualPosition * parent.width - (width / 2)))
             y: (parent.height - height) / 2
             // We use scale to allow us to enlarge the circle from the center,

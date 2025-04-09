@@ -36,6 +36,7 @@ T.ItemDelegate {
             id: item_holder_leader
             name: control.icon.name
             size: Math.min(control.icon.width, control.icon.height)
+            fill: control.checked
         }
         MD.Text {
             Layout.fillWidth: true

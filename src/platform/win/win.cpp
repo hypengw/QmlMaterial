@@ -1,5 +1,5 @@
 #include "qml_material/util/qml_util.hpp"
-#include "qml_material/color.h"
+#include "qml_material/token/color.hpp"
 
 namespace qml_material
 {

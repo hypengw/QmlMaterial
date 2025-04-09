@@ -27,7 +27,7 @@ MD.State {
             name: "meidium"
             when: root.item.type === MD.Enum.AppBarMedium
             PropertyChanges {
-                root.backgroundColor: root.ctx.color.surface
+                // root.backgroundColor: root.ctx.color.surface
                 root.typescale: MD.Token.typescale.headline_small
                 root.elevation: MD.Token.elevation.level0
                 root.containerHeight: 112
@@ -37,7 +37,7 @@ MD.State {
             name: "large"
             when: root.item.type === MD.Enum.AppBarLarge
             PropertyChanges {
-                root.backgroundColor: root.ctx.color.surface
+                // root.backgroundColor: root.ctx.color.surface
                 root.typescale: MD.Token.typescale.headline_medium
                 root.elevation: MD.Token.elevation.level0
                 root.containerHeight: 152
