@@ -79,13 +79,13 @@ MD.TokenImpl {
         id: m_material_round_static
         Item {
             FontLoader {
-                source: 'qrc:/Qcm/Material/assets/MaterialSymbolsRounded.wght_400.opsz_24.ttf'
+                source: root.iconFill0FontUrl
                 Component.onCompleted: {
                     root.font.icon_family = font.family;
                 }
             }
             FontLoader {
-                source: 'qrc:/Qcm/Material/assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_1.ttf'
+                source: root.iconFill1FontUrl
                 Component.onCompleted: {
                     root.font.icon_fill_family = font.family;
                 }

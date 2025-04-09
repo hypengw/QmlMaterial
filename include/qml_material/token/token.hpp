@@ -248,6 +248,9 @@ class Token : public QObject {
     QML_NAMED_ELEMENT(TokenImpl)
 
     Q_PROPERTY(QString iconFontUrl READ icon_font_url CONSTANT FINAL)
+    Q_PROPERTY(QString iconFill0FontUrl READ icon_fill_0_font_url CONSTANT FINAL)
+    Q_PROPERTY(QString iconFill1FontUrl READ icon_fill_1_font_url CONSTANT FINAL)
+
     /// Typography scale settings
     Q_PROPERTY(qml_material::token::TypeScale* typescale READ typescale CONSTANT FINAL)
     /// Icon token settings and management
@@ -267,6 +270,9 @@ public:
     ~Token();
 
     auto icon_font_url() const -> QString;
+    auto icon_fill_0_font_url() const -> QString;
+    auto icon_fill_1_font_url() const -> QString;
+
     auto typescale() const -> TypeScale*;
     auto icon() const -> IconToken*;
     auto flick() const -> Flick*;

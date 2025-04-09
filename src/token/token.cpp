@@ -10,6 +10,9 @@ Token::Token(QObject* parent)
 Token::~Token() {}
 
 auto Token::icon_font_url() const -> QString { return QM_ICON_FONT_URL; }
+auto Token::icon_fill_0_font_url() const -> QString { return QM_ICON_FILL_0_FONT_URL; }
+auto Token::icon_fill_1_font_url() const -> QString { return QM_ICON_FILL_1_FONT_URL; }
+
 auto Token::typescale() const -> TypeScale* { return m_typescale; }
 auto Token::icon() const -> IconToken* { return m_icon; }
 auto Token::flick() const -> Flick* { return m_flick; }

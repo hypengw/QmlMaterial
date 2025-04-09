@@ -200,10 +200,7 @@ set(QML_FILES
     qml/impl/ElevationRectangleBorder.qml
     qml/impl/Shape.qml)
 
-set(RESOURCES
-    assets/MaterialSymbolsRounded.wght_400.opsz_24.ttf
-    assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2
-    assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_1.ttf)
+set(RESOURCES assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2)
 
 set(QML_REG_INCLUDE_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/item"
@@ -215,14 +212,27 @@ set(SHADER_DEFINES)
 
 set(QML_MATERIAL_BUILD_TYPE SHARED)
 
+set(QM_ICON_FILL_0_FONT_FILE)
+set(QM_ICON_FILL_1_FONT_FILE)
+
 if(EMSCRIPTEN)
   list(APPEND SOURCES src/platform/wasm/wasm.cpp)
   list(APPEND SHADER_DEFINES "GLES=1")
+  set(QM_ICON_FILL_0_FONT_FILE
+      assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_0.ttf)
+  set(QM_ICON_FILL_1_FONT_FILE
+      assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_1.ttf)
 
   set(QML_MATERIAL_BUILD_TYPE STATIC)
-  add_compile_options(-flto)
+  add_compile_options(-flto -oz)
   add_link_options("-sEXPORT_NAME=qml_material" -s FULL_ES3=1 -flto)
 else()
+
+  set(QM_ICON_FILL_0_FONT_FILE
+      assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_0.woff2)
+  set(QM_ICON_FILL_1_FONT_FILE
+      assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_1.woff2)
+
   if(UNIX)
     if(ANDROID)
       list(APPEND SOURCES src/platform/android/android.cpp)
@@ -234,6 +244,9 @@ else()
     list(APPEND SOURCES src/platform/win/win.cpp)
   endif()
 endif()
+
+list(APPEND RESOURCES "${QM_ICON_FILL_0_FONT_FILE}"
+     "${QM_ICON_FILL_1_FONT_FILE}")
 
 set_source_files_properties(qml/Token.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 include_directories(include)
@@ -260,9 +273,15 @@ set_source_files_properties(
   "${CMAKE_CURRENT_BINARY_DIR}/${LIBNAME}_qmltyperegistrations.cpp"
   TARGET_DIRECTORY "${LIBNAME}" PROPERTIES INCLUDE_DIRECTORIES
                                            "${QML_REG_INCLUDE_DIRS}")
+
+set(TOKEN_COMPILE_DEFINITIONS
+    QM_ICON_FONT_URL="${QM_ICON_FONT_URL}"
+    QM_ICON_FILL_0_FONT_URL="qrc:/Qcm/Material/${QM_ICON_FILL_0_FONT_FILE}"
+    QM_ICON_FILL_1_FONT_URL="qrc:/Qcm/Material/${QM_ICON_FILL_1_FONT_FILE}")
+
 set_source_files_properties(
   src/token/token.cpp PROPERTIES COMPILE_DEFINITIONS
-                                 QM_ICON_FONT_URL="${QM_ICON_FONT_URL}")
+                                 "${TOKEN_COMPILE_DEFINITIONS}")
 
 set(SHADER_GLSLS "assets/shader/common.glsl" "assets/shader/sdf.glsl")
 set(SHADER_SOURCES
@@ -335,8 +354,8 @@ function(qt_install_qml_module target_)
           LIBRARY DESTINATION ${QML_TARGET_INSTALL_DIR})
 
   install(FILES "${QT_QML_OUTPUT_DIRECTORY}/${QML_TARGET_PATH}/qmldir"
-                "${QT_QML_OUTPUT_DIRECTORY}/${QML_TARGET_PATH}/${QML_TYEPINFO}"
-          DESTINATION ${QML_TARGET_INSTALL_DIR})
+                "${QT_QML_OUTPUT_DIRECTORY}/${QML_TARGET_PATH}/${QML_TYEPINFO}
+    " DESTINATION ${QML_TARGET_INSTALL_DIR})
 endfunction()
 
 qt_install_qml_module(${LIBNAME})
