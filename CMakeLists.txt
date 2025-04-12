@@ -161,6 +161,7 @@ set(QML_FILES
     qml/flickable/VerticalFlickable.qml
     qml/flickable/VerticalGridView.qml
     qml/flickable/VerticalListView.qml
+    qml/flickable/HorizontalListView.qml
     qml/flickable/FlickablePane.qml
     qml/flickable/GridView.qml
     qml/flickable/ListView.qml

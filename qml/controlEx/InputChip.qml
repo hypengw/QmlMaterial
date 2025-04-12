@@ -29,6 +29,7 @@ T.Button {
     icon.width: 18
     icon.height: 18
     icon.name: MD.Token.icon.close
+    action: null
     font.capitalization: Font.Capitalize
 
     property Item leadingItem: null
@@ -51,51 +52,6 @@ T.Button {
                     m_leading.visible: false
                 }
             }
-
-            transitions: [
-                Transition {
-                    to: ""
-                    SequentialAnimation {
-                        PropertyAction {
-                            property: "visible"
-                        }
-                        ParallelAnimation {
-                            OpacityAnimator {
-                                duration: 100
-                            }
-                            NumberAnimation {
-                                property: "implicitWidth"
-                                duration: 100
-                            }
-                            NumberAnimation {
-                                property: "leftPadding"
-                                duration: 50
-                            }
-                        }
-                    }
-                },
-                Transition {
-                    to: "hidden"
-                    SequentialAnimation {
-                        ParallelAnimation {
-                            OpacityAnimator {
-                                duration: 100
-                            }
-                            NumberAnimation {
-                                property: "implicitWidth"
-                                duration: 100
-                            }
-                            NumberAnimation {
-                                property: "leftPadding"
-                                duration: 50
-                            }
-                        }
-                        PropertyAction {
-                            property: "visible"
-                        }
-                    }
-                }
-            ]
 
             RowLayout {
                 spacing: 0
@@ -121,15 +77,15 @@ T.Button {
             }
             Item {
                 Layout.alignment: Qt.AlignVCenter
-                implicitWidth: control.icon.width
-                implicitHeight: control.icon.height
+                implicitWidth: control.action ? control.action.icon.width : control.icon.width
+                implicitHeight: control.action ? control.action.icon.height : control.icon.height
 
                 MD.StandardIconButton {
                     anchors.centerIn: parent
 
                     implicitBackgroundSize: 0
-                    visible: icon.name
-                    icon: control.icon
+                    visible: action ? action.icon.name : icon.name
+                    icon: action ? action.icon : control.icon
                     action: control.action
                 }
             }

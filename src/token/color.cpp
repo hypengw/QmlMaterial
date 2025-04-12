@@ -59,6 +59,7 @@ MdColorMgr::MdColorMgr(QObject* parent)
     : QObject(parent),
       m_accent_color(BASE_COLOR),
       m_mode(sysColorScheme()),
+      m_last_mode(m_mode),
       m_use_sys_color_scheme(true),
       m_use_sys_accent_color(false) {
     genScheme();
@@ -111,20 +112,30 @@ QColor MdColorMgr::getOn(QColor in) const {
     return m_scheme.on_background;
 }
 
-void MdColorMgr::genScheme() {
-    auto cs = mode();
-    if (cs == Enum::ThemeMode::Light)
+void MdColorMgr::genSchemeImpl(Enum::ThemeMode mode) {
+    if (mode == Enum::ThemeMode::Light)
         m_scheme = MaterialLightColorScheme(m_accent_color.rgb());
     else
         m_scheme = MaterialDarkColorScheme(m_accent_color.rgb());
+
+    m_last_mode = mode;
 
     m_on_map = gen_on_map(m_scheme);
     Q_EMIT schemeChanged();
 }
 
+void MdColorMgr::genScheme() {
+    auto m = useSysColorSM() ? sysColorScheme() : mode();
+    genSchemeImpl(m);
+}
+
 void MdColorMgr::refrehFromSystem() {
     if (useSysColorSM()) {
-        setMode(sysColorScheme());
+        genSchemeImpl(sysColorScheme());
+    } else {
+        if (m_last_mode != mode()) {
+            genScheme();
+        }
     }
 
     if (useSysAccentColor()) {

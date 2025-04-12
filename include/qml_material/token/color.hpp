@@ -18,9 +18,9 @@ struct QColorCompare {
 };
 
 /**
- * @brief Material Design [Color](https://m3.material.io/styles/color/roles) Manager class  
- * 
- * Manages color schemes and theme modes for Material Design implementation.  
+ * @brief Material Design [Color](https://m3.material.io/styles/color/roles) Manager class
+ *
+ * Manages color schemes and theme modes for Material Design implementation.
  * @image html color-role.png
  */
 class MdColorMgr : public QObject {
@@ -171,8 +171,11 @@ public:
     Q_SIGNAL void useSysAccentColorChanged();
 
 private:
+    void genSchemeImpl(Enum::ThemeMode);
+
     QColor                                  m_accent_color;
     Enum::ThemeMode                         m_mode;
+    Enum::ThemeMode                         m_last_mode;
     qcm::MdScheme                           m_scheme;
     std::map<QColor, QColor, QColorCompare> m_on_map;
     bool                                    m_use_sys_color_scheme;
