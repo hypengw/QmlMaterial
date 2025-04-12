@@ -63,11 +63,16 @@ T.ItemDelegate {
 
             MD.Control {
                 id: m_holder_leader
-                visible: contentItem
+                visible: {
+                    const item = contentItem;
+                    if (item instanceof MD.Icon) {
+                        return item.name;
+                    }
+                    return item;
+                }
                 contentItem: MD.Icon {
-                    visible: name
-                    name: control.icon.name
-                    size: control.icon.width
+                    name: control.action ? control.action.icon.name : control.icon.name
+                    size: control.action ? control.action.icon.width : control.icon.width
                 }
             }
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <QAbstractListModel>
-#include <QQmlEngine>
-#include <QTimer>
+#include <QtCore/QAbstractListModel>
+#include <QtCore/QTimer>
+#include <QtQml/QQmlEngine>
 
 #include "qml_material/enum.hpp"
 

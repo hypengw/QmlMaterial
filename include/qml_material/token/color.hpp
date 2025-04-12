@@ -38,6 +38,13 @@ public:
     Q_PROPERTY(qml_material::Enum::ThemeMode mode READ mode WRITE setMode NOTIFY modeChanged FINAL)
 
     /**
+     * @property PaletteType
+     * @brief Color scheme type
+     */
+    Q_PROPERTY(qml_material::Enum::PaletteType paletteType READ paletteType WRITE setPaletteType
+                   NOTIFY paletteTypeChanged FINAL)
+
+    /**
      * @property accentColor
      * @brief Primary accent color for the theme
      */
@@ -154,6 +161,8 @@ public:
     QColor accentColor() const;
     bool   useSysColorSM() const;
     bool   useSysAccentColor() const;
+    auto   paletteType() const -> Enum::PaletteType;
+    void   setPaletteType(Enum::PaletteType);
 
     Q_INVOKABLE QColor getOn(QColor) const;
 
@@ -166,6 +175,7 @@ public:
 
     Q_SIGNAL void modeChanged(Enum::ThemeMode);
     Q_SIGNAL void schemeChanged();
+    Q_SIGNAL void paletteTypeChanged();
     Q_SIGNAL void accentColorChanged(QColor);
     Q_SIGNAL void useSysColorSMChanged();
     Q_SIGNAL void useSysAccentColorChanged();
@@ -176,7 +186,8 @@ private:
     QColor                                  m_accent_color;
     Enum::ThemeMode                         m_mode;
     Enum::ThemeMode                         m_last_mode;
-    qcm::MdScheme                           m_scheme;
+    Enum::PaletteType                       m_scheme_type;
+    MdScheme                                m_scheme;
     std::map<QColor, QColor, QColorCompare> m_on_map;
     bool                                    m_use_sys_color_scheme;
     bool                                    m_use_sys_accent_color;

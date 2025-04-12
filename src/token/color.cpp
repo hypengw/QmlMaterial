@@ -60,11 +60,13 @@ MdColorMgr::MdColorMgr(QObject* parent)
       m_accent_color(BASE_COLOR),
       m_mode(sysColorScheme()),
       m_last_mode(m_mode),
+      m_scheme_type(Enum::PaletteType::PaletteTonalSpot),
       m_use_sys_color_scheme(true),
       m_use_sys_accent_color(false) {
     genScheme();
     connect(this, &Self::modeChanged, this, &Self::genScheme);
     connect(this, &Self::accentColorChanged, this, &Self::genScheme);
+    connect(this, &Self::paletteTypeChanged, this, &Self::genScheme);
 
     sysNotifyInit(*this);
 
@@ -86,6 +88,12 @@ QColor MdColorMgr::accentColor() const { return m_accent_color; }
 
 bool MdColorMgr::useSysColorSM() const { return m_use_sys_color_scheme; };
 bool MdColorMgr::useSysAccentColor() const { return m_use_sys_accent_color; };
+auto MdColorMgr::paletteType() const -> Enum::PaletteType { return m_scheme_type; }
+void MdColorMgr::setPaletteType(Enum::PaletteType t) {
+    if (std::exchange(m_scheme_type, t) != t) {
+        paletteTypeChanged();
+    }
+}
 
 void MdColorMgr::setAccentColor(QColor v) {
     if (std::exchange(m_accent_color, v) != v) {
@@ -114,9 +122,9 @@ QColor MdColorMgr::getOn(QColor in) const {
 
 void MdColorMgr::genSchemeImpl(Enum::ThemeMode mode) {
     if (mode == Enum::ThemeMode::Light)
-        m_scheme = MaterialLightColorScheme(m_accent_color.rgb());
+        m_scheme = MaterialLightColorScheme(m_accent_color.rgb(), paletteType());
     else
-        m_scheme = MaterialDarkColorScheme(m_accent_color.rgb());
+        m_scheme = MaterialDarkColorScheme(m_accent_color.rgb(), paletteType());
 
     m_last_mode = mode;
 

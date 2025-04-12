@@ -1,16 +1,24 @@
 #include "qml_material/helper.hpp"
 
 #include "cpp/scheme/scheme_content.h"
+#include "cpp/scheme/scheme_expressive.h"
+#include "cpp/scheme/scheme_fidelity.h"
+#include "cpp/scheme/scheme_fruit_salad.h"
+#include "cpp/scheme/scheme_monochrome.h"
 #include "cpp/scheme/scheme_neutral.h"
+#include "cpp/scheme/scheme_rainbow.h"
 #include "cpp/scheme/scheme_tonal_spot.h"
+#include "cpp/scheme/scheme_vibrant.h"
+
 #include "cpp/blend/blend.h"
 
 #include "qml_material/core.hpp"
 
 #include "cpp/palettes/core.h"
 
-using MdScheme = qcm::MdScheme;
+using MdScheme = qml_material::MdScheme;
 namespace md   = material_color_utilities;
+using Hct      = md::Hct;
 
 namespace
 {
@@ -22,9 +30,7 @@ QRgb blend(QRgb a, QRgb b, double t) {
                  qBlue(a) * dt + qBlue(b) * t,
                  qAlpha(a));
 }
-} // namespace
-
-static void convert_from(MdScheme& out, const md::DynamicScheme& in) {
+void convert_from(MdScheme& out, const md::DynamicScheme& in) {
     out.primary                = in.GetPrimary();
     out.on_primary             = in.GetOnPrimary();
     out.primary_container      = in.GetPrimaryContainer();
@@ -70,22 +76,66 @@ static void convert_from(MdScheme& out, const md::DynamicScheme& in) {
     out.surface_5 = blend(out.surface, out.primary, 0.14);
 }
 
-MdScheme qcm::MaterialLightColorScheme(QRgb rgb) {
-    md::Hct  hct(rgb);
-    auto     scheme_content = md::SchemeTonalSpot(hct, false, 0.0);
-    MdScheme scheme;
-    convert_from(scheme, scheme_content);
-    return scheme;
+auto genScheme(qml_material::Enum::PaletteType t, Hct hct, bool is_dark, double ct_level) {
+    MdScheme out;
+    using ET = qml_material::Enum::PaletteType;
+    switch (t) {
+    case ET::PaletteTonalSpot: {
+        convert_from(out, md::SchemeTonalSpot(hct, is_dark, ct_level));
+        break;
+    }
+    case ET::PaletteNeutral: {
+        convert_from(out, md::SchemeNeutral(hct, is_dark, ct_level));
+        break;
+    }
+    case ET::PaletteContent: {
+        convert_from(out, md::SchemeContent(hct, is_dark, ct_level));
+        break;
+    }
+    case ET::PaletteExpressive: {
+        convert_from(out, md::SchemeExpressive(hct, is_dark, ct_level));
+        break;
+    }
+    case ET::PaletteFidelity: {
+        convert_from(out, md::SchemeFidelity(hct, is_dark, ct_level));
+        break;
+    }
+    case ET::PaletteFruitSalad: {
+        convert_from(out, md::SchemeFruitSalad(hct, is_dark, ct_level));
+        break;
+    }
+    case ET::PaletteMonochrome: {
+        convert_from(out, md::SchemeMonochrome(hct, is_dark, ct_level));
+        break;
+    }
+    case ET::PaletteRainbow: {
+        convert_from(out, md::SchemeRainbow(hct, is_dark, ct_level));
+        break;
+    }
+    case ET::PaletteVibrant: {
+        convert_from(out, md::SchemeVibrant(hct, is_dark, ct_level));
+        break;
+    }
+    default: {
+        convert_from(out, md::SchemeTonalSpot(hct, is_dark, ct_level));
+        break;
+    }
+    }
+    return out;
+}
+} // namespace
+
+MdScheme qml_material::MaterialLightColorScheme(QRgb rgb, Enum::PaletteType type) {
+    md::Hct hct(rgb);
+    return genScheme(type, hct, false, 0.0);
 }
 
-MdScheme qcm::MaterialDarkColorScheme(QRgb rgb) {
-    md::Hct  hct(rgb);
-    auto     scheme_content = md::SchemeTonalSpot(hct, true);
-    MdScheme scheme;
-    convert_from(scheme, scheme_content);
-    return scheme;
+MdScheme qml_material::MaterialDarkColorScheme(QRgb rgb, Enum::PaletteType type) {
+    md::Hct hct(rgb);
+    return genScheme(type, hct, true, 0.0);
 }
 
-QRgb qcm::MaterialBlendHctHue(const QRgb design_color, const QRgb key_color, const double mount) {
+QRgb qml_material::MaterialBlendHctHue(const QRgb design_color, const QRgb key_color,
+                                       const double mount) {
     return md::BlendHctHue(design_color, key_color, mount);
 }

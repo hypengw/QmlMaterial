@@ -1,9 +1,11 @@
 #pragma once
 
-#include <QtGui/qcolor.h>
-#include <QObject>
+#include <QtCore/QObject>
+#include <QtGui/QColor>
 
-namespace qcm
+#include "qml_material/enum.hpp"
+
+namespace qml_material
 {
 struct MdScheme {
     QRgb primary;
@@ -53,8 +55,8 @@ struct MdScheme {
     QRgb surface_container_highest;
 };
 
-MdScheme MaterialLightColorScheme(QRgb);
-MdScheme MaterialDarkColorScheme(QRgb);
+auto MaterialLightColorScheme(QRgb, Enum::PaletteType) -> MdScheme;
+auto MaterialDarkColorScheme(QRgb, Enum::PaletteType) -> MdScheme;
 
 QRgb MaterialBlendHctHue(const QRgb design_color, const QRgb key_color, const double mount);
-} // namespace qcm
+} // namespace qml_material

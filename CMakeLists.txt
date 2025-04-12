@@ -80,6 +80,7 @@ set(SOURCES
     src/util/image.cpp
     src/util/qml_util.cpp
     src/util/page_context.cpp
+    src/model/palette_model.cpp
     src/model/snake_model.cpp
     src/token/color.cpp
     src/token/icon.cpp
