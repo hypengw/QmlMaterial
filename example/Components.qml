@@ -221,7 +221,7 @@ MD.Page {
                                 Layout.preferredWidth: 400
                                 padding: 12
                                 radius: MD.Token.shape.corner.medium
-                                backgroundColor: MD.MatProp.color.surface_container
+                                backgroundColor: MD.MProp.color.surface_container
 
                                 ColumnLayout {
                                     anchors.fill: parent
@@ -387,7 +387,7 @@ MD.Page {
                             id: m_nav_bar
                             Layout.fillWidth: true
                             padding: 0
-                            backgroundColor: MD.MatProp.color.surface_container
+                            backgroundColor: MD.MProp.color.surface_container
                             property int idx: 1
                             RowLayout {
                                 anchors.fill: parent
@@ -441,7 +441,7 @@ MD.Page {
                         MD.AppBar {
                             Layout.fillWidth: true
                             title: 'Center-aligned'
-                            mdState.backgroundColor: MD.MatProp.color.surface_container_highest
+                            mdState.backgroundColor: MD.MProp.color.surface_container_highest
                             leadingAction: MD.Action {
                                 icon.name: MD.Token.icon.arrow_back
                             }
@@ -455,7 +455,7 @@ MD.Page {
                             Layout.fillWidth: true
                             type: MD.Enum.AppBarSmall
                             title: 'Small'
-                            mdState.backgroundColor: MD.MatProp.color.surface_container_highest
+                            mdState.backgroundColor: MD.MProp.color.surface_container_highest
                             leadingAction: MD.Action {
                                 icon.name: MD.Token.icon.arrow_back
                             }
@@ -470,7 +470,7 @@ MD.Page {
                             Layout.fillWidth: true
                             type: MD.Enum.AppBarMedium
                             title: 'Medium'
-                            mdState.backgroundColor: MD.MatProp.color.surface_container_highest
+                            mdState.backgroundColor: MD.MProp.color.surface_container_highest
                             leadingAction: MD.Action {
                                 icon.name: MD.Token.icon.arrow_back
                             }
@@ -484,7 +484,7 @@ MD.Page {
                             Layout.fillWidth: true
                             type: MD.Enum.AppBarLarge
                             title: 'Large'
-                            mdState.backgroundColor: MD.MatProp.color.surface_container_highest
+                            mdState.backgroundColor: MD.MProp.color.surface_container_highest
                             leadingAction: MD.Action {
                                 icon.name: MD.Token.icon.arrow_back
                             }
@@ -519,7 +519,7 @@ MD.Page {
                 Layout.minimumWidth: 400
                 padding: 12
                 radius: MD.Token.shape.corner.medium
-                backgroundColor: MD.MatProp.color.surface_container
+                backgroundColor: MD.MProp.color.surface_container
 
                 ColumnLayout {
                     id: m_content

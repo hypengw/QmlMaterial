@@ -19,7 +19,7 @@ Text {
 
     antialiasing: true
 
-    color: MD.MatProp.textColor
+    color: MD.MProp.textColor
     lineHeightMode: Text.FixedHeight
     wrapMode: Text.Wrap
     elide: Text.ElideRight

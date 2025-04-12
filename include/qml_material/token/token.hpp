@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <QtGui/QFont>
 #include <QtQml/QQmlEngine>
 #include <QtQuick/QQuickWindow>
@@ -115,6 +116,125 @@ public:
     i32 level3 { 6 };
     i32 level4 { 8 };
     i32 level5 { 12 };
+};
+
+/**
+ * @brief Motion easing
+ *
+ */
+struct EasingItem {
+    Q_GADGET
+    Q_PROPERTY(QList<double> list READ toList CONSTANT FINAL)
+    Q_INVOKABLE QList<double> toList() const;
+
+public:
+    qreal x0;
+    qreal y0;
+    qreal x1;
+    qreal y1;
+};
+
+/**
+ * @brief Motion easing
+ *
+ */
+struct Easing {
+    Q_GADGET
+    QML_ANONYMOUS
+    /// Animation curve for emphasized acceleration
+    Q_PROPERTY(qml_material::token::EasingItem emphasized_accelerate MEMBER emphasized_accelerate
+                   CONSTANT FINAL)
+    /// Animation curve for emphasized deceleration
+    Q_PROPERTY(qml_material::token::EasingItem emphasized_decelerate MEMBER emphasized_decelerate
+                   CONSTANT FINAL)
+    /// Standard animation curve for balanced motion
+    Q_PROPERTY(qml_material::token::EasingItem standard MEMBER standard CONSTANT FINAL)
+    /// Animation curve for standard acceleration
+    Q_PROPERTY(qml_material::token::EasingItem standard_accelerate MEMBER standard_accelerate
+                   CONSTANT FINAL)
+    /// Animation curve for standard deceleration
+    Q_PROPERTY(qml_material::token::EasingItem standard_decelerate MEMBER standard_decelerate
+                   CONSTANT FINAL)
+    /// Legacy animation curve (backward compatibility)
+    Q_PROPERTY(qml_material::token::EasingItem legacy MEMBER legacy CONSTANT FINAL)
+    /// Legacy acceleration curve
+    Q_PROPERTY(
+        qml_material::token::EasingItem legacy_accelerate MEMBER legacy_accelerate CONSTANT FINAL)
+    /// Legacy deceleration curve
+    Q_PROPERTY(
+        qml_material::token::EasingItem legacy_decelerate MEMBER legacy_decelerate CONSTANT FINAL)
+    /// Linear animation curve (constant speed)
+    Q_PROPERTY(qml_material::token::EasingItem linear MEMBER linear CONSTANT FINAL)
+
+private:
+    EasingItem emphasized_accelerate { .x0 = 0.3, .y0 = 0, .x1 = 0.8, .y1 = 0.15 };
+    EasingItem emphasized_decelerate { .x0 = 0.05, .y0 = 0.7, .x1 = 0.1, .y1 = 1 };
+    EasingItem standard { .x0 = 0.2, .y0 = 0, .x1 = 0, .y1 = 1 };
+    EasingItem standard_accelerate { .x0 = 0.3, .y0 = 0, .x1 = 1, .y1 = 1 };
+    EasingItem standard_decelerate { .x0 = 0, .y0 = 0, .x1 = 0, .y1 = 1 };
+    EasingItem legacy { .x0 = 0.4, .y0 = 0, .x1 = 0.2, .y1 = 1 };
+    EasingItem legacy_accelerate { .x0 = 0.4, .y0 = 0, .x1 = 1, .y1 = 1 };
+    EasingItem legacy_decelerate { .x0 = 0, .y0 = 0, .x1 = 0.2, .y1 = 1 };
+    EasingItem linear { .x0 = 0, .y0 = 0, .x1 = 1, .y1 = 1 };
+};
+
+/**
+ * @brief Motion duration
+ *
+ */
+struct Duration {
+    Q_GADGET
+    QML_ANONYMOUS
+    /// Extra short duration (50ms)
+    Q_PROPERTY(qreal short1 MEMBER short1 CONSTANT FINAL)
+    /// Short duration (100ms)
+    Q_PROPERTY(qreal short2 MEMBER short2 CONSTANT FINAL)
+    /// Short-medium duration (150ms)
+    Q_PROPERTY(qreal short3 MEMBER short3 CONSTANT FINAL)
+    /// Medium-short duration (200ms)
+    Q_PROPERTY(qreal short4 MEMBER short4 CONSTANT FINAL)
+    /// Medium duration (250ms)
+    Q_PROPERTY(qreal medium1 MEMBER medium1 CONSTANT FINAL)
+    /// Medium-standard duration (300ms)
+    Q_PROPERTY(qreal medium2 MEMBER medium2 CONSTANT FINAL)
+    /// Medium-long duration (350ms)
+    Q_PROPERTY(qreal medium3 MEMBER medium3 CONSTANT FINAL)
+    /// Extended medium duration (400ms)
+    Q_PROPERTY(qreal medium4 MEMBER medium4 CONSTANT FINAL)
+    /// Long duration (450ms)
+    Q_PROPERTY(qreal long1 MEMBER long1 CONSTANT FINAL)
+    /// Extended long duration (500ms)
+    Q_PROPERTY(qreal long2 MEMBER long2 CONSTANT FINAL)
+    /// Very long duration (550ms)
+    Q_PROPERTY(qreal long3 MEMBER long3 CONSTANT FINAL)
+    /// Maximum long duration (600ms)
+    Q_PROPERTY(qreal long4 MEMBER long4 CONSTANT FINAL)
+    /// Extra long duration (700ms)
+    Q_PROPERTY(qreal extra_long1 MEMBER extra_long1 CONSTANT FINAL)
+    /// Extended extra long duration (800ms)
+    Q_PROPERTY(qreal extra_long2 MEMBER extra_long2 CONSTANT FINAL)
+    /// Very extra long duration (900ms)
+    Q_PROPERTY(qreal extra_long3 MEMBER extra_long3 CONSTANT FINAL)
+    /// Maximum extra long duration (1000ms)
+    Q_PROPERTY(qreal extra_long4 MEMBER extra_long4 CONSTANT FINAL)
+
+public:
+    qreal short1 { 50 };
+    qreal short2 { 100 };
+    qreal short3 { 150 };
+    qreal short4 { 200 };
+    qreal medium1 { 250 };
+    qreal medium2 { 300 };
+    qreal medium3 { 350 };
+    qreal medium4 { 400 };
+    qreal long1 { 450 };
+    qreal long2 { 500 };
+    qreal long3 { 550 };
+    qreal long4 { 600 };
+    qreal extra_long1 { 700 };
+    qreal extra_long2 { 800 };
+    qreal extra_long3 { 900 };
+    qreal extra_long4 { 1000 };
 };
 
 /**
@@ -260,6 +380,10 @@ class Token : public QObject {
     Q_PROPERTY(qml_material::token::Flick* flick READ flick CONSTANT FINAL)
     /// Elevation levels for shadows
     Q_PROPERTY(qml_material::token::Elevation elevation READ elevation CONSTANT FINAL)
+    /// Motion durations
+    Q_PROPERTY(qml_material::token::Duration duration READ duration CONSTANT FINAL)
+    /// Motion Easing
+    Q_PROPERTY(qml_material::token::Easing easing READ easing CONSTANT FINAL)
     /// State appearance settings
     Q_PROPERTY(qml_material::token::State state READ state CONSTANT FINAL)
     /// Shape styling settings
@@ -282,6 +406,8 @@ public:
     auto state() const -> const State&;
     auto shape() const -> const Shape&;
     auto window_class() const -> const WindowClass&;
+    auto duration() const -> const Duration&;
+    auto easing() const -> const Easing&;
 
     auto datas() -> QQmlListProperty<QObject>;
 
@@ -291,6 +417,8 @@ private:
     TypeScale*  m_typescale;
     IconToken*  m_icon;
     Flick*      m_flick;
+    Duration    m_duration;
+    Easing      m_easing;
     Elevation   m_elevation;
     State       m_state;
     Shape       m_shape;

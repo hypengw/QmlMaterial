@@ -26,5 +26,5 @@ T.TextField {
     selectedTextColor: MD.Token.color.getOn(selectionColor)
 
     verticalAlignment: TextInput.AlignVCenter
-    color: MD.MatProp.textColor
+    color: MD.MProp.textColor
 }

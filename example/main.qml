@@ -9,8 +9,8 @@ MD.ApplicationWindow {
     visible: true
     width: 900
 
-    MD.MatProp.textColor: MD.MatProp.color.on_surface
-    MD.MatProp.backgroundColor: MD.MatProp.color.surface_container
+    MD.MProp.textColor: MD.MProp.color.on_surface
+    MD.MProp.backgroundColor: MD.MProp.color.surface_container
 
     Loader {
         anchors.fill: parent

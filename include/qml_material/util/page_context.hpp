@@ -50,6 +50,8 @@ public:
     Q_SIGNAL void showHeaderChanged();
     Q_SIGNAL void showBackgroundChanged();
 
+    Q_SIGNAL void pushItem(const QJSValue& url_or_comp, const QVariantMap& props = {});
+
 private:
     PageContext* m_inherit;
 

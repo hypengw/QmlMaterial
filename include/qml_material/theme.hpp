@@ -53,7 +53,7 @@ private:
 class Theme : public QQuickAttachedPropertyPropagator {
     Q_OBJECT
 
-    QML_NAMED_ELEMENT(MatProp)
+    QML_NAMED_ELEMENT(MProp)
     QML_UNCREATABLE("")
     QML_ATTACHED(Theme)
 

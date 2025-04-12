@@ -15,7 +15,7 @@ MD.Page {
 
     Component.onCompleted: pageIndexChanged()
 
-    MD.MatProp.page: m_page_ctx
+    MD.MProp.page: m_page_ctx
 
     MD.PageContext {
         id: m_page_ctx
@@ -183,7 +183,7 @@ MD.Page {
             Layout.fillWidth: true
             clip: true
             initialItem: Item {}
-            MD.MatProp.page: m_page_ctx_c
+            MD.MProp.page: m_page_ctx_c
 
             MD.PageContext {
                 id: m_page_ctx_c

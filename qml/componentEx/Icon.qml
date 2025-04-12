@@ -17,7 +17,7 @@ Item {
     property alias verticalAlignment: m_text_icon.verticalAlignment
 
     property int lineHeight: MD.Token.typescale.label_large.line_height
-    property color color: MD.MatProp.color.on_background
+    property color color: MD.MProp.color.on_background
 
     property real _fill: fill ? 1 : 0
     Behavior on _fill {

@@ -12,7 +12,7 @@ T.Pane {
     property int radius: 0
     property MD.t_corner corners: MD.Util.corner(radius)
     property int elevation: MD.Token.elevation.level0
-    property color backgroundColor: MD.MatProp.color.background
+    property color backgroundColor: MD.MProp.color.background
     property alias showBackground: control.background.visible
 
     background: MD.ElevationRectangle {

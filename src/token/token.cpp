@@ -21,9 +21,13 @@ auto Token::elevation() const -> const Elevation& { return m_elevation; }
 auto Token::state() const -> const State& { return m_state; }
 auto Token::shape() const -> const Shape& { return m_shape; }
 auto Token::window_class() const -> const WindowClass& { return m_win_class; }
+auto Token::duration() const -> const Duration& { return m_duration; }
+auto Token::easing() const -> const Easing& { return m_easing; }
 auto Token::cal_curve_scale(double dpr) const -> double { return dpr >= 2.0 ? 1.0 : 4.0; }
 
 auto Token::datas() -> QQmlListProperty<QObject> { return { this, &m_datas }; }
+
+auto EasingItem::toList() const -> QList<double> { return { x0, y0, x1, y1, 1, 1 }; }
 
 Flick::Flick(QObject* parent)
     : QObject(parent),

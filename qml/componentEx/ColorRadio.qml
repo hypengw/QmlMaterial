@@ -22,7 +22,7 @@ Item {
 
         Rectangle {
             anchors.centerIn: parent
-            border.color: root.MD.MatProp.color.surface
+            border.color: root.MD.MProp.color.surface
             border.width: 0.25 * 0.5 * root.size
             color: parent.color
             height: width

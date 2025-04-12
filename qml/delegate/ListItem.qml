@@ -36,10 +36,10 @@ T.ItemDelegate {
 
     property string supportText
     property int maximumLineCount: 1
-    property alias leader: item_holder_leader.contentItem
-    property alias trailing: item_holder_trailing.contentItem
-    property alias below: item_holder_below.contentItem
-    property alias divider: holder_divider.item
+    property alias leader: m_holder_leader.contentItem
+    property alias trailing: m_holder_trailing.contentItem
+    property alias below: m_holder_below.contentItem
+    property alias divider: m_holder_divider.item
     property int radius: 0
     property MD.t_corner corners: MD.Util.corner(radius)
 
@@ -57,15 +57,18 @@ T.ItemDelegate {
     }
 
     contentItem: ColumnLayout {
-        id: m_test
         opacity: control.mdState.contentOpacity
         RowLayout {
-            id: m_test2
             spacing: 16
 
             MD.Control {
-                id: item_holder_leader
+                id: m_holder_leader
                 visible: contentItem
+                contentItem: MD.Icon {
+                    visible: name
+                    name: control.icon.name
+                    size: control.icon.width
+                }
             }
 
             ColumnLayout {
@@ -99,7 +102,7 @@ T.ItemDelegate {
             }
 
             MD.Control {
-                id: item_holder_trailing
+                id: m_holder_trailing
                 Layout.alignment: Qt.AlignVCenter
                 visible: contentItem
             }
@@ -114,14 +117,14 @@ T.ItemDelegate {
 
         RowLayout {
             spacing: 16
-            visible: item_holder_below.contentItem
+            visible: m_holder_below.contentItem
             Item {
-                implicitWidth: item_holder_leader.height
-                visible: item_holder_leader.visible
+                implicitWidth: m_holder_leader.height
+                visible: m_holder_leader.visible
             }
 
             MD.Control {
-                id: item_holder_below
+                id: m_holder_below
                 Layout.fillWidth: true
             }
         }
@@ -161,7 +164,7 @@ T.ItemDelegate {
         }
 
         MD.ItemHolder {
-            id: holder_divider
+            id: m_holder_divider
             visible: control.dgIndex + 1 !== control.count
         }
     }

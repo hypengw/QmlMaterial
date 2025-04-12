@@ -39,8 +39,8 @@ T.BusyIndicator {
                     const s = m_shape;
                     const p = control._progress;
                     const w = m_shape.width;
-                    const primary = control.MD.MatProp.color.primary;
-                    const container = control.MD.MatProp.color.secondary_container;
+                    const primary = control.MD.MProp.color.primary;
+                    const container = control.MD.MProp.color.secondary_container;
 
                     const t = p * 5;
 

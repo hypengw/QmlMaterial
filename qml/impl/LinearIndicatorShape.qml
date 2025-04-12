@@ -10,9 +10,9 @@ MD.Shape {
     property real x1: 0
     property real x2: 0
 
-    property color c1: root.MD.MatProp.color.secondary_container
-    property color c2: root.MD.MatProp.color.secondary_container
-    property color c3: root.MD.MatProp.color.secondary_container
+    property color c1: root.MD.MProp.color.secondary_container
+    property color c2: root.MD.MProp.color.secondary_container
+    property color c3: root.MD.MProp.color.secondary_container
 
     readonly property real w1: {
         if (x1 < strokeWidth) {

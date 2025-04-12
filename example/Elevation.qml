@@ -100,7 +100,7 @@ MD.Page {
         MD.Rectangle {
             anchors.fill: parent
             radius: parent.radius
-            color: MD.MatProp.color.surface_container
+            color: MD.MProp.color.surface_container
         }
     }
 }

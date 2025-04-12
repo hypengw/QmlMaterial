@@ -19,7 +19,7 @@ TextInput {
     cursorDelegate: MD.CursorDelegate {
     }
 
-    color: MD.MatProp.textColor
+    color: MD.MProp.textColor
     selectionColor: MD.Token.color.primary
     selectedTextColor: MD.Token.color.getOn(selectionColor)
 

@@ -164,6 +164,10 @@ set(QML_FILES
     qml/flickable/FlickablePane.qml
     qml/flickable/GridView.qml
     qml/flickable/ListView.qml
+    qml/motion/FadeInMotion.qml
+    qml/motion/FadeOutMotion.qml
+    qml/motion/FadeInThroughMotion.qml
+    qml/motion/FadeOutThroughMotion.qml
     qml/state/StateAppBar.qml
     qml/state/StateSnakeBar.qml
     qml/state/StateButton.qml
@@ -280,8 +284,7 @@ set(TOKEN_COMPILE_DEFINITIONS
     QM_ICON_FONT_URL="${QM_ICON_FONT_URL}"
     QM_ICON_FILL_0_FONT_URL="qrc:/Qcm/Material/${QM_ICON_FILL_0_FONT_FILE}"
     QM_ICON_FILL_1_FONT_URL="qrc:/Qcm/Material/${QM_ICON_FILL_1_FONT_FILE}"
-    QM_VERSION="${QM_VERSION}"
-    )
+    QM_VERSION="${QM_VERSION}")
 
 set_source_files_properties(
   src/token/token.cpp PROPERTIES COMPILE_DEFINITIONS

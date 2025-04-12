@@ -13,7 +13,7 @@ MD.Page {
         MD.Pane {
             Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
             Layout.preferredWidth: 400
-            backgroundColor: MD.MatProp.color.surface_container
+            backgroundColor: MD.MProp.color.surface_container
             radius: MD.Token.shape.corner.medium
             padding: 12
 

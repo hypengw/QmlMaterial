@@ -66,7 +66,7 @@ T.TabBar {
     }
 
     background: MD.Rectangle {
-        color: control.MD.MatProp.backgroundColor
+        color: control.MD.MProp.backgroundColor
         corners: control.corners
 
         //layer.enabled: control.Material.elevation > 0

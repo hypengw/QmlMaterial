@@ -26,7 +26,7 @@ MD.TokenImpl {
     /**
      * @brief global color token
      */
-    readonly property MD.MdColorMgr color: root.MD.MatProp.color
+    readonly property MD.MdColorMgr color: root.MD.MProp.color
     /**
      * @brief global themeMode
      */

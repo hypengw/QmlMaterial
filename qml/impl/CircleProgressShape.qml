@@ -17,7 +17,7 @@ MD.Shape {
         fillColor: "transparent"
         startX: root.radius
         startY: 0
-        strokeColor: MD.Util.transparent(root.MD.MatProp.color.primary, 0.3)
+        strokeColor: MD.Util.transparent(root.MD.MProp.color.primary, 0.3)
         strokeWidth: root.strokeWidth
 
         PathAngleArc {
@@ -44,7 +44,7 @@ MD.Shape {
         fillColor: "transparent"
         startX: root.radius
         startY: 0
-        strokeColor: root.MD.MatProp.color.primary
+        strokeColor: root.MD.MProp.color.primary
         strokeWidth: root.strokeWidth
 
         PathAngleArc {

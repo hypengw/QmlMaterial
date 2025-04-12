@@ -31,7 +31,7 @@ MD.Page {
                             Layout.preferredWidth: 400
                             padding: 48
                             radius: MD.Token.shape.corner.medium
-                            backgroundColor: MD.MatProp.color.surface_container
+                            backgroundColor: MD.MProp.color.surface_container
 
                             ColumnLayout {
                                 anchors.fill: parent
@@ -41,7 +41,7 @@ MD.Page {
                                     model: [MD.Token.shape.corner.none, MD.Token.shape.corner.extra_small, MD.Token.shape.corner.small, MD.Token.shape.corner.medium, MD.Token.shape.corner.large, MD.Token.shape.corner.extra_large, MD.Token.shape.corner.full]
                                     MD.Rectangle {
                                         Layout.alignment: Qt.AlignHCenter
-                                        color: MD.MatProp.color.primary
+                                        color: MD.MProp.color.primary
                                         implicitWidth: 200
                                         implicitHeight: 100
                                         radius: modelData === MD.Token.shape.corner.full ? height / 2 : modelData
@@ -64,7 +64,7 @@ MD.Page {
                             Layout.preferredWidth: 400
                             padding: 48
                             radius: MD.Token.shape.corner.medium
-                            backgroundColor: MD.MatProp.color.surface_container
+                            backgroundColor: MD.MProp.color.surface_container
 
                             ColumnLayout {
                                 anchors.fill: parent
@@ -79,7 +79,7 @@ MD.Page {
                                     ]
                                     MD.Rectangle {
                                         Layout.alignment: Qt.AlignHCenter
-                                        color: MD.MatProp.color.primary
+                                        color: MD.MProp.color.primary
                                         implicitWidth: 200
                                         implicitHeight: 100
                                         corners: modelData

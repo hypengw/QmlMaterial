@@ -89,6 +89,8 @@ T.BusyIndicator {
                         m_anim.paused = true;
                     }
                 }
+
+                Component.onCompleted: onRunningChanged()
             }
         }
     }

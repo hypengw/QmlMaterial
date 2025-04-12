@@ -6,24 +6,24 @@ T.Page {
     id: control
 
     property bool canBack: false
-    property MD.Action leadingAction: MD.MatProp.page.leadingAction
+    property MD.Action leadingAction: MD.MProp.page.leadingAction
     property list<MD.Action> actions
 
     property alias showHeader: control.header.visible
     property alias showBackground: control.background.visible
 
     property int elevation: MD.Token.elevation.level0
-    property color backgroundColor: MD.MatProp.color.background
-    property int radius: MD.MatProp.page.radius
-    property int backgroundRadius: MD.MatProp.page.backgroundRadius
-    property int headerBackgroundOpacity: MD.MatProp.page.headerBackgroundOpacity
+    property color backgroundColor: MD.MProp.color.background
+    property int radius: MD.MProp.page.radius
+    property int backgroundRadius: MD.MProp.page.backgroundRadius
+    property int headerBackgroundOpacity: MD.MProp.page.headerBackgroundOpacity
     property bool scrolling: false
 
     header: MD.AppBar {
         title: control.title
         leadingAction: control.leadingAction
-        type: control.MD.MatProp.page.headerType
-        visible: control.MD.MatProp.page.showHeader
+        type: control.MD.MProp.page.headerType
+        visible: control.MD.MProp.page.showHeader
         radius: control.backgroundRadius
         mdState.backgroundOpacity: control.headerBackgroundOpacity
         scrolling: control.scrolling
@@ -39,6 +39,6 @@ T.Page {
     background: MD.Rectangle {
         color: control.backgroundColor
         radius: control.backgroundRadius
-        visible: control.MD.MatProp.page.showBackground
+        visible: control.MD.MProp.page.showBackground
     }
 }

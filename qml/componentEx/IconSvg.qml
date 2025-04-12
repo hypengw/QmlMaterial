@@ -7,7 +7,7 @@ Image {
     id: root
 
     property bool colorOverlay: false
-    property color color: MD.MatProp.color.on_background
+    property color color: MD.MProp.color.on_background
     property int size: 24
     property string sourceData
 
