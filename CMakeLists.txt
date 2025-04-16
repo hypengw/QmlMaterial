@@ -363,8 +363,8 @@ function(qt_install_qml_module target_)
           LIBRARY DESTINATION ${QML_TARGET_INSTALL_DIR})
 
   install(FILES "${QT_QML_OUTPUT_DIRECTORY}/${QML_TARGET_PATH}/qmldir"
-                "${QT_QML_OUTPUT_DIRECTORY}/${QML_TARGET_PATH}/${QML_TYEPINFO}
-    " DESTINATION ${QML_TARGET_INSTALL_DIR})
+                "${QT_QML_OUTPUT_DIRECTORY}/${QML_TARGET_PATH}/${QML_TYEPINFO}"
+          DESTINATION ${QML_TARGET_INSTALL_DIR})
 endfunction()
 
 qt_install_qml_module(${LIBNAME})
