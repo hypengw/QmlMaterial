@@ -126,15 +126,15 @@ public:
 
     enum class PaletteType
     {
-        PaletteTonalSpot = 0,
-        PaletteNeutral,
-        PaletteContent,
-        PaletteExpressive,
-        PaletteFidelity,
-        PaletteFruitSalad,
-        PaletteMonochrome,
+        PaletteNeutral = 0,
         PaletteRainbow,
-        PaletteVibrant
+        PaletteTonalSpot,
+        PaletteMonochrome,
+        PaletteVibrant,
+        PaletteContent,
+        PaletteFidelity,
+        PaletteExpressive,
+        PaletteFruitSalad,
     };
     Q_ENUM(PaletteType)
 };
