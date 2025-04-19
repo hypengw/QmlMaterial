@@ -46,8 +46,6 @@ if(UNIX AND NOT APPLE)
   set(LINUX CACHE INTERNAL TRUE "")
 endif()
 
-include(GNUInstallDirs)
-
 find_package(Qt6 REQUIRED COMPONENTS Core Quick QuickControls2 Gui ShaderTools)
 find_package(PkgConfig REQUIRED)
 if(QT_KNOWN_POLICY_QTP0004)
@@ -396,6 +394,13 @@ function(qt_install_qml_module target_)
 
   install(TARGETS ${QML_PLUGIN_TARGET}
           LIBRARY DESTINATION ${QML_TARGET_INSTALL_DIR})
+
+  install(
+    DIRECTORY qml
+    DESTINATION ${QML_TARGET_INSTALL_DIR}
+    FILES_MATCHING
+    PATTERN "*.qml"
+    PATTERN "*.mjs")
 
   install(FILES "${QT_QML_OUTPUT_DIRECTORY}/${QML_TARGET_PATH}/qmldir"
                 "${QT_QML_OUTPUT_DIRECTORY}/${QML_TARGET_PATH}/${QML_TYEPINFO}"
