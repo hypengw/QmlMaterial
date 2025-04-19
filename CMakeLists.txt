@@ -20,6 +20,11 @@ set(QM_ICON_FONT_URL
       "default empty, there is an already embed file: qrc:/Qcm/Material/assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2"
 )
 
+include(GNUInstallDirs)
+
+set(QT_QML_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/qml_modules")
+list(APPEND QML_DIRS "${QT_QML_OUTPUT_DIRECTORY}")
+
 if("${QT_INSTALL_QML}" STREQUAL "")
   set(QT_INSTALL_QML "${CMAKE_INSTALL_LIBDIR}/qt6/qml")
 endif()
@@ -264,6 +269,8 @@ qt_add_qml_module(
   URI
   Qcm.Material
   ${QML_MATERIAL_BUILD_TYPE}
+  OUTPUT_TARGETS
+  qml_material_targets
   RESOURCE_PREFIX
   /
   QML_FILES
@@ -368,13 +375,13 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${LIBNAME}-config.cmake"
 
 install(
   DIRECTORY include/${LIBNAME}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${LIBNAME}
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   FILES_MATCHING
   PATTERN "*.h"
   PATTERN "*.hpp")
 
+install(TARGETS ${qml_material_targets} EXPORT ${LIBNAME}-targets)
 install(TARGETS ${LIBNAME} EXPORT ${LIBNAME}-targets)
-
 install(
   EXPORT ${LIBNAME}-targets
   FILE ${LIBNAME}-targets.cmake
@@ -386,6 +393,7 @@ function(qt_install_qml_module target_)
   get_target_property(QML_TYEPINFO ${target_} QT_QML_MODULE_TYPEINFO)
   get_target_property(QML_PLUGIN_TARGET ${target_} QT_QML_MODULE_PLUGIN_TARGET)
   set(QML_TARGET_INSTALL_DIR "${QML_INSTALL_DIR}/${QML_TARGET_PATH}")
+
   install(TARGETS ${QML_PLUGIN_TARGET}
           LIBRARY DESTINATION ${QML_TARGET_INSTALL_DIR})
 
