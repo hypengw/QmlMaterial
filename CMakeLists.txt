@@ -334,7 +334,7 @@ endforeach()
 
 target_include_directories(
   ${LIBNAME}
-  PUBLIC include
+  PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}include>"
   PRIVATE "include/${LIBNAME}" "include/${LIBNAME}/kirigami"
           "include/${LIBNAME}/upstream" src)
 
@@ -351,14 +351,41 @@ target_link_libraries(
          Qt6::QuickControls2 # QQuickAttachedPropertyPropagator
   PRIVATE material_color)
 
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+  "${CMAKE_CURRENT_BINARY_DIR}/${LIBNAME}-config-version.cmake"
+  VERSION ${QM_VERSION}
+  COMPATIBILITY SameMajorVersion)
+
+configure_package_config_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${LIBNAME}-config.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/${LIBNAME}-config.cmake"
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${LIBNAME})
+
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${LIBNAME}-config.cmake"
+              "${CMAKE_CURRENT_BINARY_DIR}/${LIBNAME}-config-version.cmake"
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${LIBNAME})
+
+install(
+  DIRECTORY include/${LIBNAME}
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${LIBNAME}
+  FILES_MATCHING
+  PATTERN "*.h"
+  PATTERN "*.hpp")
+
+install(TARGETS ${LIBNAME} EXPORT ${LIBNAME}-targets)
+
+install(
+  EXPORT ${LIBNAME}-targets
+  FILE ${LIBNAME}-targets.cmake
+  NAMESPACE ${LIBNAME}::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${LIBNAME})
+
 function(qt_install_qml_module target_)
   get_target_property(QML_TARGET_PATH ${target_} QT_QML_MODULE_TARGET_PATH)
   get_target_property(QML_TYEPINFO ${target_} QT_QML_MODULE_TYPEINFO)
   get_target_property(QML_PLUGIN_TARGET ${target_} QT_QML_MODULE_PLUGIN_TARGET)
   set(QML_TARGET_INSTALL_DIR "${QML_INSTALL_DIR}/${QML_TARGET_PATH}")
-
-  install(TARGETS ${target_})
-
   install(TARGETS ${QML_PLUGIN_TARGET}
           LIBRARY DESTINATION ${QML_TARGET_INSTALL_DIR})
 
