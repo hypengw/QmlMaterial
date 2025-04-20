@@ -11,6 +11,9 @@ This is a library of Qml implementing Google's Material Design.
 Work in progress
 
 ## Installation
+
+- [Git LFS](https://git-lfs.com) is required to clone fonts.
+
 ```cmake
 FetchContent_Declare(
   qml_material
