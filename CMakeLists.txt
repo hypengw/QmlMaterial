@@ -151,6 +151,7 @@ set(QML_FILES
     qml/component/TextInput.qml
     qml/component/TextMetrics.qml
     qml/component/TextField.qml
+    qml/componentEx/ActionLabel.qml
     qml/componentEx/ColorRadio.qml
     qml/componentEx/Divider.qml
     qml/componentEx/DragHandle.qml
