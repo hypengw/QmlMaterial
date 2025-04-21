@@ -16,6 +16,22 @@ Rectangle {
 
     color: mdState.backgroundColor
 
+    containmentMask: Item {
+        x: (root.width) / 2 - root.mdState.handlePressedWidth / 2
+        y: (root.height) / 2 - root.mdState.handlePressedHeight / 2
+        width: root.mdState.handlePressedWidth
+        height: root.mdState.handlePressedHeight
+    }
+
+    onHoveredChanged: {
+        if (hovered) {
+            MD.Util.setCursor(root, Qt.OpenHandCursor);
+        }
+    }
+    onPressedChanged: {
+        MD.Util.setCursor(root, pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor);
+    }
+
     Binding {
         when: root.orientation === Qt.Horizontal
         root.implicitWidth: 24

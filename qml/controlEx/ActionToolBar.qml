@@ -71,7 +71,7 @@ T.Control {
             property var oldPopup: null
             onClicked: {
                 if (!oldPopup || !oldPopup.visible) {
-                    oldPopup = MD.Util.show_popup(comp_menu, {}, this);
+                    oldPopup = MD.Util.showPopup(comp_menu, {}, this);
                     oldPopup.y = this.height;
                 }
             }

@@ -114,16 +114,16 @@ void Util::print_parents(const QJSValue& obj) {
 
 auto Util::lightness(QColor color) -> qreal { return color.lightnessF(); }
 
-auto Util::token_elevation() -> token::Elevation { return token::Elevation(); }
-auto Util::token_shape() -> token::Shape { return token::Shape(); }
-auto Util::token_state() -> token::State { return token::State(); }
+auto Util::tokenElevation() -> token::Elevation { return token::Elevation(); }
+auto Util::tokenShape() -> token::Shape { return token::Shape(); }
+auto Util::tokenState() -> token::State { return token::State(); }
 
-QObject* Util::create_item(const QJSValue& url_or_comp, const QVariantMap& props, QObject* parent) {
-    return qcm::create_item(qmlEngine(this), url_or_comp, props, parent);
+QObject* Util::createItem(const QJSValue& url_or_comp, const QVariantMap& props, QObject* parent) {
+    return qcm::createItem(qmlEngine(this), url_or_comp, props, parent);
 }
-QObject* Util::show_popup(const QJSValue& url_or_comp, const QVariantMap& props, QObject* parent,
+QObject* Util::showPopup(const QJSValue& url_or_comp, const QVariantMap& props, QObject* parent,
                           bool open_and_destry) {
-    auto popup = create_item(url_or_comp, props, parent);
+    auto popup = createItem(url_or_comp, props, parent);
     if (open_and_destry) {
         QObject::connect(popup, SIGNAL(closed()), this, SLOT(on_popup_closed()));
         QMetaObject::invokeMethod(popup, "open");
@@ -141,19 +141,25 @@ void Util::on_popup_closed() {
     }
 }
 
-auto Util::params_string(const QVariantMap& in_props) -> QString {
+auto Util::paramsString(const QVariantMap& in_props) -> QString {
     auto props = in_props;
     for (const auto& el : props.keys()) {
         auto val = props.value(el);
         if (auto pp = get_if<QObject*>(&val)) {
             props[el] = QString::number((std::intptr_t)(*pp));
         } else if (auto pp = get_if<QVariantMap>(&val)) {
-            props[el] = params_string(*pp);
+            props[el] = paramsString(*pp);
         }
     }
     QJsonDocument doc;
     doc.setObject(QJsonObject::fromVariantMap(props));
     return doc.toJson(QJsonDocument::Compact);
+}
+
+void Util::setCursor(QQuickItem* item, Qt::CursorShape shape) {
+    if (item) {
+        item->setCursor(shape);
+    }
 }
 
 } // namespace qml_material
@@ -166,7 +172,7 @@ auto qml_dyn_count() -> std::atomic<i32>& {
     return n;
 }
 
-auto create_item(QQmlEngine* engine, const QJSValue& url_or_comp, const QVariantMap& props,
+auto createItem(QQmlEngine* engine, const QJSValue& url_or_comp, const QVariantMap& props,
                  QObject* parent) -> QObject* {
     std::unique_ptr<QQmlComponent, void (*)(QQmlComponent*)> comp { nullptr, nullptr };
     if (auto p = qobject_cast<QQmlComponent*>(url_or_comp.toQObject())) {

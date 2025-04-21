@@ -11,6 +11,8 @@ MD.State {
     property int radius: MD.Token.shape.corner.full
     property int handleWidth: 4
     property int handleHeight: 48
+    property int handlePressedWidth: 12
+    property int handlePressedHeight: 52
 
     states: [
         State {
@@ -18,8 +20,8 @@ MD.State {
             when: root.item.pressed
             PropertyChanges {
                 root.textColor: root.ctx.color.on_surface
-                root.handleWidth: 12
-                root.handleHeight: 52
+                root.handleWidth: root.handlePressedWidth
+                root.handleHeight: root.handlePressedHeight
                 root.radius: MD.Token.shape.corner.medium
             }
         },

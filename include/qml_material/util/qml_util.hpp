@@ -82,16 +82,17 @@ public:
 
     Q_INVOKABLE qreal lightness(QColor color);
 
-    Q_INVOKABLE token::Elevation token_elevation();
-    Q_INVOKABLE token::Shape token_shape();
-    Q_INVOKABLE token::State token_state();
-    Q_INVOKABLE QObject*     create_item(const QJSValue& url_or_comp, const QVariantMap& props,
+    Q_INVOKABLE token::Elevation tokenElevation();
+    Q_INVOKABLE token::Shape tokenShape();
+    Q_INVOKABLE token::State tokenState();
+    Q_INVOKABLE QObject*     createItem(const QJSValue& url_or_comp, const QVariantMap& props,
                                          QObject* parent = nullptr);
 
-    Q_INVOKABLE QObject* show_popup(const QJSValue& url_or_comp, const QVariantMap& props,
+    Q_INVOKABLE QObject* showPopup(const QJSValue& url_or_comp, const QVariantMap& props,
                                     QObject* parent = nullptr, bool open_and_destry = true);
 
-    Q_INVOKABLE QString params_string(const QVariantMap& props);
+    Q_INVOKABLE QString paramsString(const QVariantMap& props);
+    Q_INVOKABLE void    setCursor(QQuickItem* item, Qt::CursorShape shape);
 
 private:
     Q_SLOT void on_popup_closed();
@@ -104,6 +105,6 @@ private:
 namespace qcm
 {
 auto qml_dyn_count() -> std::atomic<i32>&;
-auto create_item(QQmlEngine* engine, const QJSValue& url_or_comp, const QVariantMap& props,
+auto createItem(QQmlEngine* engine, const QJSValue& url_or_comp, const QVariantMap& props,
                  QObject* parent) -> QObject*;
 } // namespace qcm
