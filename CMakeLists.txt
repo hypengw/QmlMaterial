@@ -287,6 +287,9 @@ set_source_files_properties(
   "${CMAKE_CURRENT_BINARY_DIR}/${LIBNAME}_qmltyperegistrations.cpp"
   TARGET_DIRECTORY "${LIBNAME}" PROPERTIES INCLUDE_DIRECTORIES
                                            "${QML_REG_INCLUDE_DIRS}")
+set_target_properties(
+  ${LIBNAME} PROPERTIES CXX_VISIBILITY_PRESET hidden QT_QMLCACHEGEN_ARGUMENTS
+                                                     "--only-bytecode")
 
 set(TOKEN_COMPILE_DEFINITIONS
     QM_ICON_FONT_URL="${QM_ICON_FONT_URL}"
@@ -343,8 +346,6 @@ target_include_directories(
   PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}include>"
   PRIVATE "include/${LIBNAME}" "include/${LIBNAME}/kirigami"
           "include/${LIBNAME}/upstream" src)
-
-set_target_properties(${LIBNAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
 add_subdirectory(third_party)
 if(QM_BUILD_EXAMPLE)
