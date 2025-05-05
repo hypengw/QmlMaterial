@@ -78,7 +78,7 @@ bool ElevationShader::updateUniformData(RenderState& state, QSGMaterial* newMate
 
 void ElevationShader::updateSampledImage(RenderState& state, int binding, QSGTexture** texture,
                                          QSGMaterial* newMaterial, QSGMaterial*) {
-    auto mat = dynamic_cast<ElevationMaterial*>(newMaterial);
+    auto mat = static_cast<ElevationMaterial*>(newMaterial);
     if (binding == 1) {
         *texture = mat->strength_texture();
         texture[0]->commitTextureOperations(state.rhi(), state.resourceUpdateBatch());
