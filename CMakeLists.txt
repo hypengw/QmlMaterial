@@ -20,13 +20,15 @@ set(QM_ICON_FONT_URL
       "default empty, there is an already embed file: qrc:/Qcm/Material/assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2"
 )
 
-include(GNUInstallDirs)
-
 set(QT_QML_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/qml_modules")
 list(APPEND QML_DIRS "${QT_QML_OUTPUT_DIRECTORY}")
 
-if("${QT_INSTALL_QML}" STREQUAL "")
-  set(QT_INSTALL_QML "${CMAKE_INSTALL_LIBDIR}/qt6/qml")
+if(UNIX)
+  include(GNUInstallDirs)
+
+  if("${QT_INSTALL_QML}" STREQUAL "")
+    set(QT_INSTALL_QML "${CMAKE_INSTALL_LIBDIR}/qt6/qml")
+  endif()
 endif()
 
 set(QML_INSTALL_DIR
@@ -253,6 +255,12 @@ else()
       list(APPEND SOURCES src/platform/linux/xdp.cpp)
     endif()
   elseif(WIN32)
+    set(QM_ICON_FILL_0_FONT_FILE
+        assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_0.ttf)
+    set(QM_ICON_FILL_1_FONT_FILE
+        assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_1.ttf)
+
+    set(QML_MATERIAL_BUILD_TYPE STATIC)
     list(APPEND SOURCES src/platform/win/win.cpp)
   endif()
 endif()
