@@ -15,7 +15,6 @@ import Qcm.Material as MD
  * @brief
  */
 
-
 /**
  * @brief Matieral Token
  * @ingroup singleton
@@ -33,7 +32,9 @@ MD.TokenImpl {
     property int themeMode: {
         return root.themeMode = root.color.mode;
     }
-    readonly property bool isDarkTheme: themeMode == MD.Enum.Dark
+    readonly property bool isDarkTheme: {
+        return root.color.mode == MD.Enum.Dark;
+    }
 
     Binding {
         root.color.mode: root.themeMode

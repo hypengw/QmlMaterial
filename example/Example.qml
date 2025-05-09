@@ -13,7 +13,10 @@ MD.Page {
         m_container.replace(m_container.currentItem, m_repeat.model[pageIndex].source, {});
     }
 
-    Component.onCompleted: pageIndexChanged()
+    Component.onCompleted: {
+        pageIndexChanged();
+        MD.Token.color.useSysColorSM = false;
+    }
 
     MD.MProp.page: m_page_ctx
 
