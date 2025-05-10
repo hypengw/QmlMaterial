@@ -4,3 +4,4 @@ build
 /build*
 /doc/html
 /doc/doxygen-awesome-css
+CMakeLists.txt.user*
