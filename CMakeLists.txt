@@ -89,6 +89,7 @@ set(SOURCES
     src/token/icon.cpp
     src/token/token.cpp
     src/token/type_scale.cpp
+    src/item/item_proxy.cpp
     src/item/round_item.cpp
     src/item/state.cpp
     src/item/rectangle.cpp

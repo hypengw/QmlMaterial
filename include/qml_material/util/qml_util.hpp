@@ -86,13 +86,16 @@ public:
     Q_INVOKABLE token::Shape tokenShape();
     Q_INVOKABLE token::State tokenState();
     Q_INVOKABLE QObject*     createItem(const QJSValue& url_or_comp, const QVariantMap& props,
-                                         QObject* parent = nullptr);
+                                        QObject* parent = nullptr);
 
     Q_INVOKABLE QObject* showPopup(const QJSValue& url_or_comp, const QVariantMap& props,
-                                    QObject* parent = nullptr, bool open_and_destry = true);
+                                   QObject* parent = nullptr, bool open_and_destry = true);
 
     Q_INVOKABLE QString paramsString(const QVariantMap& props);
     Q_INVOKABLE void    setCursor(QQuickItem* item, Qt::CursorShape shape);
+
+    Q_INVOKABLE double  clamp(double t, double low, double high) const;
+    Q_INVOKABLE double  teleportCurve(double t, double left, double right) const;
 
 private:
     Q_SLOT void on_popup_closed();
@@ -106,5 +109,5 @@ namespace qcm
 {
 auto qml_dyn_count() -> std::atomic<i32>&;
 auto createItem(QQmlEngine* engine, const QJSValue& url_or_comp, const QVariantMap& props,
-                 QObject* parent) -> QObject*;
+                QObject* parent) -> QObject*;
 } // namespace qcm

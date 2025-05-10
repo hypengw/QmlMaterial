@@ -14,13 +14,20 @@ T.Drawer {
     topPadding: edge !== Qt.TopEdge ? 16 : 0
     bottomPadding: edge !== Qt.BottomEdge ? 16 : 0
 
+    width: implicitWidth
+
     enter: Transition {
         SmoothedAnimation {
+            //properties: "width"
+            //from: 200
+            //to: control.implicitWidth
             velocity: 5
         }
     }
     exit: Transition {
         SmoothedAnimation {
+            // properties: "width"
+            // to: 200
             velocity: 5
         }
     }

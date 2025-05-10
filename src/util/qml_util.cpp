@@ -11,6 +11,9 @@ Q_LOGGING_CATEGORY(qml_material_logcat, "qcm.material")
 namespace
 {
 
+// 2 time ease
+auto easeInOut(double x) -> double { return x < 0.5 ? 2 * x * x : 1 - std::pow(-2 * x + 2, 2) / 2; }
+
 } // namespace
 
 namespace qml_material
@@ -122,7 +125,7 @@ QObject* Util::createItem(const QJSValue& url_or_comp, const QVariantMap& props,
     return qcm::createItem(qmlEngine(this), url_or_comp, props, parent);
 }
 QObject* Util::showPopup(const QJSValue& url_or_comp, const QVariantMap& props, QObject* parent,
-                          bool open_and_destry) {
+                         bool open_and_destry) {
     auto popup = createItem(url_or_comp, props, parent);
     if (open_and_destry) {
         QObject::connect(popup, SIGNAL(closed()), this, SLOT(on_popup_closed()));
@@ -162,6 +165,23 @@ void Util::setCursor(QQuickItem* item, Qt::CursorShape shape) {
     }
 }
 
+auto Util::clamp(double t, double low, double heigh) const -> double {
+    return std::clamp(t, low, heigh);
+}
+auto Util::teleportCurve(double t, double left, double right) const -> double {
+    if (t < left) {
+        double x = t / left;
+        return 1.0 - easeInOut(x);
+    } else if (t < right) {
+        return 0.0;
+    } else if (t <= 1.0) {
+        double x = (t - right) / (1.0 - right);
+        return easeInOut(x);
+    } else {
+        return 1.0;
+    }
+}
+
 } // namespace qml_material
 
 namespace qcm
@@ -173,7 +193,7 @@ auto qml_dyn_count() -> std::atomic<i32>& {
 }
 
 auto createItem(QQmlEngine* engine, const QJSValue& url_or_comp, const QVariantMap& props,
-                 QObject* parent) -> QObject* {
+                QObject* parent) -> QObject* {
     std::unique_ptr<QQmlComponent, void (*)(QQmlComponent*)> comp { nullptr, nullptr };
     if (auto p = qobject_cast<QQmlComponent*>(url_or_comp.toQObject())) {
         comp = decltype(comp)(p, [](QQmlComponent*) {
