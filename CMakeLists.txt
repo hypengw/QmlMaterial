@@ -359,7 +359,7 @@ target_link_libraries(
          Qt6::QuickControls2 # QQuickAttachedPropertyPropagator
   PRIVATE material_color)
 
-if(PROJECT_IS_TOP_LEVEL AND NOT QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
+if(NOT QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
   include(CMakePackageConfigHelpers)
   write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/${LIBNAME}-config-version.cmake"
