@@ -60,7 +60,7 @@ MdColorMgr::MdColorMgr(QObject* parent)
       m_accent_color(BASE_COLOR),
       m_mode(sysColorScheme()),
       m_last_mode(m_mode),
-      m_scheme_type(Enum::PaletteType::PaletteTonalSpot),
+      m_scheme_type(Enum::PaletteType::PaletteNeutral),
       m_use_sys_color_scheme(true),
       m_use_sys_accent_color(false) {
     genScheme();
