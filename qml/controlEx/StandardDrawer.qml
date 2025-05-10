@@ -50,9 +50,6 @@ T.Control {
 
     contentItem: Item {
         id: m_embed_content
-        onImplicitWidthChanged: {
-            console.error(implicitWidth);
-        }
     }
 
     Component {
@@ -69,8 +66,8 @@ T.Control {
         MD.MProp.textColor: MD.MProp.color.on_surface
         MD.MProp.backgroundColor: MD.MProp.color.surface_container
 
-        topMargin: 4
-        bottomMargin: 4
+        topPadding: 4
+        bottomPadding: 4
         contentItem: Item {
             id: m_popup_content
         }
@@ -79,9 +76,7 @@ T.Control {
     Item {
         visible: false
         state: m_private.drawerOpened ? "popup" : "embed"
-        onStateChanged: {
-            console.error(state);
-        }
+
         states: [
             State {
                 name: "embed"
