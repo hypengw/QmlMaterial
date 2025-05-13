@@ -145,6 +145,7 @@ set(QML_FILES
     qml/controlEx/DrawerItem.qml
     qml/controlEx/IconButton.qml
     qml/controlEx/StandardIconButton.qml
+    qml/controlEx/EmbedChip.qml
     qml/controlEx/FAB.qml
     qml/component/Image.qml
     qml/component/Label.qml
@@ -198,6 +199,7 @@ set(QML_FILES
     qml/state/StateSearchBar.qml
     qml/state/StateTextField.qml
     qml/state/StateRailItem.qml
+    qml/state/StateEmbedChip.qml
     qml/impl/BoxShadow.qml
     qml/impl/CircleProgressShape.qml
     qml/impl/CircleIndicatorShape.qml

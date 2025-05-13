@@ -20,6 +20,7 @@ T.Menu {
     delegate: MD.MenuItem {}
 
     property var model: contentModel
+    property Component contentDelegate: null
 
     enter: Transition {
         // grow_fade_in
@@ -63,6 +64,7 @@ T.Menu {
         model: control.model
         interactive: Window.window ? contentHeight + control.topPadding + control.bottomPadding > Window.window.height : false
         currentIndex: control.currentIndex
+        delegate: control.contentDelegate
 
         T.ScrollIndicator.vertical: MD.ScrollIndicator {}
     }
