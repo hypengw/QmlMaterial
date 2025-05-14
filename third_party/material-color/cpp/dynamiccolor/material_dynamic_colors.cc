@@ -28,6 +28,11 @@
 #include "cpp/dynamiccolor/variant.h"
 #include "cpp/utils/utils.h"
 
+#ifndef M_PI
+#include <numbers>
+#define M_PI std::numbers::pi
+#endif
+
 namespace material_color_utilities {
 
 using std::nullopt;
