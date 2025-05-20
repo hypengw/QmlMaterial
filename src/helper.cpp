@@ -74,6 +74,8 @@ void convert_from(MdScheme& out, const md::DynamicScheme& in) {
     out.surface_3 = blend(out.surface, out.primary, 0.11);
     out.surface_4 = blend(out.surface, out.primary, 0.12);
     out.surface_5 = blend(out.surface, out.primary, 0.14);
+
+    out.neutral_palette = in.neutral_palette;
 }
 
 auto genScheme(qml_material::Enum::PaletteType t, Hct hct, bool is_dark, double ct_level) {
