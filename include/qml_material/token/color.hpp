@@ -153,6 +153,27 @@ public:
     X(surface_container_highest)
 #undef X
 
+#define X(_n_)                                           \
+    Q_INVOKABLE QColor get_##_n_(double tone) const { return m_scheme._n_##_palette.get(tone); }
+
+    X(neutral)
+#undef X
+
+#define X(_n_, _tone_)                                   \
+    Q_PROPERTY(QColor _n_##_##_tone_ READ _n_##_##_tone_ NOTIFY schemeChanged) \
+        QColor _n_##_##_tone_() const { return m_scheme._n_##_palette.get(_tone_); }
+
+    X(neutral, 10)
+    X(neutral, 20)
+    X(neutral, 30)
+    X(neutral, 40)
+    X(neutral, 50)
+    X(neutral, 60)
+    X(neutral, 70)
+    X(neutral, 80)
+    X(neutral, 90)
+#undef X
+
 public:
     auto mode() const -> Enum::ThemeMode;
     auto sysColorScheme() const -> Enum::ThemeMode;

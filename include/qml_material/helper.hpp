@@ -5,6 +5,8 @@
 
 #include "qml_material/enum.hpp"
 
+#include "cpp/palettes/tones.h"
+
 namespace qml_material
 {
 struct MdScheme {
@@ -53,6 +55,8 @@ struct MdScheme {
     QRgb surface_container_lowest;
     QRgb surface_container_high;
     QRgb surface_container_highest;
+
+    material_color_utilities::TonalPalette neutral_palette { 0 };
 };
 
 auto MaterialLightColorScheme(QRgb, Enum::PaletteType) -> MdScheme;

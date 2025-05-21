@@ -72,6 +72,10 @@ MD.Page {
             ColorGroup {
                 model: ['outline', 'shadow', 'inverse_surface', 'inverse_on_surface', 'inverse_primary']
             }
+            ColorGroup {
+                model: ['neutral_10', 'neutral_20', 'neutral_30', 'neutral_40', 'neutral_50',
+                        'neutral_60', 'neutral_70', 'neutral_80', 'neutral_90', ]
+            }
         }
     }
 }
