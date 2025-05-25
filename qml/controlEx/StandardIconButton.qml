@@ -26,6 +26,7 @@ T.Button {
 
     property int implicitBackgroundSize: 40
     property int backgroundRadius: background.height / 2
+    property alias iconFill: m_icon.fill
 
     contentItem: Item {
         implicitWidth: control.icon.width
@@ -33,6 +34,8 @@ T.Button {
         opacity: control.mdState.contentOpacity
 
         MD.Icon {
+            id: m_icon
+
             anchors.centerIn: parent
             name: control.icon.name
             size: Math.min(control.icon.width, control.icon.height)
