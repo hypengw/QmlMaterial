@@ -25,6 +25,8 @@ T.Button {
     icon.height: 24
 
     property int implicitBackgroundSize: 40
+    property int backgroundRadius: background.height / 2
+    property alias iconFill: m_icon.fill
 
     contentItem: Item {
         implicitWidth: control.icon.width
@@ -32,6 +34,8 @@ T.Button {
         opacity: control.mdState.contentOpacity
 
         MD.Icon {
+            id: m_icon
+
             anchors.centerIn: parent
             name: control.icon.name
             size: Math.min(control.icon.width, control.icon.height)
@@ -43,7 +47,7 @@ T.Button {
         implicitWidth: control.implicitBackgroundSize
         implicitHeight: control.implicitBackgroundSize
 
-        radius: height / 2
+        radius: control.backgroundRadius
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
 
@@ -52,7 +56,7 @@ T.Button {
 
         MD.Ripple2 {
             anchors.fill: parent
-            radius: height / 2
+            radius: control.backgroundRadius
             pressX: control.pressX
             pressY: control.pressY
             pressed: control.pressed
