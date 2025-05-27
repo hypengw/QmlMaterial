@@ -149,6 +149,7 @@ set(QML_FILES
     qml/controlEx/FAB.qml
     qml/component/Image.qml
     qml/component/Label.qml
+    qml/component/Loader.qml
     qml/component/FontMetrics.qml
     qml/component/Text.qml
     qml/component/TextEdit.qml

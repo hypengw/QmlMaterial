@@ -36,9 +36,9 @@ T.ItemDelegate {
 
     property string supportText
     property int maximumLineCount: 1
-    property alias leader: m_holder_leader.contentItem
-    property alias trailing: m_holder_trailing.contentItem
-    property alias below: m_holder_below.contentItem
+    property alias leader: m_holder_leader.sourceComponent
+    property alias trailing: m_holder_trailing.sourceComponent
+    property alias below: m_holder_below.sourceComponent
     property alias divider: m_holder_divider.item
     property int radius: 0
     property MD.t_corner corners: MD.Util.corner(radius)
@@ -61,16 +61,10 @@ T.ItemDelegate {
         RowLayout {
             spacing: 16
 
-            MD.Control {
+            MD.Loader {
                 id: m_holder_leader
-                visible: {
-                    const item = contentItem;
-                    if (item instanceof MD.Icon) {
-                        return item.name;
-                    }
-                    return item;
-                }
-                contentItem: MD.Icon {
+                visible: item instanceof MD.Icon ? (item as MD.Icon).name : item
+                sourceComponent: MD.Icon {
                     name: control.action ? control.action.icon.name : control.icon.name
                     size: control.action ? control.action.icon.width : control.icon.width
                 }
@@ -106,10 +100,10 @@ T.ItemDelegate {
                 verticalAlignment: Qt.AlignVCenter
             }
 
-            MD.Control {
+            MD.Loader {
                 id: m_holder_trailing
                 Layout.alignment: Qt.AlignVCenter
-                visible: contentItem
+                visible: item
             }
 
             MD.Icon {
@@ -122,13 +116,13 @@ T.ItemDelegate {
 
         RowLayout {
             spacing: 16
-            visible: m_holder_below.contentItem
+            visible: m_holder_below.item
             Item {
                 implicitWidth: m_holder_leader.height
                 visible: m_holder_leader.visible
             }
 
-            MD.Control {
+            MD.Loader {
                 id: m_holder_below
                 Layout.fillWidth: true
             }

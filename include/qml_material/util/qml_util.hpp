@@ -94,8 +94,11 @@ public:
     Q_INVOKABLE QString paramsString(const QVariantMap& props);
     Q_INVOKABLE void    setCursor(QQuickItem* item, Qt::CursorShape shape);
 
-    Q_INVOKABLE double  clamp(double t, double low, double high) const;
-    Q_INVOKABLE double  teleportCurve(double t, double left, double right) const;
+    Q_INVOKABLE double clamp(double t, double low, double high) const;
+    Q_INVOKABLE double teleportCurve(double t, double left, double right) const;
+
+    Q_INVOKABLE void forceSetImplicitHeight(QQuickItem* item, qreal height);
+    Q_INVOKABLE void forceSetImplicitWidth(QQuickItem* item, qreal width);
 
 private:
     Q_SLOT void on_popup_closed();

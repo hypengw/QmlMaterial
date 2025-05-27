@@ -182,6 +182,17 @@ auto Util::teleportCurve(double t, double left, double right) const -> double {
     }
 }
 
+void Util::forceSetImplicitHeight(QQuickItem* item, qreal height) {
+    if (item) {
+        item->setImplicitHeight(height);
+    }
+}
+void Util::forceSetImplicitWidth(QQuickItem* item, qreal width) {
+    if (item) {
+        item->setImplicitWidth(width);
+    }
+}
+
 } // namespace qml_material
 
 namespace qcm
