@@ -37,6 +37,10 @@ T.Control {
         property bool drawerOpenedSet: drawerOpened
     }
 
+    function open() {
+        m_drawer.open();
+    }
+
     function close() {
         m_drawer.close();
     }
