@@ -3,6 +3,7 @@
 #include <functional>
 
 #include <QtCore/QObject>
+#include <QtCore/QTimer>
 #include <QtQml/QQmlEngine>
 #include <QtGui/QColor>
 #include <QtQuickControls2/QQuickAttachedPropertyPropagator>
@@ -10,19 +11,18 @@
 #include "qml_material/token/color.hpp"
 #include "qml_material/util/page_context.hpp"
 
-#define ATTACH_PROPERTY(_type_, _name_)                                                 \
-private:                                                                                \
-    Q_PROPERTY(_type_ _name_ READ _name_ WRITE set_##_name_ RESET reset_##_name_ NOTIFY \
-                   _name_##Changed FINAL)                                               \
-public:                                                                                 \
-    _type_              _name_() const;                                                 \
-    void                set_##_name_(_type_);                                           \
-    void                reset_##_name_();                                               \
-    AttachProp<_type_>& get_##_name_();                                                 \
-    Q_SIGNAL void       _name_##Changed();                                              \
-                                                                                        \
-private:                                                                                \
-    AttachProp<_type_> m_##_name_ { &Self::_name_##Changed };
+#define ATTACH_PROPERTY(Type, Name)                                                                \
+private:                                                                                           \
+    Q_PROPERTY(Type Name READ Name WRITE set_##Name RESET reset_##Name NOTIFY Name##Changed FINAL) \
+public:                                                                                            \
+    Type              Name() const;                                                                \
+    void              set_##Name(Type);                                                            \
+    void              reset_##Name();                                                              \
+    AttachProp<Type>& get_##Name();                                                                \
+    Q_SIGNAL void     Name##Changed();                                                             \
+                                                                                                   \
+private:                                                                                           \
+    AttachProp<Type> m_##Name { &Self::Name##Changed };
 
 namespace qml_material
 {
@@ -36,11 +36,26 @@ public:
     Q_PROPERTY(
         qint32 windowClass READ windowClass WRITE setWindowClass NOTIFY windowClassChanged FINAL)
     Q_PROPERTY(bool isCompact READ isCompact NOTIFY windowClassChanged FINAL)
+    Q_PROPERTY(bool isMedium READ isMedium NOTIFY windowClassChanged FINAL)
+    Q_PROPERTY(bool isExpanded READ isExpanded NOTIFY windowClassChanged FINAL)
+    Q_PROPERTY(bool isLarge READ isLarge NOTIFY windowClassChanged FINAL)
+    Q_PROPERTY(bool isExtraLarge READ isExtraLarge NOTIFY windowClassChanged FINAL)
 
-    auto          isCompact() const -> bool;
+    Q_PROPERTY(qint32 width READ width WRITE setWidth NOTIFY widthChanged FINAL)
+
+    auto isCompact() const -> bool;
+    auto isMedium() const -> bool;
+    auto isExpanded() const -> bool;
+    auto isLarge() const -> bool;
+    auto isExtraLarge() const -> bool;
+
+    auto          width() const -> qint32;
+    void          setWidth(qint32 w);
+    Q_SIGNAL void widthChanged(qint32);
+
     auto          windowClass() const -> qint32;
     void          setWindowClass(qint32);
-    Q_SIGNAL void windowClassChanged();
+    Q_SIGNAL void windowClassChanged(qint32);
 
     Q_PROPERTY(qint32 verticalPadding READ verticalPadding NOTIFY verticalPaddingChanged FINAL)
     auto          verticalPadding() const -> qint32;
@@ -48,6 +63,8 @@ public:
 
 private:
     qint32 m_window_class;
+    qint32 m_width;
+    QTimer  m_width_timer;
 };
 
 class Theme : public QQuickAttachedPropertyPropagator {
@@ -63,9 +80,9 @@ public:
     template<typename V>
     struct AttachProp {
         using SigFunc   = void (Theme::*)();
-        using ReadFunc  = V (Theme::*const)();
+        using ReadFunc  = V (Theme::* const)();
         using WriteFunc = void (Theme::*)(V);
-        using GetFunc   = AttachProp<V>& (Theme::*const)();
+        using GetFunc   = AttachProp<V>& (Theme::* const)();
 
         std::optional<V> value;
         bool             explicited;

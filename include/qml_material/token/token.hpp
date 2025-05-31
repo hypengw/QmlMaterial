@@ -279,7 +279,7 @@ public:
 struct Shape {
     Q_GADGET
     QML_ANONYMOUS
-    Q_PROPERTY(ShapeCorner corner MEMBER corner CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::ShapeCorner corner MEMBER corner CONSTANT FINAL)
 public:
     ShapeCorner corner;
 };

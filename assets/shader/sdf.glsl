@@ -2,6 +2,8 @@
 
 // according to https://iquilezles.org/articles/distfunctions2d/
 
+#extension GL_OES_standard_derivatives : enable
+
 float filterwidth(vec2 v) {
   vec2 fw = max(abs(dFdx(v)), abs(dFdy(v)));
   return max(fw.x, fw.y);

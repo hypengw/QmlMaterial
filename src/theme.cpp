@@ -1,5 +1,6 @@
 #include "qml_material/theme.hpp"
 #include "qml_material/enum.hpp"
+#include "qml_material/token/token.hpp"
 
 using namespace qml_material;
 
@@ -40,7 +41,13 @@ template<typename F, typename T>
 void set_prop(Theme* self, const T& v, F&& get_prop) {
     auto& p      = std::invoke(std::forward<F>(get_prop), self);
     p.explicited = true;
-    if (std::exchange(p.value, v) != v) {
+    if (p.value != v) {
+        p.value = v;
+        if constexpr (std::is_base_of_v<QObject, std::remove_pointer_t<T>>) {
+            if (p.value && *p.value) {
+                (*p.value)->setParent(self);
+            }
+        }
         propagate(self, [&v, &get_prop](Theme* child) {
             inherit_attach_prop(child, get_prop, v);
         });
@@ -104,7 +111,7 @@ void Theme::attachedParentChange(QQuickAttachedPropertyPropagator* newParent,
     Propagator::attachedParentChange(newParent, oldParent);
     Theme* attachedParentStyle = qobject_cast<Theme*>(newParent);
     if (attachedParentStyle) {
-#define X(_name_) inherit_attach_prop(this, &Theme::get_##_name_, attachedParentStyle->_name_())
+#define X(Name) inherit_attach_prop(this, &Theme::get_##Name, attachedParentStyle->Name())
         X(textColor);
         X(backgroundColor);
         X(elevation);
@@ -116,17 +123,48 @@ void Theme::attachedParentChange(QQuickAttachedPropertyPropagator* newParent,
 }
 
 ThemeSize::ThemeSize(QObject* parent)
-    : QObject(parent), m_window_class((qint32)Enum::WindowClassType::WindowClassMedium) {}
+    : QObject(parent), m_window_class((qint32)Enum::WindowClassType::WindowClassMedium) {
+    m_width_timer.setSingleShot(true);
+    connect(this, &ThemeSize::widthChanged, this, [this]() {
+        if (! m_width_timer.isActive()) m_width_timer.start(200);
+    });
+    connect(&m_width_timer, &QTimer::timeout, this, [this]() {
+        static auto the_wclass = token::WindowClass {};
+        setWindowClass((qint32)the_wclass.select_type(m_width));
+    });
+}
 ThemeSize::~ThemeSize() {}
 
 auto ThemeSize::isCompact() const -> bool {
     return m_window_class == (qint32)Enum::WindowClassType::WindowClassCompact;
 }
+auto ThemeSize::isMedium() const -> bool {
+    return m_window_class == (qint32)Enum::WindowClassType::WindowClassMedium;
+}
+auto ThemeSize::isExpanded() const -> bool {
+    return m_window_class == (qint32)Enum::WindowClassType::WindowClassExpanded;
+}
+auto ThemeSize::isLarge() const -> bool {
+    return m_window_class == (qint32)Enum::WindowClassType::WindowClassLarge;
+}
+auto ThemeSize::isExtraLarge() const -> bool {
+    return m_window_class == (qint32)Enum::WindowClassType::WindowClassExtraLarge;
+}
+
+auto ThemeSize::width() const -> qint32 { return m_width; }
+
+void ThemeSize::setWidth(qint32 v) {
+    if (m_width != v) {
+        m_width = v;
+        widthChanged(m_width);
+    }
+}
+
 auto ThemeSize::windowClass() const -> qint32 { return m_window_class; }
 void ThemeSize::setWindowClass(qint32 v) {
     if (v != m_window_class) {
         m_window_class = v;
-        windowClassChanged();
+        windowClassChanged(m_window_class);
 
         verticalPaddingChanged();
     }

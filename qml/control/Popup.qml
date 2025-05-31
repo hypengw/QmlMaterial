@@ -17,6 +17,10 @@ T.Popup {
     verticalPadding: 0
     horizontalPadding: 1
 
+    MD.MProp.size: MD.ThemeSize {
+        width: control.parent.width
+    }
+
     enter: Transition {
         // grow_fade_in
         NumberAnimation {
