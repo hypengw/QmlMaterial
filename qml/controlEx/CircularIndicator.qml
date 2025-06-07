@@ -5,10 +5,16 @@ import Qcm.Material as MD
 
 T.BusyIndicator {
     id: control
+    enum AnimStateType {
+        Running,
+        Completing,
+        Stopped
+    }
 
+    property int animationState: CircularIndicator.Stopped
     property real strokeWidth: 4
     readonly property alias progress: m_updator.progress
-    running: true
+    running: false
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
@@ -16,19 +22,42 @@ T.BusyIndicator {
     padding: 0
     clip: false
 
+    onRunningChanged: {
+        if (running) {
+            m_updator.completeEndProgress = 0;
+            animationState = CircularIndicator.Running;
+        } else {
+            if (animationState == CircularIndicator.Running)
+                animationState = CircularIndicator.Completing;
+        }
+    }
+
     MD.CircularIndicatorUpdator {
         id: m_updator
     }
 
     NumberAnimation {
-        running: true
-        paused: !control.running
+        running: control.animationState != CircularIndicator.Stopped
         loops: Animation.Infinite
         target: m_updator
         property: 'progress'
         from: 0
         to: 1
         duration: m_updator.duration
+    }
+
+    NumberAnimation {
+        id: m_complete_end_anim
+        running: control.animationState == CircularIndicator.Completing
+        target: m_updator
+        property: 'completeEndProgress'
+        from: 0
+        to: 1
+        duration: m_updator.completeEndDuration
+        onFinished: {
+            if (control.animationState == CircularIndicator.Completing)
+                control.animationState = CircularIndicator.Stopped;
+        }
     }
 
     contentItem: Item {

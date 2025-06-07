@@ -16,7 +16,10 @@ class CircularIndicatorUpdator : public QObject {
     Q_PROPERTY(double endFraction READ endFraction NOTIFY updated FINAL)
     Q_PROPERTY(double rotation READ rotation NOTIFY updated FINAL)
     Q_PROPERTY(double progress READ progress WRITE update NOTIFY updated FINAL)
+    Q_PROPERTY(double completeEndProgress READ completeEndProgress WRITE updateCompleteEndProgress
+                   NOTIFY updated FINAL)
     Q_PROPERTY(double duration READ duration NOTIFY indeterminateAnimationTypeChanged FINAL)
+    Q_PROPERTY(double completeEndDuration READ completeEndDuration NOTIFY indeterminateAnimationTypeChanged FINAL)
     Q_PROPERTY(
         IndeterminateAnimationType indeterminateAnimationType READ indeterminateAnimationType WRITE
             setIndeterminateAnimationType NOTIFY indeterminateAnimationTypeChanged FINAL)
@@ -36,7 +39,9 @@ public:
     auto rotation() const noexcept -> double;
 
     auto progress() const noexcept -> double;
+    auto completeEndProgress() const noexcept -> double;
     auto duration() const noexcept -> double;
+    auto completeEndDuration() const noexcept -> double;
 
     auto indeterminateAnimationType() const noexcept -> IndeterminateAnimationType;
     void setIndeterminateAnimationType(IndeterminateAnimationType t);
@@ -45,6 +50,7 @@ public:
     void updateRetreat(double progress) noexcept;
 
     Q_SLOT void   update(double progress);
+    Q_SLOT void   updateCompleteEndProgress(double progress);
     Q_SIGNAL void updated();
     Q_SIGNAL void indeterminateAnimationTypeChanged();
 
@@ -57,6 +63,6 @@ private:
     float m_end_fraction;
     float m_rotation_degree;
 
-    float m_complete_end_fraction;
+    float m_complete_end_progress;
 };
 } // namespace qml_material

@@ -68,7 +68,7 @@ CircularIndicatorUpdator::CircularIndicatorUpdator(QObject* parent)
       m_start_fraction(0),
       m_end_fraction(0),
       m_rotation_degree(0),
-      m_complete_end_fraction(0) {}
+      m_complete_end_progress(0) {}
 
 auto CircularIndicatorUpdator::startFraction() const noexcept -> double { return m_start_fraction; }
 auto CircularIndicatorUpdator::endFraction() const noexcept -> double { return m_end_fraction; }
@@ -79,6 +79,13 @@ auto CircularIndicatorUpdator::duration() const noexcept -> double {
         return advance::TOTAL_DURATION_IN_MS;
     } else {
         return retreat::TOTAL_DURATION_IN_MS;
+    }
+}
+auto CircularIndicatorUpdator::completeEndDuration() const noexcept -> double {
+    if (m_type == IndeterminateAnimationType::Advance) {
+        return advance::DURATION_TO_COMPLETE_END_IN_MS;
+    } else {
+        return retreat::DURATION_TO_COMPLETE_END_IN_MS;
     }
 }
 auto CircularIndicatorUpdator::indeterminateAnimationType() const noexcept
@@ -92,6 +99,13 @@ void CircularIndicatorUpdator::setIndeterminateAnimationType(IndeterminateAnimat
     }
 }
 
+auto CircularIndicatorUpdator::completeEndProgress() const noexcept -> double {
+    return m_complete_end_progress;
+}
+void CircularIndicatorUpdator::updateCompleteEndProgress(double progress) {
+    m_complete_end_progress = progress;
+    update(m_progress);
+}
 void CircularIndicatorUpdator::update(double progress) {
     if (m_type == IndeterminateAnimationType::Advance) {
         updateAdvance(progress);
@@ -123,8 +137,8 @@ void CircularIndicatorUpdator::updateRetreat(double progress) noexcept {
     m_end_fraction   = std::lerp(END_FRACTION_RANGE[0], END_FRACTION_RANGE[1], fraction);
 
     // Completing animation.
-    if (m_complete_end_fraction > 0) {
-        m_end_fraction *= 1 - m_complete_end_fraction;
+    if (m_complete_end_progress > 0) {
+        m_end_fraction *= 1 - m_complete_end_progress;
     }
 }
 
@@ -150,7 +164,7 @@ void CircularIndicatorUpdator::updateAdvance(double progress) noexcept {
     }
 
     // Closes the gap between head and tail for complete end.
-    m_start_fraction += (m_end_fraction - m_start_fraction) * m_complete_end_fraction;
+    m_start_fraction += (m_end_fraction - m_start_fraction) * m_complete_end_progress;
 
     m_start_fraction /= 360.f;
     m_end_fraction /= 360.f;
