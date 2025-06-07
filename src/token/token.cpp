@@ -27,8 +27,6 @@ auto Token::cal_curve_scale(double dpr) const -> double { return dpr >= 2.0 ? 1.
 
 auto Token::datas() -> QQmlListProperty<QObject> { return { this, &m_datas }; }
 
-auto EasingItem::toList() const -> QList<double> { return { x0, y0, x1, y1, 1, 1 }; }
-
 Flick::Flick(QObject* parent)
     : QObject(parent),
       m_press_delay(100),

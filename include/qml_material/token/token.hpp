@@ -1,12 +1,14 @@
 #pragma once
 
 #include <array>
+#include <QtCore/QEasingCurve>
 #include <QtGui/QFont>
 #include <QtQml/QQmlEngine>
 #include <QtQuick/QQuickWindow>
 
 #include "qml_material/core.hpp"
 #include "qml_material/token/type_scale.hpp"
+#include "qml_material/anim/interpolator.hpp"
 #include "qml_material/enum.hpp"
 Q_MOC_INCLUDE("qml_material/token/icon.hpp")
 
@@ -122,60 +124,38 @@ public:
  * @brief Motion easing
  *
  */
-struct EasingItem {
-    Q_GADGET
-    Q_PROPERTY(QList<double> list READ toList CONSTANT FINAL)
-    Q_INVOKABLE QList<double> toList() const;
-
-public:
-    qreal x0;
-    qreal y0;
-    qreal x1;
-    qreal y1;
-};
-
-/**
- * @brief Motion easing
- *
- */
 struct Easing {
     Q_GADGET
     QML_ANONYMOUS
     /// Animation curve for emphasized acceleration
-    Q_PROPERTY(qml_material::token::EasingItem emphasized_accelerate MEMBER emphasized_accelerate
-                   CONSTANT FINAL)
+    Q_PROPERTY(QEasingCurve emphasized_accelerate READ emphasized_accelerate CONSTANT FINAL)
     /// Animation curve for emphasized deceleration
-    Q_PROPERTY(qml_material::token::EasingItem emphasized_decelerate MEMBER emphasized_decelerate
-                   CONSTANT FINAL)
+    Q_PROPERTY(QEasingCurve emphasized_decelerate READ emphasized_decelerate CONSTANT FINAL)
     /// Standard animation curve for balanced motion
-    Q_PROPERTY(qml_material::token::EasingItem standard MEMBER standard CONSTANT FINAL)
+    Q_PROPERTY(QEasingCurve standard READ standard CONSTANT FINAL)
     /// Animation curve for standard acceleration
-    Q_PROPERTY(qml_material::token::EasingItem standard_accelerate MEMBER standard_accelerate
-                   CONSTANT FINAL)
+    Q_PROPERTY(QEasingCurve standard_accelerate READ standard_accelerate CONSTANT FINAL)
     /// Animation curve for standard deceleration
-    Q_PROPERTY(qml_material::token::EasingItem standard_decelerate MEMBER standard_decelerate
-                   CONSTANT FINAL)
+    Q_PROPERTY(QEasingCurve standard_decelerate READ standard_decelerate CONSTANT FINAL)
     /// Legacy animation curve (backward compatibility)
-    Q_PROPERTY(qml_material::token::EasingItem legacy MEMBER legacy CONSTANT FINAL)
+    Q_PROPERTY(QEasingCurve legacy READ legacy CONSTANT FINAL)
     /// Legacy acceleration curve
-    Q_PROPERTY(
-        qml_material::token::EasingItem legacy_accelerate MEMBER legacy_accelerate CONSTANT FINAL)
+    Q_PROPERTY(QEasingCurve legacy_accelerate READ legacy_accelerate CONSTANT FINAL)
     /// Legacy deceleration curve
-    Q_PROPERTY(
-        qml_material::token::EasingItem legacy_decelerate MEMBER legacy_decelerate CONSTANT FINAL)
+    Q_PROPERTY(QEasingCurve legacy_decelerate READ legacy_decelerate CONSTANT FINAL)
     /// Linear animation curve (constant speed)
-    Q_PROPERTY(qml_material::token::EasingItem linear MEMBER linear CONSTANT FINAL)
+    Q_PROPERTY(QEasingCurve linear READ linear CONSTANT FINAL)
 
-private:
-    EasingItem emphasized_accelerate { .x0 = 0.3, .y0 = 0, .x1 = 0.8, .y1 = 0.15 };
-    EasingItem emphasized_decelerate { .x0 = 0.05, .y0 = 0.7, .x1 = 0.1, .y1 = 1 };
-    EasingItem standard { .x0 = 0.2, .y0 = 0, .x1 = 0, .y1 = 1 };
-    EasingItem standard_accelerate { .x0 = 0.3, .y0 = 0, .x1 = 1, .y1 = 1 };
-    EasingItem standard_decelerate { .x0 = 0, .y0 = 0, .x1 = 0, .y1 = 1 };
-    EasingItem legacy { .x0 = 0.4, .y0 = 0, .x1 = 0.2, .y1 = 1 };
-    EasingItem legacy_accelerate { .x0 = 0.4, .y0 = 0, .x1 = 1, .y1 = 1 };
-    EasingItem legacy_decelerate { .x0 = 0, .y0 = 0, .x1 = 0.2, .y1 = 1 };
-    EasingItem linear { .x0 = 0, .y0 = 0, .x1 = 1, .y1 = 1 };
+public:
+    auto emphasized_accelerate() const -> QEasingCurve { return anim::emphasized_accelerate(); }
+    auto emphasized_decelerate() const -> QEasingCurve { return anim::emphasized_decelerate(); }
+    auto standard() const -> QEasingCurve { return anim::standard(); }
+    auto standard_accelerate() const -> QEasingCurve { return anim::standard_accelerate(); }
+    auto standard_decelerate() const -> QEasingCurve { return anim::standard_decelerate(); }
+    auto legacy() const -> QEasingCurve { return anim::legacy(); }
+    auto legacy_accelerate() const -> QEasingCurve { return anim::legacy_accelerate(); }
+    auto legacy_decelerate() const -> QEasingCurve { return anim::legacy_decelerate(); }
+    auto linear() const -> QEasingCurve { return anim::linear(); }
 };
 
 /**
