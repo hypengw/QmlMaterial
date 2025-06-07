@@ -9,7 +9,7 @@ MD.Shape {
     readonly property vector2d center: Qt.vector2d(radius, radius)
     property real startAngle: 0
     property real endAngle: 0
-    asynchronous: true
+    asynchronous: false
 
     ShapePath {
         capStyle: ShapePath.RoundCap

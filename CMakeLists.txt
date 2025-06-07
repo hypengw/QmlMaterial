@@ -78,6 +78,7 @@ set(SOURCES
     src/enum.cpp
     src/theme.cpp
     src/helper.cpp
+    src/anim/circular_indicator_updator.cpp
     src/util/corner.cpp
     src/util/input_block.cpp
     src/util/item_holder.cpp
@@ -222,6 +223,7 @@ set(QML_FILES
 set(RESOURCES assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2)
 
 set(QML_REG_INCLUDE_DIRS
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/anim"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/item"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/token"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/model"

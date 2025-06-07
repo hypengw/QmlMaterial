@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import Qcm.Material as MD
 
@@ -31,7 +32,7 @@ MD.IconButton {
                 running: true
                 strokeWidth: 2
                 implicitWidth: {
-                    const w = Math.min(control.icon.width, control.icon.height); 
+                    const w = Math.min(control.icon.width, control.icon.height);
                     return w - 6;
                 }
                 implicitHeight: implicitWidth
