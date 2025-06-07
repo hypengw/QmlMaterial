@@ -249,11 +249,20 @@ MD.Page {
                     ComponentCard {
                         title: 'Button indicator'
 
-                        MD.BusyIconButton {
+                        Row {
                             Layout.alignment: Qt.AlignHCenter
-                            checkable: true
-                            busy: checked
-                            icon.name: MD.Token.icon.add
+                            MD.BusyIconButton {
+                                checkable: true
+                                busy: checked
+                                icon.name: MD.Token.icon.add
+                            }
+                            MD.BusyButton {
+                                anchors.verticalCenter: parent.verticalCenter
+                                checkable: true
+                                busy: checked
+                                icon.name: MD.Token.icon.add
+                                text: 'add'
+                            }
                         }
                     }
 

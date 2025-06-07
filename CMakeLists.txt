@@ -133,6 +133,7 @@ set(QML_FILES
     qml/controlEx/ActionToolBar.qml
     qml/controlEx/AppBar.qml
     qml/controlEx/BusyIconButton.qml
+    qml/controlEx/BusyButton.qml
     qml/controlEx/BarItem.qml
     qml/controlEx/Card.qml
     qml/controlEx/AssistChip.qml
