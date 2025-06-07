@@ -4,6 +4,7 @@ import Qcm.Material as MD
 
 MD.Shape {
     id: root
+    property color strokeColor: MD.MProp.color.primary
     property real strokeWidth: 4
     readonly property int radius: height / 2
     readonly property vector2d center: Qt.vector2d(radius, radius)
@@ -16,7 +17,7 @@ MD.Shape {
         fillColor: "transparent"
         startX: root.radius
         startY: 0
-        strokeColor: root.MD.MProp.color.primary
+        strokeColor: root.strokeColor
         strokeWidth: root.strokeWidth
 
         PathAngleArc {

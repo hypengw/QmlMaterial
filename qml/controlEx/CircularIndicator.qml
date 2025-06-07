@@ -13,6 +13,7 @@ T.BusyIndicator {
 
     property int animationState: CircularIndicator.Stopped
     property real strokeWidth: 4
+    property color color: MD.MProp.color.primary
     readonly property alias progress: m_updator.progress
     running: false
 
@@ -67,6 +68,7 @@ T.BusyIndicator {
             id: m_shape
             anchors.fill: parent
             strokeWidth: control.strokeWidth
+            strokeColor: control.color
             rotation: m_updator.rotation
             startAngle: m_updator.startFraction * 360
             endAngle: m_updator.endFraction * 360

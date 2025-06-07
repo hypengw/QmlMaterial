@@ -4,7 +4,12 @@ import Qcm.Material as MD
 
 MD.Button {
     id: control
-    property bool busy: false
+    property bool busy: {
+        if (action instanceof MD.Action) {
+            return (action as MD.Action).busy;
+        }
+        return false;
+    }
     contentItem.visible: !busy
 
     MD.Loader {
@@ -23,6 +28,17 @@ MD.Button {
                     return w - 6;
                 }
                 implicitHeight: implicitWidth
+                color: {
+                    const ctx = control.mdState.ctx;
+                    switch (control.type) {
+                    case MD.Enum.BtFilled:
+                        return ctx.color.on_primary;
+                    case MD.Enum.BtFilledTonal:
+                        return ctx.color.on_secondary_container;
+                    default:
+                        return ctx.color.primary;
+                    }
+                }
             }
         }
     }

@@ -4,7 +4,12 @@ import Qcm.Material as MD
 
 MD.IconButton {
     id: control
-    property bool busy: false
+    property bool busy: {
+        if (action instanceof MD.Action) {
+            return (action as MD.Action).busy;
+        }
+        return false;
+    }
     contentItem: Item {
         implicitWidth: control.icon.width
         implicitHeight: control.icon.height
