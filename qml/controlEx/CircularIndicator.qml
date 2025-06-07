@@ -8,6 +8,7 @@ T.BusyIndicator {
     readonly property real arcDuration: 1333
     readonly property real fullArcDuration: 4 * 1333
     readonly property real fullDuration: 17 * 4 * 1333
+    property real strokeWidth: 4
     property real _progress: 0
 
     // duration: (4 * control.arcDuration) / 360 * 306 -> 4532 -> 0.85 (360)
@@ -40,6 +41,7 @@ T.BusyIndicator {
         MD.CircleIndicatorShape {
             id: m_shape
             anchors.fill: parent
+            strokeWidth: control.strokeWidth
 
             Connections {
                 target: control

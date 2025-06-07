@@ -1,7 +1,5 @@
 import QtQuick
 import QtQuick.Window
-// this is needed for qml wasm to load QtQuick.Shape plugin
-import QtQuick.Controls.Basic
 import Qcm.Material as MD
 
 MD.ApplicationWindow {

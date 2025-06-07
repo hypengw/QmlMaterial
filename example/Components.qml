@@ -205,64 +205,58 @@ MD.Page {
                         text: 'Communication'
                         typescale: MD.Token.typescale.title_large
                     }
-
-                    ColumnLayout {
-                        Layout.alignment: Qt.AlignHCenter
+                    ComponentCard {
+                        title: 'Propgress indicators'
 
                         ColumnLayout {
-                            Layout.alignment: Qt.AlignHCenter
-                            MD.Text {
-                                Layout.alignment: Qt.AlignHCenter
-                                text: 'Propgress indicators'
-                                typescale: MD.Token.typescale.title_medium
+                            anchors.fill: parent
+                            RowLayout {
+                                spacing: 0
+                                Item {
+                                    MD.IconButton {
+                                        id: m_indicator_play
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        checkable: true
+                                        icon.name: checked ? MD.Token.icon.pause : MD.Token.icon.play_arrow
+                                    }
+                                }
+
+                                Item {
+                                    Layout.fillWidth: true
+                                    implicitHeight: children[0].implicitHeight
+                                    MD.CircularIndicator {
+                                        anchors.centerIn: parent
+                                        running: m_indicator_play.checked
+                                    }
+                                }
                             }
-                            MD.Pane {
-                                Layout.alignment: Qt.AlignHCenter
-                                Layout.preferredWidth: 400
-                                padding: 12
-                                radius: MD.Token.shape.corner.medium
-                                backgroundColor: MD.MProp.color.surface_container
+                            RowLayout {
+                                spacing: 0
+                                MD.IconButton {
+                                    id: m_linear_indicator_play
+                                    checkable: true
+                                    icon.name: checked ? MD.Token.icon.pause : MD.Token.icon.play_arrow
+                                }
 
-                                ColumnLayout {
-                                    anchors.fill: parent
-                                    RowLayout {
-                                        spacing: 0
-                                        Item {
-                                            MD.IconButton {
-                                                id: m_indicator_play
-                                                anchors.verticalCenter: parent.verticalCenter
-                                                checkable: true
-                                                icon.name: checked ? MD.Token.icon.pause : MD.Token.icon.play_arrow
-                                            }
-                                        }
-
-                                        Item {
-                                            Layout.fillWidth: true
-                                            implicitHeight: children[0].implicitHeight
-                                            MD.CircularIndicator {
-                                                anchors.centerIn: parent
-                                                running: m_indicator_play.checked
-                                            }
-                                        }
-                                    }
-                                    RowLayout {
-                                        spacing: 0
-                                        MD.IconButton {
-                                            id: m_linear_indicator_play
-                                            checkable: true
-                                            icon.name: checked ? MD.Token.icon.pause : MD.Token.icon.play_arrow
-                                        }
-
-                                        MD.LinearIndicator {
-                                            Layout.fillWidth: true
-                                            Layout.alignment: Qt.AlignVCenter
-                                            running: m_linear_indicator_play.checked
-                                        }
-                                    }
+                                MD.LinearIndicator {
+                                    Layout.fillWidth: true
+                                    Layout.alignment: Qt.AlignVCenter
+                                    running: m_linear_indicator_play.checked
                                 }
                             }
                         }
                     }
+                    ComponentCard {
+                        title: 'Button indicator'
+
+                        MD.BusyIconButton {
+                            Layout.alignment: Qt.AlignHCenter
+                            checkable: true
+                            busy: checked
+                            icon.name: MD.Token.icon.add
+                        }
+                    }
+
                     ComponentCard {
                         title: 'SnakeBar'
 

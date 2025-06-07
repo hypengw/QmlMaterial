@@ -4,7 +4,7 @@ import Qcm.Material as MD
 
 MD.Shape {
     id: root
-    property int strokeWidth: 4
+    property real strokeWidth: 4
     readonly property int radius: height / 2
     readonly property vector2d center: Qt.vector2d(radius, radius)
     property real startAngle: 0
@@ -22,8 +22,8 @@ MD.Shape {
         PathAngleArc {
             centerX: root.center.x
             centerY: root.center.y
-            radiusX: 16
-            radiusY: radiusX
+            radiusX: root.radius
+            radiusY: root.radius
             startAngle: root.startAngle
             sweepAngle: root.endAngle - root.startAngle
         }
