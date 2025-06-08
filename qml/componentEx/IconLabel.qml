@@ -1,53 +1,55 @@
 import QtQuick
-import QtQuick.Layouts
 import Qcm.Material as MD
 
 Item {
     id: root
 
-    implicitWidth: layout_row.implicitWidth
-    implicitHeight: layout_row.implicitHeight
+    implicitWidth: m_row.implicitWidth
+    implicitHeight: m_row.implicitHeight
 
-    property alias spacing: layout_row.spacing
+    property alias spacing: m_row.spacing
 
-    property alias text: item_label_text.text
-    property alias font: item_label_text.font
-    property alias typescale: item_label_text.typescale
-    property alias color: item_label_text.color
+    property alias text: m_text.text
+    property alias font: m_text.font
+    property alias typescale: m_text.typescale
+    property alias color: m_text.color
 
-    property alias icon_name: item_label_icon.name
-    property alias icon_size: item_label_icon.size
-    property alias icon_color: item_label_icon.color
+    property alias icon_name: m_icon.name
+    property alias icon_size: m_icon.size
+    property alias icon_color: m_icon.color
 
     property int icon_style: MD.Enum.IconAndText
 
     property int horizontalAlignment: Qt.AlignHCenter
 
-    RowLayout {
-        id: layout_row
-
-        anchors.fill: parent
+    Row {
+        id: m_row
+        Binding {
+            when: root.horizontalAlignment == Qt.AlignLeft
+            m_row.anchors.left: root.left
+        }
+        Binding {
+            when: root.horizontalAlignment == Qt.AlignRight
+            m_row.anchors.right: root.right
+        }
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.horizontalCenter: root.horizontalAlignment == Qt.AlignHCenter ? parent.horizontalCenter : undefined
         spacing: 8
 
         MD.Icon {
-            id: item_label_icon
-            Layout.alignment: root.horizontalAlignment | Qt.AlignVCenter
+            id: m_icon
+            anchors.verticalCenter: parent.verticalCenter
             visible: root.icon_style != MD.Enum.TextOnly && name.length > 0
             color: root.color
         }
 
         MD.Label {
-            id: item_label_text
-            Layout.alignment: root.horizontalAlignment | Qt.AlignVCenter
+            id: m_text
+            anchors.verticalCenter: parent.verticalCenter
             verticalAlignment: Text.AlignVCenter
 
             visible: root.icon_style != MD.Enum.IconOnly
             color: root.color
-        }
-
-        Item {
-            Layout.fillWidth: true
-            visible: root.horizontalAlignment == Qt.AlignLeft
         }
     }
 }
