@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Templates as T
 import Qcm.Material as MD
@@ -56,6 +57,27 @@ T.MenuItem {
         icon_name: control.icon.name
         icon_size: control.icon.width
         icon_color: control.leadingIconColor
+        icon_fill: control.checked
+
+        icon_component: m_loading_comp
+        icon_component_active: {
+            const a = control.action;
+            return a instanceof MD.Action && (a as MD.Action).busy;
+        }
+
+        Component {
+            id: m_loading_comp
+            MD.CircularIndicator {
+                anchors.centerIn: parent
+                running: true
+                strokeWidth: 2
+                implicitWidth: {
+                    const w = Math.min(control.icon.width, control.icon.height);
+                    return w - 6;
+                }
+                implicitHeight: implicitWidth
+            }
+        }
     }
 
     background: Rectangle {

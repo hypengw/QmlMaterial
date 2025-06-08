@@ -17,6 +17,10 @@ Item {
     property alias icon_name: m_icon.name
     property alias icon_size: m_icon.size
     property alias icon_color: m_icon.color
+    property alias icon_fill: m_icon.fill
+
+    property alias icon_component_active: m_loader.active
+    property alias icon_component: m_loader.sourceComponent
 
     property int icon_style: MD.Enum.IconAndText
 
@@ -36,11 +40,24 @@ Item {
         anchors.horizontalCenter: root.horizontalAlignment == Qt.AlignHCenter ? parent.horizontalCenter : undefined
         spacing: 8
 
-        MD.Icon {
-            id: m_icon
+        Item {
             anchors.verticalCenter: parent.verticalCenter
-            visible: root.icon_style != MD.Enum.TextOnly && name.length > 0
-            color: root.color
+            implicitHeight: Math.max(m_icon.implicitHeight, m_loader.implicitHeight)
+            implicitWidth: Math.max(m_icon.implicitWidth, m_loader.implicitWidth)
+            visible: root.icon_style != MD.Enum.TextOnly
+            MD.Icon {
+                id: m_icon
+                anchors.verticalCenter: parent.verticalCenter
+                visible: name.length > 0 && !m_loader.active
+                color: root.color
+            }
+
+            MD.Loader {
+                id: m_loader
+                anchors.verticalCenter: parent.verticalCenter
+                active: false
+                visible: active
+            }
         }
 
         MD.Label {
