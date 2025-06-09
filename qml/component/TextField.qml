@@ -14,7 +14,7 @@ MD.TextFieldEmbed {
     font.capitalization: Font.MixedCase
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, Math.max(contentWidth, placeholder.implicitWidth) + leftPadding + rightPadding + (leading.visible ? leading.implicitWidth : 0) + (trailing.visible ? trailing.implicitWidth : 0))
-    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)
+    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + bottomPadding + (control.type === MD.Enum.TextFieldFilled ? 0 : topPadding))
 
     // If we're clipped, set topInset to half the height of the placeholder text to avoid it being clipped.
     topInset: clip ? placeholder.largestHeight / 2 : 0
@@ -23,16 +23,16 @@ MD.TextFieldEmbed {
     leftPadding: 16
     rightPadding: 16
     bottomPadding: 0
-    topPadding: type === MD.Enum.TextFieldFilled ? 10 + topInset : 0
-
-    // Need to account for the placeholder text when it's sitting on top.
-    //topPadding: Material.containerStyle === Material.Filled
-    //    ? placeholderText.length > 0 && (activeFocus || length > 0)
-    //        ? Material.textFieldVerticalPadding + placeholder.largestHeight
-    //        : Material.textFieldVerticalPadding
-    //    // Account for any topInset (used to avoid floating placeholder text being clipped),
-    //    // otherwise the text will be too close to the background.
-    //    : Material.textFieldVerticalPadding + topInset
+    topPadding: {
+        if (control.type === MD.Enum.TextFieldFilled) {
+            const h = Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + bottomPadding);
+            const ch = cursorRectangle.height;
+            const bottom = (height - ch) / 2;
+            return 2 * (bottom - 8);
+        } else {
+            return 0;
+        }
+    }
 
     MD.FloatingPlaceholderText {
         id: placeholder
