@@ -81,8 +81,6 @@ set(SOURCES
     src/anim/circular_indicator_updator.cpp
     src/util/corner.cpp
     src/util/input_block.cpp
-    src/util/item_holder.cpp
-    src/util/item_holder.cpp
     src/util/image.cpp
     src/util/qml_util.cpp
     src/util/page_context.cpp
@@ -219,7 +217,9 @@ set(QML_FILES
     qml/impl/Elevation.qml
     qml/impl/ElevationRectangle.qml
     qml/impl/ElevationRectangleBorder.qml
-    qml/impl/Shape.qml)
+    qml/impl/Shape.qml
+    qml/impl/ItemHolder.qml
+    )
 
 set(RESOURCES assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2)
 

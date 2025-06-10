@@ -36,9 +36,9 @@ T.ItemDelegate {
 
     property string supportText
     property int maximumLineCount: 1
-    property alias leader: m_holder_leader.sourceComponent
-    property alias trailing: m_holder_trailing.sourceComponent
-    property alias below: m_holder_below.sourceComponent
+    property alias leader: m_holder_leader.item
+    property alias trailing: m_holder_trailing.item
+    property alias below: m_holder_below.item
     property alias divider: m_holder_divider.item
     property int radius: 0
     property MD.t_corner corners: MD.Util.corner(radius)
@@ -56,75 +56,90 @@ T.ItemDelegate {
         return MD.Util.corner(index === 0 ? size : 0, index + 1 === count ? size : 0);
     }
 
-    contentItem: ColumnLayout {
+    contentItem: Item {
+        implicitHeight: m_content.implicitHeight
+        implicitWidth: m_content.implicitWidth
         opacity: control.mdState.contentOpacity
-        RowLayout {
-            spacing: 16
+        Column {
+            id: m_content
+            anchors.verticalCenter: parent.verticalCenter
+            width: parent.width
 
-            MD.Loader {
-                id: m_holder_leader
-                visible: item instanceof MD.Icon ? (item as MD.Icon).name : item
-                sourceComponent: MD.Icon {
-                    name: control.action ? control.action.icon.name : control.icon.name
-                    size: control.action ? control.action.icon.width : control.icon.width
+            RowLayout {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                spacing: 16
+
+                MD.ItemHolder {
+                    id: m_holder_leader
+                    visible: {
+                        let ok = false;
+                        if (item instanceof MD.Icon) {
+                            ok = (item as MD.Icon).name;
+                        } else if (item instanceof MD.Loader) {
+                            ok = (item as MD.Loader).item?.name;
+                        } else {
+                            ok = item;
+                        }
+                        return ok;
+                    }
+                    item: MD.Loader {
+                        active: control.leader == this
+                        sourceComponent: MD.Icon {
+                            name: control.action ? control.action.icon.name : control.icon.name
+                            size: control.action ? control.action.icon.width : control.icon.width
+                        }
+                    }
                 }
-            }
 
-            ColumnLayout {
-                Layout.fillWidth: true
-                Layout.alignment: Qt.AlignVCenter
-                spacing: 0
-                MD.Text {
+                ColumnLayout {
                     Layout.fillWidth: true
-                    text: control.text
-                    font: control.font
-                    typescale: MD.Token.typescale.body_large
-                    maximumLineCount: control.maximumLineCount
-                    verticalAlignment: Qt.AlignVCenter
+                    Layout.alignment: Qt.AlignVCenter
+                    spacing: 0
+                    MD.Text {
+                        Layout.fillWidth: true
+                        text: control.text
+                        font: control.font
+                        typescale: MD.Token.typescale.body_large
+                        maximumLineCount: control.maximumLineCount
+                        verticalAlignment: Qt.AlignVCenter
+                    }
+
+                    MD.Text {
+                        Layout.fillWidth: true
+                        visible: text.length > 0
+                        text: control.supportText
+                        color: control.mdState.supportTextColor
+                        typescale: MD.Token.typescale.body_medium
+                        verticalAlignment: Qt.AlignVCenter
+                    }
                 }
-
                 MD.Text {
-                    Layout.fillWidth: true
+                    id: item_text_trailing_support
+                    Layout.alignment: Qt.AlignVCenter
                     visible: text.length > 0
-                    text: control.supportText
-                    color: control.mdState.supportTextColor
-                    typescale: MD.Token.typescale.body_medium
+                    typescale: MD.Token.typescale.label_small
                     verticalAlignment: Qt.AlignVCenter
                 }
-            }
-            MD.Text {
-                id: item_text_trailing_support
-                Layout.alignment: Qt.AlignVCenter
-                visible: text.length > 0
-                typescale: MD.Token.typescale.label_small
-                verticalAlignment: Qt.AlignVCenter
-            }
 
-            MD.Loader {
-                id: m_holder_trailing
-                Layout.alignment: Qt.AlignVCenter
-                visible: item
-            }
+                MD.ItemHolder {
+                    id: m_holder_trailing
+                    Layout.alignment: Qt.AlignVCenter
+                    visible: item
+                }
 
-            MD.Icon {
-                id: item_text_trailing_icon
-                Layout.alignment: Qt.AlignVCenter
-                visible: name.length
-                size: 24
+                MD.Icon {
+                    id: item_text_trailing_icon
+                    Layout.alignment: Qt.AlignVCenter
+                    visible: name.length
+                    size: 24
+                }
             }
-        }
-
-        RowLayout {
-            spacing: 16
-            visible: m_holder_below.item
-            Item {
-                implicitWidth: m_holder_leader.height
-                visible: m_holder_leader.visible
-            }
-
-            MD.Loader {
+            MD.ItemHolder {
                 id: m_holder_below
-                Layout.fillWidth: true
+                x: m_holder_leader.visible ? m_holder_leader.width : 0
+                width: parent.width - x
+                visible: item
             }
         }
     }
@@ -152,6 +167,7 @@ T.ItemDelegate {
         elevation: control.mdState.elevation
 
         MD.Ripple2 {
+            id: m_ripple
             corners: control.corners
             width: parent.width
             height: parent.height
@@ -164,6 +180,9 @@ T.ItemDelegate {
 
         MD.ItemHolder {
             id: m_holder_divider
+            anchors.bottom: parent.bottom
+            width: parent.width
+            height: implicitHeight
             visible: control.dgIndex + 1 !== control.count
         }
     }
