@@ -44,7 +44,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             implicitHeight: Math.max(m_icon.implicitHeight, m_loader.implicitHeight)
             implicitWidth: Math.max(m_icon.implicitWidth, m_loader.implicitWidth)
-            visible: root.icon_style != MD.Enum.TextOnly
+            visible: root.icon_style != MD.Enum.TextOnly && (m_icon.name.length > 0 || m_loader.active)
             MD.Icon {
                 id: m_icon
                 anchors.verticalCenter: parent.verticalCenter
