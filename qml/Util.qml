@@ -1,4 +1,5 @@
 pragma Singleton
+import QtQuick
 import Qcm.Material as MD
 
 MD.UtilCpp {

@@ -12,7 +12,7 @@ T.TableViewDelegate {
     required property int column
     required property int row
     required property var model
-    readonly property bool rowHovered: hovered || (TableView.view?.hoveredRow ?? -1) === row
+    readonly property bool rowHovered: hovered || ((TableView.view as MD.TableView)?.hoveredRow ?? -1) === row
     property int rows: TableView.view?.rows ?? 0
     property MD.StateTableViewDelegate mdState: MD.StateTableViewDelegate {
         item: control

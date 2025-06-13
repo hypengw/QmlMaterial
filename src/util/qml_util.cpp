@@ -333,4 +333,4 @@ auto createItem(QQmlEngine* engine, const QJSValue& url_or_comp, const QVariantM
 
 } // namespace qcm
 
-#include <qml_material/util/moc_qml_util.cpp>
+#include "qml_material/util/moc_qml_util.cpp"
