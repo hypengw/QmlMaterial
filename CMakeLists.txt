@@ -123,6 +123,7 @@ set(QML_FILES
     qml/control/Switch.qml
     qml/control/TabBar.qml
     qml/control/TabButton.qml
+    qml/control/TableViewDelegate.qml
     qml/control/ScrollBar.qml
     qml/control/ScrollIndicator.qml
     qml/controlEx/RailItem.qml
@@ -152,6 +153,7 @@ set(QML_FILES
     qml/component/Label.qml
     qml/component/Loader.qml
     qml/component/FontMetrics.qml
+    qml/component/TableView.qml
     qml/component/Text.qml
     qml/component/TextEdit.qml
     qml/component/TextInput.qml
@@ -187,6 +189,7 @@ set(QML_FILES
     qml/state/StateDragHandle.qml
     qml/state/StateDrawerItem.qml
     qml/state/StateTabButton.qml
+    qml/state/StateTableViewDelegate.qml
     qml/state/StateListItem.qml
     qml/state/StateSlider.qml
     qml/state/StateSwitch.qml
@@ -202,23 +205,23 @@ set(QML_FILES
     qml/state/StateTextField.qml
     qml/state/StateRailItem.qml
     qml/state/StateEmbedChip.qml
-    qml/impl/BoxShadow.qml
-    qml/impl/CircleProgressShape.qml
-    qml/impl/CircleIndicatorShape.qml
-    qml/impl/LinearIndicatorShape.qml
-    qml/impl/ListBusyFooter.qml
-    qml/impl/Ripple2.qml
-    qml/impl/RectangularGlow.qml
-    qml/impl/CursorDelegate.qml
-    qml/impl/SliderHandle.qml
-    qml/impl/FloatingPlaceholderText.qml
-    qml/impl/TextFieldEmbed.qml
-    qml/impl/RoundClip.qml
-    qml/impl/Elevation.qml
-    qml/impl/ElevationRectangle.qml
-    qml/impl/ElevationRectangleBorder.qml
-    qml/impl/Shape.qml
-    qml/impl/ItemHolder.qml
+    qml/internal/BoxShadow.qml
+    qml/internal/CircleProgressShape.qml
+    qml/internal/CircleIndicatorShape.qml
+    qml/internal/LinearIndicatorShape.qml
+    qml/internal/ListBusyFooter.qml
+    qml/internal/Ripple2.qml
+    qml/internal/RectangularGlow.qml
+    qml/internal/CursorDelegate.qml
+    qml/internal/SliderHandle.qml
+    qml/internal/FloatingPlaceholderText.qml
+    qml/internal/TextFieldEmbed.qml
+    qml/internal/RoundClip.qml
+    qml/internal/Elevation.qml
+    qml/internal/ElevationRectangle.qml
+    qml/internal/ElevationRectangleBorder.qml
+    qml/internal/Shape.qml
+    qml/internal/ItemHolder.qml
     )
 
 set(RESOURCES assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2)

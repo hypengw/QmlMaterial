@@ -31,51 +31,29 @@ public:
 
     Q_INVOKABLE void track(QVariant, Track);
 
-    Q_INVOKABLE bool hasIcon(const QJSValue& v) {
-        auto name   = v.property("name");
-        auto source = v.property("source");
-        if (name.isString() && source.toVariant().isValid()) {
-            return ! name.toString().isEmpty() || ! source.toString().isEmpty();
-        }
-        return false;
-    }
+    Q_INVOKABLE bool hasIcon(const QJSValue& v) const;
 
-    Q_INVOKABLE QColor transparent(QColor in, float alpha) {
-        in.setAlphaF(alpha);
-        return in;
-    }
+    Q_INVOKABLE void closePopup(QObject* obj) const;
 
-    Q_INVOKABLE void closePopup(QObject* obj) {
-        do {
-            auto meta = obj->metaObject();
-            do {
-                if (meta->className() == std::string("QQuickPopup")) {
-                    QMetaObject::invokeMethod(obj, "close");
-                    return;
-                }
-            } while (meta = meta->superClass(), meta);
-        } while (obj = obj->parent(), obj);
-    }
+    Q_INVOKABLE QColor transparent(QColor in, float alpha) const noexcept;
 
-    Q_INVOKABLE QColor hoverColor(QColor in) {
-        in.setAlphaF(0.08);
-        return in;
-    }
+    Q_INVOKABLE QColor hoverColor(QColor in) const noexcept;
 
-    Q_INVOKABLE QColor pressColor(QColor in) {
-        in.setAlphaF(0.18);
-        return in;
-    }
+    Q_INVOKABLE QColor pressColor(QColor in) const noexcept;
 
     Q_INVOKABLE qreal devicePixelRatio(QQuickItem* in) {
         return in ? in->window() ? in->window()->devicePixelRatio() : 1.0 : 1.0;
     }
 
+    Q_INVOKABLE CornersGroup listCorners(qint32 idx, qint32 count, qint32 radius) const noexcept;
+    Q_INVOKABLE CornersGroup tableCorners(qint32 row, qint32 column, qint32 rows, qint32 columns,
+                                          qint32 radius) const noexcept;
+
     // tl tr bl br
-    Q_INVOKABLE CornersGroup cornerArray(QVariant in);
-    Q_INVOKABLE CornersGroup corner(qreal in);
-    Q_INVOKABLE CornersGroup corner(qreal, qreal);
-    Q_INVOKABLE CornersGroup corner(qreal tl, qreal tr, qreal bl, qreal br);
+    Q_INVOKABLE CornersGroup cornerArray(QVariant in) const noexcept;
+    Q_INVOKABLE CornersGroup corners(qreal in) const noexcept;
+    Q_INVOKABLE CornersGroup corners(qreal, qreal) const noexcept;
+    Q_INVOKABLE CornersGroup corners(qreal tl, qreal tr, qreal bl, qreal br) const noexcept;
 
     QString          type_str(const QJSValue&);
     Q_INVOKABLE void print_parents(const QJSValue&);

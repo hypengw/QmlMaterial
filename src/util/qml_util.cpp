@@ -22,7 +22,60 @@ namespace qml_material
 Util::Util(QObject* parent): QObject(parent) {}
 Util::~Util() {}
 
-auto Util::cornerArray(QVariant in) -> CornersGroup {
+bool Util::hasIcon(const QJSValue& v) const {
+    auto name   = v.property("name");
+    auto source = v.property("source");
+    if (name.isString() && source.toVariant().isValid()) {
+        return ! name.toString().isEmpty() || ! source.toString().isEmpty();
+    }
+    return false;
+}
+
+auto Util::transparent(QColor in, float alpha) const noexcept -> QColor {
+    in.setAlphaF(alpha);
+    return in;
+}
+
+auto Util::hoverColor(QColor in) const noexcept -> QColor {
+    in.setAlphaF(0.08);
+    return in;
+}
+
+auto Util::pressColor(QColor in) const noexcept -> QColor {
+    in.setAlphaF(0.18);
+    return in;
+}
+
+void Util::closePopup(QObject* obj) const {
+    do {
+        auto meta = obj->metaObject();
+        do {
+            if (meta->className() == std::string("QQuickPopup")) {
+                QMetaObject::invokeMethod(obj, "close");
+                return;
+            }
+        } while (meta = meta->superClass(), meta);
+    } while (obj = obj->parent(), obj);
+}
+
+auto Util::listCorners(qint32 idx, qint32 count, qint32 radius) const noexcept -> CornersGroup {
+    return corners(idx == 0 ? radius : 0, idx + 1 == count ? radius : 0);
+}
+auto Util::tableCorners(qint32 row, qint32 column, qint32 rows, qint32 columns,
+                        qint32 radius) const noexcept -> CornersGroup {
+    CornersGroup out;
+    bool         row_start    = row == 0;
+    bool         row_end      = row + 1 == rows;
+    bool         column_start = column == 0;
+    bool         column_end   = column + 1 == columns;
+    out.setTopLeft(row_start && column_start ? radius : 0);
+    out.setTopRight(row_start && column_end ? radius : 0);
+    out.setBottomLeft(row_end && column_start ? radius : 0);
+    out.setBottomRight(row_end && column_end ? radius : 0);
+    return out;
+}
+
+auto Util::cornerArray(QVariant in) const noexcept -> CornersGroup {
     CornersGroup out;
     if (in.canConvert<qreal>()) {
         out = CornersGroup(in.value<qreal>());
@@ -58,9 +111,9 @@ auto Util::cornerArray(QVariant in) -> CornersGroup {
     return out;
 }
 
-auto Util::corner(qreal in) -> CornersGroup { return CornersGroup(in); }
+auto Util::corners(qreal in) const noexcept -> CornersGroup { return CornersGroup(in); }
 
-auto Util::corner(qreal a, qreal b) -> CornersGroup {
+auto Util::corners(qreal a, qreal b) const noexcept -> CornersGroup {
     CornersGroup out;
     out.setTopLeft(a);
     out.setTopRight(a);
@@ -69,7 +122,7 @@ auto Util::corner(qreal a, qreal b) -> CornersGroup {
     return out;
 }
 
-auto Util::corner(qreal tl, qreal tr, qreal bl, qreal br) -> CornersGroup {
+auto Util::corners(qreal tl, qreal tr, qreal bl, qreal br) const noexcept -> CornersGroup {
     return CornersGroup(br, tr, bl, tl);
 }
 

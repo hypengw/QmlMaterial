@@ -7,15 +7,15 @@ MD.Rectangle {
     required property Flickable view
     property int excludeBegin: 0
     property int excludeEnd: 0
-    property int topMargin: view.topMargin
-    property int bottomMargin: view.bottomMargin
-    property int leftMargin: view.leftMargin
-    property int rightMargin: view.rightMargin
-    property int contentWidth: view.contentItem.width
-    property int contentHeight: view.contentItem.height
+    property int topMargin: view?.topMargin ?? 0
+    property int bottomMargin: view?.bottomMargin ?? 0
+    property int leftMargin: view?.leftMargin ?? 0
+    property int rightMargin: view?.rightMargin ?? 0
+    property int contentWidth: view?.contentItem.width ?? 0
+    property int contentHeight: view?.contentItem.height ?? 0
 
-    x: view.originX 
-    y: -view.contentY + view.originY + excludeBegin - topMargin
+    x: view?.originX ?? 0
+    y: view ? -view.contentY + view.originY + excludeBegin - topMargin : 0
 
     color: MD.MProp.backgroundColor
 

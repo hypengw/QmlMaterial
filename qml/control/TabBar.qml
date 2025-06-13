@@ -7,7 +7,7 @@ T.TabBar {
 
     property int type: MD.Enum.PrimaryTab
     property int radius: 0
-    property MD.t_corner corners: MD.Util.corner(radius)
+    property MD.corners corners: MD.Util.corners(radius)
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)
 

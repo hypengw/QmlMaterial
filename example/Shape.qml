@@ -72,10 +72,10 @@ MD.Page {
 
                                 Repeater {
                                     model: [
-                                        MD.Util.corner(MD.Token.shape.corner.extra_small, 0),
-                                        MD.Util.corner(MD.Token.shape.corner.large, 0),
-                                        MD.Util.corner(MD.Token.shape.corner.extra_large, 0),
-                                        MD.Util.corner(0 ,MD.Token.shape.corner.extra_large, 0, MD.Token.shape.corner.extra_large),
+                                        MD.Util.corners(MD.Token.shape.corner.extra_small, 0),
+                                        MD.Util.corners(MD.Token.shape.corner.large, 0),
+                                        MD.Util.corners(MD.Token.shape.corner.extra_large, 0),
+                                        MD.Util.corners(0 ,MD.Token.shape.corner.extra_large, 0, MD.Token.shape.corner.extra_large),
                                     ]
                                     MD.Rectangle {
                                         Layout.alignment: Qt.AlignHCenter

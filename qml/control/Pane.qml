@@ -10,7 +10,7 @@ T.Pane {
 
     padding: 0
     property int radius: 0
-    property MD.t_corner corners: MD.Util.corner(radius)
+    property MD.corners corners: MD.Util.corners(radius)
     property int elevation: MD.Token.elevation.level0
     property color backgroundColor: MD.MProp.color.background
     property alias showBackground: control.background.visible

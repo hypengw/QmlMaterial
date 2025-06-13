@@ -94,8 +94,8 @@ T.ToolBar {
         //elevation: control.mdState.elevation
         //elevationItem.height: height - control.radius
         //elevationItem.y: control.radius
-        //elevationItem.corners: MD.Util.corner(0)
-        corners: MD.Util.corner(control.radius, 0)
+        //elevationItem.corners: MD.Util.corners(0)
+        corners: MD.Util.corners(control.radius, 0)
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
     }

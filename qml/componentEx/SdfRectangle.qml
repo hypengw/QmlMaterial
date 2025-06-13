@@ -4,7 +4,7 @@ import Qcm.Material as MD
 Item {
     id: root
     property int radius 
-    property MD.t_corner corners: MD.Util.corner(radius)
+    property MD.corners corners: MD.Util.corners(radius)
     property alias color: inner.color
 
     ShaderEffect {

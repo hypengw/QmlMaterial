@@ -50,7 +50,7 @@ inline void set_rect_flip(T* v, T* lt, T* rt, T* lb, T* rb) {
 
 // four points
 
-inline void set_corner(RectangleVertex* v, QVector2D o, QVector2D s, float outter, float inner) {
+inline void secorners(RectangleVertex* v, QVector2D o, QVector2D s, float outter, float inner) {
     auto helper = [](RectangleVertex* v,
                      QVector2D        lt,
                      QVector2D        rt,
@@ -102,7 +102,7 @@ inline void set_corner(RectangleVertex* v, QVector2D o, QVector2D s, float outte
 };
 template<typename T>
 inline void set_right_bottom_corner(T* v, QVector2D size, float r, float outter, float inner) {
-    set_corner(v, { size.x() - r, size.y() - r }, { r, r }, outter, inner);
+    secorners(v, { size.x() - r, size.y() - r }, { r, r }, outter, inner);
 
     float offset = 1.0;
     v[1].ce_x    = offset;
@@ -116,7 +116,7 @@ inline void set_right_bottom_corner(T* v, QVector2D size, float r, float outter,
 }
 template<typename T>
 inline void set_right_top_corner(T* v, QVector2D size, float r, float outter, float inner) {
-    set_corner(v, { size.x() - r, 0 }, { r, r }, outter, inner);
+    secorners(v, { size.x() - r, 0 }, { r, r }, outter, inner);
     float offset = 1.0;
     v[4].ce_x    = offset;
     v[0].ce_y    = offset;
@@ -128,7 +128,7 @@ inline void set_right_top_corner(T* v, QVector2D size, float r, float outter, fl
 }
 template<typename T>
 inline void set_left_bottom_corner(T* v, QVector2D size, float r, float outter, float inner) {
-    set_corner(v, { 0, size.y() - r }, { r, r }, outter, inner);
+    secorners(v, { 0, size.y() - r }, { r, r }, outter, inner);
     float offset = 1.0;
     v[0].ce_x    = offset;
     v[4].ce_y    = offset;
@@ -140,7 +140,7 @@ inline void set_left_bottom_corner(T* v, QVector2D size, float r, float outter, 
 }
 template<typename T>
 inline void set_left_top_corner(T* v, QVector2D, float r, float outter, float inner) {
-    set_corner(v, {}, { r, r }, outter, inner);
+    secorners(v, {}, { r, r }, outter, inner);
     float offset = 1.0;
     v[2].ce_x    = offset;
     v[3].ce_x    = offset;

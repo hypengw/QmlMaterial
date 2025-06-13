@@ -41,7 +41,7 @@ T.ItemDelegate {
     property alias below: m_holder_below.item
     property alias divider: m_holder_divider.item
     property int radius: 0
-    property MD.t_corner corners: MD.Util.corner(radius)
+    property MD.corners corners: MD.Util.corners(radius)
 
     property int heightMode: {
         if (supportText)
@@ -51,10 +51,6 @@ T.ItemDelegate {
     }
 
     font.capitalization: Font.MixedCase
-
-    function indexCorners(index, count, size) {
-        return MD.Util.corner(index === 0 ? size : 0, index + 1 === count ? size : 0);
-    }
 
     contentItem: Item {
         implicitHeight: m_content.implicitHeight

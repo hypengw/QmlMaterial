@@ -5,7 +5,7 @@ Item {
     id: root
     property int radius: 0
     // tl,tr,bl,br
-    property MD.t_corner corners: MD.Util.corner(radius)
+    property MD.corners corners: MD.Util.corners(radius)
     property alias asynchronous: m_image.asynchronous
     property alias retainWhileLoading: m_image.retainWhileLoading
     property alias autoTransform: m_image.autoTransform

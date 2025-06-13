@@ -2,9 +2,10 @@
 
 using namespace qml_material;
 
-CornersGroup::CornersGroup(): CornersGroup(0) {}
-CornersGroup::CornersGroup(qreal r): CornersGroup(r, r, r, r) {}
-CornersGroup::CornersGroup(qreal bottomRight, qreal topRight, qreal bottomLeft, qreal topLeft)
+CornersGroup::CornersGroup() noexcept: CornersGroup(0) {}
+CornersGroup::CornersGroup(qreal r) noexcept: CornersGroup(r, r, r, r) {}
+CornersGroup::CornersGroup(qreal bottomRight, qreal topRight, qreal bottomLeft,
+                           qreal topLeft) noexcept
     : m_bottomRight(bottomRight),
       m_topRight(topRight),
       m_bottomLeft(bottomLeft),
@@ -43,6 +44,5 @@ QVector4D CornersGroup::toVector4D() const noexcept {
     };
 }
 CornersGroup::operator QVector4D() const noexcept { return toVector4D(); }
-
 
 #include <qml_material/util/moc_corner.cpp>
