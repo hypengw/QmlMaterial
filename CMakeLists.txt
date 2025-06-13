@@ -221,8 +221,7 @@ set(QML_FILES
     qml/internal/ElevationRectangle.qml
     qml/internal/ElevationRectangleBorder.qml
     qml/internal/Shape.qml
-    qml/internal/ItemHolder.qml
-    )
+    qml/internal/ItemHolder.qml)
 
 set(RESOURCES assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2)
 
@@ -287,6 +286,8 @@ qt_add_qml_module(
   URI
   Qcm.Material
   ${QML_MATERIAL_BUILD_TYPE}
+  DEPENDENCIES
+  QtQuick
   OUTPUT_TARGETS
   qml_material_targets
   RESOURCE_PREFIX
