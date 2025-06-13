@@ -52,7 +52,7 @@ T.Button {
         border.width: control.type == MD.Enum.BtOutlined ? 1 : 0
         border.color: control.mdState.ctx.color.outline
         elevation: control.mdState.elevation
-        elevationVisible: elevation != MD.Token.elevation.level0 && !control.flat && color.a > 0
+        elevationVisible: !MD.Util.epsilonEqual(elevation, MD.Token.elevation.level0) && !control.flat && color.a > 0
 
         MD.Ripple2 {
             anchors.fill: parent

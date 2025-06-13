@@ -4,7 +4,7 @@ import Qcm.Material as MD
 
 MD.State {
     id: root
-    required property T.Control item
+    required property T.Switch item
 
     elevation: MD.Token.elevation.level1
     textColor: root.item.checked ? root.ctx.color.on_primary_container : root.ctx.color.surface_container_highest
@@ -36,10 +36,8 @@ MD.State {
             }
             PropertyChanges {
                 restoreEntryValues: false
-                root.stateLayerColor: {
-                    const c = root.item.checked ? root.ctx.color.primary : root.ctx.color.on_surface;
-                    return MD.Util.transparent(c, MD.Token.state.pressed.state_layer_opacity);
-                }
+                root.stateLayerColor: root.item.checked ? root.ctx.color.primary : root.ctx.color.on_surface
+                root.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
             }
         },
         State {
@@ -52,10 +50,8 @@ MD.State {
             }
             PropertyChanges {
                 restoreEntryValues: false
-                root.stateLayerColor: {
-                    const c = root.item.checked ? root.ctx.color.primary : root.ctx.color.on_surface;
-                    return MD.Util.transparent(c, MD.Token.state.hover.state_layer_opacity);
-                }
+                root.stateLayerColor: root.item.checked ? root.ctx.color.primary : root.ctx.color.on_surface
+                root.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
             }
         }
     ]

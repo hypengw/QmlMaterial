@@ -1,6 +1,6 @@
 import QtQuick.Shapes
 
 Shape {
-    asynchronous: true
+    asynchronous: false
     preferredRendererType: Shape.CurveRenderer
 }

@@ -34,7 +34,7 @@ public:
     }
 
     void updateGeometry() {
-        auto             vertices = static_cast<ShadowVertex*>(geometry()->vertexData());
+        // auto             vertices = static_cast<ShadowVertex*>(geometry()->vertexData());
         sg::ShadowParams params;
         {
             params.z_plane_params = QVector3D(0, 0, elevation);
@@ -60,7 +60,7 @@ public:
         markDirty(QSGNode::DirtyGeometry);
     }
 
-    qint32    elevation;
+    double    elevation;
     QRectF    rect;
     QColor    color;
     QVector4D radius;
@@ -68,7 +68,7 @@ public:
 } // namespace sg
 
 Elevation::Elevation(QQuickItem* parentItem)
-    : QQuickItem(parentItem),  m_elevation(0), m_corners(), m_radius(0), m_color(Qt::black) {
+    : QQuickItem(parentItem), m_elevation(0), m_corners(), m_radius(0), m_color(Qt::black) {
     setFlag(QQuickItem::ItemHasContents, true);
     connect(this, &Elevation::elevationChanged, this, &Elevation::update);
     connect(this, &Elevation::colorChanged, this, &Elevation::update);
@@ -77,17 +77,17 @@ Elevation::Elevation(QQuickItem* parentItem)
 
 Elevation::~Elevation() {}
 
-auto Elevation::elevation() const -> qint32 { return m_elevation; }
-void Elevation::setelevation(qint32 l) {
-    if (l != m_elevation) {
+auto Elevation::elevation() const -> double { return m_elevation; }
+void Elevation::setelevation(double l) {
+    if (! qFuzzyCompare(l, m_elevation)) {
         m_elevation = l;
-        elevationChanged();
+        elevationChanged(m_elevation);
     }
 }
 auto Elevation::corners() const -> const CornersGroup& { return m_corners; }
 void Elevation::setCorners(const CornersGroup& c) {
     m_corners = c;
-    cornersChanged();
+    cornersChanged(c);
 }
 
 qreal Elevation::radius() const { return m_radius; }
@@ -98,7 +98,7 @@ void Elevation::setRadius(qreal newRadius) {
     }
     m_radius = newRadius;
     setCorners(m_radius);
-    radiusChanged();
+    radiusChanged(m_radius);
 }
 
 QColor Elevation::color() const { return m_color; }
@@ -109,7 +109,7 @@ void Elevation::setColor(const QColor& newColor) {
     }
 
     m_color = newColor;
-    colorChanged();
+    colorChanged(m_color);
 }
 
 void Elevation::componentComplete() { QQuickItem::componentComplete(); }

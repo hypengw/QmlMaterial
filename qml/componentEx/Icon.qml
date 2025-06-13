@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Window
 import Qcm.Material as MD
-import "qrc:/Qcm/Material/qml/js/jsUtils.mjs" as UT
 
 Item {
     id: root
@@ -32,7 +31,7 @@ Item {
         if (fill) {
             v = _fillVals.find(el => _fill <= el);
         } else {
-            v = UT.findLast(_fillVals, el => _fill >= el);
+            v = MD.Util.findLast(_fillVals, el => _fill >= el);
         }
         return v;
     }

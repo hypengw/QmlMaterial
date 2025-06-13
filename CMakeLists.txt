@@ -98,7 +98,7 @@ set(SOURCES
 
 set(QML_FILES
     qml/Token.qml
-    qml/js/jsUtils.mjs
+    qml/Util.qml
     qml/control/Button.qml
     qml/control/Control.qml
     qml/control/ComboBox.qml
@@ -126,6 +126,9 @@ set(QML_FILES
     qml/control/TableViewDelegate.qml
     qml/control/ScrollBar.qml
     qml/control/ScrollIndicator.qml
+    qml/control/ItemDelegate.qml
+    qml/control/HorizontalHeaderView.qml
+    qml/control/HorizontalHeaderViewDelegate.qml
     qml/controlEx/RailItem.qml
     qml/controlEx/SearchBar.qml
     qml/controlEx/ActionMenu.qml
@@ -279,6 +282,7 @@ list(APPEND RESOURCES "${QM_ICON_FILL_0_FONT_FILE}"
      "${QM_ICON_FILL_1_FONT_FILE}")
 
 set_source_files_properties(qml/Token.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+set_source_files_properties(qml/Util.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 include_directories(include)
 
 qt_add_qml_module(

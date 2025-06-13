@@ -2,8 +2,6 @@ import QtQuick
 import QtQuick.Templates as T
 import Qcm.Material as MD
 
-import "qrc:/Qcm/Material/qml/js/jsUtils.mjs" as UT
-
 T.Button {
     id: control
 
@@ -93,7 +91,7 @@ T.Button {
                 name: "hide"
                 when: {
                     const fk = control.flickable;
-                    const fk_end = fk && !UT.epsilonEqual(fk.visibleArea.heightRatio, 1.0) && (1.0 - fk.visibleArea.heightRatio - fk.visibleArea.yPosition) * fk.height < 4.0;
+                    const fk_end = fk && !MD.Util.epsilonEqual(fk.visibleArea.heightRatio, 1.0) && (1.0 - fk.visibleArea.heightRatio - fk.visibleArea.yPosition) * fk.height < 4.0;
                     return !control.visible || fk_end;
                 }
                 PropertyChanges {

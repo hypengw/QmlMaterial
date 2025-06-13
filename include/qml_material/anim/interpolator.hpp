@@ -5,6 +5,14 @@
 
 namespace qml_material::anim
 {
+inline auto emphasized() noexcept -> QEasingCurve {
+    auto out = QEasingCurve(QEasingCurve::BezierSpline);
+    // M 0,0 C 0.05,0 0.133333,0.06 0.166666,0.4 C 0.208333,0.82 0.25,1, 1, 1)
+    out.addCubicBezierSegment({ 0.05, 0 }, { 0.133333, 0.06 }, { 0.166666, 0.4 });
+    out.addCubicBezierSegment({ 0.208333, 0.82 }, { 0.25, 1. }, { 1., 1. });
+    return out;
+}
+
 inline auto emphasized_accelerate() noexcept -> QEasingCurve {
     auto out = QEasingCurve(QEasingCurve::BezierSpline);
     out.addCubicBezierSegment({ 0.3, 0. }, { 0.8, 0.15 }, { 1., 1. });

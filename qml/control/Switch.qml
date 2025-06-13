@@ -27,10 +27,9 @@ T.Switch {
         height: 32
         radius: height / 2
         y: parent.height / 2 - height / 2
-        color: control.mdState.backgroundColor
+        color: MD.Util.transparent(control.mdState.backgroundColor, control.mdState.backgroundOpacity)
         border.width: 2
-        border.color: control.mdState.ctx.color.outline
-        opacity: control.mdState.backgroundOpacity
+        border.color: MD.Util.transparent(control.mdState.ctx.color.outline, control.mdState.backgroundOpacity)
 
         Behavior on color {
             ColorAnimation {

@@ -16,8 +16,7 @@ namespace qml_material
 
 class Util : public QObject {
     Q_OBJECT
-    QML_ELEMENT
-    QML_SINGLETON
+    QML_NAMED_ELEMENT(UtilCpp)
 public:
     Util(QObject* parent = nullptr);
     ~Util();
@@ -41,13 +40,13 @@ public:
 
     Q_INVOKABLE QColor pressColor(QColor in) const noexcept;
 
-    Q_INVOKABLE qreal devicePixelRatio(QQuickItem* in) {
-        return in ? in->window() ? in->window()->devicePixelRatio() : 1.0 : 1.0;
-    }
+    Q_INVOKABLE qreal devicePixelRatio(QQuickItem* in) const ;
 
     Q_INVOKABLE CornersGroup listCorners(qint32 idx, qint32 count, qint32 radius) const noexcept;
     Q_INVOKABLE CornersGroup tableCorners(qint32 row, qint32 column, qint32 rows, qint32 columns,
                                           qint32 radius) const noexcept;
+    Q_INVOKABLE CornersGroup tableWithHeaderCorners(qint32 row, qint32 column, qint32 rows,
+                                                    qint32 columns, qint32 radius) const noexcept;
 
     // tl tr bl br
     Q_INVOKABLE CornersGroup cornerArray(QVariant in) const noexcept;
@@ -79,6 +78,7 @@ public:
     Q_INVOKABLE void forceSetImplicitWidth(QQuickItem* item, qreal width);
 
     Q_INVOKABLE void cellHoveredOn(QQuickItem* item, bool hovered, qint32 row, qint32 column) const;
+
 private:
     Q_SLOT void on_popup_closed();
 

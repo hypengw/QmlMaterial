@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Shapes
 import Qcm.Material as MD
-import "qrc:/Qcm/Material/qml/js/jsUtils.mjs" as Util
 
 MD.Shape {
     id: root
@@ -29,7 +28,7 @@ MD.Shape {
             sweepAngle: {
                 const p = m_active_arc.sweepAngle;
                 let out = 0;
-                if (isNaN(p) || Util.epsilonEqual(p, 0)) {
+                if (isNaN(p) || MD.Util.epsilonEqual(p, 0)) {
                     out = -360 + root.spacingAngle;
                 } else {
                     out = -360 + 2 * root.spacingAngle + p;

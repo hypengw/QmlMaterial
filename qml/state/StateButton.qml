@@ -1,8 +1,11 @@
 import QtQuick
+import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.State {
     id: root
+    required property T.Button item
+
     elevation: MD.Token.elevation.level1
     textColor: {
         switch (root.item.type) {
@@ -25,7 +28,7 @@ MD.State {
             return ctx.color.secondary_container;
         case MD.Enum.BtOutlined:
         case MD.Enum.BtText:
-            return "transparent"
+            return "transparent";
         case MD.Enum.BtElevated:
         default:
             return ctx.color.surface_container_low;

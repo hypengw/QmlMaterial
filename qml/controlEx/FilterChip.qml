@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Layouts
 import QtQuick.Templates as T
 import Qcm.Material as MD
 
@@ -95,10 +94,10 @@ T.Button {
                 }
             ]
 
-            RowLayout {
+            Row {
                 spacing: 0
                 MD.Icon {
-                    Layout.alignment: Qt.AlignVCenter
+                    anchors.verticalCenter: parent.verticalCenter
                     name: MD.Token.icon.check
                     size: control.icon.width
                     color: control.mdState.leadingIconColor
@@ -108,17 +107,17 @@ T.Button {
                 }
             }
         }
-        RowLayout {
+        Row {
             anchors.verticalCenter: parent.verticalCenter
             spacing: control.spacing
             MD.Label {
-                Layout.alignment: Qt.AlignVCenter
+                anchors.verticalCenter: parent.verticalCenter
                 text: control.text
                 verticalAlignment: Text.AlignVCenter
                 typescale: MD.Token.typescale.label_large
             }
             MD.Icon {
-                Layout.alignment: Qt.AlignVCenter
+                anchors.verticalCenter: parent.verticalCenter
                 visible: name
                 name: control.icon.name
                 size: control.icon.width

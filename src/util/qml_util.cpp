@@ -57,9 +57,22 @@ void Util::closePopup(QObject* obj) const {
         } while (meta = meta->superClass(), meta);
     } while (obj = obj->parent(), obj);
 }
+auto Util::devicePixelRatio(QQuickItem* in) const -> qreal {
+    return in ? in->window() ? in->window()->devicePixelRatio() : 1.0 : 1.0;
+}
 
 auto Util::listCorners(qint32 idx, qint32 count, qint32 radius) const noexcept -> CornersGroup {
     return corners(idx == 0 ? radius : 0, idx + 1 == count ? radius : 0);
+}
+auto Util::tableWithHeaderCorners(qint32 row, qint32 column, qint32 rows, qint32 columns,
+                                  qint32 radius) const noexcept -> CornersGroup {
+    CornersGroup out;
+    bool         row_end      = row + 1 == rows;
+    bool         column_start = column == 0;
+    bool         column_end   = column + 1 == columns;
+    out.setBottomLeft(row_end && column_start ? radius : 0);
+    out.setBottomRight(row_end && column_end ? radius : 0);
+    return out;
 }
 auto Util::tableCorners(qint32 row, qint32 column, qint32 rows, qint32 columns,
                         qint32 radius) const noexcept -> CornersGroup {

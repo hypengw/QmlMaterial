@@ -127,6 +127,8 @@ public:
 struct Easing {
     Q_GADGET
     QML_ANONYMOUS
+    /// Animation curve for emphasized
+    Q_PROPERTY(QEasingCurve emphasized READ emphasized CONSTANT FINAL)
     /// Animation curve for emphasized acceleration
     Q_PROPERTY(QEasingCurve emphasized_accelerate READ emphasized_accelerate CONSTANT FINAL)
     /// Animation curve for emphasized deceleration
@@ -147,15 +149,24 @@ struct Easing {
     Q_PROPERTY(QEasingCurve linear READ linear CONSTANT FINAL)
 
 public:
-    auto emphasized_accelerate() const -> QEasingCurve { return anim::emphasized_accelerate(); }
-    auto emphasized_decelerate() const -> QEasingCurve { return anim::emphasized_decelerate(); }
-    auto standard() const -> QEasingCurve { return anim::standard(); }
-    auto standard_accelerate() const -> QEasingCurve { return anim::standard_accelerate(); }
-    auto standard_decelerate() const -> QEasingCurve { return anim::standard_decelerate(); }
-    auto legacy() const -> QEasingCurve { return anim::legacy(); }
-    auto legacy_accelerate() const -> QEasingCurve { return anim::legacy_accelerate(); }
-    auto legacy_decelerate() const -> QEasingCurve { return anim::legacy_decelerate(); }
-    auto linear() const -> QEasingCurve { return anim::linear(); }
+    auto emphasized() const noexcept -> QEasingCurve { return anim::emphasized(); }
+    auto emphasized_accelerate() const noexcept -> QEasingCurve {
+        return anim::emphasized_accelerate();
+    }
+    auto emphasized_decelerate() const noexcept -> QEasingCurve {
+        return anim::emphasized_decelerate();
+    }
+    auto standard() const noexcept -> QEasingCurve { return anim::standard(); }
+    auto standard_accelerate() const noexcept -> QEasingCurve {
+        return anim::standard_accelerate();
+    }
+    auto standard_decelerate() const noexcept -> QEasingCurve {
+        return anim::standard_decelerate();
+    }
+    auto legacy() const noexcept -> QEasingCurve { return anim::legacy(); }
+    auto legacy_accelerate() const noexcept -> QEasingCurve { return anim::legacy_accelerate(); }
+    auto legacy_decelerate() const noexcept -> QEasingCurve { return anim::legacy_decelerate(); }
+    auto linear() const noexcept -> QEasingCurve { return anim::linear(); }
 };
 
 /**
