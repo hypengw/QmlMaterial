@@ -153,7 +153,6 @@ set(QML_FILES
     qml/component/Label.qml
     qml/component/Loader.qml
     qml/component/FontMetrics.qml
-    qml/component/TableView.qml
     qml/component/Text.qml
     qml/component/TextEdit.qml
     qml/component/TextInput.qml
@@ -176,6 +175,7 @@ set(QML_FILES
     qml/flickable/VerticalListView.qml
     qml/flickable/HorizontalListView.qml
     qml/flickable/FlickablePane.qml
+    qml/flickable/TableView.qml
     qml/flickable/GridView.qml
     qml/flickable/ListView.qml
     qml/motion/FadeInMotion.qml
