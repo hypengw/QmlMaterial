@@ -1,7 +1,7 @@
 #pragma once
 
-#include <QQuickItem>
 #include <QQmlEngine>
+#include <QQuickItem>
 
 #include "qml_material/util/corner.hpp"
 
@@ -15,7 +15,7 @@ class Elevation : public QQuickItem {
     Q_PROPERTY(qint32 elevation READ elevation WRITE setelevation NOTIFY elevationChanged FINAL)
     Q_PROPERTY(qreal radius READ radius WRITE setRadius NOTIFY radiusChanged FINAL)
     Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY colorChanged FINAL)
-    Q_PROPERTY(CornersGroup corners READ corners WRITE setCorners NOTIFY cornersChanged FINAL)
+    Q_PROPERTY(qml_material::CornersGroup corners READ corners WRITE setCorners NOTIFY cornersChanged FINAL)
 public:
     Elevation(QQuickItem* parent = nullptr);
     ~Elevation() override;

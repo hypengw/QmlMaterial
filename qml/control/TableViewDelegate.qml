@@ -20,12 +20,7 @@ T.TableViewDelegate {
     property int radius: 0
     property MD.corners corners: MD.Util.corners(radius)
 
-    onHoveredChanged: {
-        const view = TableView.view;
-        if (view && view.hasOwnProperty('lastHoveredRow') && hovered) {
-            view.lastHoveredRow = row;
-        }
-    }
+    onHoveredChanged: MD.Util.cellHoveredOn(TableView.view, hovered, row, column)
 
     contentItem: MD.Label {
         clip: false

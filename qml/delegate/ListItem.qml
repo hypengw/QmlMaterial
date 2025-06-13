@@ -10,9 +10,6 @@ T.ItemDelegate {
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
-    property int leftMargin: 0
-    property int rightMargin: 0
-
     topInset: 0
     bottomInset: 0
     leftInset: leftMargin
@@ -27,8 +24,13 @@ T.ItemDelegate {
     icon.width: 24
     icon.height: 24
 
+    required property int index
+    required property var model
+
+    property int leftMargin: 0
+    property int rightMargin: 0
+
     property int count: (ListView.view?.count ?? GridView.view?.count) ?? 0
-    property int dgIndex: index ?? 0
 
     property MD.StateListItem mdState: MD.StateListItem {
         item: control
@@ -179,7 +181,7 @@ T.ItemDelegate {
             anchors.bottom: parent.bottom
             width: parent.width
             height: implicitHeight
-            visible: control.dgIndex + 1 !== control.count
+            visible: control.index + 1 !== control.count
         }
     }
 

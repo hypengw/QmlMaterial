@@ -246,6 +246,18 @@ void Util::forceSetImplicitWidth(QQuickItem* item, qreal width) {
     }
 }
 
+void Util::cellHoveredOn(QQuickItem* item, bool hovered, qint32 row, qint32 column) const {
+    if (item == nullptr) return;
+    if (! hovered) return;
+
+    auto meta       = item->metaObject();
+    auto signal_sig = QMetaObject::normalizedSignature("cellHovered(qint32, qint32)");
+    auto idx        = meta->indexOfSignal(signal_sig);
+    if (idx != -1) {
+        auto signal = meta->method(idx);
+        signal.invoke(item, row, column);
+    }
+}
 } // namespace qml_material
 
 namespace qcm

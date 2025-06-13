@@ -78,6 +78,7 @@ public:
     Q_INVOKABLE void forceSetImplicitHeight(QQuickItem* item, qreal height);
     Q_INVOKABLE void forceSetImplicitWidth(QQuickItem* item, qreal width);
 
+    Q_INVOKABLE void cellHoveredOn(QQuickItem* item, bool hovered, qint32 row, qint32 column) const;
 private:
     Q_SLOT void on_popup_closed();
 

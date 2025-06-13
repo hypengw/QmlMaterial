@@ -144,4 +144,4 @@ QSGNode* Elevation::updatePaintNode(QSGNode* node, QQuickItem::UpdatePaintNodeDa
 }
 } // namespace qml_material
 
-#include <qml_material/item/moc_elevation.cpp>
+#include "qml_material/item/moc_elevation.cpp"
