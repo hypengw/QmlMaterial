@@ -39,7 +39,7 @@ message("QML_INSTALL_DIR: ${QML_INSTALL_DIR}")
 # check lto
 include(CheckIPOSupported)
 check_ipo_supported(RESULT is_ipo_supported OUTPUT lto_error)
-if(is_ipo_supported AND NOT EMSCRIPTEN)
+if(is_ipo_supported AND NOT EMSCRIPTEN AND NOT WIN32)
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
 endif()
