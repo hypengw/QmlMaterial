@@ -33,9 +33,6 @@ MD.State {
                 root.backgroundColor: root.item.checked ? root.ctx.color.primary : root.ctx.color.surface_container_highest
                 root.handleColor: root.item.checked ? root.ctx.color.primary_container : root.ctx.color.on_surface_variant
                 root.handleSize: 28
-            }
-            PropertyChanges {
-                restoreEntryValues: false
                 root.stateLayerColor: root.item.checked ? root.ctx.color.primary : root.ctx.color.on_surface
                 root.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
             }
@@ -47,9 +44,6 @@ MD.State {
                 root.textColor: root.item.checked ? root.ctx.color.on_primary_container : root.ctx.color.surface_container_highest
                 root.backgroundColor: root.item.checked ? root.ctx.color.primary : root.ctx.color.surface_container_highest
                 root.handleColor: root.item.checked ? root.ctx.color.primary_container : root.ctx.color.on_surface_variant
-            }
-            PropertyChanges {
-                restoreEntryValues: false
                 root.stateLayerColor: root.item.checked ? root.ctx.color.primary : root.ctx.color.on_surface
                 root.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
             }

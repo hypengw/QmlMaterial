@@ -79,7 +79,9 @@ set(SOURCES
     src/theme.cpp
     src/helper.cpp
     src/anim/circular_indicator_updator.cpp
+    src/anim/linear_indicator_updator.cpp
     src/util/corner.cpp
+    src/util/pool.cpp
     src/util/input_block.cpp
     src/util/image.cpp
     src/util/qml_util.cpp

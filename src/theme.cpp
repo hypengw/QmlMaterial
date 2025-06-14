@@ -65,6 +65,8 @@ void reset_prop(Theme* self, F&& get_prop, const T& init_v) {
 }
 
 struct GlobalTheme {
+    ~GlobalTheme() {
+    }
     QColor      textColor;
     QColor      supportTextColor;
     QColor      backgroundColor;

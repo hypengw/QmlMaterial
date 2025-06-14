@@ -16,4 +16,10 @@ MD.UtilCpp {
         }
         return undefined;
     }
+
+    function removeObj(arr: list<QtObject>, obj: QtObject) {
+        const idx = arr.indexOf(obj);
+        if (idx >= 0)
+            arr.splice(idx, 1);
+    }
 }

@@ -50,11 +50,6 @@ constexpr std::array END_FRACTION_RANGE    = { 0.10f, 0.87f };
 
 } // namespace retreat
 
-float getFractionInRange(i32 playtime, i32 start, i32 duration) {
-    float fraction = (float)(playtime - start) / duration;
-    return std::clamp(fraction, 0.f, 1.f);
-}
-
 } // namespace
 
 namespace qml_material
@@ -124,15 +119,15 @@ void CircularIndicatorUpdator::updateRetreat(double progress) noexcept {
     float spinRotation = 0;
     for (int spinDelay : DELAY_SPINS_IN_MS) {
         spinRotation +=
-            m_curve.valueForProgress(getFractionInRange(playtime, spinDelay, DURATION_SPIN_IN_MS)) *
+            m_curve.valueForProgress(anim::get_fraction_in_range(playtime, spinDelay, DURATION_SPIN_IN_MS)) *
             SPIN_ROTATION_DEGREES;
     }
     m_rotation_degree = constantRotation + spinRotation;
     // Grow active indicator.
     float fraction = m_curve.valueForProgress(
-        getFractionInRange(playtime, DELAY_GROW_ACTIVE_IN_MS, DURATION_GROW_ACTIVE_IN_MS));
+        anim::get_fraction_in_range(playtime, DELAY_GROW_ACTIVE_IN_MS, DURATION_GROW_ACTIVE_IN_MS));
     fraction -= m_curve.valueForProgress(
-        getFractionInRange(playtime, DELAY_SHRINK_ACTIVE_IN_MS, DURATION_SHRINK_ACTIVE_IN_MS));
+        anim::get_fraction_in_range(playtime, DELAY_SHRINK_ACTIVE_IN_MS, DURATION_SHRINK_ACTIVE_IN_MS));
     m_start_fraction = START_FRACTION;
     m_end_fraction   = std::lerp(END_FRACTION_RANGE[0], END_FRACTION_RANGE[1], fraction);
 
@@ -153,12 +148,12 @@ void CircularIndicatorUpdator::updateAdvance(double progress) noexcept {
     // Adds cycle specific rotation to segment positions.
     for (i32 cycleIndex = 0; cycleIndex < TOTAL_CYCLES; cycleIndex++) {
         // While expanding.
-        float fraction = getFractionInRange(
+        float fraction = anim::get_fraction_in_range(
             playtime, DELAY_TO_EXPAND_IN_MS[cycleIndex], DURATION_TO_EXPAND_IN_MS);
         m_end_fraction += m_curve.valueForProgress(fraction) * EXTRA_DEGREES_PER_CYCLE;
 
         // While collapsing.
-        fraction = getFractionInRange(
+        fraction = anim::get_fraction_in_range(
             playtime, DELAY_TO_COLLAPSE_IN_MS[cycleIndex], DURATION_TO_COLLAPSE_IN_MS);
         m_start_fraction += m_curve.valueForProgress(fraction) * EXTRA_DEGREES_PER_CYCLE;
     }
