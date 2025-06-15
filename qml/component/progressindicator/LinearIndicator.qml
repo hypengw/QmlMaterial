@@ -10,8 +10,14 @@ T.BusyIndicator {
         Completing,
         Stopped
     }
+    enum AnimType {
+        Disjoint = 0,
+        Contiguous
+    }
 
     property int animationState: LinearIndicator.Stopped
+    property int strokeWidth: 4
+    property alias type: m_updator.indeterminateAnimationType
     running: false
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
@@ -22,10 +28,10 @@ T.BusyIndicator {
     onRunningChanged: {
         if (running) {
             m_updator.completeEndProgress = 0;
-            animationState = CircularIndicator.Running;
+            animationState = LinearIndicator.Running;
         } else {
-            if (animationState == CircularIndicator.Running)
-                animationState = CircularIndicator.Completing;
+            if (animationState == LinearIndicator.Running)
+                animationState = LinearIndicator.Completing;
         }
     }
 
@@ -33,7 +39,11 @@ T.BusyIndicator {
         id: m_updator
         colors: {
             const m = control.MD.MProp.color;
-            return [m.secondary_container, m.primary, m.secondary_container];
+            if (indeterminateAnimationType == MD.LinearIndicatorUpdator.DisJoint) {
+                return [m.primary];
+            } else {
+                return [m.primary, m.primary, m.primary];
+            }
         }
     }
 
@@ -49,25 +59,31 @@ T.BusyIndicator {
 
     NumberAnimation {
         id: m_complete_end_anim
-        running: control.animationState == CircularIndicator.Completing
+        running: control.animationState == LinearIndicator.Completing
         target: m_updator
-        property: 'completeEndProgress'
-        from: 0
+        property: 'progress'
         to: 1
         duration: m_updator.completeEndDuration
         onFinished: {
-            if (control.animationState == CircularIndicator.Completing)
-                control.animationState = CircularIndicator.Stopped;
+            if (control.animationState == LinearIndicator.Completing)
+                control.animationState = LinearIndicator.Stopped;
         }
     }
 
     contentItem: Item {
-        implicitHeight: 4
+        implicitHeight: m_shape.strokeWidth
         implicitWidth: 100
         MD.LinearIndicatorShape {
             id: m_shape
             anchors.fill: parent
             indicators: m_updator.activeIndicators
+            strokeWidth: control.animationState != LinearIndicator.Stopped ? control.strokeWidth : 0
+
+            Behavior on strokeWidth {
+                NumberAnimation {
+                    duration: MD.Token.duration.short2
+                }
+            }
         }
     }
 

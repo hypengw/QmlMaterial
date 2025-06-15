@@ -206,7 +206,7 @@ MD.Page {
                         typescale: MD.Token.typescale.title_large
                     }
                     ComponentCard {
-                        title: 'Propgress indicators'
+                        title: 'Progress indicators'
 
                         ColumnLayout {
                             RowLayout {
@@ -244,10 +244,19 @@ MD.Page {
                                     icon.name: checked ? MD.Token.icon.pause : MD.Token.icon.play_arrow
                                 }
 
-                                MD.LinearIndicator {
+                                Column {
                                     Layout.fillWidth: true
                                     Layout.alignment: Qt.AlignVCenter
-                                    running: m_linear_indicator_play.checked
+                                    spacing: 12
+                                    MD.LinearIndicator {
+                                        width: parent.width
+                                        running: m_linear_indicator_play.checked
+                                    }
+                                    MD.LinearIndicator {
+                                        width: parent.width
+                                        running: m_linear_indicator_play.checked
+                                        type: MD.LinearIndicator.Contiguous
+                                    }
                                 }
                             }
                         }

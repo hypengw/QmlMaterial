@@ -22,4 +22,10 @@ MD.UtilCpp {
         if (idx >= 0)
             arr.splice(idx, 1);
     }
+    function clamp(number: real, lower: real, upper: real): real {
+        number = number < lower ? lower : number;
+        number = number > upper ? upper : number;
+
+        return number;
+    }
 }

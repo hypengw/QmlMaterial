@@ -82,7 +82,7 @@ namespace linear_indicator
 {
 inline auto line1_head_curve() noexcept -> QEasingCurve {
     auto out = QEasingCurve(QEasingCurve::BezierSpline);
-    out.addCubicBezierSegment({ 0.2, 0.8 }, { 0.0, 1.0 }, { 1.0, 1.0 });
+    out.addCubicBezierSegment({ 0.2, 0.0 }, { 0.8, 1.0 }, { 1.0, 1.0 });
     return out;
 }
 inline auto line1_tail_curve() noexcept -> QEasingCurve {
@@ -92,12 +92,12 @@ inline auto line1_tail_curve() noexcept -> QEasingCurve {
 }
 inline auto line2_head_curve() noexcept -> QEasingCurve {
     auto out = QEasingCurve(QEasingCurve::BezierSpline);
-    out.addCubicBezierSegment({ 0.0, 0.65 }, { 0.0, 1.0 }, { 1.0, 1.0 });
+    out.addCubicBezierSegment({ 0.0, 0.0 }, { 0.65, 1.0 }, { 1.0, 1.0 });
     return out;
 }
 inline auto line2_tail_curve() noexcept -> QEasingCurve {
     auto out = QEasingCurve(QEasingCurve::BezierSpline);
-    out.addCubicBezierSegment({ 0.1, 0.45 }, { 0.0, 1.0 }, { 1.0, 1.0 });
+    out.addCubicBezierSegment({ 0.1, 0.0 }, { 0.45, 1.0 }, { 1.0, 1.0 });
     return out;
 }
 } // namespace linear_indicator

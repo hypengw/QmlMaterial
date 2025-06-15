@@ -73,11 +73,12 @@ T.BusyIndicator {
         MD.CircleIndicatorShape {
             id: m_shape
             anchors.fill: parent
-            strokeWidth: control.strokeWidth
             strokeColor: control.color
             rotation: m_updator.rotation
             startAngle: m_updator.startFraction * 360
             endAngle: m_updator.endFraction * 360
+
+            strokeWidth: control.strokeWidth
         }
     }
 }

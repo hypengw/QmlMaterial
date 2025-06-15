@@ -32,6 +32,7 @@ LinearActiveIndicatorData::LinearActiveIndicatorData(QObject* parent): QObject(p
 auto LinearActiveIndicatorData::startFraction() const noexcept -> double { return start_fraction; }
 auto LinearActiveIndicatorData::endFraction() const noexcept -> double { return end_fraction; }
 auto LinearActiveIndicatorData::getColor() const noexcept -> QColor { return color; }
+auto LinearActiveIndicatorData::getGapSize() const noexcept -> qint32 { return gap_size; }
 
 LinearIndicatorUpdator::LinearIndicatorUpdator(QObject* parent)
     : QObject(parent),
@@ -52,6 +53,15 @@ LinearIndicatorUpdator::LinearIndicatorUpdator(QObject* parent)
     for (auto el : m_active_indicators) {
         connect(this, &LinearIndicatorUpdator::updated, el, &LinearActiveIndicatorData::updated);
     }
+    connect(this,
+            &LinearIndicatorUpdator::indeterminateAnimationTypeChanged,
+            this,
+            &LinearIndicatorUpdator::initIndicatorDatas);
+    connect(this,
+            &LinearIndicatorUpdator::colorsChanged,
+            this,
+            &LinearIndicatorUpdator::initIndicatorDatas);
+    initIndicatorDatas();
 }
 
 auto LinearIndicatorUpdator::activeIndicators() -> QList<LinearActiveIndicatorData*> {
@@ -109,7 +119,7 @@ void LinearIndicatorUpdator::updateCompleteEndProgress(double progress) {
 
 void LinearIndicatorUpdator::updateContiguous(double progress) noexcept {
     using namespace contiguous;
-    auto playtime = progress * TOTAL_DURATION_IN_MS;
+    auto playtime = progress * DURATION_PER_CYCLE_IN_MS;
 
     m_active_indicators[0]->start_fraction = 0.f;
     float fraction = anim::get_fraction_in_range(playtime, 0, TOTAL_DURATION_IN_MS);
@@ -122,12 +132,6 @@ void LinearIndicatorUpdator::updateContiguous(double progress) noexcept {
         m_contiguous_interpolator.valueForProgress(fraction);
 
     m_active_indicators[2]->end_fraction = 1.f;
-
-    printf("---------------\n");
-    for (auto& el : m_active_indicators) {
-        printf("(%.4f,%.4f,%u), ", el->startFraction(), el->endFraction(), el->color.rgb());
-    }
-    printf("\n\n");
 }
 void LinearIndicatorUpdator::updateDisjoint(double progress) noexcept {
     using namespace disjoint;
@@ -163,6 +167,15 @@ void LinearIndicatorUpdator::updateColors() noexcept {
             a[1]->color   = a[0]->color;
             a[0]->color   = color;
             m_color_dirty = false;
+        }
+    }
+}
+
+void LinearIndicatorUpdator::initIndicatorDatas() noexcept {
+    for (auto& el : m_active_indicators) {
+        el->gap_size = 4;
+        if (! m_colors.empty()) {
+            el->color = m_colors[0];
         }
     }
 }
