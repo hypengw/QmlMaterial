@@ -62,3 +62,4 @@ Set the option to it if you need animation when switching `FILL`.
 ### Acknowledgements
 - [material-color-utilities](https://github.com/material-foundation/material-color-utilities)
 - [kirigami](https://invent.kde.org/frameworks/kirigami)
+- [quickshell](https://git.outfoxxed.me/quickshell/quickshell)
