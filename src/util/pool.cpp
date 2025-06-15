@@ -34,7 +34,14 @@ Pool::~Pool() {
             delete el.second.get();
         }
     }
-    m_objs.clear();
+    for (auto el : m_uncache_objs) {
+        delete el;
+    }
+    for(const auto& el: m_tasks) {
+        if(el.second.object) {
+            delete el.second.object;
+        }
+    }
 }
 void Pool::incubatorStateChanged(qint64 id, QQmlIncubator::Status status) {
     if (status == QQmlIncubator::Loading || status == QQmlIncubator::Null) return;
