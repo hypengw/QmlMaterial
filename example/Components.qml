@@ -209,7 +209,6 @@ MD.Page {
                         title: 'Propgress indicators'
 
                         ColumnLayout {
-                            anchors.fill: parent
                             RowLayout {
                                 spacing: 0
                                 Item {
@@ -224,9 +223,16 @@ MD.Page {
                                 Item {
                                     Layout.fillWidth: true
                                     implicitHeight: children[0].implicitHeight
-                                    MD.CircularIndicator {
+                                    Row {
                                         anchors.centerIn: parent
-                                        running: m_indicator_play.checked
+                                        spacing: 12
+                                        MD.CircularIndicator {
+                                            running: m_indicator_play.checked
+                                        }
+                                        MD.CircularIndicator {
+                                            running: m_indicator_play.checked
+                                            type: MD.CircularIndicator.Reteat
+                                        }
                                     }
                                 }
                             }
@@ -247,7 +253,7 @@ MD.Page {
                         }
                     }
                     ComponentCard {
-                        title: 'Button indicator'
+                        title: 'Button indicators'
 
                         Row {
                             Layout.alignment: Qt.AlignHCenter

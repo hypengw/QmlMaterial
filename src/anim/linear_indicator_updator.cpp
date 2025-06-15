@@ -35,7 +35,7 @@ auto LinearActiveIndicatorData::getColor() const noexcept -> QColor { return col
 
 LinearIndicatorUpdator::LinearIndicatorUpdator(QObject* parent)
     : QObject(parent),
-      m_type(IndeterminateAnimationType::Contiguous),
+      m_type(IndeterminateAnimationType::DisJoint),
       m_contiguous_interpolator(anim::fast_out_slow_in()),
       m_interpolators({ anim::linear_indicator::line1_head_curve(),
                         anim::linear_indicator::line1_tail_curve(),
@@ -155,13 +155,16 @@ void LinearIndicatorUpdator::updateColors() noexcept {
         for (auto el : m_active_indicators) {
             el->color = color;
         }
+        m_color_dirty = false;
     } else {
-        auto& a     = m_active_indicators;
-        a[2]->color = a[1]->color;
-        a[1]->color = a[0]->color;
-        a[0]->color = color;
+        auto& a = m_active_indicators;
+        if (a[1]->end_fraction < 1.f) {
+            a[2]->color   = a[1]->color;
+            a[1]->color   = a[0]->color;
+            a[0]->color   = color;
+            m_color_dirty = false;
+        }
     }
-    m_color_dirty = false;
 }
 
 void LinearIndicatorUpdator::update(double progress) {
@@ -171,7 +174,7 @@ void LinearIndicatorUpdator::update(double progress) {
         updateContiguous(progress);
     }
     if (m_progress > progress) {
-        m_color_idx = (m_color_idx + 1) % m_colors.size();
+        m_color_idx   = (m_color_idx + 1) % m_colors.size();
         m_color_dirty = true;
     }
     if (m_color_dirty) updateColors();

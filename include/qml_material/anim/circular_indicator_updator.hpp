@@ -29,7 +29,7 @@ public:
 
     enum class IndeterminateAnimationType
     {
-        Advance,
+        Advance = 0,
         Reteat,
     };
     Q_ENUM(IndeterminateAnimationType)

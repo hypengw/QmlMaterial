@@ -39,7 +39,9 @@ message("QML_INSTALL_DIR: ${QML_INSTALL_DIR}")
 # check lto
 include(CheckIPOSupported)
 check_ipo_supported(RESULT is_ipo_supported OUTPUT lto_error)
-if(is_ipo_supported AND NOT EMSCRIPTEN AND NOT WIN32)
+if(is_ipo_supported
+   AND NOT EMSCRIPTEN
+   AND NOT WIN32)
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
 endif()
@@ -131,29 +133,6 @@ set(QML_FILES
     qml/control/ItemDelegate.qml
     qml/control/HorizontalHeaderView.qml
     qml/control/HorizontalHeaderViewDelegate.qml
-    qml/controlEx/RailItem.qml
-    qml/controlEx/SearchBar.qml
-    qml/controlEx/ActionMenu.qml
-    qml/controlEx/ActionToolBar.qml
-    qml/controlEx/AppBar.qml
-    qml/controlEx/BusyIconButton.qml
-    qml/controlEx/BusyButton.qml
-    qml/controlEx/BarItem.qml
-    qml/controlEx/Card.qml
-    qml/controlEx/AssistChip.qml
-    qml/controlEx/FilterChip.qml
-    qml/controlEx/InputChip.qml
-    qml/controlEx/SuggestionChip.qml
-    qml/controlEx/CircleProgressBar.qml
-    qml/controlEx/CircularIndicator.qml
-    qml/controlEx/LinearIndicator.qml
-    qml/controlEx/SnakeBar.qml
-    qml/controlEx/StandardDrawer.qml
-    qml/controlEx/DrawerItem.qml
-    qml/controlEx/IconButton.qml
-    qml/controlEx/StandardIconButton.qml
-    qml/controlEx/EmbedChip.qml
-    qml/controlEx/FAB.qml
     qml/component/Image.qml
     qml/component/Label.qml
     qml/component/Loader.qml
@@ -163,16 +142,42 @@ set(QML_FILES
     qml/component/TextInput.qml
     qml/component/TextMetrics.qml
     qml/component/TextField.qml
-    qml/componentEx/ActionLabel.qml
-    qml/componentEx/ColorRadio.qml
-    qml/componentEx/Divider.qml
-    qml/componentEx/DragHandle.qml
-    qml/componentEx/IconLabel.qml
-    qml/componentEx/Icon.qml
-    qml/componentEx/IconSvg.qml
-    qml/componentEx/Space.qml
-    qml/componentEx/SdfRectangle.qml
-    qml/componentEx/SnakeView.qml
+    qml/component/appbar/ActionMenu.qml
+    qml/component/appbar/SearchBar.qml
+    qml/component/appbar/ActionToolBar.qml
+    qml/component/appbar/SnakeBar.qml
+    qml/component/appbar/AppBar.qml
+    qml/component/appbar/BarItem.qml
+    qml/component/button/BusyIconButton.qml
+    qml/component/button/BusyButton.qml
+    qml/component/button/FAB.qml
+    qml/component/button/IconButton.qml
+    qml/component/button/StandardIconButton.qml
+    qml/component/card/Card.qml
+    qml/component/chip/AssistChip.qml
+    qml/component/chip/EmbedChip.qml
+    qml/component/chip/FilterChip.qml
+    qml/component/chip/InputChip.qml
+    qml/component/chip/SuggestionChip.qml
+    qml/component/navigation/RailItem.qml
+    qml/component/navigation/StandardDrawer.qml
+    qml/component/navigation/DrawerItem.qml
+    qml/component/progressindicator/CircleProgressBar.qml
+    qml/component/progressindicator/CircularIndicator.qml
+    qml/component/progressindicator/CircleProgressShape.qml
+    qml/component/progressindicator/CircleIndicatorShape.qml
+    qml/component/progressindicator/LinearIndicator.qml
+    qml/component/progressindicator/LinearIndicatorShape.qml
+    qml/component/extra/ActionLabel.qml
+    qml/component/extra/ColorRadio.qml
+    qml/component/extra/Divider.qml
+    qml/component/extra/DragHandle.qml
+    qml/component/extra/IconLabel.qml
+    qml/component/extra/Icon.qml
+    qml/component/extra/IconSvg.qml
+    qml/component/extra/Space.qml
+    qml/component/extra/SdfRectangle.qml
+    qml/component/extra/SnakeView.qml
     qml/delegate/ListItem.qml
     qml/flickable/Flickable.qml
     qml/flickable/VerticalFlickable.qml
@@ -211,9 +216,6 @@ set(QML_FILES
     qml/state/StateRailItem.qml
     qml/state/StateEmbedChip.qml
     qml/internal/BoxShadow.qml
-    qml/internal/CircleProgressShape.qml
-    qml/internal/CircleIndicatorShape.qml
-    qml/internal/LinearIndicatorShape.qml
     qml/internal/ListBusyFooter.qml
     qml/internal/Ripple2.qml
     qml/internal/RectangularGlow.qml

@@ -47,6 +47,20 @@ T.BusyIndicator {
         duration: m_updator.duration
     }
 
+    NumberAnimation {
+        id: m_complete_end_anim
+        running: control.animationState == CircularIndicator.Completing
+        target: m_updator
+        property: 'completeEndProgress'
+        from: 0
+        to: 1
+        duration: m_updator.completeEndDuration
+        onFinished: {
+            if (control.animationState == CircularIndicator.Completing)
+                control.animationState = CircularIndicator.Stopped;
+        }
+    }
+
     contentItem: Item {
         implicitHeight: 4
         implicitWidth: 100

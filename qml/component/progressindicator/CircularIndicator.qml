@@ -10,17 +10,23 @@ T.BusyIndicator {
         Completing,
         Stopped
     }
+    enum AnimType {
+        Advance = 0,
+        Reteat
+    }
 
     property int animationState: CircularIndicator.Stopped
     property real strokeWidth: 4
     property color color: MD.MProp.color.primary
+    property alias type: m_updator.indeterminateAnimationType
     readonly property alias progress: m_updator.progress
+
     running: false
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
-    padding: 0
+    padding: strokeWidth
     clip: false
 
     onRunningChanged: {
