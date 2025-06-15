@@ -23,6 +23,7 @@ MD.Button {
                 anchors.centerIn: parent
                 running: true
                 strokeWidth: 2
+                padding: 0
                 implicitWidth: {
                     const w = Math.min(control.icon.width, control.icon.height);
                     return w - 6;
