@@ -228,6 +228,8 @@ set(QML_FILES
     qml/internal/ElevationRectangle.qml
     qml/internal/ElevationRectangleBorder.qml
     qml/internal/Shape.qml
+    qml/internal/FilledTextFiledShape.qml
+    qml/internal/RoundPath.qml
     qml/internal/ItemHolder.qml)
 
 set(RESOURCES assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2)
@@ -315,9 +317,9 @@ set_source_files_properties(
   "${CMAKE_CURRENT_BINARY_DIR}/${LIBNAME}_qmltyperegistrations.cpp"
   TARGET_DIRECTORY "${LIBNAME}" PROPERTIES INCLUDE_DIRECTORIES
                                            "${QML_REG_INCLUDE_DIRS}")
-set_target_properties(
-  ${LIBNAME} PROPERTIES CXX_VISIBILITY_PRESET hidden QT_QMLCACHEGEN_ARGUMENTS
-                                                     "--only-bytecode")
+
+# QT_QMLCACHEGEN_ARGUMENTS "--only-bytecode"
+set_target_properties(${LIBNAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
 set(TOKEN_COMPILE_DEFINITIONS
     QM_ICON_FONT_URL="${QM_ICON_FONT_URL}"
