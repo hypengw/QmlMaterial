@@ -6,6 +6,7 @@ MD.State {
     id: root
 
     required property T.Button item
+    ctx: item.MD.MProp
 
     elevation: {
         switch (root.item.type) {

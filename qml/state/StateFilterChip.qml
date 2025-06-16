@@ -6,6 +6,7 @@ MD.State {
     id: root
 
     required property T.Button item
+    ctx: item.MD.MProp
     property bool elevated: false
     property color leadingIconColor: item.checked ? ctx.color.on_secondary_container : ctx.color.primary
     property color trailingIconColor: item.checked ? ctx.color.on_secondary_container : ctx.color.on_surface_variant

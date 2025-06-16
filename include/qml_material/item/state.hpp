@@ -11,7 +11,7 @@ class State : public QQuickItem {
     Q_OBJECT
     QML_ELEMENT
     Q_PROPERTY(QObject* item READ item WRITE set_item NOTIFY itemChanged)
-    Q_PROPERTY(qml_material::Theme* ctx READ ctx NOTIFY ctxChanged FINAL)
+    Q_PROPERTY(qml_material::Theme* ctx READ ctx WRITE setCtx NOTIFY ctxChanged FINAL)
     Q_PROPERTY(qint32 elevation READ elevation WRITE set_elevation NOTIFY elevationChanged FINAL)
 
     Q_PROPERTY(QColor textColor READ text_color WRITE set_text_color NOTIFY textColorChanged FINAL)
@@ -34,9 +34,10 @@ class State : public QQuickItem {
 public:
     State(QQuickItem* parent = nullptr);
     ~State();
-    void classBegin() override;
-    void componentComplete() override;
-    auto ctx() const -> Theme*;
+    void        classBegin() override;
+    void        componentComplete() override;
+    auto        ctx() const -> Theme*;
+    Q_SLOT void setCtx(Theme*);
 
     auto item() const -> QObject*;
     auto elevation() const -> qint32;
@@ -73,10 +74,11 @@ public:
     Q_SIGNAL void backgroundOpacityChanged();
 
 private:
-    Q_SLOT void on_item_changed();
+    Q_SLOT void updateCtx();
 
 private:
     QObject* m_item;
+    Theme*   m_ctx;
     qint32   m_elevation;
     QColor   m_text_color;
     QColor   m_outline_color;

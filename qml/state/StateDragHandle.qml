@@ -4,6 +4,7 @@ import Qcm.Material as MD
 MD.State {
     id: root
     required property Item item
+    ctx: item.MD.MProp
 
     textColor: root.ctx.color.outline
     backgroundColor: "transparent"

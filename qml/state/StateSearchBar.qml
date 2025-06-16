@@ -13,6 +13,7 @@ MD.State {
     outlineColor: root.ctx.color.outline
 
     required property T.Button item
+    ctx: item.MD.MProp
 
     property real placeholderOpacity: 1.0
 

@@ -5,6 +5,7 @@ import Qcm.Material as MD
 MD.State {
     id: root
     required property T.Switch item
+    ctx: item.MD.MProp
 
     elevation: MD.Token.elevation.level1
     textColor: root.item.checked ? root.ctx.color.on_primary_container : root.ctx.color.surface_container_highest

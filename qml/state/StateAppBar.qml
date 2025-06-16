@@ -12,7 +12,8 @@ MD.State {
     stateLayerOpacity: 0.0
     stateLayerColor: root.ctx.color.on_surface
 
-    property T.Control item
+    required property T.Control item
+    ctx: item.MD.MProp
     property MD.t_typescale typescale: MD.Token.typescale.title_large
     property int containerHeight: 64
 

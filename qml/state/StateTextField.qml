@@ -4,7 +4,8 @@ import QtQuick.Templates as T
 
 MD.State {
     id: root
-    // required property T.TextField item
+    required property T.TextField item
+    ctx: item.MD.MProp
 
     elevation: MD.Token.elevation.level0
     textColor: root.ctx.color.on_surface
@@ -18,7 +19,9 @@ MD.State {
     }
     supportTextColor: root.ctx.color.on_surface_variant
     outlineColor: root.ctx.color.outline
-    property color placeholderColor: ctx.color.on_surface_variant
+    property int indicatorHeight: 1
+    property color indicatorColor: root.ctx.color.on_surface_variant
+    property color placeholderColor: root.ctx.color.on_surface_variant
 
     property MD.t_typescale typescale: {
         switch (item.type) {
@@ -68,6 +71,8 @@ MD.State {
             PropertyChanges {
                 root.placeholderColor: root.ctx.color.primary
                 root.outlineColor: root.ctx.color.primary
+                root.indicatorColor: root.ctx.color.primary
+                root.indicatorHeight: 2
             }
             PropertyChanges {
                 restoreEntryValues: false

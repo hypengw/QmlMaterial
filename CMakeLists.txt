@@ -229,6 +229,7 @@ set(QML_FILES
     qml/internal/ElevationRectangleBorder.qml
     qml/internal/Shape.qml
     qml/internal/FilledTextFiledShape.qml
+    qml/internal/OutlineTextFiledShape.qml
     qml/internal/RoundPath.qml
     qml/internal/ItemHolder.qml)
 

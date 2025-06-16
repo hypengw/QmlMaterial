@@ -5,6 +5,7 @@ import Qcm.Material as MD
 MD.State {
     id: root
     required property T.Button item
+    ctx: item.MD.MProp
 
     elevation: MD.Token.elevation.level1
     textColor: {

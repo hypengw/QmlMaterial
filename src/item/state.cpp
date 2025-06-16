@@ -1,6 +1,7 @@
 #include "qml_material/item/state.hpp"
 #include <QQmlContext>
 #include <QQmlProperty>
+#include <QVariant>
 #include "qml_material/theme.hpp"
 
 namespace qml_material
@@ -8,6 +9,7 @@ namespace qml_material
 State::State(QQuickItem* parent)
     : QQuickItem(parent),
       m_item(nullptr),
+      m_ctx(nullptr),
       m_elevation(0),
       m_text_color(),
       m_outline_color(),
@@ -17,21 +19,42 @@ State::State(QQuickItem* parent)
       m_state_layer_opacity(0),
       m_content_opacity(1.0),
       m_background_opacity(1.0) {
-    connect(this, &State::itemChanged, this, &State::ctxChanged, Qt::DirectConnection);
+    connect(this, &State::itemChanged, this, &State::updateCtx, Qt::DirectConnection);
 }
 State::~State() {}
 
 void State::classBegin() { QQuickItem::classBegin(); }
 void State::componentComplete() {
     QQuickItem::componentComplete();
-    QQmlProperty item(this, "item");
-    auto         meta = item.propertyMetaType().metaObject();
-    if (meta == nullptr || std::string_view(meta->className()) != "QObject") {
-        item.connectNotifySignal(this, SLOT(on_item_changed()));
+    // auto ctx = qmlContext(this);
+    // Q_ASSERT(ctx);
+    // auto prop = QQmlProperty(this, "item", ctx);
+    // auto ok   = prop.connectNotifySignal(this, SLOT(updateCtx()));
+    // Q_ASSERT(ok);
+}
+
+auto State::ctx() const -> Theme* { return m_ctx; }
+void State::setCtx(Theme* v) {
+    if (m_ctx != v) {
+        m_ctx = v;
+        ctxChanged();
     }
 }
 
-void State::on_item_changed() { ctxChanged(); }
+void State::updateCtx() {
+    QObject const* item = nullptr;
+    if (auto ctx = qmlContext(this)) {
+        item = QQmlProperty(this, "item", ctx).read().value<QObject*>();
+    } else {
+        item = m_item;
+    }
+
+    if (item != nullptr) {
+        if (auto a = qobject_cast<Theme*>(qmlAttachedPropertiesObject<Theme>(item, true))) {
+            setCtx(a);
+        }
+    }
+}
 
 #define X(type, name, sig)                                \
     auto State::name() const -> type { return m_##name; } \
@@ -52,17 +75,6 @@ X(double, state_layer_opacity, stateLayerOpacityChanged)
 X(double, content_opacity, contentOpacityChanged)
 X(double, background_opacity, backgroundOpacityChanged)
 #undef X
-
-auto State::ctx() const -> Theme* {
-    auto item = property("item").value<QObject*>();
-    if (item != nullptr) {
-        if (auto a = qobject_cast<Theme*>(qmlAttachedPropertiesObject<Theme>(item, true))) {
-            return a;
-        }
-    } else {
-    }
-    return nullptr;
-}
 
 StateHolder::StateHolder(QObject* parent): QObject(parent), m_state(nullptr) {}
 StateHolder::~StateHolder() {}

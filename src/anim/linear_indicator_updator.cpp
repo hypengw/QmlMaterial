@@ -44,7 +44,8 @@ LinearIndicatorUpdator::LinearIndicatorUpdator(QObject* parent)
                         anim::linear_indicator::line2_tail_curve() }),
       m_progress(0),
       m_complete_end_progress(0),
-      m_color_idx(0) {
+      m_color_idx(0),
+      m_color_dirty(true) {
     m_active_indicators = {
         new LinearActiveIndicatorData(this),
         new LinearActiveIndicatorData(this),
