@@ -7,8 +7,16 @@ T.ToolBar {
     id: control
     property int radius: 0
     property int type: MD.Enum.AppBarCenterAligned
+    property bool scrolling: false
+    property list<MD.Action> actions
+    property alias leadingAction: m_leading.action
+    property alias title: m_title.text
     property MD.StateAppBar mdState: MD.StateAppBar {
         item: control
+    }
+    Binding {
+        control.mdState.type: control.type
+        control.mdState.scrolling: control.scrolling
     }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
@@ -22,11 +30,6 @@ T.ToolBar {
     padding: 0
     leftPadding: 16 - (m_leading.visible ? m_leading.leftInset + m_leading.leftPadding : 0)
     rightPadding: leftPadding
-
-    property list<MD.Action> actions
-    property alias leadingAction: m_leading.action
-    property alias title: m_title.text
-    property bool scrolling: false
 
     contentItem: Item {
         implicitWidth: children[0].implicitWidth

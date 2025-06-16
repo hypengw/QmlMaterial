@@ -4,29 +4,30 @@ import QtQuick.Templates as T
 
 MD.State {
     id: root
+    ctx: item.MD.MProp
+    required property T.ToolBar item
+    property int type: MD.Enum.AppBarCenterAligned
+    property bool scrolling: false
 
-    elevation: item.scrolling ? MD.Token.elevation.level2 : MD.Token.elevation.level0
+    property MD.t_typescale typescale: MD.Token.typescale.title_large
+    property int containerHeight: 64
+
+    elevation: root.scrolling ? MD.Token.elevation.level2 : MD.Token.elevation.level0
     textColor: root.ctx.color.on_surface
-    backgroundColor: item.scrolling ? root.ctx.color.surface_container : root.ctx.color.surface  
+    backgroundColor: root.scrolling ? root.ctx.color.surface_container : root.ctx.color.surface
     supportTextColor: root.ctx.color.on_surface_variant
     stateLayerOpacity: 0.0
     stateLayerColor: root.ctx.color.on_surface
 
-    required property T.Control item
-    ctx: item.MD.MProp
-    property MD.t_typescale typescale: MD.Token.typescale.title_large
-    property int containerHeight: 64
-
     states: [
         State {
             name: "small"
-            when: root.item.type === MD.Enum.AppBarSmall
-            PropertyChanges {
-            }
+            when: root.type === MD.Enum.AppBarSmall
+            PropertyChanges {}
         },
         State {
             name: "meidium"
-            when: root.item.type === MD.Enum.AppBarMedium
+            when: root.type === MD.Enum.AppBarMedium
             PropertyChanges {
                 // root.backgroundColor: root.ctx.color.surface
                 root.typescale: MD.Token.typescale.headline_small
@@ -36,7 +37,7 @@ MD.State {
         },
         State {
             name: "large"
-            when: root.item.type === MD.Enum.AppBarLarge
+            when: root.type === MD.Enum.AppBarLarge
             PropertyChanges {
                 // root.backgroundColor: root.ctx.color.surface
                 root.typescale: MD.Token.typescale.headline_medium
