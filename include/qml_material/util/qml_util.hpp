@@ -40,7 +40,7 @@ public:
 
     Q_INVOKABLE QColor pressColor(QColor in) const noexcept;
 
-    Q_INVOKABLE qreal devicePixelRatio(QQuickItem* in) const ;
+    Q_INVOKABLE qreal devicePixelRatio(QQuickItem* in) const;
 
     Q_INVOKABLE CornersGroup listCorners(qint32 idx, qint32 count, qint32 radius) const noexcept;
     Q_INVOKABLE CornersGroup tableCorners(qint32 row, qint32 column, qint32 rows, qint32 columns,
@@ -78,6 +78,7 @@ public:
     Q_INVOKABLE void forceSetImplicitWidth(QQuickItem* item, qreal width);
 
     Q_INVOKABLE void cellHoveredOn(QQuickItem* item, bool hovered, qint32 row, qint32 column) const;
+    Q_INVOKABLE QObject* getParent(QObject* obj) const;
 
 private:
     Q_SLOT void on_popup_closed();

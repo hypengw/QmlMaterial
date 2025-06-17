@@ -271,6 +271,8 @@ void Util::cellHoveredOn(QQuickItem* item, bool hovered, qint32 row, qint32 colu
         signal.invoke(item, row, column);
     }
 }
+
+QObject* Util::getParent(QObject* obj) const { return obj ? obj->parent() : nullptr; }
 } // namespace qml_material
 
 namespace qcm

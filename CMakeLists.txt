@@ -68,7 +68,6 @@ set(SOURCES
     include/qml_material/scenegraph/geometry.h
     include/qml_material/scenegraph/rectangle_material.h
     include/qml_material/scenegraph/elevation_material.h
-    include/qml_material/upstream/qquickmaterialtextcontainer_p.h
     src/scenegraph/geometry.cpp
     src/scenegraph/rectangle_material.cpp
     src/scenegraph/elevation_material.cpp
@@ -76,7 +75,6 @@ set(SOURCES
     src/kirigami/toolbarlayout.cpp
     src/kirigami/toolbarlayoutdelegate.cpp
     src/kirigami/wheelhandler.cpp
-    src/upstream/qquickmaterialtextcontainer.cpp
     src/enum.cpp
     src/theme.cpp
     src/helper.cpp
@@ -168,6 +166,9 @@ set(QML_FILES
     qml/component/progressindicator/CircleIndicatorShape.qml
     qml/component/progressindicator/LinearIndicator.qml
     qml/component/progressindicator/LinearIndicatorShape.qml
+    qml/component/textfield/FloatingPlaceholderText.qml
+    qml/component/textfield/FilledTextFieldShape.qml
+    qml/component/textfield/OutlineTextFieldShape.qml
     qml/component/extra/ActionLabel.qml
     qml/component/extra/ColorRadio.qml
     qml/component/extra/Divider.qml
@@ -221,15 +222,12 @@ set(QML_FILES
     qml/internal/RectangularGlow.qml
     qml/internal/CursorDelegate.qml
     qml/internal/SliderHandle.qml
-    qml/internal/FloatingPlaceholderText.qml
     qml/internal/TextFieldEmbed.qml
     qml/internal/RoundClip.qml
     qml/internal/Elevation.qml
     qml/internal/ElevationRectangle.qml
     qml/internal/ElevationRectangleBorder.qml
     qml/internal/Shape.qml
-    qml/internal/FilledTextFiledShape.qml
-    qml/internal/OutlineTextFiledShape.qml
     qml/internal/RoundPath.qml
     qml/internal/ItemHolder.qml)
 
@@ -375,8 +373,7 @@ endforeach()
 target_include_directories(
   ${LIBNAME}
   PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}include>"
-  PRIVATE "include/${LIBNAME}" "include/${LIBNAME}/kirigami"
-          "include/${LIBNAME}/upstream" src)
+  PRIVATE "include/${LIBNAME}" "include/${LIBNAME}/kirigami" src)
 
 add_subdirectory(third_party)
 if(QM_BUILD_EXAMPLE)

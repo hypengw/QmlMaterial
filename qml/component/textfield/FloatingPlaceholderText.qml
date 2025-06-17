@@ -10,8 +10,10 @@ MD.Text {
     property int largestHeight: 0
 
     property bool filled: false
+    property real targetScale: 0.8
     y: (controlHeight - height) / 2.0
     scale: 1.0
+    verticalAlignment: Text.AlignVCenter
 
     transformOrigin: {
         switch (effectiveHorizontalAlignment) {
@@ -31,7 +33,7 @@ MD.Text {
             when: root.controlFocus || root.controlHasText
             PropertyChanges {
                 root.y: root.filled ? root.verticalPadding : -root.largestHeight / 2.0
-                root.scale: 0.8
+                root.scale: root.targetScale
             }
         }
     ]

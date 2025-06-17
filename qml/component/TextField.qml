@@ -6,34 +6,35 @@ MD.TextFieldEmbed {
     id: control
 
     property int type: MD.Enum.TextFieldOutlined
-    property string leading_icon
-    property string trailing_icon
+    property string leadingIcon
+    property string trailingIcon
     property MD.StateTextField mdState: MD.StateTextField {
         item: control
     }
+    Binding {
+        control.mdState.type: control.type
+    }
 
     font.capitalization: Font.MixedCase
-
-    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, Math.max(contentWidth, m_placeholder.implicitWidth) + leftPadding + rightPadding + (leading.visible ? leading.implicitWidth : 0) + (trailing.visible ? trailing.implicitWidth : 0))
+    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, Math.max(contentWidth, m_placeholder.implicitWidth) + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + bottomPadding + (control.type === MD.Enum.TextFieldFilled ? 0 : topPadding))
 
     // If we're clipped, set topInset to half the height of the placeholder text to avoid it being clipped.
     topInset: clip ? m_placeholder.largestHeight / 2 : 0
     bottomInset: 0
 
-    leftPadding: 16
-    rightPadding: 16
-    bottomPadding: 0
-    // topPadding: {
-    //     if (control.type === MD.Enum.TextFieldFilled) {
-    //         const h = Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + bottomPadding);
-    //         const ch = cursorRectangle.height;
-    //         const bottom = (height - ch) / 2;
-    //         return 2 * (bottom - 8);
-    //     } else {
-    //         return 0;
-    //     }
-    // }
+    leftPadding: leading.visible ? 16 + 12 + leading.implicitWidth : 16
+    rightPadding: trailing.visible ? 16 + 12 + trailing.implicitWidth : 16
+    bottomPadding: 8
+    topPadding: {
+        if (control.type === MD.Enum.TextFieldFilled) {
+            const ch = cursorRectangle.height;
+            const ph = m_placeholder.implicitHeight;
+            return ph + 8;
+        } else {
+            return 8;
+        }
+    }
 
     MD.FloatingPlaceholderText {
         id: m_placeholder
@@ -59,7 +60,7 @@ MD.TextFieldEmbed {
         anchors.left: parent?.left
         anchors.verticalCenter: parent?.verticalCenter
         anchors.leftMargin: 12
-        name: control.leading_icon
+        name: control.leadingIcon
         visible: name
         size: 24
     }
@@ -69,7 +70,7 @@ MD.TextFieldEmbed {
         anchors.verticalCenter: parent?.verticalCenter
         anchors.rightMargin: 12
         visible: name
-        name: control.trailing_icon
+        name: control.trailingIcon
         size: 24
     }
 
@@ -84,11 +85,11 @@ MD.TextFieldEmbed {
 
         MD.Loader {
             anchors.fill: parent
-            sourceComponent: m_filled_comp
+            sourceComponent: control.type == MD.Enum.TextFieldFilled ? m_filled_comp : m_outline_comp
         }
         Component {
             id: m_filled_comp
-            MD.FilledTextFiledShape {
+            MD.FilledTextFieldShape {
                 color: control.mdState.backgroundColor
                 radius: MD.Token.shape.corner.extra_small
                 bottomLineColor: control.mdState.indicatorColor
@@ -97,23 +98,15 @@ MD.TextFieldEmbed {
         }
         Component {
             id: m_outline_comp
-            MD.OutlineTextFiledShape {}
+            MD.OutlineTextFieldShape {
+                borderColor: control.mdState.outlineColor
+                radius: MD.Token.shape.corner.extra_small
+                floatWidth: m_placeholder.implicitWidth * m_placeholder.targetScale + 2 + 2
+                floatX: 16 - 2
+                open: control.activeFocus || control.text.length > 0
+            }
         }
     }
-    // MD.MaterialTextContainer {
-    //     implicitWidth: 64
-    //     implicitHeight: 56
-
-    //     filled: control.type === MD.Enum.TextFieldFilled
-    //     fillColor: control.mdState.backgroundColor
-    //     outlineColor: control.mdState.outlineColor
-    //     focusedOutlineColor: control.mdState.outlineColor
-    //     placeholderTextWidth: Math.min(placeholder.width, placeholder.implicitWidth) * 0.8 //placeholder.scale
-    //     controlHasActiveFocus: control.activeFocus
-    //     controlHasText: control.length > 0
-    //     placeholderHasText: placeholder.text.length > 0
-    //     horizontalPadding: 16
-    // }
     color: control.mdState.textColor
     placeholderTextColor: control.mdState.placeholderColor
 

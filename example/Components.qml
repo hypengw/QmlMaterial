@@ -353,11 +353,20 @@ MD.Page {
 
                     ComponentCard {
                         title: 'Text Inputs'
+                        spacing: 12
                         MD.TextField {
                             Layout.fillWidth: true
                             type: MD.Enum.TextFieldFilled
                             placeholderText: 'Filled'
                         }
+                        MD.TextField {
+                            Layout.fillWidth: true
+                            leadingIcon: MD.Token.icon.search
+                            trailingIcon: MD.Token.icon.info
+                            type: MD.Enum.TextFieldFilled
+                            placeholderText: 'Filled'
+                        }
+
                         MD.TextField {
                             Layout.fillWidth: true
                             type: MD.Enum.TextFieldOutlined
