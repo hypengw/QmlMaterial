@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Window
 import QtQuick.Templates as T
@@ -7,7 +8,9 @@ T.ComboBox {
     id: control
 
     property int type: MD.Enum.TextFieldOutlined
-    property alias mdState: item_state
+    property MD.StateComboBox mdState: MD.StateComboBox {
+        item: control
+    }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding, implicitIndicatorHeight + topPadding + bottomPadding)
@@ -52,27 +55,24 @@ T.ComboBox {
         inputMethodHints: control.inputMethodHints
         validator: control.validator
         selectByMouse: control.selectTextByMouse
-        color: item_state.textColor
-        selectionColor: item_state.ctx.color.primary
-        selectedTextColor: item_state.ctx.color.getOn(selectionColor)
+        color: control.mdState.textColor
+        selectionColor: control.mdState.ctx.color.primary
+        selectedTextColor: control.mdState.ctx.color.getOn(selectionColor)
         verticalAlignment: TextInput.AlignVCenter
     }
-    background: MD.MaterialTextContainer {
+    background: Item {
         implicitWidth: 64
         implicitHeight: 56
-
-        filled: control.type === MD.Enum.TextFieldFilled
-        fillColor: control.mdState.backgroundColor
-        outlineColor: control.outlineColor
-        focusedOutlineColor: control.outlineColor
-        controlHasActiveFocus: control.activeFocus
-        controlHasText: true
-        horizontalPadding: 16
+        MD.OutlineTextFieldShape {
+            anchors.fill: parent
+            borderColor: control.mdState.outlineColor
+            radius: MD.Token.shape.corner.extra_small
+        }
     }
 
     popup: MD.Menu {
         y: control.editable ? control.height - 5 : 0
-        height: Math.min(contentItem.implicitHeight + verticalPadding * 2, control.Window.height - topMargin - bottomMargin)
+        height: Math.max(implicitHeight, contentItem.implicitHeight + verticalPadding * 2)
         width: control.width
         transformOrigin: Item.Top
         modal: false
@@ -80,61 +80,10 @@ T.ComboBox {
         topMargin: 12
         bottomMargin: 12
         verticalPadding: 8
+
+        Component.onCompleted: {
+            console.error('---------------', width, height)
+        }
     }
-    property color outlineColor: item_state.outlineColor
-
-    MD.State {
-        id: item_state
-        item: control
-
-        elevation: MD.Token.elevation.level0
-        textColor: item_state.ctx.color.on_surface
-        backgroundColor: "transparent"
-        supportTextColor: item_state.ctx.color.on_surface_variant
-        outlineColor: item_state.ctx.color.outline
-
-        states: [
-            State {
-                name: "Disabled"
-                when: !enabled
-                PropertyChanges {
-                    item_state.supportTextColor: item_state.ctx.color.on_surface
-                    control.contentItem.opacity: 0.38
-                    control.background.opacity: 0.12
-                }
-            },
-            State {
-                name: "Error"
-                when: !control.acceptableInput && !control.hovered
-                PropertyChanges {
-                    item_state.textColor: item_state.ctx.color.on_surface
-                    item_state.supportTextColor: item_state.ctx.color.error
-                    item_state.outlineColor: item_state.ctx.color.error
-                }
-            },
-            State {
-                name: "ErrorHover"
-                when: !control.acceptableInput && control.hovered
-                PropertyChanges {
-                    item_state.textColor: item_state.ctx.color.on_surface
-                    item_state.supportTextColor: item_state.ctx.color.error
-                    item_state.outlineColor: item_state.ctx.color.on_error_container
-                }
-            },
-            State {
-                name: "Focused"
-                when: control.visualFocus
-                PropertyChanges {
-                    item_state.outlineColor: item_state.ctx.color.primary
-                }
-            },
-            State {
-                name: "Hovered"
-                when: control.hovered
-                PropertyChanges {
-                    item_state.outlineColor: item_state.ctx.color.on_surface
-                }
-            }
-        ]
-    }
+    property color outlineColor: control.mdState.outlineColor
 }

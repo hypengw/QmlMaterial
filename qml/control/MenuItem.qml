@@ -99,47 +99,8 @@ T.MenuItem {
     property color leadingIconColor: item_state.leadingIconColor
     property color trailingIconColor: item_state.trailingIconColor
 
-    MD.State {
+    MD.StateMenuItem {
         id: item_state
         item: control
-
-        elevation: MD.Token.elevation.level2
-        textColor: item_state.ctx.color.on_surface
-        backgroundColor: item_state.ctx.color.surface_container
-        supportTextColor: item_state.ctx.color.on_surface_variant
-        stateLayerColor: "transparent"
-        property color leadingIconColor: item_state.ctx.color.on_surface
-        property color trailingIconColor: item_state.ctx.color.on_surface
-
-        states: [
-            State {
-                name: "Disabled"
-                when: !control.enabled
-                PropertyChanges {
-                    item_state.elevation: MD.Token.elevation.level0
-                    control.contentItem.opacity: 0.38
-                }
-            },
-            State {
-                name: "Pressed"
-                when: control.down || control.visualFocus
-                PropertyChanges {
-                    item_state.leadingIconColor: item_state.ctx.color.on_surface_variant
-                    item_state.trailingIconColor: item_state.ctx.color.on_surface_variant
-                    item_state.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
-                    item_state.stateLayerColor: item_state.ctx.color.on_surface
-                }
-            },
-            State {
-                name: "Hovered"
-                when: control.hovered
-                PropertyChanges {
-                    item_state.leadingIconColor: item_state.ctx.color.on_surface_variant
-                    item_state.trailingIconColor: item_state.ctx.color.on_surface_variant
-                    item_state.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
-                    item_state.stateLayerColor: item_state.ctx.color.on_surface
-                }
-            }
-        ]
     }
 }

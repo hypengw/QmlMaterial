@@ -216,6 +216,8 @@ set(QML_FILES
     qml/state/StateTextField.qml
     qml/state/StateRailItem.qml
     qml/state/StateEmbedChip.qml
+    qml/state/StateComboBox.qml
+    qml/state/StateMenuItem.qml
     qml/internal/BoxShadow.qml
     qml/internal/ListBusyFooter.qml
     qml/internal/Ripple2.qml
