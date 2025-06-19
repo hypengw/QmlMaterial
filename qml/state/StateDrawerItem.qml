@@ -12,6 +12,7 @@ MD.State {
     stateLayerColor: "transparent"
 
     property T.ItemDelegate item
+    ctx: item.MD.MProp
 
     states: [
         State {
