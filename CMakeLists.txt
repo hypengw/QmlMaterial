@@ -106,6 +106,8 @@ set(QML_FILES
     qml/control/Control.qml
     qml/control/ComboBox.qml
     qml/control/ButtonGroup.qml
+    qml/control/CheckBox.qml
+    qml/control/RadioButton.qml
     qml/control/Dialog.qml
     qml/control/DialogButtonBox.qml
     qml/control/Drawer.qml
