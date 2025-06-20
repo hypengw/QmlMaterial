@@ -6,10 +6,11 @@ MD.State {
     id: root
 
     required property T.Button item
+    property int type: MD.Enum.CardElevated
     ctx: item.MD.MProp
 
     elevation: {
-        switch (root.item.type) {
+        switch (root.type) {
         case MD.Enum.CardOutlined:
         case MD.Enum.CardFilled:
             return MD.Token.elevation.level0;
@@ -20,7 +21,7 @@ MD.State {
     }
     textColor: root.ctx.color.getOn(backgroundColor)
     backgroundColor: {
-        switch (root.item.type) {
+        switch (root.type) {
         case MD.Enum.CardOutlined:
             return root.ctx.color.surface;
         case MD.Enum.CardFilled:
@@ -38,7 +39,7 @@ MD.State {
             when: !root.item.enabled
             PropertyChanges {
                 root.elevation: {
-                    switch (root.item.type) {
+                    switch (root.type) {
                     case MD.Enum.CardFilled:
                         return MD.Token.elevation.level1;
                     case MD.Enum.CardOutlined:
@@ -57,7 +58,7 @@ MD.State {
             when: root.item.down || root.item.visualFocus
             PropertyChanges {
                 root.elevation: {
-                    switch (root.item.type) {
+                    switch (root.type) {
                     case MD.Enum.CardOutlined:
                     case MD.Enum.CardFilled:
                         return MD.Token.elevation.level0;
@@ -75,7 +76,7 @@ MD.State {
             when: root.item.hovered
             PropertyChanges {
                 root.elevation: {
-                    switch (root.item.type) {
+                    switch (root.type) {
                     case MD.Enum.CardOutlined:
                     case MD.Enum.CardFilled:
                         return MD.Token.elevation.level1;

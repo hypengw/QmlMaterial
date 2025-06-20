@@ -5,11 +5,12 @@ import Qcm.Material as MD
 MD.State {
     id: root
     required property T.Button item
+    property int type: MD.Enum.BtElevated
     ctx: item.MD.MProp
 
     elevation: MD.Token.elevation.level1
     textColor: {
-        switch (root.item.type) {
+        switch (root.type) {
         case MD.Enum.BtFilled:
             return ctx.color.on_primary;
         case MD.Enum.BtFilledTonal:
@@ -22,7 +23,7 @@ MD.State {
         }
     }
     backgroundColor: {
-        switch (root.item.type) {
+        switch (root.type) {
         case MD.Enum.BtFilled:
             return ctx.color.primary;
         case MD.Enum.BtFilledTonal:
@@ -45,7 +46,7 @@ MD.State {
                 root.elevation: MD.Token.elevation.level0
                 root.textColor: root.ctx.color.on_surface
                 root.backgroundColor: {
-                    switch (root.item.type) {
+                    switch (root.type) {
                     case MD.Enum.BtOutlined:
                     case MD.Enum.BtText:
                         return "transparent";
@@ -65,7 +66,7 @@ MD.State {
                 root.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
                 root.stateLayerColor: {
                     let c = null;
-                    switch (root.item.type) {
+                    switch (root.type) {
                     case MD.Enum.BtFilled:
                     case MD.Enum.BtFilledTonal:
                         c = root.ctx.color.getOn(root.backgroundColor);
@@ -88,7 +89,7 @@ MD.State {
                 root.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
                 root.stateLayerColor: {
                     let c = null;
-                    switch (root.item.type) {
+                    switch (root.type) {
                     case MD.Enum.BtFilled:
                     case MD.Enum.BtFilledTonal:
                         c = root.ctx.color.getOn(root.backgroundColor);
@@ -111,7 +112,7 @@ MD.State {
                 root.stateLayerOpacity: MD.Token.state.focus.state_layer_opacity
                 root.stateLayerColor: {
                     let c = null;
-                    switch (root.item.type) {
+                    switch (root.type) {
                     case MD.Enum.BtFilled:
                     case MD.Enum.BtFilledTonal:
                         c = root.ctx.color.getOn(root.backgroundColor);
