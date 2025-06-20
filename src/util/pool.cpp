@@ -37,8 +37,8 @@ Pool::~Pool() {
     for (auto el : m_uncache_objs) {
         delete el;
     }
-    for(const auto& el: m_tasks) {
-        if(el.second.object) {
+    for (const auto& el : m_tasks) {
+        if (el.second.object) {
             delete el.second.object;
         }
     }
@@ -155,7 +155,11 @@ void Pool::onComponentProgress(qint64, qreal) {}
 void Pool::onComponentLoaded(qint64 id) {
     if (auto it = m_tasks.find(id); it != m_tasks.end()) {
         auto& t = it->second;
-        t.component->create(*t.incubator);
+        if (t.component->isError()) {
+            qCCritical(qml_material_logcat()) << t.component->errorString();
+        } else {
+            t.component->create(*t.incubator);
+        }
     }
 }
 void Pool::onQueueAdded(qint64 id) {
