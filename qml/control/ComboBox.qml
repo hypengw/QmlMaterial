@@ -32,9 +32,7 @@ T.ComboBox {
 
         width: ListView.view.width
         text: model[control.textRole]
-        // Material.foreground: control.currentIndex === index ? ListView.view.contentItem.Material.accent : ListView.view.contentItem.Material.foreground
-        highlighted: control.highlightedIndex === index
-        hoverEnabled: true//control.hoverEnabled
+        highlighted: control.highlightedIndex == index
     }
 
     indicator: MD.Icon {
@@ -60,9 +58,10 @@ T.ComboBox {
         selectedTextColor: control.mdState.ctx.color.getOn(selectionColor)
         verticalAlignment: TextInput.AlignVCenter
     }
+
     background: Item {
         implicitWidth: 64
-        implicitHeight: 56
+        implicitHeight: 48
         MD.OutlineTextFieldShape {
             anchors.fill: parent
             borderColor: control.mdState.outlineColor
@@ -72,18 +71,15 @@ T.ComboBox {
 
     popup: MD.Menu {
         y: control.editable ? control.height - 5 : 0
-        height: Math.max(implicitHeight, contentItem.implicitHeight + verticalPadding * 2)
+        height: implicitHeight
         width: control.width
         transformOrigin: Item.Top
         modal: false
+        focus: false
         model: control.delegateModel
         topMargin: 12
         bottomMargin: 12
         verticalPadding: 8
-
-        Component.onCompleted: {
-            console.error('---------------', width, height)
-        }
+        currentIndex: control.currentIndex
     }
-    property color outlineColor: control.mdState.outlineColor
 }

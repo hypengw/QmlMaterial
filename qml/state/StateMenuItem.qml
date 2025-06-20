@@ -9,7 +9,7 @@ MD.State {
 
     elevation: MD.Token.elevation.level2
     textColor: root.ctx.color.on_surface
-    backgroundColor: root.ctx.color.surface_container
+    backgroundColor: item.highlighted ? root.ctx.color.secondary_container : "transparent"
     supportTextColor: root.ctx.color.on_surface_variant
     stateLayerColor: "transparent"
     property color leadingIconColor: root.ctx.color.on_surface
@@ -26,7 +26,7 @@ MD.State {
         },
         State {
             name: "Pressed"
-            when: root.item.down || root.item.visualFocus
+            when: root.item.down
             PropertyChanges {
                 root.leadingIconColor: root.ctx.color.on_surface_variant
                 root.trailingIconColor: root.ctx.color.on_surface_variant
@@ -41,6 +41,16 @@ MD.State {
                 root.leadingIconColor: root.ctx.color.on_surface_variant
                 root.trailingIconColor: root.ctx.color.on_surface_variant
                 root.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
+                root.stateLayerColor: root.ctx.color.on_surface
+            }
+        },
+        State {
+            name: "Focused"
+            when: root.item.visualFocus
+            PropertyChanges {
+                root.leadingIconColor: root.ctx.color.on_surface_variant
+                root.trailingIconColor: root.ctx.color.on_surface_variant
+                root.stateLayerOpacity: MD.Token.state.focus.state_layer_opacity
                 root.stateLayerColor: root.ctx.color.on_surface
             }
         }

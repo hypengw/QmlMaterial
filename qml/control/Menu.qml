@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Templates as T
 import QtQuick.Window
+import QtQml.Models
 
 import Qcm.Material as MD
 
@@ -17,55 +18,64 @@ T.Menu {
 
     transformOrigin: !cascade ? Item.Top : (mirrored ? Item.TopRight : Item.TopLeft)
 
-    delegate: MD.MenuItem {}
-
-    property var model: contentModel
-    property Component contentDelegate: null
+    delegate: MD.MenuItem {
+    }
+    property var model: null
+    property alias contentDelegate: m_model.delegate
 
     enter: Transition {
-        // grow_fade_in
-        NumberAnimation {
-            property: "scale"
-            from: 0.9
-            to: 1.0
-            easing.type: Easing.OutQuint
-            duration: 220
-        }
         NumberAnimation {
             property: "opacity"
-            from: 0.0
+            from: 0
             to: 1.0
-            easing.type: Easing.OutCubic
-            duration: 150
+            easing: MD.Token.easing.emphasized_decelerate
+            duration: MD.Token.duration.short3
+        }
+        NumberAnimation {
+            property: "scale"
+            from: 0.8
+            to: 1.0
+            easing: MD.Token.easing.emphasized_decelerate
+            duration: MD.Token.duration.short3
         }
     }
 
     exit: Transition {
-        // shrink_fade_out
-        NumberAnimation {
-            property: "scale"
-            from: 1.0
-            to: 0.9
-            easing.type: Easing.OutQuint
-            duration: 220
-        }
         NumberAnimation {
             property: "opacity"
-            from: 1.0
-            to: 0.0
-            easing.type: Easing.OutCubic
-            duration: 150
+            to: 0
+            easing: MD.Token.easing.emphasized_decelerate
+            duration: MD.Token.duration.short3
         }
+        NumberAnimation {
+            property: "scale"
+            to: 0.8
+            easing: MD.Token.easing.emphasized_decelerate
+            duration: MD.Token.duration.short3
+        }
+    }
+
+    DelegateModel {
+        id: m_model
+        model: control.model
     }
 
     contentItem: ListView {
         implicitHeight: contentHeight
-
-        model: control.model
+        model: {
+            if (control.model) {
+                if (control.contentDelegate) {
+                    return m_model;
+                } else if (control.model instanceof DelegateModel) {
+                    return control.model;
+                } else if (control.model != control.contentModel) {
+                    return m_model;
+                }
+            }
+            return control.contentModel;
+        }
         interactive: Window.window ? contentHeight + control.topPadding + control.bottomPadding > Window.window.height : false
-        currentIndex: control.currentIndex
-        delegate: control.contentDelegate
-
+        keyNavigationEnabled: false
         T.ScrollIndicator.vertical: MD.ScrollIndicator {}
     }
 

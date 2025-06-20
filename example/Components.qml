@@ -352,6 +352,40 @@ MD.Page {
                     }
 
                     ComponentCard {
+                        title: 'Menus'
+                        spacing: 12
+                        MD.Button {
+                            Layout.alignment: Qt.AlignHCenter
+                            type: MD.Enum.BtText
+                            text: 'Open menu'
+                            onClicked: m_menu.open()
+                            MD.Menu {
+                                id: m_menu
+                                y: parent.height
+                                MD.MenuItem {
+                                    text: 'First'
+                                }
+                                MD.MenuItem {
+                                    text: 'Second'
+                                }
+                                MD.MenuItem {
+                                    text: 'Third'
+                                }
+                            }
+                        }
+                        Row {
+                            spacing: 12
+                            Layout.alignment: Qt.AlignHCenter
+                            MD.ComboBox {
+                                model: ["First", "Second", "Third"]
+                            }
+                            MD.ComboBox {
+                                model: ["First", "Second", "Third"]
+                            }
+                        }
+                    }
+
+                    ComponentCard {
                         title: 'Text Inputs'
                         spacing: 12
                         MD.TextField {

@@ -6,7 +6,9 @@ import Qcm.Material as MD
 T.MenuItem {
     id: control
 
-    property alias mdState: item_state
+    property MD.StateMenuItem mdState: MD.StateMenuItem {
+        item: control
+    }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding, implicitIndicatorHeight + topPadding + bottomPadding)
@@ -83,7 +85,7 @@ T.MenuItem {
     background: Rectangle {
         implicitWidth: 200
         implicitHeight: 48
-        color: "transparent"
+        color: control.mdState.backgroundColor
 
         MD.Ripple2 {
             anchors.fill: parent
@@ -91,16 +93,11 @@ T.MenuItem {
             pressX: control.pressX
             pressY: control.pressY
             pressed: control.pressed
-            stateOpacity: item_state.stateLayerOpacity
-            color: item_state.stateLayerColor
+            stateOpacity: control.mdState.stateLayerOpacity
+            color: control.mdState.stateLayerColor
         }
     }
 
-    property color leadingIconColor: item_state.leadingIconColor
-    property color trailingIconColor: item_state.trailingIconColor
-
-    MD.StateMenuItem {
-        id: item_state
-        item: control
-    }
+    property color leadingIconColor: control.mdState.leadingIconColor
+    property color trailingIconColor: control.mdState.trailingIconColor
 }
