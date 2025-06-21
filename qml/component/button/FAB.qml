@@ -8,7 +8,13 @@ T.Button {
     property int type: MD.Enum.FABNormal
     property int color: MD.Enum.FABColorPrimary
     property QtObject flickable: null
-    property alias mdState: m_state
+    property MD.StateFAB mdState: MD.StateFAB {
+        item: control
+    }
+
+    Binding {
+        control.mdState.color: control.color
+    }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
@@ -69,11 +75,6 @@ T.Button {
 
     function _size(t, small, normal, large) {
         return t == MD.Enum.FABSmall ? small : (t == MD.Enum.FABLarge ? large : normal);
-    }
-
-    MD.StateFAB {
-        id: m_state
-        item: control
     }
 
     MD.InputBlock {

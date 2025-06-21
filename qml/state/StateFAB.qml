@@ -3,34 +3,37 @@ import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.State {
-    id: item_state
-    item: control
+    id: root
+    required property T.Button item
+    property int color: MD.Enum.FABColorPrimary
+
+    ctx: item.MD.MProp
 
     elevation: MD.Token.elevation.level3
     textColor: {
-        switch (control.color) {
+        switch (root.color) {
         case MD.Enum.FABColorSurfaec:
-            return item_state.ctx.color.primary;
+            return root.ctx.color.primary;
         case MD.Enum.FABColorSecondary:
-            return item_state.ctx.color.on_secondary_container;
+            return root.ctx.color.on_secondary_container;
         case MD.Enum.FABColorTertiary:
-            return item_state.ctx.color.on_tertiary_container;
+            return root.ctx.color.on_tertiary_container;
         case MD.Enum.FABColorPrimary:
         default:
-            return item_state.ctx.color.on_primary_container;
+            return root.ctx.color.on_primary_container;
         }
     }
     backgroundColor: {
-        switch (control.color) {
+        switch (root.color) {
         case MD.Enum.FABColorSurfaec:
-            return item_state.ctx.color.surface_container_high;
+            return root.ctx.color.surface_container_high;
         case MD.Enum.FABColorSecondary:
-            return item_state.ctx.color.secondary_container;
+            return root.ctx.color.secondary_container;
         case MD.Enum.FABColorTertiary:
-            return item_state.ctx.color.tertiary_container;
+            return root.ctx.color.tertiary_container;
         case MD.Enum.FABColorPrimary:
         default:
-            return item_state.ctx.color.primary_container;
+            return root.ctx.color.primary_container;
         }
     }
     stateLayerColor: textColor
@@ -38,18 +41,18 @@ MD.State {
     states: [
         State {
             name: "Pressed"
-            when: control.pressed || control.visualFocus
+            when: root.item.pressed || root.item.visualFocus
             PropertyChanges {
-                item_state.elevation: MD.Token.elevation.level3
-                item_state.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
+                root.elevation: MD.Token.elevation.level3
+                root.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
             }
         },
         State {
             name: "Hovered"
-            when: control.hovered
+            when: root.item.hovered
             PropertyChanges {
-                item_state.elevation: MD.Token.elevation.level4
-                item_state.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
+                root.elevation: MD.Token.elevation.level4
+                root.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
             }
         }
     ]

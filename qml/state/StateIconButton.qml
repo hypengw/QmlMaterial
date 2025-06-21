@@ -1,14 +1,19 @@
 import QtQuick
+import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.State {
     id: root
+    required property T.Button item
+    property int type
+    ctx: item.MD.MProp
+
     elevation: MD.Token.elevation.level1
     stateLayerColor: "transparent"
 
     textColor: {
-        switch (root.item.type) {
-        case MD.Enum.iBtOutlined:
+        switch (root.type) {
+        case MD.Enum.IBtOutlined:
             if (root.item.checked)
                 return root.ctx.color.inverse_on_surface;
             else
@@ -32,7 +37,7 @@ MD.State {
         }
     }
     backgroundColor: {
-        switch (root.item.type) {
+        switch (root.type) {
         case MD.Enum.IBtStandard:
             return "transparent";
         case MD.Enum.IBtOutlined:
@@ -61,7 +66,7 @@ MD.State {
                 root.elevation: MD.Token.elevation.level0
                 root.textColor: root.ctx.color.on_surface
                 root.backgroundColor: {
-                    switch (root.item.type) {
+                    switch (root.type) {
                     case MD.Enum.IBtOutlined:
                     case MD.Enum.IBtStandard:
                         return "transparent";
@@ -81,7 +86,7 @@ MD.State {
                 root.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
                 root.stateLayerColor: {
                     let c = null;
-                    switch (root.item.type) {
+                    switch (root.type) {
                     case MD.Enum.IBtFilled:
                         if (!root.item.checkable || root.item.checked)
                             c = root.ctx.color.on_primary;
@@ -119,7 +124,7 @@ MD.State {
                 root.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
                 root.stateLayerColor: {
                     let c = null;
-                    switch (root.item.type) {
+                    switch (root.type) {
                     case MD.Enum.IBtFilled:
                         if (!root.item.checkable || root.item.checked)
                             c = root.ctx.color.on_primary;

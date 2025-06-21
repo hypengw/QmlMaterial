@@ -1,10 +1,13 @@
 import QtQuick
+import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.State {
     id: root
-    stateLayerColor: "transparent"
+    required property T.Button item
+    ctx: item.MD.MProp
 
+    stateLayerColor: "transparent"
     textColor: {
         if (root.item.checked)
             return root.ctx.color.primary;

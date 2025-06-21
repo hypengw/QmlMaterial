@@ -11,6 +11,10 @@ T.Button {
         item: control
     }
 
+    Binding {
+        control.mdState.type: control.type
+    }
+
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 

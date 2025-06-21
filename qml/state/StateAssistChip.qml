@@ -1,8 +1,12 @@
 import QtQuick
+import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.State {
     id: root
+
+    required property T.Button item
+    ctx: item.MD.MProp
 
     property bool elevated: false
     property color iconColor: ctx.color.primary

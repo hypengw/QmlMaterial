@@ -9,7 +9,13 @@ T.TabButton {
     property int iconStyle: hasIcon ? MD.Enum.IconAndText : MD.Enum.TextOnly
     readonly property bool hasIcon: MD.Util.hasIcon(icon)
 
-    property alias mdState: m_sh.state
+    property MD.StateTabButton mdState: MD.StateTabButton {
+        item: control
+    }
+
+    Binding {
+        control.mdState.type: control.type
+    }
 
     // use checked instead
     // property bool active: T.TabBar.index === T.TabBar.tabBar.currentIndex
@@ -53,9 +59,6 @@ T.TabButton {
     }
 
     MD.StateHolder {
-        id: m_sh
-        state: MD.StateTabButton {
-            item: control
-        }
+        state: control.mdState
     }
 }
