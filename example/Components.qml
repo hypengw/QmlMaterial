@@ -352,6 +352,21 @@ MD.Page {
                     }
 
                     ComponentCard {
+                        title: 'Radio buttons'
+                        spacing: 12
+
+                        MD.RadioButton {
+                            text: 'option 1'
+                        }
+                        MD.RadioButton {
+                            text: 'option 2'
+                        }
+                        MD.RadioButton {
+                            text: 'option 3'
+                        }
+                    }
+
+                    ComponentCard {
                         title: 'Menus'
                         spacing: 12
                         MD.Button {

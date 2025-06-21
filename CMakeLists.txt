@@ -154,6 +154,7 @@ set(QML_FILES
     qml/component/button/FAB.qml
     qml/component/button/IconButton.qml
     qml/component/button/StandardIconButton.qml
+    qml/component/button/RadioIndicatorShape.qml
     qml/component/card/Card.qml
     qml/component/chip/AssistChip.qml
     qml/component/chip/EmbedChip.qml
@@ -221,6 +222,7 @@ set(QML_FILES
     qml/state/StateEmbedChip.qml
     qml/state/StateComboBox.qml
     qml/state/StateMenuItem.qml
+    qml/state/StateRadioButton.qml
     qml/internal/BoxShadow.qml
     qml/internal/ListBusyFooter.qml
     qml/internal/Ripple2.qml
