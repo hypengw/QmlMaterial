@@ -307,6 +307,21 @@ MD.Page {
                     }
 
                     ComponentCard {
+                        title: 'Checkboxes'
+                        spacing: 12
+
+                        MD.CheckBox {
+                            text: 'option 1'
+                        }
+                        MD.CheckBox {
+                            text: 'option 2'
+                        }
+                        MD.CheckBox {
+                            text: 'option 3'
+                        }
+                    }
+
+                    ComponentCard {
                         title: 'Chips'
                         RowLayout {
                             spacing: 12
