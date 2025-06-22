@@ -273,6 +273,20 @@ void Util::cellHoveredOn(QQuickItem* item, bool hovered, qint32 row, qint32 colu
 }
 
 QObject* Util::getParent(QObject* obj) const { return obj ? obj->parent() : nullptr; }
+bool     Util::disconnectAll(QObject* obj, const QString& name) const {
+    if (! obj) {
+        qCWarning(qml_material_logcat()) << "disconnectAll: obj is null";
+        return false;
+    }
+    auto signal_idx = obj->metaObject()->indexOfSignal(
+        QMetaObject::normalizedSignature(name.toUtf8().constData()));
+    if (signal_idx == -1) {
+        qCWarning(qml_material_logcat()) << "disconnectAll: signal not found" << name;
+        return false;
+    }
+    auto signal = obj->metaObject()->method(signal_idx);
+    return QObject::disconnect(obj, signal, nullptr, QMetaMethod {});
+}
 } // namespace qml_material
 
 namespace qcm

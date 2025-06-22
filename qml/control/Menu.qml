@@ -19,7 +19,20 @@ T.Menu {
     transformOrigin: !cascade ? Item.Top : (mirrored ? Item.TopRight : Item.TopLeft)
 
     delegate: MD.MenuItem {
+        id: m_item
+
+        function clickedCB() {
+            if ((action as MD.Action)?.closeMenu) {
+                triggered();
+            }
+        }
+
+        Component.onCompleted: {
+            MD.Util.disconnectAll(m_item, "clicked()");
+            m_item.clicked.connect(clickedCB);
+        }
     }
+
     property var model: null
     property alias contentDelegate: m_model.delegate
 

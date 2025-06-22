@@ -28,4 +28,23 @@ MD.UtilCpp {
 
         return number;
     }
+    function printJsObj(obj: var) {
+        const visited = new Set();
+        let current = obj;
+
+        while (current !== null) {
+            Object.getOwnPropertyNames(current).forEach(prop => {
+                if (!visited.has(prop)) {
+                    visited.add(prop);
+                    try {
+                        const value = obj[prop];
+                        console.log(`${prop}:`, value);
+                    } catch (e) {
+                        console.log(`${prop}: <unable to access>`);
+                    }
+                }
+            });
+            current = Object.getPrototypeOf(current);
+        }
+    }
 }

@@ -35,9 +35,7 @@ public:
     Q_INVOKABLE void closePopup(QObject* obj) const;
 
     Q_INVOKABLE QColor transparent(QColor in, float alpha) const noexcept;
-
     Q_INVOKABLE QColor hoverColor(QColor in) const noexcept;
-
     Q_INVOKABLE QColor pressColor(QColor in) const noexcept;
 
     Q_INVOKABLE qreal devicePixelRatio(QQuickItem* in) const;
@@ -79,6 +77,7 @@ public:
 
     Q_INVOKABLE void cellHoveredOn(QQuickItem* item, bool hovered, qint32 row, qint32 column) const;
     Q_INVOKABLE QObject* getParent(QObject* obj) const;
+    Q_INVOKABLE bool disconnectAll(QObject* obj, const QString&) const;
 
 private:
     Q_SLOT void on_popup_closed();
