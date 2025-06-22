@@ -1,8 +1,10 @@
 pragma Singleton
 import QtQuick
+import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.UtilCpp {
+    id: root
     function epsilonEqual(x: real, y: real): real {
         return Math.abs(x - y) < Number.EPSILON;
     }
@@ -22,12 +24,14 @@ MD.UtilCpp {
         if (idx >= 0)
             arr.splice(idx, 1);
     }
+
     function clamp(number: real, lower: real, upper: real): real {
         number = number < lower ? lower : number;
         number = number > upper ? upper : number;
 
         return number;
     }
+
     function printJsObj(obj: var) {
         const visited = new Set();
         let current = obj;
@@ -45,6 +49,15 @@ MD.UtilCpp {
                 }
             });
             current = Object.getPrototypeOf(current);
+        }
+    }
+
+    function closeMenuOn(obj: QtObject) {
+        if (obj instanceof MD.Action) {
+            const parent = root.getParent(obj);
+            (parent as T.Menu)?.close();
+        } else if (obj instanceof T.Menu) {
+            (obj as T.Menu)?.close();
         }
     }
 }
