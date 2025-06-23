@@ -27,8 +27,8 @@ T.Button {
     padding: 8
     spacing: 0
 
-    icon.width: 24
-    icon.height: 24
+    icon.width: action ? action.icon.width : 24
+    icon.height: action ? action.icon.height : 24
 
     contentItem: Item {
         implicitWidth: control.icon.width
