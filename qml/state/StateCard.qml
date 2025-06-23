@@ -7,6 +7,7 @@ MD.State {
 
     required property T.Button item
     property int type: MD.Enum.CardElevated
+    property int radius: 12
     ctx: item.MD.MProp
 
     elevation: {

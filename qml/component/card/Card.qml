@@ -31,7 +31,7 @@ T.Button {
         implicitWidth: 64
         implicitHeight: 64
 
-        radius: 12
+        radius: control.mdState.radius
         color: control.mdState.backgroundColor
 
         border.width: control.type == MD.Enum.CardOutlined ? 1 : 0
