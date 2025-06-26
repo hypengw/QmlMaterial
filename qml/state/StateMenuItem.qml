@@ -5,11 +5,12 @@ import Qcm.Material as MD
 MD.State {
     id: root
     required property T.MenuItem item
+    property bool selected: false
     ctx: item.MD.MProp
 
     elevation: MD.Token.elevation.level2
     textColor: root.ctx.color.on_surface
-    backgroundColor: item.highlighted ? root.ctx.color.secondary_container : "transparent"
+    backgroundColor: root.selected ? root.ctx.color.secondary_container : "transparent"
     supportTextColor: root.ctx.color.on_surface_variant
     stateLayerColor: "transparent"
     property color leadingIconColor: root.ctx.color.on_surface

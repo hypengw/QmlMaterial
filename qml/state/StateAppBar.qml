@@ -15,6 +15,7 @@ MD.State {
     elevation: root.scrolling ? MD.Token.elevation.level2 : MD.Token.elevation.level0
     textColor: root.ctx.color.on_surface
     backgroundColor: root.scrolling ? root.ctx.color.surface_container : root.ctx.color.surface
+    backgroundOpacity: root.scrolling ? 1 : 0
     supportTextColor: root.ctx.color.on_surface_variant
     stateLayerOpacity: 0.0
     stateLayerColor: root.ctx.color.on_surface

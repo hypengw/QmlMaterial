@@ -42,14 +42,14 @@ T.Menu {
             from: 0
             to: 1.0
             easing: MD.Token.easing.emphasized_decelerate
-            duration: MD.Token.duration.short3
+            duration: MD.Token.duration.medium2
         }
         NumberAnimation {
             property: "scale"
             from: 0.8
             to: 1.0
             easing: MD.Token.easing.emphasized_decelerate
-            duration: MD.Token.duration.short3
+            duration: MD.Token.duration.medium2
         }
     }
 
@@ -58,13 +58,13 @@ T.Menu {
             property: "opacity"
             to: 0
             easing: MD.Token.easing.emphasized_decelerate
-            duration: MD.Token.duration.short3
+            duration: MD.Token.duration.medium2
         }
         NumberAnimation {
             property: "scale"
             to: 0.8
             easing: MD.Token.easing.emphasized_decelerate
-            duration: MD.Token.duration.short3
+            duration: MD.Token.duration.medium2
         }
     }
 

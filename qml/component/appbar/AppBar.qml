@@ -61,7 +61,7 @@ T.ToolBar {
                 when: control.type >= MD.Enum.AppBarMedium
                 restoreMode: Binding.RestoreNone
                 m_text_row.implicitWidth: 0
-                m_title.x: 16 - root.leftPadding
+                m_title.x: 16 - control.leftPadding
                 m_title.y: m_title.parent.height - m_title.height - (control.type === MD.Enum.AppBarMedium ? 24 : 28)
                 m_title.horizontalAlignment: Text.AlignLeft
                 m_title.width: m_title.parent.width - 16 * 2
@@ -93,11 +93,12 @@ T.ToolBar {
     }
 
     background: MD.Rectangle {
-        implicitHeight: control.mdState.containerHeight
         //elevation: control.mdState.elevation
         //elevationItem.height: height - control.radius
         //elevationItem.y: control.radius
         //elevationItem.corners: MD.Util.corners(0)
+
+        implicitHeight: control.mdState.containerHeight
         corners: MD.Util.corners(control.radius, 0)
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity

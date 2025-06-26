@@ -6,9 +6,12 @@ import Qcm.Material as MD
 T.MenuItem {
     id: control
 
-
+    property bool selected: false
     property MD.StateMenuItem mdState: MD.StateMenuItem {
         item: control
+    }
+    Binding {
+        control.mdState.selected: control.selected
     }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)

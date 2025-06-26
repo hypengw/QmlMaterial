@@ -32,6 +32,7 @@ T.ComboBox {
 
         width: ListView.view.width
         text: model[control.textRole]
+        selected: control.currentIndex == index
         highlighted: control.highlightedIndex == index
     }
 

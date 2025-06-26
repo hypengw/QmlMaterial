@@ -16,7 +16,6 @@ T.Page {
     property color backgroundColor: MD.MProp.color.background
     property int radius: MD.MProp.page.radius
     property int backgroundRadius: MD.MProp.page.backgroundRadius
-    property int headerBackgroundOpacity: MD.MProp.page.headerBackgroundOpacity
     property bool scrolling: false
 
     header: MD.AppBar {
@@ -25,7 +24,6 @@ T.Page {
         type: control.MD.MProp.page.headerType
         visible: control.MD.MProp.page.showHeader
         radius: control.backgroundRadius
-        mdState.backgroundOpacity: control.headerBackgroundOpacity
         scrolling: control.scrolling
         actions: control.actions
     }
