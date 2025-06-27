@@ -24,7 +24,7 @@ MD.State {
     property color indicatorColor: root.ctx.color.on_surface_variant
     property color placeholderColor: root.ctx.color.on_surface_variant
 
-    property MD.t_typescale typescale: {
+    property MD.typescale typescale: {
         switch (root.type) {
         case MD.Enum.TextFieldFilled:
             return MD.Token.typescale.body_large;

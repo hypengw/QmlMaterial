@@ -3,7 +3,7 @@ import Qcm.Material as MD
 
 TextInput {
     id: root
-    property MD.t_typescale typescale: MD.Token.typescale.body_large
+    property MD.typescale typescale: MD.Token.typescale.body_large
     property bool prominent: false
 
     font.capitalization: Font.MixedCase

@@ -4,7 +4,7 @@ import Qcm.Material as MD
 
 Text {
     id: root
-    property MD.t_typescale typescale: MD.Token.typescale.label_medium
+    property MD.typescale typescale: MD.Token.typescale.label_medium
     property bool prominent: false
     property bool useTypescale: true
 

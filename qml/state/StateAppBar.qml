@@ -9,7 +9,7 @@ MD.State {
     property int type: MD.Enum.AppBarCenterAligned
     property bool scrolling: false
 
-    property MD.t_typescale typescale: MD.Token.typescale.title_large
+    property MD.typescale typescale: MD.Token.typescale.title_large
     property int containerHeight: 64
 
     elevation: root.scrolling ? MD.Token.elevation.level2 : MD.Token.elevation.level0

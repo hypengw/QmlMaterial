@@ -9,7 +9,7 @@ T.Label {
 
     linkColor: root.palette.link
 
-    property MD.t_typescale typescale: MD.Token.typescale.label_medium
+    property MD.typescale typescale: MD.Token.typescale.label_medium
     property bool prominent: false
     property bool useTypescale: true
 
