@@ -18,7 +18,7 @@ Item {
     property int cellX: {
         // bind width
         const w = widthProvider.width;
-        return widthProvider.calculateX(column);
+        return widthProvider.calculateX(column) + Math.min(0, w);
     }
     property int cellY: column != 0 ? -cellHeight : 0
 }
