@@ -3,7 +3,7 @@ import QtQuick
 import QtQuick.Shapes
 import Qcm.Material as MD
 
-MD.Rectangle {
+Item {
     id: root
     property real stateOpacity: 0
     property bool pressed: false
@@ -12,17 +12,27 @@ MD.Rectangle {
 
     property real _circle_radius: 0
 
-    color: "transparent"
+    property alias color: m_back.color
+    property alias corners: m_back.corners
+    property alias radius: m_back.radius
+
     clip: false
-    opacity: stateOpacity
+
+    MD.Rectangle {
+        id: m_back
+        anchors.fill: parent
+        color: "transparent"
+        opacity: root.stateOpacity
+    }
 
     MD.Shape {
         id: m_circle
         anchors.fill: parent
+        opacity: 0.12
         ShapePath {
             strokeWidth: 0
             strokeColor: "transparent"
-            fillColor: root.color
+            fillColor: m_back.color
             fillGradient: RadialGradient {
                 centerX: root.pressX
                 centerY: root.pressY
@@ -35,8 +45,12 @@ MD.Rectangle {
                     color: MD.Util.transparent(root.color, 1.0)
                 }
                 GradientStop {
-                    position: 0.7
-                    color: MD.Util.transparent(root.color, 0.7)
+                    position: 0.77
+                    color: MD.Util.transparent(root.color, 1.0)
+                }
+                GradientStop {
+                    position: 0.771
+                    color: MD.Util.transparent(root.color, 0.0)
                 }
                 GradientStop {
                     position: 1
@@ -44,49 +58,49 @@ MD.Rectangle {
                 }
             }
 
-            startX: root.corners.topLeft
+            startX: m_back.corners.topLeft
 
             startY: 0
 
             PathLine {
-                x: root.width - root.corners.topRight
+                x: root.width - m_back.corners.topRight
                 y: 0
             }
             PathArc {
-                relativeX: root.corners.topRight
-                relativeY: root.corners.topRight
-                radiusX: root.corners.topRight
-                radiusY: root.corners.topRight
+                relativeX: m_back.corners.topRight
+                relativeY: m_back.corners.topRight
+                radiusX: m_back.corners.topRight
+                radiusY: m_back.corners.topRight
             }
             PathLine {
                 x: root.width
-                y: root.height - root.corners.bottomRight
+                y: root.height - m_back.corners.bottomRight
             }
             PathArc {
-                relativeX: -root.corners.bottomRight
-                relativeY: root.corners.bottomRight
-                radiusX: root.corners.bottomRight
-                radiusY: root.corners.bottomRight
+                relativeX: -m_back.corners.bottomRight
+                relativeY: m_back.corners.bottomRight
+                radiusX: m_back.corners.bottomRight
+                radiusY: m_back.corners.bottomRight
             }
             PathLine {
-                x: root.corners.bottomLeft
+                x: m_back.corners.bottomLeft
                 y: root.height
             }
             PathArc {
-                relativeX: -root.corners.bottomLeft
-                relativeY: -root.corners.bottomLeft
-                radiusX: root.corners.bottomLeft
-                radiusY: root.corners.bottomLeft
+                relativeX: -m_back.corners.bottomLeft
+                relativeY: -m_back.corners.bottomLeft
+                radiusX: m_back.corners.bottomLeft
+                radiusY: m_back.corners.bottomLeft
             }
             PathLine {
                 x: 0
-                y: root.corners.topLeft
+                y: m_back.corners.topLeft
             }
             PathArc {
-                x: root.corners.topLeft
+                x: m_back.corners.topLeft
                 y: 0
-                radiusX: root.corners.topLeft
-                radiusY: root.corners.topLeft
+                radiusX: m_back.corners.topLeft
+                radiusY: m_back.corners.topLeft
             }
         }
     }
@@ -118,32 +132,47 @@ MD.Rectangle {
                 ScriptAction {
                     script: {
                         m_fade.stop();
-                        root.opacity = root.stateOpacity;
-                        root._circle_radius = 0.0;
-                        m_circle.opacity = 1.0;
+                        m_back.opacity = root.stateOpacity;
+                        root._circle_radius = root.endRadius / 1.3 / 4;
+                        m_circle.opacity = 0.12;
                     }
                 }
-                NumberAnimation {
-                    target: root
-                    property: '_circle_radius'
-                    duration: 500
+                ParallelAnimation {
+                    NumberAnimation {
+                        target: m_back
+                        property: 'opacity'
+                        to: 0.12
+                        duration: 500
+                    }
+                    NumberAnimation {
+                        target: root
+                        property: '_circle_radius'
+                        duration: 500
+                    }
                 }
             }
         },
         Transition {
             from: "active"
             to: "normal"
-            SequentialAnimation {
-                NumberAnimation {
-                    target: root
-                    property: '_circle_radius'
-                    to: root.endRadius
+            ParallelAnimation {
+                OpacityAnimator {
+                    target: m_back
+                    to: root.stateOpacity
                     duration: 200
                 }
+                SequentialAnimation {
+                    NumberAnimation {
+                        target: root
+                        property: '_circle_radius'
+                        to: root.endRadius
+                        duration: 200
+                    }
 
-                ScriptAction {
-                    script: {
-                        m_fade.start();
+                    ScriptAction {
+                        script: {
+                            m_fade.start();
+                        }
                     }
                 }
             }
@@ -155,15 +184,15 @@ MD.Rectangle {
         id: m_fade
         running: false
         onFinished: {
-            root.opacity = Qt.binding(function () {
+            m_back.opacity = Qt.binding(function () {
                 return root.stateOpacity;
             });
         }
 
         OpacityAnimator {
-            target: root
+            target: m_back
             to: root.stateOpacity
-            duration: 200
+            duration: 100
         }
         OpacityAnimator {
             target: m_circle
