@@ -185,6 +185,7 @@ set(QML_FILES
     qml/component/extra/SdfRectangle.qml
     qml/component/extra/SnakeView.qml
     qml/delegate/ListItem.qml
+    qml/delegate/ListGridBaseDelegate.qml
     qml/flickable/Flickable.qml
     qml/flickable/VerticalFlickable.qml
     qml/flickable/VerticalGridView.qml

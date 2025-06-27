@@ -33,6 +33,7 @@ T.Button {
 
         radius: control.mdState.radius
         color: control.mdState.backgroundColor
+        opacity: control.mdState.backgroundOpacity
 
         border.width: control.type == MD.Enum.CardOutlined ? 1 : 0
         border.color: control.mdState.ctx.color.outline
