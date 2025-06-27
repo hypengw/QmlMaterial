@@ -35,7 +35,7 @@ namespace qml_material::token
 struct TypeScaleItem {
     Q_GADGET
     QML_ELEMENT
-    QML_VALUE_TYPE(t_typescale)
+    QML_VALUE_TYPE(typescale)
 
     /** @brief Font size in pixels */
     Q_PROPERTY(qint32 size MEMBER size FINAL)
