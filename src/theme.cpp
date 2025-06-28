@@ -65,8 +65,7 @@ void reset_prop(Theme* self, F&& get_prop, const T& init_v) {
 }
 
 struct GlobalTheme {
-    ~GlobalTheme() {
-    }
+    ~GlobalTheme() {}
     QColor      textColor;
     QColor      supportTextColor;
     QColor      backgroundColor;
@@ -125,10 +124,18 @@ void Theme::attachedParentChange(QQuickAttachedPropertyPropagator* newParent,
 }
 
 ThemeSize::ThemeSize(QObject* parent)
-    : QObject(parent), m_window_class((qint32)Enum::WindowClassType::WindowClassMedium) {
+    : QObject(parent),
+      m_window_class((qint32)Enum::WindowClassType::WindowClassMedium),
+      m_width(0),
+      m_duration(200) {
     m_width_timer.setSingleShot(true);
     connect(this, &ThemeSize::widthChanged, this, [this]() {
-        if (! m_width_timer.isActive()) m_width_timer.start(200);
+        if (m_duration > 0) {
+            if (! m_width_timer.isActive()) m_width_timer.start(m_duration);
+        } else {
+            static auto the_wclass = token::WindowClass {};
+            setWindowClass((qint32)the_wclass.select_type(m_width));
+        }
     });
     connect(&m_width_timer, &QTimer::timeout, this, [this]() {
         static auto the_wclass = token::WindowClass {};
@@ -159,6 +166,14 @@ void ThemeSize::setWidth(qint32 v) {
     if (m_width != v) {
         m_width = v;
         widthChanged(m_width);
+    }
+}
+auto ThemeSize::duration() const -> qint32 { return m_duration; }
+
+void ThemeSize::setDuration(qint32 v) {
+    if (m_duration != v) {
+        m_duration = v;
+        durationChanged(m_width);
     }
 }
 

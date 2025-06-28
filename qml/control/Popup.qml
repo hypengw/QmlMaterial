@@ -19,6 +19,7 @@ T.Popup {
 
     MD.MProp.size: MD.ThemeSize {
         width: control.parent.width
+        duration: 0
     }
 
     enter: Transition {

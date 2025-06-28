@@ -41,6 +41,7 @@ public:
     Q_PROPERTY(bool isLarge READ isLarge NOTIFY windowClassChanged FINAL)
     Q_PROPERTY(bool isExtraLarge READ isExtraLarge NOTIFY windowClassChanged FINAL)
 
+    Q_PROPERTY(qint32 duration READ duration WRITE setDuration NOTIFY durationChanged FINAL)
     Q_PROPERTY(qint32 width READ width WRITE setWidth NOTIFY widthChanged FINAL)
 
     auto isCompact() const -> bool;
@@ -53,6 +54,10 @@ public:
     void          setWidth(qint32 w);
     Q_SIGNAL void widthChanged(qint32);
 
+    auto          duration() const -> qint32;
+    void          setDuration(qint32 w);
+    Q_SIGNAL void durationChanged(qint32);
+
     auto          windowClass() const -> qint32;
     void          setWindowClass(qint32);
     Q_SIGNAL void windowClassChanged(qint32);
@@ -64,6 +69,7 @@ public:
 private:
     qint32 m_window_class;
     qint32 m_width;
+    qint32 m_duration;
     QTimer  m_width_timer;
 };
 
