@@ -156,9 +156,11 @@ Item {
             from: "active"
             to: "normal"
             ParallelAnimation {
-                OpacityAnimator {
+                alwaysRunToEnd: true
+                NumberAnimation {
                     target: m_back
                     to: root.stateOpacity
+                    property: 'opacity'
                     duration: 200
                 }
                 SequentialAnimation {
@@ -183,21 +185,24 @@ Item {
     SequentialAnimation {
         id: m_fade
         running: false
-        onFinished: {
+        onStopped: {
             m_back.opacity = Qt.binding(function () {
                 return root.stateOpacity;
             });
+            m_circle.opacity = 0
         }
 
-        OpacityAnimator {
+        NumberAnimation {
             target: m_back
             to: root.stateOpacity
             duration: 100
+            property: "opacity"
         }
-        OpacityAnimator {
+        NumberAnimation {
             target: m_circle
             to: 0
             duration: 100
+            property: "opacity"
         }
     }
 }

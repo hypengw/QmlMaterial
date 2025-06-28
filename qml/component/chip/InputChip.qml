@@ -23,12 +23,12 @@ T.Button {
     bottomInset: 0
     verticalPadding: 0
     leftPadding: 8
-    rightPadding: MD.Util.hasIcon(icon) ? 8 : 16
+    rightPadding: icon.name ? 8 : 16
     spacing: 8
 
     icon.width: 18
     icon.height: 18
-    icon.name: MD.Token.icon.close
+
     action: null
     font.capitalization: Font.Capitalize
 
@@ -66,26 +66,26 @@ T.Button {
                 }
             }
         }
-        RowLayout {
+        Row {
             anchors.verticalCenter: parent.verticalCenter
             spacing: control.spacing
             MD.Label {
-                Layout.alignment: Qt.AlignVCenter
+                anchors.verticalCenter: parent.verticalCenter
                 text: control.text
                 verticalAlignment: Text.AlignVCenter
                 typescale: MD.Token.typescale.label_large
             }
             Item {
-                Layout.alignment: Qt.AlignVCenter
-                implicitWidth: control.action ? control.action.icon.width : control.icon.width
-                implicitHeight: control.action ? control.action.icon.height : control.icon.height
+                anchors.verticalCenter: parent.verticalCenter
+                implicitWidth: control.icon.width
+                implicitHeight: control.icon.height
+                visible: control.icon.name
 
                 MD.StandardIconButton {
                     anchors.centerIn: parent
 
                     implicitBackgroundSize: 0
-                    visible: action ? action.icon.name : icon.name
-                    icon: action ? action.icon : control.icon
+                    icon: control.icon
                     action: control.action
                 }
             }

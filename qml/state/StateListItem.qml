@@ -12,8 +12,8 @@ MD.State {
     textColor: root.ctx.color.on_surface
     backgroundColor: root.ctx.color.surface
     supportTextColor: root.ctx.color.on_surface_variant
-    stateLayerOpacity: 0.0
     stateLayerColor: root.ctx.color.on_surface
+    stateLayerOpacity: 0.0
 
     states: [
         State {
@@ -30,7 +30,7 @@ MD.State {
         },
         State {
             name: "Pressed"
-            when: root.item.pressed || root.item.visualFocus
+            when: root.item.pressed //  || root.item.visualFocus
             PropertyChanges {
                 root.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
             }
