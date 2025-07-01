@@ -153,15 +153,15 @@ public:
     X(surface_container_highest)
 #undef X
 
-#define X(_n_)                                           \
+#define X(_n_) \
     Q_INVOKABLE QColor get_##_n_(double tone) const { return m_scheme._n_##_palette.get(tone); }
 
     X(neutral)
 #undef X
 
-#define X(_n_, _tone_)                                   \
+#define X(_n_, _tone_)                                                         \
     Q_PROPERTY(QColor _n_##_##_tone_ READ _n_##_##_tone_ NOTIFY schemeChanged) \
-        QColor _n_##_##_tone_() const { return m_scheme._n_##_palette.get(_tone_); }
+    QColor _n_##_##_tone_() const { return m_scheme._n_##_palette.get(_tone_); }
 
     X(neutral, 10)
     X(neutral, 20)
@@ -193,6 +193,8 @@ public:
     Q_SLOT void setUseSysAccentColor(bool);
     Q_SLOT void genScheme();
     Q_SLOT void refrehFromSystem();
+
+    Q_SLOT void selectFromImage(const QImage&);
 
     Q_SIGNAL void modeChanged(Enum::ThemeMode);
     Q_SIGNAL void schemeChanged();

@@ -10,11 +10,15 @@
 #include "cpp/scheme/scheme_tonal_spot.h"
 #include "cpp/scheme/scheme_vibrant.h"
 
+#include "cpp/quantize/celebi.h"
+#include "cpp/score/score.h"
+
 #include "cpp/blend/blend.h"
 
 #include "qml_material/core.hpp"
 
 #include "cpp/palettes/core.h"
+#include <QtGui/QImage>
 
 using MdScheme = qml_material::MdScheme;
 namespace md   = material_color_utilities;
@@ -127,17 +131,32 @@ auto genScheme(qml_material::Enum::PaletteType t, Hct hct, bool is_dark, double 
 }
 } // namespace
 
-MdScheme qml_material::MaterialLightColorScheme(QRgb rgb, Enum::PaletteType type) {
+MdScheme qml_material::material_light_color_scheme(QRgb rgb, Enum::PaletteType type) {
     md::Hct hct(rgb);
     return genScheme(type, hct, false, 0.0);
 }
 
-MdScheme qml_material::MaterialDarkColorScheme(QRgb rgb, Enum::PaletteType type) {
+MdScheme qml_material::material_dark_color_scheme(QRgb rgb, Enum::PaletteType type) {
     md::Hct hct(rgb);
     return genScheme(type, hct, true, 0.0);
 }
 
-QRgb qml_material::MaterialBlendHctHue(const QRgb design_color, const QRgb key_color,
-                                       const double mount) {
+QRgb qml_material::material_blend_hcthue(const QRgb design_color, const QRgb key_color,
+                                         const double mount) {
     return md::BlendHctHue(design_color, key_color, mount);
+}
+
+auto qml_material::color_from_image(const QImage& image) -> QRgb {
+    std::vector<QRgb> pixels;
+    pixels.reserve(image.width() * image.height());
+    for (int y = 0; y < image.height(); ++y) {
+        QRgb const* line = reinterpret_cast<const QRgb*>(image.constScanLine(y));
+        for (int x = 0; x < image.width(); ++x) {
+            const auto& rgb = line[x];
+            auto        p   = qRgba(qRed(rgb), qGreen(rgb), qBlue(rgb), qAlpha(rgb));
+            pixels.push_back(p);
+        }
+    }
+    auto quantize_res = material_color_utilities::QuantizeCelebi(pixels, 12);
+    return material_color_utilities::RankedSuggestions(quantize_res.color_to_count).at(0);
 }

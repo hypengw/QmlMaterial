@@ -122,9 +122,9 @@ QColor MdColorMgr::getOn(QColor in) const {
 
 void MdColorMgr::genSchemeImpl(Enum::ThemeMode mode) {
     if (mode == Enum::ThemeMode::Light)
-        m_scheme = MaterialLightColorScheme(m_accent_color.rgb(), paletteType());
+        m_scheme = material_light_color_scheme(m_accent_color.rgb(), paletteType());
     else
-        m_scheme = MaterialDarkColorScheme(m_accent_color.rgb(), paletteType());
+        m_scheme = material_dark_color_scheme(m_accent_color.rgb(), paletteType());
 
     m_last_mode = mode;
 
@@ -149,6 +149,12 @@ void MdColorMgr::refrehFromSystem() {
     if (useSysAccentColor()) {
         setAccentColor(sysAccentColor());
     }
+}
+
+void MdColorMgr::selectFromImage(const QImage& image) {
+    auto color = color_from_image(image);
+    setUseSysAccentColor(false);
+    setAccentColor(color);
 }
 
 #include <qml_material/token/moc_color.cpp>

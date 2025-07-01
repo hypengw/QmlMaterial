@@ -59,8 +59,9 @@ struct MdScheme {
     material_color_utilities::TonalPalette neutral_palette { 0 };
 };
 
-auto MaterialLightColorScheme(QRgb, Enum::PaletteType) -> MdScheme;
-auto MaterialDarkColorScheme(QRgb, Enum::PaletteType) -> MdScheme;
+auto material_light_color_scheme(QRgb, Enum::PaletteType) -> MdScheme;
+auto material_dark_color_scheme(QRgb, Enum::PaletteType) -> MdScheme;
 
-QRgb MaterialBlendHctHue(const QRgb design_color, const QRgb key_color, const double mount);
+auto material_blend_hcthue(const QRgb design_color, const QRgb key_color, const double mount) -> QRgb;
+auto color_from_image(const QImage&) -> QRgb;
 } // namespace qml_material

@@ -17,6 +17,10 @@ add_library(
   ${md_dir}/utils/utils.cc
   ${md_dir}/temperature/temperature_cache.cc
   ${md_dir}/quantize/lab.cc
+  ${md_dir}/quantize/celebi.cc
+  ${md_dir}/quantize/wsmeans.cc
+  ${md_dir}/quantize/wu.cc
+  ${md_dir}/score/score.cc
   ${md_dir}/dislike/dislike.cc
   ${md_dir}/contrast/contrast.cc
   ${md_dir}/cam/cam.cc
