@@ -24,7 +24,7 @@ T.Page {
         type: control.MD.MProp.page.headerType
         visible: control.MD.MProp.page.showHeader
         radius: control.backgroundRadius
-        scrolling: control.scrolling
+        showBackground: control.scrolling
         actions: control.actions
     }
 
