@@ -9,8 +9,8 @@ MD.State {
     ctx: item.MD.MProp
 
     elevation: MD.Token.elevation.level0
-    textColor: root.ctx.color.on_surface
-    backgroundColor: root.ctx.color.surface
+    textColor: root.ctx.textColor
+    backgroundColor: root.ctx.backgroundColor
     supportTextColor: root.ctx.color.on_surface_variant
     stateLayerColor: root.ctx.color.on_surface
     stateLayerOpacity: 0.0
