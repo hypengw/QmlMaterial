@@ -18,6 +18,8 @@ class InputBlock : public QObject {
                    acceptHoverEventsChanged FINAL)
     Q_PROPERTY(bool acceptTouch READ acceptTouchEvents WRITE setAcceptTouchEvents NOTIFY
                    acceptTouchEventsChanged FINAL)
+    Q_PROPERTY(bool acceptWheel READ acceptWheelEvents WRITE setAcceptWheelEvents NOTIFY
+                   acceptWheelEventsChanged FINAL)
 
 public:
     InputBlock(QObject* parent = nullptr);
@@ -34,12 +36,17 @@ public:
     void             setAcceptHoverEvents(bool enabled);
     bool             acceptTouchEvents() const;
     void             setAcceptTouchEvents(bool accept);
+    bool             acceptWheelEvents() const;
+    void             setAcceptWheelEvents(bool accept);
+
+    bool eventFilter(QObject* obj, QEvent* event) override;
 
     Q_SIGNAL void whenChanged();
     Q_SIGNAL void targetChanged();
     Q_SIGNAL void acceptMouseButtonsChanged();
     Q_SIGNAL void acceptHoverEventsChanged();
     Q_SIGNAL void acceptTouchEventsChanged();
+    Q_SIGNAL void acceptWheelEventsChanged();
 
     Q_SLOT void trigger();
 
@@ -54,6 +61,7 @@ private:
 
 private:
     bool                 mWhen;
+    bool                 mAcceptWheel;
     QPointer<QQuickItem> mTarget;
     State                mState;
     State                mReqState;

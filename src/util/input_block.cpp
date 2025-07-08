@@ -2,12 +2,25 @@
 
 using namespace qml_material;
 
-InputBlock::InputBlock(QObject* parent): QObject(parent), mWhen(true), mTarget(nullptr) {
+InputBlock::InputBlock(QObject* parent)
+    : QObject(parent), mWhen(true), mAcceptWheel(true), mTarget(nullptr) {
     connect(this, &InputBlock::whenChanged, this, &InputBlock::trigger, Qt::QueuedConnection);
     connect(this, &InputBlock::targetChanged, this, &InputBlock::trigger, Qt::QueuedConnection);
-    connect(this, &InputBlock::acceptMouseButtonsChanged, this, &InputBlock::trigger, Qt::QueuedConnection);
-    connect(this, &InputBlock::acceptHoverEventsChanged, this, &InputBlock::trigger, Qt::QueuedConnection);
-    connect(this, &InputBlock::acceptTouchEventsChanged, this, &InputBlock::trigger, Qt::QueuedConnection);
+    connect(this,
+            &InputBlock::acceptMouseButtonsChanged,
+            this,
+            &InputBlock::trigger,
+            Qt::QueuedConnection);
+    connect(this,
+            &InputBlock::acceptHoverEventsChanged,
+            this,
+            &InputBlock::trigger,
+            Qt::QueuedConnection);
+    connect(this,
+            &InputBlock::acceptTouchEventsChanged,
+            this,
+            &InputBlock::trigger,
+            Qt::QueuedConnection);
 }
 
 bool InputBlock::when() const { return mWhen; }
@@ -22,9 +35,11 @@ void        InputBlock::setTarget(QQuickItem* v) {
     if (auto old = std::exchange(mTarget, v); old != v) {
         if (old) {
             mState.restoreState(old);
+            old->removeEventFilter(this);
         }
         if (mTarget) {
             mState.saveState(mTarget);
+            mTarget->installEventFilter(this);
         }
         targetChanged();
     }
@@ -69,6 +84,20 @@ void InputBlock::setAcceptTouchEvents(bool accept) {
     if (std::exchange(mReqState.canTouch, accept)) {
         acceptTouchEventsChanged();
     }
+}
+bool InputBlock::acceptWheelEvents() const { return mAcceptWheel; }
+void InputBlock::setAcceptWheelEvents(bool accept) {
+    if (std::exchange(mAcceptWheel, accept)) {
+        acceptWheelEventsChanged();
+    }
+}
+
+bool InputBlock::eventFilter(QObject* obj, QEvent* event) {
+    auto t = event->type();
+    if (t == QEvent::Wheel) {
+        return ! mAcceptWheel;
+    }
+    return QObject::eventFilter(obj, event);
 }
 
 #include <qml_material/util/moc_input_block.cpp>
