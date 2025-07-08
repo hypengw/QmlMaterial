@@ -93,9 +93,11 @@ void InputBlock::setAcceptWheelEvents(bool accept) {
 }
 
 bool InputBlock::eventFilter(QObject* obj, QEvent* event) {
-    auto t = event->type();
-    if (t == QEvent::Wheel) {
-        return ! mAcceptWheel;
+    if (mWhen) {
+        auto t = event->type();
+        if (t == QEvent::Wheel) {
+            return ! mAcceptWheel;
+        }
     }
     return QObject::eventFilter(obj, event);
 }
