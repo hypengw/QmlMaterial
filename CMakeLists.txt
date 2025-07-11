@@ -154,6 +154,7 @@ set(QML_FILES
     qml/component/button/FAB.qml
     qml/component/button/IconButton.qml
     qml/component/button/StandardIconButton.qml
+    qml/component/button/SmallIconButton.qml
     qml/component/button/RadioIndicatorShape.qml
     qml/component/checkbox/CheckShape.qml
     qml/component/card/Card.qml
