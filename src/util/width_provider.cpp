@@ -16,41 +16,41 @@ WidthProvider::WidthProvider(QObject* parent)
         this, &WidthProvider::totalChanged, this, &WidthProvider::refresh, Qt::DirectConnection);
 }
 
-auto WidthProvider::width() const noexcept -> qint32 { return m_width; }
+auto WidthProvider::width() const noexcept -> double { return m_width; }
 auto WidthProvider::column() const noexcept -> qint32 { return m_column; }
 
-auto WidthProvider::minimum() const noexcept -> qint32 { return m_minimum; }
-void WidthProvider::setMinimum(qint32 v) {
-    if (m_minimum != v) {
+auto WidthProvider::minimum() const noexcept -> double { return m_minimum; }
+void WidthProvider::setMinimum(double v) {
+    if (! qFuzzyCompare(m_minimum, v)) {
         m_minimum = v;
         minimumChanged();
     }
 }
-auto WidthProvider::leftMargin() const noexcept -> qint32 { return m_left_margin; }
-void WidthProvider::setLeftMargin(qint32 v) {
-    if (m_left_margin != v) {
+auto WidthProvider::leftMargin() const noexcept -> double { return m_left_margin; }
+void WidthProvider::setLeftMargin(double v) {
+    if (! qFuzzyCompare(m_left_margin, v)) {
         m_left_margin = v;
         leftMarginChanged();
     }
 }
-auto WidthProvider::rightMargin() const noexcept -> qint32 { return m_right_margin; }
-void WidthProvider::setrightMargin(qint32 v) {
-    if (m_right_margin != v) {
+auto WidthProvider::rightMargin() const noexcept -> double { return m_right_margin; }
+void WidthProvider::setrightMargin(double v) {
+    if (! qFuzzyCompare(m_right_margin, v)) {
         m_right_margin = v;
         rightMarginChanged();
     }
 }
 
-auto WidthProvider::total() const noexcept -> qint32 { return m_total; }
-void WidthProvider::setTotal(qint32 v) {
-    if (m_total != v) {
+auto WidthProvider::total() const noexcept -> double { return m_total; }
+void WidthProvider::setTotal(double v) {
+    if (! qFuzzyCompare(m_total, v)) {
         m_total = v;
         totalChanged();
     }
 }
-auto WidthProvider::spacing() const noexcept -> qint32 { return m_spacing; }
-void WidthProvider::setSpacing(qint32 v) {
-    if (m_spacing != v) {
+auto WidthProvider::spacing() const noexcept -> double { return m_spacing; }
+void WidthProvider::setSpacing(double v) {
+    if (! qFuzzyCompare(m_spacing, v)) {
         m_spacing = v;
         spacingChanged();
     }
@@ -68,20 +68,19 @@ void WidthProvider::refresh() {
         return;
     }
 
-    auto d     = (double)total / (m_minimum + m_spacing);
-    auto count = (i64)(d);
+    // find maxmum `count` satisfy:
+    // $ count * m_minimum + (count - 1) * m_spacing <= total $
+    // only keep integer
+    const i64 d = (total + m_spacing) / (m_minimum + m_spacing);
+    // at least one
+    const i64 count = std::max<i64>(d, 1);
 
-    if (count == 0) {
-        m_width = std::max(total, m_minimum);
-    } else {
-        auto spacing = (double)m_spacing / total;
-        auto scale   = (d - count) / count + 1.0 + spacing;
-        m_width      = m_minimum * scale;
-    }
-    if (old != m_width) {
+    m_width = static_cast<double>(total - (count - 1) * m_spacing) / count;
+
+    if (! qFuzzyCompare(old, m_width)) {
         widthChanged();
     }
-    count = std::max<i64>(count, 1);
+
     if (count != m_column) {
         m_column = count;
         columnChanged();
