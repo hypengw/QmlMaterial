@@ -32,6 +32,10 @@ T.ItemDelegate {
 
     property int count: (ListView.view?.count ?? GridView.view?.count) ?? 0
 
+    readonly property bool prevSameSection: ListView.section == ListView.previousSection
+    readonly property bool nextSameSection: ListView.section == ListView.nextSection
+    property bool showDivider: nextSameSection && index + 1 !== count
+
     property MD.StateListItem mdState: MD.StateListItem {
         item: control
     }
@@ -181,7 +185,7 @@ T.ItemDelegate {
             anchors.bottom: parent.bottom
             width: parent.width
             height: implicitHeight
-            visible: control.index + 1 !== control.count
+            visible: control.showDivider
         }
     }
 
