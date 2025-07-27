@@ -7,7 +7,7 @@
 
 #include "qml_material/util/loggingcategory.hpp"
 
-Q_LOGGING_CATEGORY(qml_material_logcat, "qcm.material")
+Q_LOGGING_CATEGORY(qml_material_logcat, "qcm.material", QtMsgType::QtInfoMsg)
 namespace
 {
 
