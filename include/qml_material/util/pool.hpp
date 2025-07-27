@@ -35,25 +35,21 @@ public:
     Pool(QObject* parent = nullptr);
     ~Pool();
 
-    Q_INVOKABLE void add(QQmlComponent* comp, const QVariantMap&, bool cache);
-    Q_INVOKABLE void add(const QUrl& url, const QVariantMap&, bool cache);
-    Q_INVOKABLE void addFromModule(const QString& uri, const QString& typeName, const QVariantMap&,
-                                   bool cache);
-
-    Q_INVOKABLE void addWithKey(const QString& key, QQmlComponent* comp, const QVariantMap&,
-                                bool cache);
-    Q_INVOKABLE void addWithKey(const QString& key, const QUrl& url, const QVariantMap&,
-                                bool cache);
-    Q_INVOKABLE void addFromModuleWithKey(const QString& key, const QString& uri,
-                                          const QString& typeName, const QVariantMap&, bool cache);
-
-    Q_SIGNAL void objectAdded(QObject* obj, bool is_cache);
+    Q_INVOKABLE bool     contains(const QString& key) const;
+    Q_INVOKABLE QObject* get(const QString& key) const;
+    Q_INVOKABLE void     add(const QVariant&, const QVariantMap&, bool autoKey = false);
+    Q_INVOKABLE void     addWithKey(const QString& key, const QVariant& url_module_comp,
+                                    const QVariantMap&);
+    Q_SIGNAL void        objectAdded(QObject* obj, const QVariant& key /*may null*/);
 
     auto          async() const -> bool;
     void          setAsync(bool);
     Q_SIGNAL void asyncChanged(bool);
 
     Q_INVOKABLE bool removeObject(QObject*);
+    Q_INVOKABLE void clear();
+
+    void add(std::optional<QStringView> key, QQmlComponent* comp, const QVariantMap&);
 
 private:
     Q_SIGNAL void queueAdded(qint64);
@@ -62,8 +58,8 @@ private:
 
     struct Task {
         QString  key;
-        bool     cache;
-        QObject* object;
+        bool     hasKey { false };
+        QObject* object { nullptr };
 
         QPointer<QQmlComponent> component {};
         PoolIncubator*          incubator { nullptr };
@@ -75,7 +71,8 @@ private:
     void onComponentProgress(qint64 id, qreal);
     void onComponentLoaded(qint64 id);
     auto createComponent() -> QQmlComponent*;
-    auto tryCache(QStringView, bool) -> bool;
+    auto tryCreateComponent(const QVariant&) -> QQmlComponent*;
+    auto tryCache(QStringView) -> bool;
 
     using task_iterator = std::map<qint64, Task>::iterator;
     void clearTask(task_iterator);
@@ -83,7 +80,7 @@ private:
     mutable qint64                                    m_serial;
     std::map<qint64, Task>                            m_tasks;
     std::map<QString, QPointer<QObject>, std::less<>> m_objs;
-    std::set<QObject*>                                m_uncache_objs;
+    std::set<QObject*>                                m_nokey_objs;
 
     bool m_async;
 };

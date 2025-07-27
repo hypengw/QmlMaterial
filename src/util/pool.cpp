@@ -34,7 +34,7 @@ Pool::~Pool() {
             delete el.second.get();
         }
     }
-    for (auto el : m_uncache_objs) {
+    for (auto el : m_nokey_objs) {
         delete el;
     }
     for (const auto& el : m_tasks) {
@@ -54,8 +54,11 @@ void Pool::incubatorStateChanged(qint64 id, QQmlIncubator::Status status) {
     if (status == QQmlIncubator::Ready) {
         auto object = incubator->object();
         incubator->clear();
-        if (t.cache) {
+        if (t.hasKey) {
             m_objs.insert({ t.key, object });
+        } else {
+            connect(object, &QObject::destroyed, this, &Pool::onUncacheObjectDeleted);
+            m_nokey_objs.insert(object);
         }
         t.object = object;
         queueAdded(id);
@@ -85,23 +88,33 @@ void Pool::clearTask(task_iterator it) {
     m_tasks.erase(it);
 }
 
-auto Pool::genSerial() const -> qint64 { return m_serial++; }
+auto     Pool::genSerial() const -> qint64 { return m_serial++; }
+bool     Pool::contains(const QString& key) const { return m_objs.contains(key); }
+QObject* Pool::get(const QString& key) const {
+    if (auto it = m_objs.find(key); it != m_objs.end()) {
+        return it->second;
+    }
+    return nullptr;
+}
+void Pool::add(std::optional<QStringView> key, QQmlComponent* component, const QVariantMap& props) {
+    Task task {};
+    task.component = component;
 
-void Pool::addWithKey(const QString& key, QQmlComponent* component, const QVariantMap& props,
-                      bool cache) {
-    if (tryCache(key, cache)) return;
-    if (! component) return;
-    auto id   = genSerial();
-    auto task = Task {
-        .key       = key,
-        .cache     = cache,
-        .object    = nullptr,
-        .component = component,
-        .incubator = new PoolIncubator(
-            this, id, async() ? QQmlIncubator::Asynchronous : QQmlIncubator::Synchronous),
-    };
-    m_tasks.insert({ id, task });
+    auto id = genSerial();
+    if (key) {
+        if (tryCache(*key)) return;
+        if (! component) return;
+
+        task.key    = QString(*key);
+        task.hasKey = true;
+    } else {
+        if (! component) return;
+    }
+
+    task.incubator = new PoolIncubator(
+        this, id, async() ? QQmlIncubator::Asynchronous : QQmlIncubator::Synchronous);
     task.incubator->setInitialProperties(props);
+    m_tasks.insert({ id, task });
 
     if (! component->isLoading()) {
         onComponentLoaded(id);
@@ -114,43 +127,59 @@ void Pool::addWithKey(const QString& key, QQmlComponent* component, const QVaria
         });
     }
 }
-void Pool::addWithKey(const QString& key, const QUrl& url, const QVariantMap& props, bool cache) {
-    if (tryCache(key, cache)) return;
 
-    auto component = createComponent();
-    component->loadUrl(url,
-                       async() ? QQmlComponent::Asynchronous : QQmlComponent::PreferSynchronous);
-    addWithKey(key, component, props, cache);
-}
-void Pool::addFromModuleWithKey(const QString& key, const QString& uri, const QString& typeName,
-                                const QVariantMap& props, bool cache) {
-    if (tryCache(key, cache)) return;
+auto Pool::tryCreateComponent(const QVariant& val) -> QQmlComponent* {
+    QQmlComponent* component = nullptr;
+    if (component = val.value<QQmlComponent*>(); component) {
+        return component;
+    } else {
+        auto useAsync = async() ? QQmlComponent::Asynchronous : QQmlComponent::PreferSynchronous;
 
-    auto component = createComponent();
-    component->loadFromModule(
-        uri, typeName, async() ? QQmlComponent::Asynchronous : QQmlComponent::PreferSynchronous);
-    addWithKey(key, component, props, cache);
+        if (val.typeId() == QMetaType::QString) {
+            const auto str = val.toString();
+            if (str.startsWith(u"qrc:/") || str.startsWith(u"file:/")) {
+                component = createComponent();
+                QUrl url  = str;
+                component->loadUrl(url, useAsync);
+            } else if (auto splits = str.split('/'); splits.size() == 2) {
+                component = createComponent();
+                component->loadFromModule(splits[0], splits[1], useAsync);
+            }
+        } else if (val.typeId() == QMetaType::QUrl) {
+            component      = createComponent();
+            const auto url = val.toUrl();
+            component->loadUrl(url, useAsync);
+        }
+        if (! component) {
+            qCWarning(qml_material_logcat()) << "can't create component from" << val;
+        }
+        return component;
+    }
 }
+void Pool::addWithKey(const QString& key, const QVariant& val, const QVariantMap& props) {
+    if (tryCache(key)) return;
+    if (auto comp = tryCreateComponent(val)) {
+        add(key, comp, props);
+    }
+}
+
 auto Pool::createComponent() -> QQmlComponent* {
     auto engine = qmlEngine(this);
     if (engine == nullptr) return nullptr;
     return new QQmlComponent(engine, this);
 }
-void Pool::add(QQmlComponent* component, const QVariantMap& props, bool cache) {
-    QString key = QString("%1%2")
-                      .arg(QString::number((std::ptrdiff_t)component))
-                      .arg(variant_map_to_string(props));
-    addWithKey(key, component, props, cache);
+
+void Pool::add(const QVariant& val, const QVariantMap& props, bool autoKey) {
+    if (autoKey) {
+        auto key = QString("%1%2").arg(val.toString()).arg(variant_map_to_string(props));
+        addWithKey(key, val, props);
+    } else {
+        if (auto comp = tryCreateComponent(val)) {
+            add(std::nullopt, comp, props);
+        }
+    }
 }
-void Pool::add(const QUrl& url, const QVariantMap& props, bool cache) {
-    QString key = QString("%1%2").arg(url.toString()).arg(variant_map_to_string(props));
-    addWithKey(key, url, props, cache);
-}
-void Pool::addFromModule(const QString& uri, const QString& typeName, const QVariantMap& props,
-                         bool cache) {
-    QString key = QString("%1%2%3").arg(uri).arg(typeName).arg(variant_map_to_string(props));
-    addFromModuleWithKey(key, uri, typeName, props, cache);
-}
+
 void Pool::onComponentProgress(qint64, qreal) {}
 void Pool::onComponentLoaded(qint64 id) {
     if (auto it = m_tasks.find(id); it != m_tasks.end()) {
@@ -163,18 +192,16 @@ void Pool::onComponentLoaded(qint64 id) {
     }
 }
 void Pool::onQueueAdded(qint64 id) {
+    // try pop first task
     if (m_tasks.empty()) return;
     auto it = m_tasks.begin();
     if (it->first != id) return;
 
-    auto& t = it->second;
+    const auto& t = it->second;
     if (t.object) {
-        if (! t.cache) {
-            connect(t.object, &QObject::destroyed, this, &Pool::onUncacheObjectDeleted);
-            m_uncache_objs.insert(t.object);
-        }
-
-        objectAdded(t.object, t.cache);
+        auto key = t.hasKey ? QVariant(t.key) : QVariant();
+        qCDebug(qml_material_logcat()) << "pool: object added" << t.object << t.key;
+        objectAdded(t.object, key);
         clearTask(it);
 
         // try next
@@ -184,7 +211,7 @@ void Pool::onQueueAdded(qint64 id) {
         }
     }
 }
-void Pool::onUncacheObjectDeleted(QObject* o) { m_uncache_objs.erase(o); }
+void Pool::onUncacheObjectDeleted(QObject* o) { m_nokey_objs.erase(o); }
 
 auto Pool::async() const -> bool { return m_async; }
 void Pool::setAsync(bool v) {
@@ -195,12 +222,14 @@ void Pool::setAsync(bool v) {
 }
 
 bool Pool::removeObject(QObject* o) {
-    if (m_uncache_objs.erase(o) > 0) {
+    if (m_nokey_objs.erase(o) > 0) {
+        qCDebug(qml_material_logcat()) << "pool: object removed" << o;
         o->deleteLater();
         return true;
     }
     for (auto& el : m_objs) {
         if (el.second == o) {
+            qCDebug(qml_material_logcat()) << "pool: object removed" << o << el.first;
             o->deleteLater();
             m_objs.erase(el.first);
             return true;
@@ -208,15 +237,24 @@ bool Pool::removeObject(QObject* o) {
     }
     return false;
 }
+void Pool::clear() {
+    for (auto o : m_nokey_objs) {
+        o->deleteLater();
+    }
+    m_nokey_objs.clear();
+    for (auto o : m_objs) {
+        o.second->deleteLater();
+    }
+    m_objs.clear();
+}
 
-auto Pool::tryCache(QStringView key, bool cache) -> bool {
-    if (! cache) return false;
+auto Pool::tryCache(QStringView key) -> bool {
     if (auto it = m_objs.find(key); it != m_objs.end()) {
         auto id = genSerial();
         m_tasks.insert({ id,
                          Task {
                              .key    = key.toString(),
-                             .cache  = true,
+                             .hasKey = true,
                              .object = it->second,
                          } });
         queueAdded(id);
