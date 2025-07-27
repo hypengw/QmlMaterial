@@ -218,6 +218,8 @@ auto Util::paramsString(const QVariantMap& in_props) -> QString {
             props[el] = QString::number((std::intptr_t)(*pp));
         } else if (auto pp = get_if<QVariantMap>(&val)) {
             props[el] = paramsString(*pp);
+        } else {
+            props[el] = val.toString();
         }
     }
     QJsonDocument doc;
