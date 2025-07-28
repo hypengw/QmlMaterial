@@ -1,5 +1,6 @@
 #include "qml_material/util/pool.hpp"
 #include "qml_material/util/loggingcategory.hpp"
+#include "qml_material/util/qml_util.hpp"
 
 namespace
 {
@@ -129,32 +130,10 @@ void Pool::add(std::optional<QStringView> key, QQmlComponent* component, const Q
 }
 
 auto Pool::tryCreateComponent(const QVariant& val) -> QQmlComponent* {
-    QQmlComponent* component = nullptr;
-    if (component = val.value<QQmlComponent*>(); component) {
-        return component;
-    } else {
-        auto useAsync = async() ? QQmlComponent::Asynchronous : QQmlComponent::PreferSynchronous;
-
-        if (val.typeId() == QMetaType::QString) {
-            const auto str = val.toString();
-            if (str.startsWith(u"qrc:/") || str.startsWith(u"file:/")) {
-                component = createComponent();
-                QUrl url  = str;
-                component->loadUrl(url, useAsync);
-            } else if (auto splits = str.split('/'); splits.size() == 2) {
-                component = createComponent();
-                component->loadFromModule(splits[0], splits[1], useAsync);
-            }
-        } else if (val.typeId() == QMetaType::QUrl) {
-            component      = createComponent();
-            const auto url = val.toUrl();
-            component->loadUrl(url, useAsync);
-        }
-        if (! component) {
-            qCWarning(qml_material_logcat()) << "can't create component from" << val;
-        }
-        return component;
-    }
+    auto useAsync = async() ? QQmlComponent::Asynchronous : QQmlComponent::PreferSynchronous;
+    return qml_material::tryCreateComponent(val, useAsync, [this] {
+        return createComponent();
+    });
 }
 void Pool::addWithKey(const QString& key, const QVariant& val, const QVariantMap& props) {
     if (tryCache(key)) return;

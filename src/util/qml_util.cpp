@@ -289,7 +289,37 @@ bool     Util::disconnectAll(QObject* obj, const QString& name) const {
     auto signal = obj->metaObject()->method(signal_idx);
     return QObject::disconnect(obj, signal, nullptr, QMetaMethod {});
 }
+
 } // namespace qml_material
+
+auto qml_material::tryCreateComponent(const QVariant& val, QQmlComponent::CompilationMode useAsync,
+                                      const std::function<QQmlComponent*()>& createComponent)
+    -> QQmlComponent* {
+    QQmlComponent* component = nullptr;
+    if (component = val.value<QQmlComponent*>(); component) {
+        return component;
+    } else {
+        if (val.typeId() == QMetaType::QString) {
+            const auto str = val.toString();
+            if (str.startsWith(u"qrc:/") || str.startsWith(u"file:/")) {
+                component = createComponent();
+                QUrl url  = str;
+                component->loadUrl(url, useAsync);
+            } else if (auto splits = str.split('/'); splits.size() == 2) {
+                component = createComponent();
+                component->loadFromModule(splits[0], splits[1], useAsync);
+            }
+        } else if (val.typeId() == QMetaType::QUrl) {
+            component      = createComponent();
+            const auto url = val.toUrl();
+            component->loadUrl(url, useAsync);
+        }
+        if (! component) {
+            qCWarning(qml_material_logcat()) << "can't create component from" << val;
+        }
+        return component;
+    }
+}
 
 namespace qcm
 {
@@ -306,17 +336,16 @@ auto createItem(QQmlEngine* engine, const QJSValue& url_or_comp, const QVariantM
         comp = decltype(comp)(p, [](QQmlComponent*) {
         });
     } else if (auto p = url_or_comp.toVariant(); ! p.isNull()) {
-        QUrl url;
-        if (p.canConvert<QUrl>()) {
-            url = p.toUrl();
-        } else if (p.canConvert<QString>()) {
-            url = p.toString();
-        }
-        comp = decltype(comp)(new QQmlComponent(engine, url, nullptr), [](QQmlComponent* q) {
-            delete q;
+        auto raw = qml_material::tryCreateComponent(p, QQmlComponent::PreferSynchronous, [engine] {
+            return new QQmlComponent(engine, nullptr);
         });
+        if (raw) {
+            comp = decltype(comp)(raw, [](QQmlComponent* q) {
+                delete q;
+            });
+        }
     } else {
-        qCCritical(qml_material_logcat) << "url not valid";
+        qCWarning(qml_material_logcat()) << "can't create component from" << url_or_comp.toString();
         return nullptr;
     }
 
@@ -330,7 +359,7 @@ auto createItem(QQmlEngine* engine, const QJSValue& url_or_comp, const QVariantM
                                   Q_ARG(const QVariantMap&, props));
         if (obj != nullptr) {
             qml_dyn_count()++;
-            auto name = obj->metaObject()->className();
+            // auto name = obj->metaObject()->className();
             QObject::connect(obj, &QObject::destroyed, [](QObject*) {
                 qml_dyn_count()--;
             });

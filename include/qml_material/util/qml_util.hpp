@@ -77,7 +77,7 @@ public:
 
     Q_INVOKABLE void cellHoveredOn(QQuickItem* item, bool hovered, qint32 row, qint32 column) const;
     Q_INVOKABLE QObject* getParent(QObject* obj) const;
-    Q_INVOKABLE bool disconnectAll(QObject* obj, const QString&) const;
+    Q_INVOKABLE bool     disconnectAll(QObject* obj, const QString&) const;
 
 private:
     Q_SLOT void on_popup_closed();
@@ -85,6 +85,9 @@ private:
 private:
     usize m_tracked { 0 };
 };
+
+auto tryCreateComponent(const QVariant& val, QQmlComponent::CompilationMode useAsync,
+                        const std::function<QQmlComponent*()>& createComponent) -> QQmlComponent*;
 } // namespace qml_material
 
 namespace qcm
@@ -92,4 +95,5 @@ namespace qcm
 auto qml_dyn_count() -> std::atomic<i32>&;
 auto createItem(QQmlEngine* engine, const QJSValue& url_or_comp, const QVariantMap& props,
                 QObject* parent) -> QObject*;
+
 } // namespace qcm
