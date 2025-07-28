@@ -91,8 +91,8 @@ T.Button {
 
             Loader {
                 anchors.verticalCenter: parent.verticalCenter
-                width: control.trailing && item?.visible ? implicitWidth : 0
-                height: control.trailing && item?.visible ? implicitHeight : 0
+                width: control.trailing ? implicitWidth : 0
+                height: control.trailing ? implicitHeight : 0
                 sourceComponent: control.trailing
             }
         }
