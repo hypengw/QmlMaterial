@@ -307,6 +307,9 @@ qt_add_qml_module(
   URI
   Qcm.Material
   ${QML_MATERIAL_BUILD_TYPE}
+  IMPORTS
+  QtQuick.Layouts
+  QtQuick.Shapes
   DEPENDENCIES
   QtQuick
   OUTPUT_TARGETS
