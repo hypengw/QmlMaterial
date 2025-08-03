@@ -49,7 +49,7 @@ T.Button {
         }
     }
 
-    background: MD.ElevationRectangleBorder {
+    background: MD.ElevationRectangle {
         implicitWidth: control._size(control.type, 40, 56, 96)
         implicitHeight: control._size(control.type, 40, 56, 96)
 

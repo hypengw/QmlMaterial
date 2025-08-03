@@ -30,7 +30,6 @@ T.Button {
     icon.height: 18
 
     action: null
-    font.capitalization: Font.Capitalize
 
     property Item leadingItem: null
 

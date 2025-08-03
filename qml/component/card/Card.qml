@@ -27,7 +27,7 @@ T.Button {
 
     contentItem: Item {}
 
-    background: MD.ElevationRectangleBorder {
+    background: MD.ElevationRectangle {
         implicitWidth: 64
         implicitHeight: 64
 

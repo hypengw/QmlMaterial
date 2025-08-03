@@ -126,7 +126,7 @@ T.Button {
         }
     }
 
-    background: MD.ElevationRectangleBorder {
+    background: MD.ElevationRectangle {
         implicitWidth: 32
         implicitHeight: 32
 

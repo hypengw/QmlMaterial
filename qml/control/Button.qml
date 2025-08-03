@@ -44,7 +44,7 @@ T.Button {
         opacity: control.mdState.contentOpacity
     }
 
-    background: MD.ElevationRectangleBorder {
+    background: MD.ElevationRectangle {
         implicitWidth: 64
         implicitHeight: 40
 

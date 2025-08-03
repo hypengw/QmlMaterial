@@ -227,17 +227,15 @@ set(QML_FILES
     qml/state/StateMenuItem.qml
     qml/state/StateRadioButton.qml
     qml/state/StateCheckBox.qml
-    qml/internal/BoxShadow.qml
     qml/internal/ListBusyFooter.qml
     qml/internal/Ripple2.qml
-    qml/internal/RectangularGlow.qml
     qml/internal/CursorDelegate.qml
     qml/internal/SliderHandle.qml
     qml/internal/TextFieldEmbed.qml
     qml/internal/RoundClip.qml
     qml/internal/Elevation.qml
+    qml/internal/Rectangle.qml
     qml/internal/ElevationRectangle.qml
-    qml/internal/ElevationRectangleBorder.qml
     qml/internal/Shape.qml
     qml/internal/RoundPath.qml
     qml/internal/RectPath.qml

@@ -44,11 +44,11 @@ T.Button {
         }
     }
 
-    background: MD.ElevationRectangleBorder {
+    background: MD.ElevationRectangle {
         implicitWidth: 40
         implicitHeight: 40
 
-        radius: height / 2
+        radius: Math.max(height / 2, 0)
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
 
@@ -60,7 +60,7 @@ T.Button {
 
         MD.Ripple2 {
             anchors.fill: parent
-            radius: height / 2
+            radius: Math.max(height / 2, 0)
             pressX: control.pressX
             pressY: control.pressY
             pressed: control.pressed

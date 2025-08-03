@@ -7,6 +7,7 @@ namespace qml_material
 class CornersGroup {
     Q_GADGET
     QML_VALUE_TYPE(corners)
+    QML_CONSTRUCTIBLE_VALUE
 
     Q_PROPERTY(qreal topLeft READ topLeft WRITE setTopLeft FINAL)
     Q_PROPERTY(qreal topRight READ topRight WRITE setTopRight FINAL)
@@ -14,9 +15,9 @@ class CornersGroup {
     Q_PROPERTY(qreal bottomRight READ bottomRight WRITE setBottomRight FINAL)
 
 public:
-    CornersGroup() noexcept;
-    CornersGroup(qreal) noexcept;
-    CornersGroup(qreal bottomRight, qreal topRight, qreal bottomLeft, qreal topLeft) noexcept;
+    Q_INVOKABLE CornersGroup() noexcept;
+    Q_INVOKABLE CornersGroup(qreal) noexcept;
+    Q_INVOKABLE CornersGroup(qreal bottomRight, qreal topRight, qreal bottomLeft, qreal topLeft) noexcept;
     ~CornersGroup();
 
     Q_INVOKABLE CornersGroup& operator=(qreal) { return *this; }

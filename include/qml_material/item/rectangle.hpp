@@ -10,7 +10,7 @@ namespace qml_material
 
 class Rectangle : public QQuickItem {
     Q_OBJECT
-    QML_ELEMENT
+    QML_NAMED_ELEMENT(RectangleImpl)
 
     Q_PROPERTY(qreal radius READ radius WRITE setRadius NOTIFY radiusChanged FINAL)
     Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY colorChanged FINAL)
