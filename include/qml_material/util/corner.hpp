@@ -17,25 +17,29 @@ class CornersGroup {
 public:
     Q_INVOKABLE CornersGroup() noexcept;
     Q_INVOKABLE CornersGroup(qreal) noexcept;
-    Q_INVOKABLE CornersGroup(qreal bottomRight, qreal topRight, qreal bottomLeft, qreal topLeft) noexcept;
+    Q_INVOKABLE CornersGroup(qreal bottomRight, qreal topRight, qreal bottomLeft,
+                             qreal topLeft) noexcept;
     ~CornersGroup();
 
-    Q_INVOKABLE CornersGroup& operator=(qreal) { return *this; }
+    CornersGroup(const CornersGroup&)            = default;
+    CornersGroup(CornersGroup&&)                 = default;
+    CornersGroup& operator=(const CornersGroup&) = default;
+    CornersGroup& operator=(CornersGroup&&)      = default;
 
-    Q_INVOKABLE qreal radius() const;
-    void setRadius(qreal);
+    Q_INVOKABLE qreal radius() const noexcept;
+    void              setRadius(qreal) noexcept;
 
-    qreal topLeft() const;
-    void  setTopLeft(qreal newTopLeft);
+    qreal topLeft() const noexcept;
+    void  setTopLeft(qreal newTopLeft) noexcept;
 
-    qreal topRight() const;
-    void  setTopRight(qreal newTopRight);
+    qreal topRight() const noexcept;
+    void  setTopRight(qreal newTopRight) noexcept;
 
-    qreal bottomLeft() const;
-    void  setBottomLeft(qreal newBottomLeft);
+    qreal bottomLeft() const noexcept;
+    void  setBottomLeft(qreal newBottomLeft) noexcept;
 
-    qreal bottomRight() const;
-    void  setBottomRight(qreal newBottomRight);
+    qreal bottomRight() const noexcept;
+    void  setBottomRight(qreal newBottomRight) noexcept;
 
     Q_INVOKABLE QVector4D toVector4D() const noexcept;
     operator QVector4D() const noexcept;
