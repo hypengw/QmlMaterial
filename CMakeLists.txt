@@ -398,6 +398,7 @@ target_link_libraries(
   ${LIBNAME}
   PUBLIC Qt6::Core Qt6::Quick
          Qt6::QuickControls2 # QQuickAttachedPropertyPropagator
+         Qt6::QuickPrivate # QQuickStateGroup
   PRIVATE material_color)
 
 if(NOT QML_MATERIAL_BUILD_TYPE MATCHES STATIC)

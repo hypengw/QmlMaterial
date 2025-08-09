@@ -2,13 +2,15 @@
 #include <QQmlContext>
 #include <QQmlProperty>
 #include <QVariant>
+#include <QtQuick/private/qquickstategroup_p.h>
 #include "qml_material/theme.hpp"
 
 namespace qml_material
 {
 State::State(QQuickItem* parent)
-    : QQuickItem(parent),
+    : QObject(parent),
       m_target(nullptr),
+      m_enabled(true),
       m_ctx(nullptr),
       m_elevation(0),
       m_text_color(),
@@ -18,13 +20,49 @@ State::State(QQuickItem* parent)
       m_state_layer_color("transparent"),
       m_state_layer_opacity(0),
       m_content_opacity(1.0),
-      m_background_opacity(1.0) {
+      m_background_opacity(1.0),
+      m_component_complete(true),
+      m_state_group(nullptr) {
     connect(this, &State::targetChanged, this, &State::updateCtx, Qt::DirectConnection);
 }
 State::~State() {}
 
-void State::classBegin() { QQuickItem::classBegin(); }
-void State::componentComplete() { QQuickItem::componentComplete(); }
+auto State::datas() -> QQmlListProperty<QObject> { return { this, &m_datas }; }
+
+QQuickStateGroup* State::_states() {
+    if (! m_state_group) {
+        m_state_group = new QQuickStateGroup;
+        if (! m_component_complete) m_state_group->classBegin();
+
+        qmlobject_connect(m_state_group,
+                          QQuickStateGroup,
+                          SIGNAL(stateChanged(QString)),
+                          this,
+                          State,
+                          SIGNAL(stateChanged(QString)));
+    }
+    return m_state_group;
+}
+QQmlListProperty<QQuickState> State::states() { return _states()->statesProperty(); }
+
+QQmlListProperty<QQuickTransition> State::transitions() { return _states()->transitionsProperty(); }
+
+QString State::state() const {
+    if (! m_state_group)
+        return QString();
+    else
+        return m_state_group->state();
+}
+void State::set_state(const QString& state) { _states()->setState(state); }
+
+void State::classBegin() {
+    m_component_complete = false;
+    if (m_state_group) m_state_group->classBegin();
+}
+void State::componentComplete() {
+    m_component_complete = true;
+    if (m_state_group) m_state_group->componentComplete();
+}
 
 auto State::ctx() const -> Theme* { return m_ctx; }
 void State::setCtx(Theme* v) {
@@ -39,6 +77,14 @@ void State::updateCtx() {
         if (auto a = qobject_cast<Theme*>(qmlAttachedPropertiesObject<Theme>(m_target, true))) {
             setCtx(a);
         }
+    }
+}
+
+auto State::enabled() const noexcept -> bool { return m_enabled; }
+void State::set_enabled(bool v) {
+    if (m_enabled != v) {
+        m_enabled = v;
+        enabledChanged();
     }
 }
 
@@ -57,7 +103,6 @@ void State::set_target(QObject* item) {
             sig();                                                 \
         }                                                          \
     }
-
 
 X(qint32, elevation, elevationChanged)
 X(QColor, text_color, textColorChanged)

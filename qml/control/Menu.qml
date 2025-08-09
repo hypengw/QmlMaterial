@@ -120,7 +120,6 @@ T.Menu {
 
     MD.MState {
         id: item_state
-        visible: false
 
         elevation: MD.Token.elevation.level2
         textColor: MD.Token.color.on_surface
