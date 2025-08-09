@@ -65,7 +65,7 @@ void State::componentComplete() {
 }
 
 auto State::ctx() const -> Theme* { return m_ctx; }
-void State::setCtx(Theme* v) {
+void State::set_ctx(Theme* v) {
     if (m_ctx != v) {
         m_ctx = v;
         ctxChanged();
@@ -75,7 +75,7 @@ void State::setCtx(Theme* v) {
 void State::updateCtx() {
     if (m_target != nullptr) {
         if (auto a = qobject_cast<Theme*>(qmlAttachedPropertiesObject<Theme>(m_target, true))) {
-            setCtx(a);
+            set_ctx(a);
         }
     }
 }

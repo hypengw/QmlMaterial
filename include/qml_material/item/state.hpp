@@ -19,7 +19,7 @@ class State : public QObject, public QQmlParserStatus {
 
     Q_PROPERTY(QObject* target READ target WRITE set_target NOTIFY targetChanged FINAL)
     Q_PROPERTY(bool enabled READ enabled WRITE set_enabled NOTIFY enabledChanged FINAL)
-    Q_PROPERTY(qml_material::Theme* ctx READ ctx WRITE setCtx NOTIFY ctxChanged FINAL)
+    Q_PROPERTY(qml_material::Theme* ctx READ ctx WRITE set_ctx NOTIFY ctxChanged FINAL)
     Q_PROPERTY(qint32 elevation READ elevation WRITE set_elevation NOTIFY elevationChanged FINAL)
 
     Q_PROPERTY(QColor textColor READ text_color WRITE set_text_color NOTIFY textColorChanged FINAL)
@@ -47,10 +47,10 @@ public:
     State(QQuickItem* parent = nullptr);
     ~State();
 
-    void        classBegin() override;
-    void        componentComplete() override;
-    auto        ctx() const -> Theme*;
-    Q_SLOT void setCtx(Theme*);
+    void classBegin() override;
+    void componentComplete() override;
+    auto ctx() const -> Theme*;
+    void set_ctx(Theme*);
 
     auto state() const -> QString;
     auto enabled() const noexcept -> bool;
