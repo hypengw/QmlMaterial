@@ -30,7 +30,7 @@ namespace qml_material::token
 
 /**
  * @brief TypeScaleItem
- * 
+ *
  */
 struct TypeScaleItem {
     Q_GADGET
@@ -59,7 +59,7 @@ public:
 
 /**
  * @brief TypeScale
- * 
+ *
  */
 class TypeScale : public QObject {
     Q_OBJECT
@@ -67,12 +67,12 @@ class TypeScale : public QObject {
 public:
     using QObject::QObject;
 
-#define X(NAME, ...)                                                                            \
-    Q_PROPERTY(qml_material::token::TypeScaleItem NAME READ NAME NOTIFY typescaleChanged FINAL) \
-public:                                                                                         \
-    const TypeScaleItem& NAME() const { return m_##NAME; }                                      \
-                                                                                                \
-private:                                                                                        \
+#define X(NAME, ...)                                                             \
+    Q_PROPERTY(qml_material::token::TypeScaleItem NAME READ NAME CONSTANT FINAL) \
+public:                                                                          \
+    const TypeScaleItem& NAME() const noexcept { return m_##NAME; }              \
+                                                                                 \
+private:                                                                         \
     TypeScaleItem m_##NAME { __VA_ARGS__ };
 
     // clang-format off
@@ -109,8 +109,6 @@ private:                                                                        
     // clang-format on
 
 #undef X
-
-    Q_SIGNAL void typescaleChanged();
 };
 
 } // namespace qml_material::token
