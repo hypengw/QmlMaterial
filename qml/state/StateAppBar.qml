@@ -2,9 +2,9 @@ import QtQuick
 import Qcm.Material as MD
 import QtQuick.Templates as T
 
-MD.State {
+MD.MState {
     id: root
-    ctx: item.MD.MProp
+   
     required property T.ToolBar item
     property int type: MD.Enum.AppBarCenterAligned
     property bool showBackground: false

@@ -2,11 +2,11 @@ import QtQuick
 import QtQuick.Templates as T
 import Qcm.Material as MD
 
-MD.State {
+MD.MState {
     id: root
     required property T.MenuItem item
     property bool selected: false
-    ctx: item.MD.MProp
+   
 
     elevation: MD.Token.elevation.level2
     textColor: root.ctx.color.on_surface

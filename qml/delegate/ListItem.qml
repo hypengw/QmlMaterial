@@ -188,8 +188,4 @@ T.ItemDelegate {
             visible: control.showDivider
         }
     }
-
-    MD.StateHolder {
-        state: control.mdState
-    }
 }

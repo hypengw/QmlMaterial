@@ -1,8 +1,12 @@
 import QtQuick
+import QtQuick.Templates as T
 import Qcm.Material as MD
 
-MD.State {
+MD.MState {
     id: root
+
+    required property T.Control item
+
     elevation: MD.Token.elevation.level3
     textColor: ctx.color.inverse_primary
     supportTextColor: ctx.color.inverse_on_surface

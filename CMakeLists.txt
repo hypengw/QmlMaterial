@@ -134,6 +134,7 @@ set(QML_FILES
     qml/control/ItemDelegate.qml
     qml/control/HorizontalHeaderView.qml
     qml/control/HorizontalHeaderViewDelegate.qml
+    qml/component/MState.qml
     qml/component/Image.qml
     qml/component/Label.qml
     qml/component/Loader.qml

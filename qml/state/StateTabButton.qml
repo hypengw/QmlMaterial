@@ -2,12 +2,12 @@ import QtQuick
 import QtQuick.Templates as T
 import Qcm.Material as MD
 
-MD.State {
+MD.MState {
     id: root
 
     required property T.TabButton item
     property int type
-    ctx: item.MD.MProp
+   
 
     property color baseTextColor: root.type == MD.Enum.PrimaryTab ? (root.item.checked ? root.ctx.color.primary : root.ctx.color.on_surface) : (root.item.checked ? root.ctx.color.on_surface : root.ctx.color.on_surface_variant)
     elevation: MD.Token.elevation.level0

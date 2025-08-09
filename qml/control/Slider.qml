@@ -94,7 +94,5 @@ T.Slider {
             }
         }
     }
-    MD.StateHolder {
-        state: control.mdState
-    }
+
 }

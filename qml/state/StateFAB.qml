@@ -2,12 +2,12 @@ import QtQuick
 import QtQuick.Templates as T
 import Qcm.Material as MD
 
-MD.State {
+MD.MState {
     id: root
     required property T.Button item
     property int color: MD.Enum.FABColorPrimary
 
-    ctx: item.MD.MProp
+   
 
     elevation: MD.Token.elevation.level3
     textColor: {

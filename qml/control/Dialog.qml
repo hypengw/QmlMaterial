@@ -7,7 +7,14 @@ T.Dialog {
     id: control
 
     property int titleCapitalization: Font.Capitalize
-    property alias mdState: m_sh.state
+    property MD.MState mdState: MD.MState {
+        target: control
+
+        elevation: MD.Token.elevation.level3
+        textColor: ctx.color.primary
+        backgroundColor: ctx.color.surface_container_high
+        supportTextColor: ctx.color.on_surface_variant
+    }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding, implicitHeaderWidth, implicitFooterWidth)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding + (implicitHeaderHeight > 0 ? implicitHeaderHeight + spacing : 0) + (implicitFooterHeight > 0 ? implicitFooterHeight + spacing : 0))
@@ -104,18 +111,6 @@ T.Dialog {
             NumberAnimation {
                 duration: 150
             }
-        }
-    }
-
-    MD.StateHolder {
-        id: m_sh
-        state: MD.State {
-            item: control
-
-            elevation: MD.Token.elevation.level3
-            textColor: ctx.color.primary
-            backgroundColor: ctx.color.surface_container_high
-            supportTextColor: ctx.color.on_surface_variant
         }
     }
 }

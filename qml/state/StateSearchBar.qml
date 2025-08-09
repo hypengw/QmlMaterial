@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Templates as T
 import Qcm.Material as MD
 
-MD.State {
+MD.MState {
     id: root
 
     elevation: MD.Token.elevation.level0
@@ -13,7 +13,7 @@ MD.State {
     outlineColor: root.ctx.color.outline
 
     required property T.Button item
-    ctx: item.MD.MProp
+   
 
     property real placeholderOpacity: 1.0
 

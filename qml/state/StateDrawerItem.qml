@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Templates as T
 import Qcm.Material as MD
 
-MD.State {
+MD.MState {
     id: root
 
     elevation: MD.Token.elevation.level0
@@ -12,7 +12,7 @@ MD.State {
     stateLayerColor: "transparent"
 
     property T.ItemDelegate item
-    ctx: item.MD.MProp
+   
 
     states: [
         State {

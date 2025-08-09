@@ -2,11 +2,11 @@ import QtQuick
 import Qcm.Material as MD
 import QtQuick.Templates as T
 
-MD.State {
+MD.MState {
     id: root
     required property T.TextField item
     property int type
-    ctx: item.MD.MProp
+   
 
     elevation: MD.Token.elevation.level0
     textColor: root.ctx.color.on_surface

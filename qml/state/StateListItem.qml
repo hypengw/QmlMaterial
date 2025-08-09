@@ -2,11 +2,11 @@ import QtQuick
 import QtQuick.Templates as T
 import Qcm.Material as MD
 
-MD.State {
+MD.MState {
     id: root
 
     required property T.ItemDelegate item
-    ctx: item.MD.MProp
+   
 
     elevation: MD.Token.elevation.level0
     textColor: root.ctx.textColor

@@ -9,8 +9,8 @@ namespace qml_material
 
 class State : public QQuickItem {
     Q_OBJECT
-    QML_ELEMENT
-    Q_PROPERTY(QObject* item READ item WRITE set_item NOTIFY itemChanged)
+    QML_NAMED_ELEMENT(MStateImpl)
+    Q_PROPERTY(QObject* target READ target WRITE set_target NOTIFY targetChanged FINAL)
     Q_PROPERTY(qml_material::Theme* ctx READ ctx WRITE setCtx NOTIFY ctxChanged FINAL)
     Q_PROPERTY(qint32 elevation READ elevation WRITE set_elevation NOTIFY elevationChanged FINAL)
 
@@ -39,18 +39,18 @@ public:
     auto        ctx() const -> Theme*;
     Q_SLOT void setCtx(Theme*);
 
-    auto item() const -> QObject*;
-    auto elevation() const -> qint32;
-    auto text_color() const -> QColor;
-    auto outline_color() const -> QColor;
-    auto background_color() const -> QColor;
-    auto support_text_color() const -> QColor;
-    auto state_layer_color() const -> QColor;
-    auto state_layer_opacity() const -> double;
-    auto content_opacity() const -> double;
-    auto background_opacity() const -> double;
+    auto target() const noexcept -> QObject*;
+    auto elevation() const noexcept -> qint32;
+    auto text_color() const noexcept -> QColor;
+    auto outline_color() const noexcept -> QColor;
+    auto background_color() const noexcept -> QColor;
+    auto support_text_color() const noexcept -> QColor;
+    auto state_layer_color() const noexcept -> QColor;
+    auto state_layer_opacity() const noexcept -> double;
+    auto content_opacity() const noexcept -> double;
+    auto background_opacity() const noexcept -> double;
 
-    void set_item(QObject*);
+    void set_target(QObject*);
     void set_elevation(qint32);
     void set_text_color(QColor);
     void set_outline_color(QColor);
@@ -61,7 +61,7 @@ public:
     void set_content_opacity(double);
     void set_background_opacity(double);
 
-    Q_SIGNAL void itemChanged();
+    Q_SIGNAL void targetChanged();
     Q_SIGNAL void ctxChanged();
     Q_SIGNAL void elevationChanged();
     Q_SIGNAL void textColorChanged();
@@ -77,7 +77,7 @@ private:
     Q_SLOT void updateCtx();
 
 private:
-    QObject* m_item;
+    QObject* m_target;
     Theme*   m_ctx;
     qint32   m_elevation;
     QColor   m_text_color;
@@ -88,24 +88,6 @@ private:
     double   m_state_layer_opacity;
     double   m_content_opacity;
     double   m_background_opacity;
-};
-
-class StateHolder : public QObject {
-    Q_OBJECT
-    QML_ELEMENT
-
-    Q_PROPERTY(qml_material::State* state READ state WRITE setState NOTIFY stateChanged FINAL)
-public:
-    StateHolder(QObject* parent = nullptr);
-    ~StateHolder();
-
-    auto state() const -> State*;
-
-    Q_SLOT void   setState(State*);
-    Q_SIGNAL void stateChanged();
-
-private:
-    State* m_state;
 };
 
 } // namespace qml_material

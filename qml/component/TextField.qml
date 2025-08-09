@@ -110,7 +110,4 @@ MD.TextFieldEmbed {
     color: control.mdState.textColor
     placeholderTextColor: control.mdState.placeholderColor
 
-    MD.StateHolder {
-        state: control.mdState
-    }
 }

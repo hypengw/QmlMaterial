@@ -8,7 +8,9 @@ T.Button {
 
     property int iconStyle: hasIcon ? MD.Enum.IconAndText : MD.Enum.TextOnly
     readonly property bool hasIcon: MD.Util.hasIcon(icon)
-    property alias mdState: m_sh.state
+    property MD.StateRailItem mdState: MD.StateRailItem {
+        item: control
+    }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
@@ -181,10 +183,4 @@ T.Button {
     */
 
     background: Item {}
-    MD.StateHolder {
-        id: m_sh
-        state: MD.StateRailItem {
-            item: control
-        }
-    }
 }

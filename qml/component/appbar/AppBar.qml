@@ -104,7 +104,4 @@ T.ToolBar {
         opacity: control.mdState.backgroundOpacity
     }
 
-    MD.StateHolder {
-        state: control.mdState
-    }
 }

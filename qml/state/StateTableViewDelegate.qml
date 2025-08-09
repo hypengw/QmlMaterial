@@ -1,8 +1,11 @@
 import QtQuick
+import QtQuick.Templates as T
 import Qcm.Material as MD
 
-MD.State {
+MD.MState {
     id: root
+
+    required property T.TableViewDelegate item
 
     elevation: MD.Token.elevation.level0
     textColor: root.ctx.color.on_surface

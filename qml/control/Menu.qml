@@ -118,7 +118,7 @@ T.Menu {
         }
     }
 
-    MD.State {
+    MD.MState {
         id: item_state
         visible: false
 

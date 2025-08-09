@@ -57,7 +57,4 @@ T.Button {
         color: control.mdState.stateLayerColor
     }
 
-    MD.StateHolder {
-        state: control.mdState
-    }
 }

@@ -2,13 +2,13 @@ import QtQuick
 import QtQuick.Templates as T
 import Qcm.Material as MD
 
-MD.State {
+MD.MState {
     id: root
 
     required property T.Button item
     property int type: MD.Enum.CardElevated
     property int radius: 12
-    ctx: item.MD.MProp
+   
 
     elevation: {
         switch (root.type) {

@@ -57,8 +57,4 @@ T.TabButton {
         color: control.mdState.stateLayerColor
         // opacity: control.mdState.backgroundOpacity
     }
-
-    MD.StateHolder {
-        state: control.mdState
-    }
 }

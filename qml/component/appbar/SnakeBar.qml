@@ -11,9 +11,11 @@ T.Pane {
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)
 
     property alias text: label.text
-    property alias mdState: m_sh.state
-    property alias mdStateAction: m_sh.state
-    property alias mdStateIcon: m_sh.state
+    property MD.StateSnakeBar mdState: MD.StateSnakeBar {
+        item: control
+    }
+    property MD.StateSnakeBar mdStateAction: mdState
+    property MD.StateSnakeBar mdStateIcon: mdState
     readonly property alias actionControl: btn_action
     readonly property alias iconControl: btn_icon
 
@@ -135,13 +137,6 @@ T.Pane {
             }
 
             onClicked: control.closed()
-        }
-    }
-
-    MD.StateHolder {
-        id: m_sh
-        state: MD.StateSnakeBar {
-            item: control
         }
     }
 }

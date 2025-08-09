@@ -113,7 +113,4 @@ T.Button {
         }
     }
 
-    MD.StateHolder {
-        state: control.mdState
-    }
 }
