@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Templates as T
+import QtQml.Models
 import Qcm.Material as MD
 
 T.Button {
@@ -10,7 +11,10 @@ T.Button {
         item: control
     }
 
+    property bool edit: false
     property alias elevated: control.mdState.elevated
+    property Item leadingItem: null
+    property Component editDelegate: null
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
@@ -22,7 +26,7 @@ T.Button {
     topInset: 0
     bottomInset: 0
     verticalPadding: 0
-    leftPadding: 8
+    leftPadding: leadingItem ? 8 : 16
     rightPadding: icon.name ? 8 : 16
     spacing: 8
 
@@ -30,40 +34,15 @@ T.Button {
     icon.height: 18
 
     action: null
+    contentItem: contentItemRO
 
-    property Item leadingItem: null
-
-    contentItem: Row {
+    property Item contentItemRO: Row {
         opacity: control.mdState.contentOpacity
-        Item {
+        spacing: control.spacing
+        Row {
             id: m_leading
             anchors.verticalCenter: parent.verticalCenter
-            implicitWidth: children[0].implicitWidth
-            implicitHeight: children[0].implicitHeight
-
-            states: State {
-                when: !control.leadingItem
-                name: "hidden"
-                PropertyChanges {
-                    control.leftPadding: 16
-                    m_leading.implicitWidth: 0
-                    m_leading.opacity: 0
-                    m_leading.visible: false
-                }
-            }
-
-            RowLayout {
-                spacing: 0
-                Row {
-                    Layout.alignment: Qt.AlignVCenter
-                    MD.ItemHolder {
-                        item: control.leadingItem
-                    }
-                }
-                MD.Space {
-                    spacing: control.spacing
-                }
-            }
+            data: control.leadingItem ? [control.leadingItem] : []
         }
         Row {
             anchors.verticalCenter: parent.verticalCenter
@@ -113,4 +92,21 @@ T.Button {
         }
     }
 
+    onFocusChanged: {
+        if (focus)
+            control.contentItem.focus = true;
+    }
+
+    Instantiator {
+        model: control.edit ? 1 : null
+        delegate: control.editDelegate
+        onObjectAdded: (idx, obj) => {
+            control.contentItem = obj;
+            obj.focus = true;
+        }
+        onObjectRemoved: (idx, obj) => {
+            control.contentItem = control.contentItemRO;
+            control.contentItem.visible = true;
+        }
+    }
 }

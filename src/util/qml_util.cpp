@@ -7,6 +7,8 @@
 
 #include "qml_material/util/loggingcategory.hpp"
 
+using namespace std::string_view_literals;
+
 Q_LOGGING_CATEGORY(qml_material_logcat, "qcm.material", QtMsgType::QtInfoMsg)
 namespace
 {
@@ -50,7 +52,8 @@ void Util::closePopup(QObject* obj) const {
     do {
         auto meta = obj->metaObject();
         do {
-            if (meta->className() == std::string("QQuickPopup")) {
+            auto cn = meta->className();
+            if (cn == "QQuickPopup"sv) {
                 QMetaObject::invokeMethod(obj, "close");
                 return;
             }

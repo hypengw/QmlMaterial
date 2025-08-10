@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Templates as T
 import QtQuick.Window
@@ -9,6 +10,7 @@ T.Menu {
     id: control
 
     property alias mdState: item_state
+    property bool autoClose: false
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)
@@ -22,7 +24,7 @@ T.Menu {
         id: m_item
 
         function clickedCB() {
-            if ((action as MD.Action)?.closeMenu) {
+            if ((action as MD.Action)?.closeMenu || control.autoClose) {
                 triggered();
             }
         }
