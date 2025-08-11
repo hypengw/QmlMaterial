@@ -105,6 +105,7 @@ private:
     QObject* m_target;
     bool     m_enabled;
     Theme*   m_ctx;
+    bool     m_explicit_ctx;
     qint32   m_elevation;
     QColor   m_text_color;
     QColor   m_outline_color;

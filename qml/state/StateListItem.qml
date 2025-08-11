@@ -6,7 +6,6 @@ MD.MState {
     id: root
 
     required property T.ItemDelegate item
-   
 
     elevation: MD.Token.elevation.level0
     textColor: root.ctx.textColor

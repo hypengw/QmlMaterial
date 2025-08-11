@@ -12,6 +12,7 @@ State::State(QQuickItem* parent)
       m_target(nullptr),
       m_enabled(true),
       m_ctx(nullptr),
+      m_explicit_ctx(false),
       m_elevation(0),
       m_text_color(),
       m_outline_color(),
@@ -67,7 +68,8 @@ void State::componentComplete() {
 auto State::ctx() const -> Theme* { return m_ctx; }
 void State::set_ctx(Theme* v) {
     if (m_ctx != v) {
-        m_ctx = v;
+        m_ctx          = v;
+        m_explicit_ctx = true;
         ctxChanged();
     }
 }
@@ -75,7 +77,10 @@ void State::set_ctx(Theme* v) {
 void State::updateCtx() {
     if (m_target != nullptr) {
         if (auto a = qobject_cast<Theme*>(qmlAttachedPropertiesObject<Theme>(m_target, true))) {
-            set_ctx(a);
+            if (m_ctx != a && ! m_explicit_ctx) {
+                m_ctx = a;
+                ctxChanged();
+            }
         }
     }
 }
