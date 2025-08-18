@@ -27,17 +27,21 @@ T.Button {
 
     icon.width: 18
     icon.height: 18
+
+    property MD.typescale typescale: MD.Token.typescale.label_large
     font.capitalization: Font.Capitalize
+    font.pixelSize: typescale.size
+    font.weight: typescale.weight
+    font.letterSpacing: typescale.tracking
 
     contentItem: MD.IconLabel {
         text: control.text
-        typescale: MD.Token.typescale.label_large
         color: control.mdState.textColor
-
-        icon_color: control.mdState.iconColor
-        icon_name: control.icon.name
-        icon_size: control.icon.width
+        icon.color: control.mdState.iconColor
+        icon.name: control.icon.name
+        icon.size: control.icon.width
         opacity: control.mdState.contentOpacity
+        label.lineHeight: control.typescale.line_height
     }
 
     background: MD.ElevationRectangle {
@@ -62,5 +66,4 @@ T.Button {
             color: control.mdState.stateLayerColor
         }
     }
-
 }

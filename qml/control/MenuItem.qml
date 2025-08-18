@@ -44,26 +44,24 @@ T.MenuItem {
         name: MD.Token.icon.arrow_right
     }
 
+    property MD.typescale typescale: MD.Token.typescale.label_large
     font.capitalization: Font.Capitalize
+    font.pixelSize: typescale.size
+    font.weight: typescale.weight
+    font.letterSpacing: typescale.tracking
+
     contentItem: MD.IconLabel {
-
-        //readonly property real arrowPadding: control.subMenu && control.arrow ? control.arrow.width + control.spacing : 0
-        //readonly property real indicatorPadding: control.checkable && control.indicator ? control.indicator.width + control.spacing : 0
-        //leftPadding: !control.mirrored ? indicatorPadding : arrowPadding
-        //rightPadding: control.mirrored ? indicatorPadding : arrowPadding
-
+        label.lineHeight: control.typescale.line_height
         horizontalAlignment: Qt.AlignLeft
         spacing: control.spacing
 
         text: control.text
-        font: control.font
-        typescale: MD.Token.typescale.label_large
         color: control.mdState.textColor
 
-        icon_name: control.icon.name
-        icon_size: control.icon.width
-        icon_color: control.leadingIconColor
-        icon_fill: control.checked
+        icon.name: control.icon.name
+        icon.size: control.icon.width
+        icon.color: control.leadingIconColor
+        icon.fill: control.checked
 
         icon_component: m_loading_comp
         icon_component_active: {

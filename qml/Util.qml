@@ -60,4 +60,18 @@ MD.UtilCpp {
             (obj as T.Menu)?.close();
         }
     }
+
+    function applyTypescale(item: Item, typescale: MD.typescale, prominent: bool) {
+        if (item instanceof T.Control) {
+            const c = item as T.Control;
+            c.font.pixelSize = typescale.size;
+            c.font.weight = prominent ? typescale.weight_prominent : typescale.weight;
+            c.font.letterSpacing = typescale.tracking;
+        } else if (item instanceof Text) {
+            const l = item as Text;
+            l.font.pixelSize = typescale.size;
+            l.font.weight = prominent ? typescale.weight_prominent : typescale.weight;
+            l.font.letterSpacing = typescale.tracking;
+        }
+    }
 }

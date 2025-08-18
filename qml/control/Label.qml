@@ -15,12 +15,12 @@ T.Label {
 
     Binding {
         when: root.useTypescale
-        root.lineHeight: root.typescale ? root.typescale?.line_height : 16
-        root.font.pixelSize: (root.typescale ? root.typescale?.size : 16)
-        root.font.weight: root.typescale ? (root.prominent ? root.typescale.weight_prominent : typescale.weight) : Font.Normal
-        root.font.letterSpacing: root.typescale ? root.typescale.tracking : 1
-        restoreMode: Binding.RestoreNone
+        root.lineHeight: root.typescale.line_height
+        root.font.pixelSize: root.typescale.size
+        root.font.weight: root.prominent ? root.typescale.weight_prominent : root.typescale.weight
+        root.font.letterSpacing: root.typescale.tracking
     }
+
     antialiasing: true
     color: MD.MProp.textColor
     lineHeightMode: Text.FixedHeight

@@ -16,6 +16,11 @@ T.Popup {
     margins: 0
     verticalPadding: 0
     horizontalPadding: 1
+    property MD.typescale typescale: MD.Token.typescale.body_medium
+
+    font.pixelSize: typescale.size
+    font.weight: typescale.weight
+    font.letterSpacing: typescale.tracking
 
     MD.MProp.size: MD.ThemeSize {
         width: control.parent.width

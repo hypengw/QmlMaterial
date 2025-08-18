@@ -43,7 +43,6 @@ MD.TextFieldEmbed {
         text: control.placeholderText
         font: control.font
         color: control.mdState.placeholderColor
-        useTypescale: false
         elide: Text.ElideRight
         renderType: control.renderType
 

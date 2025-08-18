@@ -1,7 +1,6 @@
 import QtQuick
-import Qcm.Material as MD
 
-MD.Text {
+Text {
     id: root
     property bool controlFocus: false
     property bool controlHasText: false

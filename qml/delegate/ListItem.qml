@@ -42,10 +42,18 @@ T.ItemDelegate {
 
     property string supportText
     property int maximumLineCount: 1
-    property alias leader: m_holder_leader.item
-    property alias trailing: m_holder_trailing.item
-    property alias below: m_holder_below.item
-    property alias divider: m_holder_divider.item
+
+    property Item leader: MD.Loader {
+        active: control.leader == this
+        sourceComponent: MD.Icon {
+            name: control.action ? control.action.icon.name : control.icon.name
+            size: control.action ? control.action.icon.width : control.icon.width
+        }
+    }
+    property Item trailing: null
+    property Item below: null
+    property Item divider: null
+
     property int radius: 0
     property MD.corners corners: MD.Util.corners(radius)
 
@@ -72,9 +80,10 @@ T.ItemDelegate {
                 anchors.right: parent.right
                 spacing: 16
 
-                MD.ItemHolder {
-                    id: m_holder_leader
+                LayoutItemProxy {
+                    id: m_proxy_leader
                     visible: {
+                        const item = control.leader;
                         let ok = false;
                         if (item instanceof MD.Icon) {
                             ok = (item as MD.Icon).name;
@@ -85,13 +94,7 @@ T.ItemDelegate {
                         }
                         return ok;
                     }
-                    item: MD.Loader {
-                        active: control.leader == this
-                        sourceComponent: MD.Icon {
-                            name: control.action ? control.action.icon.name : control.icon.name
-                            size: control.action ? control.action.icon.width : control.icon.width
-                        }
-                    }
+                    target: control.leader
                 }
 
                 ColumnLayout {
@@ -124,10 +127,11 @@ T.ItemDelegate {
                     verticalAlignment: Qt.AlignVCenter
                 }
 
-                MD.ItemHolder {
-                    id: m_holder_trailing
+                LayoutItemProxy {
+                    id: m_proxy_trailing
                     Layout.alignment: Qt.AlignVCenter
-                    visible: item
+                    visible: control.trailing
+                    target: control.trailing
                 }
 
                 MD.Icon {
@@ -137,15 +141,16 @@ T.ItemDelegate {
                     size: 24
                 }
             }
-            MD.ItemHolder {
-                id: m_holder_below
-                x: m_holder_leader.visible ? m_holder_leader.width : 0
+
+            LayoutItemProxy {
+                id: m_proxy_below
+                visible: control.below
+                target: control.below
                 width: parent.width - x
-                visible: item
+                x: m_proxy_leader.visible ? m_proxy_leader.width : 0
             }
         }
     }
-
     background: MD.ElevationRectangle {
         implicitWidth: 64
         implicitHeight: {
@@ -168,8 +173,7 @@ T.ItemDelegate {
         elevationVisible: elevation && color.a > 0
         elevation: control.mdState.elevation
 
-        MD.Ripple2 {
-            id: m_ripple
+        readonly property Item ripple: MD.Ripple2 {
             corners: control.corners
             width: parent.width
             height: parent.height
@@ -180,12 +184,12 @@ T.ItemDelegate {
             color: control.mdState.stateLayerColor
         }
 
-        MD.ItemHolder {
-            id: m_holder_divider
-            anchors.bottom: parent.bottom
-            width: parent.width
-            height: implicitHeight
-            visible: control.showDivider
-        }
+        data: [ripple, control.divider]
+    }
+
+    Binding {
+        target: control.divider
+        property: "visible"
+        value: control.showDivider
     }
 }
