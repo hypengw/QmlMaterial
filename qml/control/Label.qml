@@ -26,6 +26,5 @@ T.Label {
     lineHeightMode: Text.FixedHeight
     wrapMode: Text.Wrap
     elide: Text.ElideRight
-    maximumLineCount: 1
     textFormat: Text.PlainText
 }
