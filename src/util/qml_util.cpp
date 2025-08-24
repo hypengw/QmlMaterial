@@ -33,22 +33,22 @@ bool Util::hasIcon(const QJSValue& v) const {
     return false;
 }
 
-auto Util::transparent(QColor in, float alpha) const noexcept -> QColor {
+auto Util::transparent(QColor in, float alpha) noexcept -> QColor {
     in.setAlphaF(alpha);
     return in;
 }
 
-auto Util::hoverColor(QColor in) const noexcept -> QColor {
+auto Util::hoverColor(QColor in) noexcept -> QColor {
     in.setAlphaF(0.08);
     return in;
 }
 
-auto Util::pressColor(QColor in) const noexcept -> QColor {
+auto Util::pressColor(QColor in) noexcept -> QColor {
     in.setAlphaF(0.18);
     return in;
 }
 
-void Util::closePopup(QObject* obj) const {
+void Util::closePopup(QObject* obj) {
     do {
         auto meta = obj->metaObject();
         do {
@@ -60,15 +60,17 @@ void Util::closePopup(QObject* obj) const {
         } while (meta = meta->superClass(), meta);
     } while (obj = obj->parent(), obj);
 }
-auto Util::devicePixelRatio(QQuickItem* in) const -> qreal {
+
+auto Util::devicePixelRatio(QQuickItem* in) -> qreal {
     return in ? in->window() ? in->window()->devicePixelRatio() : 1.0 : 1.0;
 }
 
-auto Util::listCorners(qint32 idx, qint32 count, qint32 radius) const noexcept -> CornersGroup {
+auto Util::listCorners(qint32 idx, qint32 count, qint32 radius) noexcept -> CornersGroup {
     return corners(idx == 0 ? radius : 0, idx + 1 == count ? radius : 0);
 }
+
 auto Util::tableWithHeaderCorners(qint32 row, qint32 column, qint32 rows, qint32 columns,
-                                  qint32 radius) const noexcept -> CornersGroup {
+                                  qint32 radius) noexcept -> CornersGroup {
     CornersGroup out;
     bool         row_end      = row + 1 == rows;
     bool         column_start = column == 0;
@@ -77,8 +79,9 @@ auto Util::tableWithHeaderCorners(qint32 row, qint32 column, qint32 rows, qint32
     out.setBottomRight(row_end && column_end ? radius : 0);
     return out;
 }
+
 auto Util::tableCorners(qint32 row, qint32 column, qint32 rows, qint32 columns,
-                        qint32 radius) const noexcept -> CornersGroup {
+                        qint32 radius) noexcept -> CornersGroup {
     CornersGroup out;
     bool         row_start    = row == 0;
     bool         row_end      = row + 1 == rows;
@@ -91,7 +94,7 @@ auto Util::tableCorners(qint32 row, qint32 column, qint32 rows, qint32 columns,
     return out;
 }
 
-auto Util::cornerArray(QVariant in) const noexcept -> CornersGroup {
+auto Util::cornerArray(QVariant in) noexcept -> CornersGroup {
     CornersGroup out;
     if (in.canConvert<qreal>()) {
         out = CornersGroup(in.value<qreal>());
@@ -127,9 +130,9 @@ auto Util::cornerArray(QVariant in) const noexcept -> CornersGroup {
     return out;
 }
 
-auto Util::corners(qreal in) const noexcept -> CornersGroup { return CornersGroup(in); }
+auto Util::corners(qreal in) noexcept -> CornersGroup { return CornersGroup(in); }
 
-auto Util::corners(qreal a, qreal b) const noexcept -> CornersGroup {
+auto Util::corners(qreal a, qreal b) noexcept -> CornersGroup {
     CornersGroup out;
     out.setTopLeft(a);
     out.setTopRight(a);
@@ -138,7 +141,7 @@ auto Util::corners(qreal a, qreal b) const noexcept -> CornersGroup {
     return out;
 }
 
-auto Util::corners(qreal tl, qreal tr, qreal bl, qreal br) const noexcept -> CornersGroup {
+auto Util::corners(qreal tl, qreal tr, qreal bl, qreal br) noexcept -> CornersGroup {
     return CornersGroup(br, tr, bl, tl);
 }
 
@@ -184,11 +187,11 @@ void Util::print_parents(const QJSValue& obj) {
         "{}\n{}", type_str(obj).toStdString(), format_parent(obj.property("parent"), 1));
 }
 
-auto Util::lightness(QColor color) -> qreal { return color.lightnessF(); }
+auto Util::lightness(QColor color) noexcept-> qreal { return color.lightnessF(); }
 
-auto Util::tokenElevation() -> token::Elevation { return token::Elevation(); }
-auto Util::tokenShape() -> token::Shape { return token::Shape(); }
-auto Util::tokenState() -> token::State { return token::State(); }
+auto Util::tokenElevation() noexcept -> token::Elevation { return token::Elevation(); }
+auto Util::tokenShape() noexcept -> token::Shape { return token::Shape(); }
+auto Util::tokenState() noexcept -> token::State { return token::State(); }
 
 QObject* Util::createItem(const QJSValue& url_or_comp, const QVariantMap& props, QObject* parent) {
     return qcm::createItem(qmlEngine(this), url_or_comp, props, parent);
@@ -197,13 +200,13 @@ QObject* Util::showPopup(const QJSValue& url_or_comp, const QVariantMap& props, 
                          bool open_and_destry) {
     auto popup = createItem(url_or_comp, props, parent);
     if (open_and_destry) {
-        QObject::connect(popup, SIGNAL(closed()), this, SLOT(on_popup_closed()));
+        QObject::connect(popup, SIGNAL(closed()), this, SLOT(onPopupClosed()));
         QMetaObject::invokeMethod(popup, "open");
     }
     return popup;
 }
 
-void Util::on_popup_closed() {
+void Util::onPopupClosed() {
     auto s = sender();
     if (auto engine = qmlEngine(s)) {
         auto js = engine->toManagedValue(s);
@@ -236,10 +239,8 @@ void Util::setCursor(QQuickItem* item, Qt::CursorShape shape) {
     }
 }
 
-auto Util::clamp(double t, double low, double heigh) const -> double {
-    return std::clamp(t, low, heigh);
-}
-auto Util::teleportCurve(double t, double left, double right) const -> double {
+double Util::clamp(double t, double low, double heigh) { return std::clamp(t, low, heigh); }
+double Util::teleportCurve(double t, double left, double right) {
     if (t < left) {
         double x = t / left;
         return 1.0 - easeInOut(x);
@@ -264,7 +265,7 @@ void Util::forceSetImplicitWidth(QQuickItem* item, qreal width) {
     }
 }
 
-void Util::cellHoveredOn(QQuickItem* item, bool hovered, qint32 row, qint32 column) const {
+void Util::cellHoveredOn(QQuickItem* item, bool hovered, qint32 row, qint32 column) {
     if (item == nullptr) return;
     if (! hovered) return;
 
@@ -277,8 +278,8 @@ void Util::cellHoveredOn(QQuickItem* item, bool hovered, qint32 row, qint32 colu
     }
 }
 
-QObject* Util::getParent(QObject* obj) const { return obj ? obj->parent() : nullptr; }
-bool     Util::disconnectAll(QObject* obj, const QString& name) const {
+QObject* Util::getParent(QObject* obj) { return obj ? obj->parent() : nullptr; }
+bool     Util::disconnectAll(QObject* obj, const QString& name) {
     if (! obj) {
         qCWarning(qml_material_logcat()) << "disconnectAll: obj is null";
         return false;
