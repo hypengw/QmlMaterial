@@ -4,6 +4,7 @@ import Qcm.Material as MD
 Item {
     id: root
     property int radius: 0
+    property alias inner: m_image
     // tl,tr,bl,br
     property MD.corners corners: MD.Util.corners(radius)
     property alias asynchronous: m_image.asynchronous

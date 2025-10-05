@@ -87,6 +87,7 @@ set(SOURCES
     src/util/qml_util.cpp
     src/util/page_context.cpp
     src/util/width_provider.cpp
+    src/util/color_picker.cpp
     src/model/palette_model.cpp
     src/model/snake_model.cpp
     src/token/color.cpp
