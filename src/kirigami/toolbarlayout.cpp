@@ -10,6 +10,7 @@
 #include <unordered_map>
 
 #include <QDeadlineTimer>
+#include <QElapsedTimer>
 #include <QQmlComponent>
 #include <QTimer>
 
