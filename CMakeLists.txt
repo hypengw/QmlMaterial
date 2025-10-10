@@ -51,6 +51,11 @@ if(UNIX AND NOT APPLE)
 endif()
 
 find_package(Qt6 REQUIRED COMPONENTS Core Quick QuickControls2 Gui ShaderTools)
+
+if(Qt6Quick_VERSION VERSION_GREATER_EQUAL 6.10)
+  find_package(Qt6 REQUIRED COMPONENTS QuickPrivate)
+endif()
+
 find_package(PkgConfig REQUIRED)
 if(QT_KNOWN_POLICY_QTP0004)
   qt_policy(SET QTP0004 NEW)
