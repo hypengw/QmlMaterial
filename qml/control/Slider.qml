@@ -68,8 +68,8 @@ T.Slider {
             Rectangle {
                 x: control.horizontal ? 0 : (parent.width - width) / 2
                 y: control.horizontal ? (parent.height - height) / 2 : control.visualPosition * parent.height
-                width: control.horizontal ? control.position * parent.width : 4
-                height: control.horizontal ? 4 : control.position * parent.height
+                width: control.horizontal ? control.visualPosition * parent.width : 4
+                height: control.horizontal ? 4 : control.visualPosition * parent.height
                 radius: Math.min(width, height) / 2
                 color: control.mdState.trackColor
             }

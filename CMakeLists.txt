@@ -25,15 +25,20 @@ list(APPEND QML_DIRS "${QT_QML_OUTPUT_DIRECTORY}")
 
 if(UNIX)
   include(GNUInstallDirs)
-
-  if("${QT_INSTALL_QML}" STREQUAL "")
-    set(QT_INSTALL_QML "${CMAKE_INSTALL_LIBDIR}/qt6/qml")
-  endif()
 endif()
 
-set(QML_INSTALL_DIR
-    "${QT_INSTALL_QML}"
-    CACHE STRING "")
+# Ensure installed libraries have an absolute install_name/rpath on macOS so
+# downstream apps (including nix-run examples) can locate them without manual
+# path injection.
+set(CMAKE_MACOSX_RPATH ON)
+if(DEFINED CMAKE_INSTALL_FULL_LIBDIR)
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
+  set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_FULL_LIBDIR}")
+endif()
+
+# Align install location with Qt 6 default (nixpkgs uses lib/qt-6/qml)
+set(QT_INSTALL_QML "${CMAKE_INSTALL_LIBDIR}/qt-6/qml" CACHE STRING "" FORCE)
+set(QML_INSTALL_DIR "${QT_INSTALL_QML}" CACHE STRING "" FORCE)
 message("QML_INSTALL_DIR: ${QML_INSTALL_DIR}")
 
 # check lto
@@ -46,11 +51,15 @@ if(is_ipo_supported
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
 endif()
 
-if(UNIX AND NOT APPLE)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(LINUX CACHE INTERNAL TRUE "")
 endif()
 
-find_package(Qt6 REQUIRED COMPONENTS Core Quick QuickControls2 Gui ShaderTools)
+set(QT6_COMPONENTS Core Quick QuickControls2 Gui ShaderTools Qml)
+if(LINUX)
+  list(APPEND QT6_COMPONENTS DBus)
+endif()
+find_package(Qt6 REQUIRED COMPONENTS ${QT6_COMPONENTS})
 
 if(Qt6Quick_VERSION VERSION_GREATER_EQUAL 6.10)
   find_package(Qt6 REQUIRED COMPONENTS QuickPrivate)
@@ -282,13 +291,9 @@ else()
   set(QM_ICON_FILL_1_FONT_FILE
       assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_1.woff2)
 
-  if(UNIX)
-    if(ANDROID)
-      list(APPEND SOURCES src/platform/android/android.cpp)
-      list(APPEND SHADER_DEFINES "GLES=1")
-    else()
-      list(APPEND SOURCES src/platform/linux/xdp.cpp)
-    endif()
+  if(ANDROID)
+    list(APPEND SOURCES src/platform/android/android.cpp)
+    list(APPEND SHADER_DEFINES "GLES=1")
   elseif(WIN32)
     set(QM_ICON_FILL_0_FONT_FILE
         assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_0.ttf)
@@ -297,6 +302,10 @@ else()
 
     set(QML_MATERIAL_BUILD_TYPE STATIC)
     list(APPEND SOURCES src/platform/win/win.cpp)
+  elseif(LINUX)
+    list(APPEND SOURCES src/platform/linux/xdp.cpp)
+  elseif(APPLE)
+    list(APPEND SOURCES src/platform/macos/macos.cpp)
   endif()
 endif()
 
@@ -406,6 +415,9 @@ target_link_libraries(
          Qt6::QuickControls2 # QQuickAttachedPropertyPropagator
          Qt6::QuickPrivate # QQuickStateGroup
   PRIVATE material_color)
+if(LINUX)
+  target_link_libraries(${LIBNAME} PRIVATE Qt6::DBus)
+endif()
 
 if(NOT QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
   include(CMakePackageConfigHelpers)

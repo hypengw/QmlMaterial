@@ -19,7 +19,7 @@ Item {
         width: 20
         height: 20
         radius: width / 2
-        color: root.control ? root.control.mdState.backgroundColor : "transparent"
+        color: root.control ? root.control.mdState.trackColor : "transparent"
         elevation: MD.Token.elevation.level1
     }
 

@@ -1,6 +1,8 @@
 .qmlls.ini
 build
 .cache
+compile_commands.json
+/result
 /build*
 /doc/html
 /doc/doxygen-awesome-css

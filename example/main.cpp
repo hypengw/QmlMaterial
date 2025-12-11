@@ -1,8 +1,6 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
-#include <QCommandLineParser>
 #include <QSurfaceFormat>
-#include <QLoggingCategory>
 
 #include <QtQml/QQmlExtensionPlugin>
 
@@ -24,8 +22,6 @@ int main(int argc, char* argv[]) {
 #endif
 
     QQmlApplicationEngine engine;
-
-    engine.addImportPath("qrc:/");
     engine.load(u"qrc:/main.qml"_s);
 
     return gui_app.exec();

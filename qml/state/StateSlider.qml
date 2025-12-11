@@ -6,19 +6,21 @@ MD.MState {
     id: root
 
     required property T.Slider item
-   
+
+    // Prefer palette from attached Theme when present, otherwise fall back to global token palette.
+    readonly property var palette: root.ctx ? root.ctx.color : MD.Token.color
 
     elevation: MD.Token.elevation.level0
-    textColor: root.ctx.color.on_primary
-    backgroundColor: root.ctx.color.primary
-    supportTextColor: root.ctx.color.on_primary
+    textColor: palette.on_primary
+    backgroundColor: palette.primary
+    supportTextColor: palette.on_primary
     stateLayerColor: "#00000000"
 
-    property color trackColor: root.backgroundColor
-    property color trackOverlayColor: root.backgroundColor
-    property color trackInactiveColor: root.ctx.color.surface_container_highest
-    property color trackMarkInactiveColor: root.ctx.color.on_surface_variant
-    property color trackMarkColor: root.supportTextColor
+    property color trackColor: palette.primary
+    property color trackOverlayColor: palette.primary
+    property color trackInactiveColor: MD.Util.transparent(palette.on_surface, 0.3)
+    property color trackMarkInactiveColor: MD.Util.transparent(palette.on_surface, 0.38)
+    property color trackMarkColor: palette.on_primary
 
     property real trackOverlayOpacity: 0.12
 
@@ -27,9 +29,9 @@ MD.MState {
             name: "Disabled"
             when: !root.item.enabled
             PropertyChanges {
-                root.textColor: root.ctx.color.on_surface
-                root.backgroundColor: root.ctx.color.on_surface
-                root.trackInactiveColor: root.ctx.color.on_surface
+                root.textColor: root.palette.on_surface
+                root.backgroundColor: root.palette.on_surface
+                root.trackInactiveColor: root.palette.on_surface
                 root.backgroundOpacity: 0.38
             }
         },
@@ -38,7 +40,7 @@ MD.MState {
             when: root.item.pressed || root.item.visualFocus
             PropertyChanges {
                 root.stateLayerColor: {
-                    const c = root.ctx.color.primary;
+                    const c = root.palette.primary;
                     return MD.Util.transparent(c, MD.Token.state.pressed.state_layer_opacity);
                 }
             }
@@ -48,7 +50,7 @@ MD.MState {
             when: root.item.hovered
             PropertyChanges {
                 root.stateLayerColor: {
-                    const c = root.ctx.color.primary;
+                    const c = root.palette.primary;
                     return MD.Util.transparent(c, MD.Token.state.hover.state_layer_opacity);
                 }
             }
