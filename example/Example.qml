@@ -43,32 +43,32 @@ MD.Page {
             model: [
                 {
                     name: 'components',
-                    source: 'qrc:/Qcm/Material/Example/Components.qml',
+                    source: 'Components.qml',
                     icon: MD.Token.icon.widgets
                 },
                 {
                     name: 'color',
-                    source: 'qrc:/Qcm/Material/Example/Color.qml',
+                    source: 'Color.qml',
                     icon: MD.Token.icon.palette
                 },
                 {
                     name: 'shape',
-                    source: 'qrc:/Qcm/Material/Example/Shape.qml',
+                    source: 'Shape.qml',
                     icon: MD.Token.icon.shapes
                 },
                 {
                     name: 'elevation',
-                    source: 'qrc:/Qcm/Material/Example/Elevation.qml',
+                    source: 'Elevation.qml',
                     icon: MD.Token.icon.shadow
                 },
                 {
                     name: 'typography',
-                    source: 'qrc:/Qcm/Material/Example/Typography.qml',
+                    source: 'Typography.qml',
                     icon: MD.Token.icon.description
                 },
                 {
                     name: 'about',
-                    source: 'qrc:/Qcm/Material/Example/About.qml',
+                    source: 'About.qml',
                     icon: MD.Token.icon.info
                 },
             ]

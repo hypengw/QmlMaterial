@@ -18,6 +18,6 @@ MD.ApplicationWindow {
 
     Loader {
         anchors.fill: parent
-        source: 'qrc:/Qcm/Material/Example/Example.qml'
+        source: "Example.qml"
     }
 }

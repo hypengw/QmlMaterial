@@ -80,15 +80,12 @@
         }
       );
 
-      apps = forAllSystems (
-        system:
-        {
-          default = {
-            type = "app";
-            program = "${self.packages.${system}.default}/bin/qml-material-demo";
-          };
-        }
-      );
+      apps = forAllSystems (system: {
+        default = {
+          type = "app";
+          program = "${self.packages.${system}.default}/bin/qm_example";
+        };
+      });
 
       devShells = forAllSystems (
         system:

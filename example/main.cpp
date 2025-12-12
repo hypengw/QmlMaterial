@@ -34,12 +34,15 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
-    QGuiApplication gui_app(argc, argv);
+    QGuiApplication app(argc, argv);
     QCoreApplication::setApplicationName("qml_material");
     QCoreApplication::setApplicationVersion("0.0.1");
 
     QQmlApplicationEngine engine;
-    engine.load(u"qrc:/main.qml"_s);
-
-    return gui_app.exec();
+    // Load the bundled QML from the module resource prefix (/qt/qml/Demo/)
+    engine.loadFromModule("Demo", "Main");
+    if (engine.rootObjects().isEmpty()) {
+        return -1;
+    }
+    return app.exec();
 }

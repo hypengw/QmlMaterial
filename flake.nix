@@ -30,7 +30,7 @@
             pname = "QmlMaterial";
             version = "0.1.4";
 
-            # Only drop the example-nix directory; keep everything else intact.
+            # Drop Nix-specific files under example; keep shared QML/CMake sources.
             src = pkgs.lib.cleanSourceWith {
               src = ./.;
               filter =
@@ -38,7 +38,11 @@
                 let
                   rel = pkgs.lib.removePrefix (toString ./. + "/") (toString path);
                 in
-                !(pkgs.lib.hasPrefix "example-nix" rel);
+                !(
+                  rel == "example/flake.nix"
+                  || rel == "example/flake.lock"
+                  || pkgs.lib.hasPrefix "example/build" rel
+                );
             };
 
             # Build-time dependencies
