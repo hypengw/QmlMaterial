@@ -31,7 +31,7 @@ T.Drawer {
     property int elevation: !interactive && !dim ? MD.Token.elevation.level0 : MD.Token.elevation.level1
 
     background: Item {
-        implicitWidth: Math.min(360, control.Window.window?.width ?? 360)
+        implicitWidth: Math.min(360, control.parent?.Window.window?.width ?? 360)
         Rectangle {
             anchors.fill: parent
             color: MD.Token.color.surface
