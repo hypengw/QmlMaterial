@@ -1,6 +1,5 @@
 {
   description = "QmlMaterial Development Environment";
-
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   };
@@ -30,9 +29,9 @@
             pname = "QmlMaterial";
             version = "0.1.4";
 
-            # When running from a GitHub flake, the default tarball source does not
-            # include Git LFS objects (fonts/images). Re-fetch with LFS enabled so
-            # `nix run github:...` has real assets.
+            # `nix run github:...` uses a GitHub source tarball, which does not
+            # include Git LFS objects (fonts/images). Re-fetch via git with LFS
+            # enabled so assets are available at build time.
             rawSrc =
               if (self.sourceInfo.type or "") == "github" then
                 builtins.fetchGit {
@@ -55,9 +54,7 @@
                   rel = pkgs.lib.removePrefix srcPrefix (toString path);
                 in
                 !(
-                  rel == "example/flake.nix"
-                  || rel == "example/flake.lock"
-                  || pkgs.lib.hasPrefix "example/build" rel
+                  rel == "example/flake.nix" || rel == "example/flake.lock" || pkgs.lib.hasPrefix "example/build" rel
                 );
             };
 

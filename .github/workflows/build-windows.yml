@@ -1,5 +1,4 @@
 name: Build QmlMaterial (Windows)
-
 on:
   push:
     branches:
@@ -11,17 +10,13 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
-
 permissions:
   contents: write
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 env:
   BUILD_TYPE: Release
-
 jobs:
   build:
     runs-on: windows-latest
@@ -32,13 +27,10 @@ jobs:
         with:
           submodules: recursive
           lfs: true
-
       - name: Setup Ninja
         uses: seanmiddleditch/gha-setup-ninja@v3
-
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
-
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
@@ -46,22 +38,14 @@ jobs:
           arch: win64_msvc2022_64
           modules: qt5compat qtshadertools
           cache: true
-
       - name: Configure CMake
         run: >
-          cmake -S . -B build -G Ninja
-          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-          -DQM_BUILD_EXAMPLE=ON
-          -DCMAKE_C_COMPILER=cl.exe
-          -DCMAKE_CXX_COMPILER=cl.exe
-          -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DQM_BUILD_EXAMPLE=ON -DCMAKE_C_COMPILER=cl.exe -DCMAKE_CXX_COMPILER=cl.exe -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
 
       - name: Build
         run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
-
       - name: Install
         run: cmake --install build --config ${{ env.BUILD_TYPE }} --prefix "${{ github.workspace }}/install"
-
       - name: Deploy Qt runtime (Windows)
         shell: pwsh
         run: |
@@ -114,7 +98,61 @@ jobs:
           }
           $targetDir = Split-Path $targetExe -Parent
           & $windeploy --release --dir "$targetDir" --qmldir "$projectDir\qml" "$targetExe"
-
+      - name: Flatten Windows bundle layout
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEST="${{ github.workspace }}/install"
+          RUNTIME="$DEST/runtime"
+          mkdir -p "$RUNTIME"
+          if [[ -d "$DEST/bin" ]]; then
+            shopt -s nullglob
+            for entry in "$DEST"/bin/*; do
+              base="$(basename "$entry")"
+              target="$DEST/$base"
+              if [[ -d "$entry" && -d "$target" ]]; then
+                cp -R "$entry"/. "$target"/
+                rm -rf "$entry"
+              else
+                mv "$entry" "$DEST/"
+              fi
+            done
+            rmdir "$DEST/bin" || true
+          fi
+          if [[ -d "$DEST/qml" ]]; then
+            rm -rf "$RUNTIME/qml"
+            mv "$DEST/qml" "$RUNTIME/"
+          elif [[ -d "$DEST/lib/qt-6/qml" ]]; then
+            mkdir -p "$RUNTIME/qml"
+            cp -R "$DEST/lib/qt-6/qml"/. "$RUNTIME/qml/"
+          fi
+          if [[ -d "$DEST/plugins" ]]; then
+            rm -rf "$RUNTIME/plugins"
+            mv "$DEST/plugins" "$RUNTIME/"
+          elif [[ -d "$DEST/lib/qt-6/plugins" ]]; then
+            rm -rf "$RUNTIME/plugins"
+            cp -R "$DEST/lib/qt-6/plugins" "$RUNTIME/plugins"
+          fi
+          shopt -s nullglob
+          for dll in "$DEST"/lib/*.dll; do
+            mv "$dll" "$DEST/"
+          done
+          rm -rf "$DEST/lib"
+          if [[ -d "$DEST/translations" ]]; then
+            rm -rf "$RUNTIME/translations"
+            mv "$DEST/translations" "$RUNTIME/"
+          elif [[ -d "$RUNTIME/qml/translations" ]]; then
+            :
+          fi
+          cat > "$DEST/qt.conf" <<'EOF'
+          [Paths]
+          Prefix = .
+          Binaries = .
+          Libraries = .
+          Plugins = runtime/plugins
+          QmlImports = runtime/qml
+          Translations = runtime/translations
+          EOF
       - name: Package artifact
         id: package
         shell: bash
@@ -125,14 +163,12 @@ jobs:
           mkdir -p "$DEST"
           cp -R "${{ github.workspace }}/install"/. "$DEST/"
           echo "artifact_dir=$DEST" >> "$GITHUB_OUTPUT"
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: qmlmaterial-windows-x86_64
           path: ${{ steps.package.outputs.artifact_dir }}
           if-no-files-found: error
-
   release:
     name: Publish Release
     needs: build
@@ -142,7 +178,6 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: dist
-
       - name: Create release archives
         run: |
           set -euo pipefail
@@ -153,7 +188,6 @@ jobs:
               cmake -E chdir dist cmake -E tar cf "${name}.zip" --format=zip "$name"
             fi
           done
-
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
