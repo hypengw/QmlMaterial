@@ -303,6 +303,16 @@ else()
       assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_0.woff2)
   set(QM_ICON_FILL_1_FONT_FILE
       assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_1.woff2)
+  # Qt font loading support for WOFF2 depends on how Qt/FreeType is built.
+  # Some Nixpkgs builds may lack WOFF2 support, so use TTF icons there.
+  if(DEFINED ENV{NIX_BUILD_TOP}
+     OR DEFINED ENV{NIX_STORE}
+     OR DEFINED ENV{IN_NIX_SHELL})
+    set(QM_ICON_FILL_0_FONT_FILE
+        assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_0.ttf)
+    set(QM_ICON_FILL_1_FONT_FILE
+        assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_1.ttf)
+  endif()
 
   if(ANDROID)
     list(APPEND SOURCES src/platform/android/android.cpp)
