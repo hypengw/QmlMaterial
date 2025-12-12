@@ -1,0 +1,142 @@
+name: Build QmlMaterial (Windows)
+
+on:
+  push:
+    branches:
+      - "**"
+    paths-ignore:
+      - "docs/**"
+      - "README.md"
+      - ".github/ISSUE_TEMPLATE/**"
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: windows-latest
+    name: Build (Windows)
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          lfs: true
+
+      - name: Setup Ninja
+        uses: seanmiddleditch/gha-setup-ninja@v3
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: "6.10.0"
+          arch: win64_msvc2022_64
+          modules: qt5compat qtshadertools
+          cache: true
+
+      - name: Configure CMake
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          -DCMAKE_C_COMPILER=cl.exe
+          -DCMAKE_CXX_COMPILER=cl.exe
+          -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+
+      - name: Build
+        run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
+
+      - name: Install
+        run: cmake --install build --config ${{ env.BUILD_TYPE }} --prefix "${{ github.workspace }}/install"
+
+      - name: Deploy Qt runtime (Windows)
+        shell: pwsh
+        run: |
+          $dest = Join-Path $env:GITHUB_WORKSPACE 'install'
+          $qtCMakeDir = $env:Qt6_DIR
+          $candidateBins = @()
+          if ($qtCMakeDir) {
+            $candidateBins += [IO.Path]::GetFullPath((Join-Path $qtCMakeDir '..\..\..\bin'))
+            $candidateBins += [IO.Path]::GetFullPath((Join-Path $qtCMakeDir '..\..\..\..\bin'))
+          }
+          $candidateBins += $env:PATH.Split([IO.Path]::PathSeparator)
+          $windeploy = $null
+          foreach ($binDir in $candidateBins) {
+            if (-not $binDir) { continue }
+            $exe = Join-Path $binDir 'windeployqt.exe'
+            if (Test-Path $exe) {
+              $windeploy = $exe
+              break
+            }
+          }
+          if (-not $windeploy) {
+            $cmd = Get-Command windeployqt.exe -ErrorAction SilentlyContinue
+            if ($cmd) {
+              $windeploy = $cmd.Source
+            }
+          }
+          if (-not $windeploy) {
+            throw "Unable to locate windeployqt.exe. Checked Qt6_DIR and PATH."
+          }
+          $projectDir = (Get-Location).ProviderPath
+          & $windeploy --release --dir "$dest\bin" --qmldir "$projectDir\qml" "$dest\bin\qm_example.exe"
+
+      - name: Package artifact
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARTIFACT_NAME="qmlmaterial-windows-x86_64"
+          DEST="dist/$ARTIFACT_NAME"
+          mkdir -p "$DEST"
+          cp -R "${{ github.workspace }}/install"/. "$DEST/"
+          echo "artifact_dir=$DEST" >> "$GITHUB_OUTPUT"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: qmlmaterial-windows-x86_64
+          path: ${{ steps.package.outputs.artifact_dir }}
+          if-no-files-found: error
+
+  release:
+    name: Publish Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Create release archives
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for dir in dist/*; do
+            if [[ -d "$dir" ]]; then
+              name="$(basename "$dir")"
+              cmake -E chdir dist cmake -E tar cf "${name}.zip" --format=zip "$name"
+            fi
+          done
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          files: dist/**/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

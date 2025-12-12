@@ -56,13 +56,15 @@ qt_add_qml_module(
     About.qml
 )
 
-qt_generate_deploy_qml_app_script(
-  TARGET qm_example
-  OUTPUT_SCRIPT deploy_qm_example
-  NO_UNSUPPORTED_PLATFORM_ERROR
-)
 install(TARGETS qm_example RUNTIME DESTINATION bin BUNDLE DESTINATION .)
-install(SCRIPT ${deploy_qm_example})
+if(QM_DEPLOY_QML_APP)
+  qt_generate_deploy_qml_app_script(
+    TARGET qm_example
+    OUTPUT_SCRIPT deploy_qm_example
+    NO_UNSUPPORTED_PLATFORM_ERROR
+  )
+  install(SCRIPT ${deploy_qm_example})
+endif()
 
 if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
   qt_import_qml_plugins(qm_example)

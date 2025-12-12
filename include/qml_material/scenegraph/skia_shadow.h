@@ -13,8 +13,8 @@ static constexpr const T& SkTPin(const T& x, const T& lo, const T& hi) {
     return std::max(lo, std::min(x, hi));
 }
 
-constexpr auto sk_double_round(double x) { return std::floor((x) + 0.5); }
-constexpr auto sk_float_round(double x) { return (float)std::floor((x) + 0.5); }
+inline auto sk_double_round(double x) { return std::floor(x + 0.5); }
+inline auto sk_float_round(double x) { return static_cast<float>(std::floor(x + 0.5)); }
 
 template<typename T, std::enable_if_t<std::is_floating_point_v<T>, bool> = true>
 static inline constexpr bool SkIsNaN(T x) {
@@ -38,7 +38,7 @@ static constexpr int sk_float_saturate2int(float x) {
     x = x > SK_MinS32FitsInFloat ? x : SK_MinS32FitsInFloat;
     return (int)x;
 }
-constexpr auto SkScalarRoundToInt(double x) { return sk_float_saturate2int(sk_float_round(x)); }
+inline auto SkScalarRoundToInt(double x) { return sk_float_saturate2int(sk_float_round(x)); }
 
 static constexpr auto kAmbientHeightFactor = 1.0f / 128.0f;
 static constexpr auto kAmbientGeomFactor   = 64.0f;

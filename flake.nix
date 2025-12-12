@@ -26,17 +26,33 @@
           pkgs = nixpkgsFor.${system};
         in
         {
-          default = pkgs.stdenv.mkDerivation {
+          default = pkgs.stdenv.mkDerivation rec {
             pname = "QmlMaterial";
             version = "0.1.4";
 
+            # When running from a GitHub flake, the default tarball source does not
+            # include Git LFS objects (fonts/images). Re-fetch with LFS enabled so
+            # `nix run github:...` has real assets.
+            rawSrc =
+              if (self.sourceInfo.type or "") == "github" then
+                builtins.fetchGit {
+                  url =
+                    "https://github.com/${self.sourceInfo.owner}/${self.sourceInfo.repo}.git";
+                  rev = self.rev;
+                  submodules = true;
+                  lfs = true;
+                }
+              else
+                ./.;
+
             # Drop Nix-specific files under example; keep shared QML/CMake sources.
             src = pkgs.lib.cleanSourceWith {
-              src = ./.;
+              src = rawSrc;
               filter =
                 path: type:
                 let
-                  rel = pkgs.lib.removePrefix (toString ./. + "/") (toString path);
+                  srcPrefix = toString rawSrc + "/";
+                  rel = pkgs.lib.removePrefix srcPrefix (toString path);
                 in
                 !(
                   rel == "example/flake.nix"
@@ -70,6 +86,7 @@
               cmake -S . -B build-nix \
                 -DCMAKE_BUILD_TYPE=Release \
                 -DQM_BUILD_EXAMPLE=ON \
+                -DQM_DEPLOY_QML_APP=OFF \
                 -DCMAKE_INSTALL_PREFIX=$out
               runHook postConfigure
             '';

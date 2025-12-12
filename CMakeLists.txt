@@ -13,6 +13,16 @@ set(CMAKE_AUTOMOC_PATH_PREFIX ON)
 
 option(QM_BUILD_EXAMPLE ON)
 
+# Qt deploy scripts attempt to patch RPATH on imported QML plugins.
+# In Nix builds the copied plugins are read-only, so disable deploy by default.
+set(_qm_deploy_default ON)
+if(DEFINED ENV{NIX_BUILD_TOP}
+   OR DEFINED ENV{NIX_STORE}
+   OR DEFINED ENV{IN_NIX_SHELL})
+  set(_qm_deploy_default OFF)
+endif()
+option(QM_DEPLOY_QML_APP "Install Qt QML deploy script for examples" ${_qm_deploy_default})
+
 set(QM_ICON_FONT_URL
     ""
     CACHE
@@ -68,7 +78,7 @@ if(Qt6Quick_VERSION VERSION_GREATER_EQUAL 6.10)
   find_package(Qt6 REQUIRED COMPONENTS QuickPrivate)
 endif()
 
-find_package(PkgConfig REQUIRED)
+find_package(PkgConfig QUIET)
 if(QT_KNOWN_POLICY_QTP0004)
   qt_policy(SET QTP0004 NEW)
 endif()

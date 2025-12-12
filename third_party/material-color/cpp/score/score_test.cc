@@ -98,7 +98,7 @@ TEST(ScoreTest, GeneratedScenarioOne) {
 
   std::vector<Argb> ranked = RankedSuggestions(
       argb_to_population,
-      {.desired = 3, .fallback_color_argb = (int)0xff8d3819, .filter = false});
+      {.desired = 3, .fallback_color_argb = 0xff8d3819, .filter = false});
 
   EXPECT_EQ(ranked.size(), 3u);
   EXPECT_EQ(ranked[0], 0xff7ea16d);
@@ -116,7 +116,7 @@ TEST(ScoreTest, GeneratedScenarioTwo) {
 
   std::vector<Argb> ranked = RankedSuggestions(
       argb_to_population,
-      {.desired = 4, .fallback_color_argb = (int)0xff7d772b, .filter = true});
+      {.desired = 4, .fallback_color_argb = 0xff7d772b, .filter = true});
 
   EXPECT_EQ(ranked.size(), 3u);
   EXPECT_EQ(ranked[0], 0xff3205cc);
@@ -134,7 +134,7 @@ TEST(ScoreTest, GeneratedScenarioThree) {
 
   std::vector<Argb> ranked = RankedSuggestions(
       argb_to_population,
-      {.desired = 3, .fallback_color_argb = (int)0xffaa79a4, .filter = true});
+      {.desired = 3, .fallback_color_argb = 0xffaa79a4, .filter = true});
 
   EXPECT_EQ(ranked.size(), 3u);
   EXPECT_EQ(ranked[0], 0xff94c574);
@@ -150,7 +150,7 @@ TEST(ScoreTest, GeneratedScenarioFour) {
 
   std::vector<Argb> ranked = RankedSuggestions(
       argb_to_population,
-      {.desired = 5, .fallback_color_argb = (int)0xff58c19c, .filter = false});
+      {.desired = 5, .fallback_color_argb = 0xff58c19c, .filter = false});
 
   EXPECT_EQ(ranked.size(), 2u);
   EXPECT_EQ(ranked[0], 0xffdf241c);
@@ -165,7 +165,7 @@ TEST(ScoreTest, GeneratedScenarioFive) {
 
   std::vector<Argb> ranked = RankedSuggestions(
       argb_to_population,
-      {.desired = 3, .fallback_color_argb = (int)0xff916691, .filter = false});
+      {.desired = 3, .fallback_color_argb = 0xff916691, .filter = false});
 
   EXPECT_EQ(ranked.size(), 3u);
   EXPECT_EQ(ranked[0], 0xffab8017);
@@ -181,7 +181,7 @@ TEST(ScoreTest, GeneratedScenarioSix) {
 
   std::vector<Argb> ranked = RankedSuggestions(
       argb_to_population,
-      {.desired = 2, .fallback_color_argb = (int)0xff4c377a, .filter = false});
+      {.desired = 2, .fallback_color_argb = 0xff4c377a, .filter = false});
 
   EXPECT_EQ(ranked.size(), 2u);
   EXPECT_EQ(ranked[0], 0xff18ea8f);
@@ -196,7 +196,7 @@ TEST(ScoreTest, GeneratedScenarioSeven) {
 
   std::vector<Argb> ranked = RankedSuggestions(
       argb_to_population,
-      {.desired = 2, .fallback_color_argb = (int)0xfff588dc, .filter = true});
+      {.desired = 2, .fallback_color_argb = 0xfff588dc, .filter = true});
 
   EXPECT_EQ(ranked.size(), 2u);
   EXPECT_EQ(ranked[0], 0xff2e05ed);
@@ -213,7 +213,7 @@ TEST(ScoreTest, GeneratedScenarioEight) {
 
   std::vector<Argb> ranked = RankedSuggestions(
       argb_to_population,
-      {.desired = 1, .fallback_color_argb = (int)0xff84b0fd, .filter = false});
+      {.desired = 1, .fallback_color_argb = 0xff84b0fd, .filter = false});
 
   EXPECT_EQ(ranked.size(), 1u);
   EXPECT_EQ(ranked[0], 0xff3cae91);
@@ -227,7 +227,7 @@ TEST(ScoreTest, GeneratedScenarioNine) {
 
   std::vector<Argb> ranked = RankedSuggestions(
       argb_to_population,
-      {.desired = 3, .fallback_color_argb = (int)0xff02b415, .filter = true});
+      {.desired = 3, .fallback_color_argb = 0xff02b415, .filter = true});
 
   EXPECT_EQ(ranked.size(), 3u);
   EXPECT_EQ(ranked[0], 0xfff51401);
@@ -245,7 +245,7 @@ TEST(ScoreTest, GeneratedScenarioTen) {
 
   std::vector<Argb> ranked = RankedSuggestions(
       argb_to_population,
-      {.desired = 4, .fallback_color_argb = (int)0xff5e7a10, .filter = true});
+      {.desired = 4, .fallback_color_argb = 0xff5e7a10, .filter = true});
 
   EXPECT_EQ(ranked.size(), 3u);
   EXPECT_EQ(ranked[0], 0xff27effe);
