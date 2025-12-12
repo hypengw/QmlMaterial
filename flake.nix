@@ -38,7 +38,7 @@
                 builtins.fetchGit {
                   url =
                     "https://github.com/${self.sourceInfo.owner}/${self.sourceInfo.repo}.git";
-                  rev = self.rev;
+                  rev = self.sourceInfo.rev;
                   submodules = true;
                   lfs = true;
                 }
@@ -85,6 +85,7 @@
               runHook preConfigure
               cmake -S . -B build-nix \
                 -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_INSTALL_LIBDIR=lib \
                 -DQM_BUILD_EXAMPLE=ON \
                 -DQM_DEPLOY_QML_APP=OFF \
                 -DCMAKE_INSTALL_PREFIX=$out
@@ -107,17 +108,33 @@
               ":"
               "$out/lib/qt-6/qml"
               "--prefix"
+              "QML_IMPORT_PATH"
+              ":"
+              "$out/lib64/qt-6/qml"
+              "--prefix"
               "QML2_IMPORT_PATH"
               ":"
               "$out/lib/qt-6/qml"
+              "--prefix"
+              "QML2_IMPORT_PATH"
+              ":"
+              "$out/lib64/qt-6/qml"
               "--prefix"
               "DYLD_LIBRARY_PATH"
               ":"
               "$out/lib"
               "--prefix"
+              "DYLD_LIBRARY_PATH"
+              ":"
+              "$out/lib64"
+              "--prefix"
               "LD_LIBRARY_PATH"
               ":"
               "$out/lib"
+              "--prefix"
+              "LD_LIBRARY_PATH"
+              ":"
+              "$out/lib64"
             ];
           };
         }

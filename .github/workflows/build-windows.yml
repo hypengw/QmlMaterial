@@ -51,6 +51,7 @@ jobs:
         run: >
           cmake -S . -B build -G Ninja
           -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          -DQM_BUILD_EXAMPLE=ON
           -DCMAKE_C_COMPILER=cl.exe
           -DCMAKE_CXX_COMPILER=cl.exe
           -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
@@ -91,7 +92,28 @@ jobs:
             throw "Unable to locate windeployqt.exe. Checked Qt6_DIR and PATH."
           }
           $projectDir = (Get-Location).ProviderPath
-          & $windeploy --release --dir "$dest\bin" --qmldir "$projectDir\qml" "$dest\bin\qm_example.exe"
+          $targetCandidates = @(
+            (Join-Path $dest 'bin\qm_example.exe'),
+            (Join-Path $dest 'qm_example.exe'),
+            (Join-Path $env:GITHUB_WORKSPACE 'build\\example\\qm_example.exe'),
+            (Join-Path $env:GITHUB_WORKSPACE 'build\\qm_example.exe')
+          )
+          $targetExe = $targetCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $targetExe) {
+            $found = Get-ChildItem -Path $dest -Recurse -Filter 'qm_example.exe' -File -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($found) { $targetExe = $found.FullName }
+          }
+          if (-not $targetExe) {
+            throw "qm_example.exe not found under install or build output."
+          }
+          if ($targetExe -notlike "$dest*") {
+            $installBin = Join-Path $dest 'bin'
+            New-Item -ItemType Directory -Force -Path $installBin | Out-Null
+            Copy-Item $targetExe -Destination (Join-Path $installBin 'qm_example.exe') -Force
+            $targetExe = Join-Path $installBin 'qm_example.exe'
+          }
+          $targetDir = Split-Path $targetExe -Parent
+          & $windeploy --release --dir "$targetDir" --qmldir "$projectDir\qml" "$targetExe"
 
       - name: Package artifact
         id: package
