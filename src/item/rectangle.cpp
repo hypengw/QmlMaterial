@@ -28,6 +28,10 @@ public:
             radius[i] = std::min<float>(radius[i], rect.size().height() / 2.0f);
         }
         QVector2D size = { (float)rect.size().width(), (float)rect.size().height() };
+        if (auto* mat = static_cast<RectangleMaterial*>(material())) {
+            mat->setSize(size);
+            mat->setRadius(radius);
+        }
         update_rectangle_geometry(vertices, size, color, radius);
         markDirty(QSGNode::DirtyGeometry);
     }

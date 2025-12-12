@@ -32,7 +32,10 @@ bool RectangleShader::updateUniformData(RenderState& state, QSGMaterial* newMate
     Q_UNUSED(oldMaterial);
     bool        changed = false;
     QByteArray* buf     = state.uniformData();
-    Q_ASSERT(buf->size() >= 68);
+    Q_ASSERT(buf->size() >= 112);
+
+    auto* mat = static_cast<RectangleMaterial*>(newMaterial);
+    auto* old = static_cast<RectangleMaterial*>(oldMaterial);
 
     if (state.isMatrixDirty()) {
         const QMatrix4x4 m = state.combinedMatrix();
@@ -43,6 +46,18 @@ bool RectangleShader::updateUniformData(RenderState& state, QSGMaterial* newMate
     if (state.isOpacityDirty()) {
         const float opacity = state.opacity();
         memcpy(buf->data() + 64, &opacity, 4);
+        changed = true;
+    }
+
+    if (!old || mat->size() != old->size()) {
+        const QVector2D s = mat->size();
+        memcpy(buf->data() + 96, &s, sizeof(QVector2D));
+        changed = true;
+    }
+
+    if (!old || mat->radius() != old->radius()) {
+        const QVector4D r = mat->radius();
+        memcpy(buf->data() + 80, &r, sizeof(QVector4D));
         changed = true;
     }
     return changed;

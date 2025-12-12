@@ -4,6 +4,9 @@
 #include <QQmlEngine>
 #include <QJsonDocument>
 #include <QJsonObject>
+#ifdef Q_OS_MACOS
+#include <QSurfaceFormat>
+#endif
 
 #include "qml_material/util/loggingcategory.hpp"
 
@@ -12,6 +15,35 @@ using namespace std::string_view_literals;
 Q_LOGGING_CATEGORY(qml_material_logcat, "qcm.material", QtMsgType::QtInfoMsg)
 namespace
 {
+
+#ifdef Q_OS_MACOS
+// Ensure a core-profile OpenGL context when apps force the OpenGL backend on macOS.
+// Without this, Qt may create a 2.1 compatibility context and look for GLSL 120 shaders,
+// which this library does not provide (it relies on UBOs and layout qualifiers).
+class MacOpenGLFormatSetter {
+public:
+    MacOpenGLFormatSetter() {
+        QSurfaceFormat current = QSurfaceFormat::defaultFormat();
+        if (current.renderableType() != QSurfaceFormat::DefaultRenderableType &&
+            current.renderableType() != QSurfaceFormat::OpenGL) {
+            return;
+        }
+        if (current.majorVersion() >= 3 &&
+            current.profile() == QSurfaceFormat::CoreProfile) {
+            return;
+        }
+        QSurfaceFormat format;
+        format.setRenderableType(QSurfaceFormat::OpenGL);
+        format.setProfile(QSurfaceFormat::CoreProfile);
+        format.setVersion(4, 1);
+        format.setSamples(4);
+        format.setDepthBufferSize(24);
+        format.setStencilBufferSize(8);
+        QSurfaceFormat::setDefaultFormat(format);
+    }
+};
+static MacOpenGLFormatSetter s_macOpenGLFormatSetter;
+#endif
 
 // 2 time ease
 auto easeInOut(double x) -> double { return x < 0.5 ? 2 * x * x : 1 - std::pow(-2 * x + 2, 2) / 2; }

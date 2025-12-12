@@ -10,6 +10,17 @@ MD.ApplicationWindow {
     MD.MProp.textColor: MD.MProp.color.on_surface
     MD.MProp.backgroundColor: MD.MProp.color.surface_container
 
+    Component.onCompleted: {
+        // Ensure a vivid default palette so controls (e.g., Slider) are not washed out
+        MD.Token.color.useSysColorSM = false;
+        MD.Token.color.paletteType = MD.Enum.PaletteTonalSpot;
+        MD.Token.color.accentColor = "#6750A4"; // M3 baseline purple seed
+        console.log("QmlMaterial primary", MD.Token.color.primary,
+                    "paletteType", MD.Token.color.paletteType,
+                    "useSysColorSM", MD.Token.color.useSysColorSM,
+                    "accentColor", MD.Token.color.accentColor);
+    }
+
     MD.Pane {
         anchors.fill: parent
         anchors.margins: 24

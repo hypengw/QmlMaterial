@@ -56,11 +56,11 @@ ElevationShader::ElevationShader() {
 
 bool ElevationShader::updateUniformData(RenderState& state, QSGMaterial* newMaterial,
                                         QSGMaterial* oldMaterial) {
-    Q_UNUSED(newMaterial);
-    Q_UNUSED(oldMaterial);
     bool        changed = false;
     QByteArray* buf     = state.uniformData();
-    Q_ASSERT(buf->size() >= 68);
+    Q_ASSERT(buf->size() >= 176);
+
+    auto* mat = static_cast<ElevationMaterial*>(newMaterial);
 
     if (state.isMatrixDirty()) {
         const QMatrix4x4 m = state.combinedMatrix();
@@ -71,6 +71,29 @@ bool ElevationShader::updateUniformData(RenderState& state, QSGMaterial* newMate
     if (state.isOpacityDirty()) {
         const float opacity = std::pow(state.opacity(), 3);
         memcpy(buf->data() + 64, &opacity, 4);
+        changed = true;
+    }
+
+    if (mat) {
+        const auto& ops = mat->shadowOps();
+
+        auto writeOp = [&](int idx, int innerOffset, int radiusOffset, int blurOffset) {
+            const auto& op = ops[idx];
+            QVector4D inner(op.innerRect.x(),
+                            op.innerRect.y(),
+                            op.innerRect.width(),
+                            op.innerRect.height());
+            memcpy(buf->data() + innerOffset, &inner, sizeof(QVector4D));
+
+            QVector4D rad = op.radius;
+            memcpy(buf->data() + radiusOffset, &rad, sizeof(QVector4D));
+
+            QVector2D blur(op.blurOutset, 0.0f);
+            memcpy(buf->data() + blurOffset, &blur, sizeof(QVector2D));
+        };
+
+        writeOp(0, 80, 112, 144);
+        writeOp(1, 96, 128, 160);
         changed = true;
     }
     return changed;

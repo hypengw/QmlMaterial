@@ -27,13 +27,16 @@ if(UNIX)
   include(GNUInstallDirs)
 endif()
 
-# Ensure installed libraries have an absolute install_name/rpath on macOS so
-# downstream apps (including nix-run examples) can locate them without manual
-# path injection.
+# Ensure installed libraries can be located by downstream apps (particularly on macOS,
+# where an absolute install_name can leak /usr/local into Nix builds).
 set(CMAKE_MACOSX_RPATH ON)
 if(DEFINED CMAKE_INSTALL_FULL_LIBDIR)
   set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
-  set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_FULL_LIBDIR}")
+  if(APPLE)
+    set(CMAKE_INSTALL_NAME_DIR "@rpath")
+  else()
+    set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_FULL_LIBDIR}")
+  endif()
 endif()
 
 # Align install location with Qt 6 default (nixpkgs uses lib/qt-6/qml)

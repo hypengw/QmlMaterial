@@ -1,4 +1,5 @@
 #include "qml_material/scenegraph/geometry.h"
+#include "qml_material/scenegraph/elevation_material.h"
 #include "qml_material/scenegraph/skia_shadow.h"
 #include "qml_material/util/loggingcategory.hpp"
 
@@ -234,7 +235,8 @@ auto sg::create_shadow_geometry() -> up<QSGGeometry> {
     out->setDrawingMode(QSGGeometry::DrawTriangles);
     return out;
 }
-void sg::update_shadow_geometry(QSGGeometry* geo, const ShadowParams& params, const QRectF& rect) {
+void sg::update_shadow_geometry(QSGGeometry* geo, const ShadowParams& params, const QRectF& rect,
+                                ElevationMaterial* material) {
     float occluderHeight = params.z_plane_params.z();
     bool  transparent    = (params.flags & ShadowFlags::TransparentOccluder_ShadowFlag);
     bool  directional    = (params.flags & ShadowFlags::DirectionalLight_ShadowFlag);
@@ -242,7 +244,7 @@ void sg::update_shadow_geometry(QSGGeometry* geo, const ShadowParams& params, co
     auto  max_radius     = std::min(rect.height(), rect.height()) / 2.0;
     bool  is_oval = params.radius.x() >= max_radius && qFuzzyCompare(rect.width(), rect.height());
 
-    std::array<std::optional<sk::ShadowCircularRRectOp>, 2> ops;
+    std::array<ShadowOpData, 2> ops;
 
     if (params.ambient_color > 0) {
         scalar       devSpaceInsetWidth  = sk::AmbientBlurRadius(occluderHeight);
@@ -259,12 +261,12 @@ void sg::update_shadow_geometry(QSGGeometry* geo, const ShadowParams& params, co
             // set a large inset to force a fill
             devSpaceInsetWidth = ambientRRect.width();
         }
-        ops[0] = sk::ShadowCircularRRectOp(params.ambient_color,
-                                           ambientRRect,
-                                           ambientRadius,
-                                           is_oval,
-                                           devSpaceAmbientBlur,
-                                           devSpaceInsetWidth);
+        ops[0].enabled    = true;
+        ops[0].outerRect  = ambientRRect;
+        ops[0].innerRect  = rect;
+        ops[0].radius     = params.radius;
+        ops[0].blurOutset = ambientPathOutset;
+        ops[0].color      = params.ambient_color;
     }
 
     if (params.spot_color > 0) {
@@ -303,25 +305,25 @@ void sg::update_shadow_geometry(QSGGeometry* geo, const ShadowParams& params, co
         //     SkASSERT(false);
         // }
 
-        // Compute the transformed shadow rrect
-        QRectF spotShadowRRect;
+        // Compute the transformed shadow rrect (unblurred occluder)
+        QRectF spotInnerRRect;
         {
             auto dw = (spotScale - 1.0f) * rect.width() / 2.0f;
             auto dh = (spotScale - 1.0f) * rect.height() / 2.0f;
-            spotShadowRRect =
+            spotInnerRRect =
                 rect.translated(spotOffset.x(), spotOffset.y()).adjusted(-dw, -dh, dw, dh);
         }
         // SkMatrix shadowTransform;
         // shadowTransform.setScaleTranslate(spotScale, spotScale, spotOffset.fX, spotOffset.fY);
         // rrect.transform(shadowTransform, &spotShadowRRect);
-        QVector4D spotRadius = params.radius * spotScale; // spotShadowRRect.getSimpleRadii().fX;
+        QVector4D spotRadius = params.radius * spotScale;
 
         // Compute the insetWidth
         scalar blurOutset = srcSpaceSpotBlur;
         scalar insetWidth = blurOutset;
         if (transparent) {
             // If transparent, just do a fill
-            insetWidth += spotShadowRRect.width();
+            insetWidth += spotInnerRRect.width();
         } else {
             // For shadows, instead of using a stroke we specify an inset from the penumbra
             // border. We want to extend this inset area so that it meets up with the caster
@@ -339,17 +341,17 @@ void sg::update_shadow_geometry(QSGGeometry* geo, const ShadowParams& params, co
             // is rect
             if (params.radius.length() == 0) {
                 // Manhattan distance works better for rects
-                maxOffset = std::max(std::max(std::abs(spotShadowRRect.left() - rect.left()),
-                                              std::abs(spotShadowRRect.top() - rect.top())),
-                                     std::max(std::abs(spotShadowRRect.right() - rect.right()),
-                                              std::abs(spotShadowRRect.bottom() - rect.bottom())));
+                maxOffset = std::max(std::max(std::abs(spotInnerRRect.left() - rect.left()),
+                                              std::abs(spotInnerRRect.top() - rect.top())),
+                                     std::max(std::abs(spotInnerRRect.right() - rect.right()),
+                                              std::abs(spotInnerRRect.bottom() - rect.bottom())));
             } else {
                 scalar    dr              = spotRadius.x() - params.radius.x();
-                QVector2D upperLeftOffset = QVector2D(spotShadowRRect.left() - rect.left() + dr,
-                                                      spotShadowRRect.top() - rect.top() + dr);
+                QVector2D upperLeftOffset = QVector2D(spotInnerRRect.left() - rect.left() + dr,
+                                                      spotInnerRRect.top() - rect.top() + dr);
                 QVector2D lowerRightOffset =
-                    QVector2D(spotShadowRRect.right() - rect.right() - dr,
-                              spotShadowRRect.bottom() - rect.bottom() - dr);
+                    QVector2D(spotInnerRRect.right() - rect.right() - dr,
+                              spotInnerRRect.bottom() - rect.bottom() - dr);
                 maxOffset = std::sqrt(std::max(upperLeftOffset.lengthSquared(),
                                                lowerRightOffset.lengthSquared())) +
                             dr;
@@ -358,45 +360,72 @@ void sg::update_shadow_geometry(QSGGeometry* geo, const ShadowParams& params, co
         }
 
         // Outset the shadow rrect to the border of the penumbra
-        spotShadowRRect.adjust(-blurOutset, -blurOutset, blurOutset, blurOutset);
-        spotRadius += QVector4D(blurOutset, blurOutset, blurOutset, blurOutset);
+        QRectF spotOuterRRect =
+            spotInnerRRect.adjusted(-blurOutset, -blurOutset, blurOutset, blurOutset);
 
-        ops[1] = sk::ShadowCircularRRectOp(params.spot_color,
-                                           spotShadowRRect,
-                                           spotRadius.x(),
-                                           is_oval,
-                                           2.0f * devSpaceSpotBlur,
-                                           insetWidth);
+        ops[1].enabled    = true;
+        ops[1].outerRect  = spotOuterRRect;
+        ops[1].innerRect  = spotInnerRRect;
+        ops[1].radius     = spotRadius;
+        ops[1].blurOutset = blurOutset;
+        ops[1].color      = params.spot_color;
     }
 
-    int vertex_count = 0;
-    int index_count  = 0;
-    for (auto& p : ops) {
-        if (p) {
-            vertex_count += p->fVertCount;
-            index_count += p->fIndexCount;
-        }
+    if (material) {
+        material->setShadowOps(ops);
     }
-    geo->allocate(vertex_count, index_count);
 
-    auto vertices       = static_cast<ShadowVertex*>(geo->vertexData());
-    auto indexes        = (std::uint16_t*)geo->indexData();
-    int  vertice_offset = 0;
-    for (auto& p : ops) {
-        if (p) {
-            auto type = p->fGeoData.type;
-            if (p->fGeoData.is_circle) {
-                bool isStroked = (sk::ShadowCircularRRectOp::kStroke_RRectType == type);
-                p->fillInCircleVerts(isStroked, &vertices);
-            } else {
-                p->fillInRRectVerts(&vertices);
-            }
-            for (int i = 0; i < p->fIndexCount; i++) {
-                indexes[i] = p->fIndexPtr[i] + vertice_offset;
-            }
-            indexes += p->fIndexCount;
-            vertice_offset += p->fVertCount;
-        }
+    int enabled_ops = 0;
+    for (const auto& op : ops) {
+        if (op.enabled) enabled_ops++;
+    }
+
+    geo->allocate(enabled_ops * 4, enabled_ops * 6);
+
+    auto* vertices = static_cast<ShadowVertex*>(geo->vertexData());
+    auto* indexes  = reinterpret_cast<std::uint16_t*>(geo->indexData());
+
+    int vbase = 0;
+    int ibase = 0;
+    for (int opIndex = 0; opIndex < 2; ++opIndex) {
+        const auto& op = ops[opIndex];
+        if (!op.enabled) continue;
+
+        const QRectF& r = op.outerRect;
+        // TL
+        vertices[vbase + 0].set_point(r.left(), r.top());
+        vertices[vbase + 0].set_color(op.color);
+        vertices[vbase + 0].offset_x = static_cast<float>(opIndex);
+        vertices[vbase + 0].offset_y = 0.0f;
+        vertices[vbase + 0].distance_correction = 0.0f;
+        // TR
+        vertices[vbase + 1].set_point(r.right(), r.top());
+        vertices[vbase + 1].set_color(op.color);
+        vertices[vbase + 1].offset_x = static_cast<float>(opIndex);
+        vertices[vbase + 1].offset_y = 0.0f;
+        vertices[vbase + 1].distance_correction = 0.0f;
+        // BR
+        vertices[vbase + 2].set_point(r.right(), r.bottom());
+        vertices[vbase + 2].set_color(op.color);
+        vertices[vbase + 2].offset_x = static_cast<float>(opIndex);
+        vertices[vbase + 2].offset_y = 0.0f;
+        vertices[vbase + 2].distance_correction = 0.0f;
+        // BL
+        vertices[vbase + 3].set_point(r.left(), r.bottom());
+        vertices[vbase + 3].set_color(op.color);
+        vertices[vbase + 3].offset_x = static_cast<float>(opIndex);
+        vertices[vbase + 3].offset_y = 0.0f;
+        vertices[vbase + 3].distance_correction = 0.0f;
+
+        indexes[ibase + 0] = vbase + 0;
+        indexes[ibase + 1] = vbase + 1;
+        indexes[ibase + 2] = vbase + 2;
+        indexes[ibase + 3] = vbase + 2;
+        indexes[ibase + 4] = vbase + 3;
+        indexes[ibase + 5] = vbase + 0;
+
+        vbase += 4;
+        ibase += 6;
     }
 }
 

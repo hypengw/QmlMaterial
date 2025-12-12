@@ -60,7 +60,7 @@ T.ItemDelegate {
         radius: 28
         color: control.mdState.backgroundColor
 
-        elevationVisible: control.enabled && color.a > 0
+        elevationVisible: elevation && control.enabled && color.a > 0
         elevation: control.mdState.elevation
 
         MD.Ripple2 {

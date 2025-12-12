@@ -11,7 +11,9 @@ using namespace qml_material;
 
 namespace
 {
-constexpr QRgb BASE_COLOR { qRgb(190, 231, 253) };
+// Material 3 baseline seed color (purple 40). Using a saturated seed prevents
+// controls like Slider from looking washed out on first launch.
+constexpr QRgb BASE_COLOR { qRgb(103, 80, 164) };
 
 auto gen_on_map(const MdScheme& sh) -> std::map<QColor, QColor, QColorCompare> {
     std::map<QColor, QColor, QColorCompare> map {
@@ -60,7 +62,9 @@ MdColorMgr::MdColorMgr(QObject* parent)
       m_accent_color(BASE_COLOR),
       m_mode(sysColorScheme()),
       m_last_mode(m_mode),
-      m_scheme_type(Enum::PaletteType::PaletteNeutral),
+      // Default to TonalSpot so the primary/secondary colors are visible out-of-the-box
+      // (Neutral yields very low-chroma colors, which made controls like Slider appear white).
+      m_scheme_type(Enum::PaletteType::PaletteTonalSpot),
       m_use_sys_color_scheme(true),
       m_use_sys_accent_color(false) {
     genScheme();

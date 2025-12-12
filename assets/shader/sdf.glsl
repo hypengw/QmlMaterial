@@ -2,7 +2,9 @@
 
 // according to https://iquilezles.org/articles/distfunctions2d/
 
+#ifdef GLES
 #extension GL_OES_standard_derivatives : enable
+#endif
 
 float filterwidth(vec2 v) {
   vec2 fw = max(abs(dFdx(v)), abs(dFdy(v)));

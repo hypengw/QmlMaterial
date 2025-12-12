@@ -65,7 +65,8 @@
               runHook preConfigure
               cmake -S . -B build-nix \
                 -DCMAKE_BUILD_TYPE=Release \
-                -DQM_BUILD_EXAMPLE=ON
+                -DQM_BUILD_EXAMPLE=ON \
+                -DCMAKE_INSTALL_PREFIX=$out
               runHook postConfigure
             '';
             buildPhase = ''
@@ -88,6 +89,14 @@
               "QML2_IMPORT_PATH"
               ":"
               "$out/lib/qt-6/qml"
+              "--prefix"
+              "DYLD_LIBRARY_PATH"
+              ":"
+              "$out/lib"
+              "--prefix"
+              "LD_LIBRARY_PATH"
+              ":"
+              "$out/lib"
             ];
           };
         }

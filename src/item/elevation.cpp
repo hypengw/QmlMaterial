@@ -55,7 +55,8 @@ public:
                 params.radius[i] = std::min<float>(params.radius[i], rect.height() / 2.0f);
             }
         }
-        update_shadow_geometry(geometry(), params, rect);
+        auto* mat = static_cast<ElevationMaterial*>(material());
+        update_shadow_geometry(geometry(), params, rect, mat);
 
         markDirty(QSGNode::DirtyGeometry);
     }

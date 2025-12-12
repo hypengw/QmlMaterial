@@ -30,6 +30,6 @@ Item {
         radius: width / 2
         pressed: root.handlePressed || root.handleHasFocus
         color: root.control.mdState.backgroundColor
-        stateOpacity: root.handleHovered ? MD.Token.state.hover.state_layer_opacity : "transparent"
+        stateOpacity: root.handleHovered ? MD.Token.state.hover.state_layer_opacity : 0
     }
 }

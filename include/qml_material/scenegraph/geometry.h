@@ -8,6 +8,8 @@
 namespace qml_material::sg
 {
 
+class ElevationMaterial;
+
 struct BasicVertex {
     // position
     float x;
@@ -88,6 +90,7 @@ struct ShadowParams {
     uint32_t  flags { 0 };
     QVector4D radius;
 };
-void update_shadow_geometry(QSGGeometry* geo, const ShadowParams& params, const QRectF& rect);
+void update_shadow_geometry(QSGGeometry* geo, const ShadowParams& params, const QRectF& rect,
+                            ElevationMaterial* material);
 
 } // namespace qml_material::sg

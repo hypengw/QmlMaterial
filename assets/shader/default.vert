@@ -1,4 +1,5 @@
-#version 440
+#version 410
+#extension GL_ARB_shading_language_420pack : enable
 layout(location = 0) in vec4 qt_Vertex;
 layout(location = 1) in vec2 qt_MultiTexCoord0;
 layout(location = 0) out vec2 qt_TexCoord0;
