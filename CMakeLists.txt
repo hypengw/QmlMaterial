@@ -13,12 +13,20 @@ set(CMAKE_AUTOMOC_PATH_PREFIX ON)
 
 option(QM_BUILD_EXAMPLE ON)
 
+# Detect Nix builds (used for deploy/font defaults).
+set(_qm_is_nix_build OFF)
+if(CMAKE_INSTALL_PREFIX MATCHES "^/nix/store/")
+  set(_qm_is_nix_build ON)
+elseif(DEFINED ENV{NIX_BUILD_TOP}
+       OR DEFINED ENV{NIX_STORE}
+       OR DEFINED ENV{IN_NIX_SHELL})
+  set(_qm_is_nix_build ON)
+endif()
+
 # Qt deploy scripts attempt to patch RPATH on imported QML plugins.
 # In Nix builds the copied plugins are read-only, so disable deploy by default.
 set(_qm_deploy_default ON)
-if(DEFINED ENV{NIX_BUILD_TOP}
-   OR DEFINED ENV{NIX_STORE}
-   OR DEFINED ENV{IN_NIX_SHELL})
+if(_qm_is_nix_build)
   set(_qm_deploy_default OFF)
 endif()
 option(QM_DEPLOY_QML_APP "Install Qt QML deploy script for examples" ${_qm_deploy_default})
@@ -33,9 +41,7 @@ set(QM_ICON_FONT_URL
 set(QT_QML_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/qml_modules")
 list(APPEND QML_DIRS "${QT_QML_OUTPUT_DIRECTORY}")
 
-if(UNIX)
-  include(GNUInstallDirs)
-endif()
+include(GNUInstallDirs)
 
 # Ensure installed libraries can be located by downstream apps (particularly on macOS,
 # where an absolute install_name can leak /usr/local into Nix builds).
@@ -48,11 +54,6 @@ if(DEFINED CMAKE_INSTALL_FULL_LIBDIR)
     set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_FULL_LIBDIR}")
   endif()
 endif()
-
-# Align install location with Qt 6 default (nixpkgs uses lib/qt-6/qml)
-set(QT_INSTALL_QML "${CMAKE_INSTALL_LIBDIR}/qt-6/qml" CACHE STRING "" FORCE)
-set(QML_INSTALL_DIR "${QT_INSTALL_QML}" CACHE STRING "" FORCE)
-message("QML_INSTALL_DIR: ${QML_INSTALL_DIR}")
 
 # check lto
 include(CheckIPOSupported)
@@ -78,7 +79,31 @@ if(Qt6Quick_VERSION VERSION_GREATER_EQUAL 6.10)
   find_package(Qt6 REQUIRED COMPONENTS QuickPrivate)
 endif()
 
-find_package(PkgConfig QUIET)
+# Align QML install location with the Qt build layout.
+set(_qm_qml_install_dir "")
+if(DEFINED QT6_INSTALL_QML)
+  set(_qm_qml_install_dir "${QT6_INSTALL_QML}")
+elseif(DEFINED QT_INSTALL_QML)
+  set(_qm_qml_install_dir "${QT_INSTALL_QML}")
+endif()
+if(IS_ABSOLUTE "${_qm_qml_install_dir}")
+  if(DEFINED QT6_INSTALL_PREFIX AND NOT "${QT6_INSTALL_PREFIX}" STREQUAL "")
+    file(RELATIVE_PATH _qm_qml_install_dir "${QT6_INSTALL_PREFIX}" "${_qm_qml_install_dir}")
+  else()
+    set(_qm_qml_install_dir "")
+  endif()
+endif()
+if(_qm_qml_install_dir STREQUAL "")
+  # Fallback for older Qt builds.
+  set(_qm_qml_install_dir "${CMAKE_INSTALL_LIBDIR}/qt-6/qml")
+endif()
+set(QT_INSTALL_QML "${_qm_qml_install_dir}" CACHE STRING "" FORCE)
+set(QML_INSTALL_DIR "${QT_INSTALL_QML}" CACHE STRING "" FORCE)
+message(STATUS "QML_INSTALL_DIR: ${QML_INSTALL_DIR}")
+
+if(UNIX)
+  find_package(PkgConfig QUIET)
+endif()
 if(QT_KNOWN_POLICY_QTP0004)
   qt_policy(SET QTP0004 NEW)
 endif()
@@ -305,9 +330,7 @@ else()
       assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_1.woff2)
   # Qt font loading support for WOFF2 depends on how Qt/FreeType is built.
   # Some Nixpkgs builds may lack WOFF2 support, so use TTF icons there.
-  if(DEFINED ENV{NIX_BUILD_TOP}
-     OR DEFINED ENV{NIX_STORE}
-     OR DEFINED ENV{IN_NIX_SHELL})
+  if(_qm_is_nix_build)
     set(QM_ICON_FILL_0_FONT_FILE
         assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_0.ttf)
     set(QM_ICON_FILL_1_FONT_FILE
