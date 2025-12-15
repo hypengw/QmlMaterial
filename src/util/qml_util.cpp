@@ -6,6 +6,7 @@
 #include <QJsonObject>
 
 #include "qml_material/util/loggingcategory.hpp"
+#include "qml_material/util/pool.hpp"
 
 using namespace std::string_view_literals;
 
@@ -187,7 +188,7 @@ void Util::print_parents(const QJSValue& obj) {
         "{}\n{}", type_str(obj).toStdString(), format_parent(obj.property("parent"), 1));
 }
 
-auto Util::lightness(QColor color) noexcept-> qreal { return color.lightnessF(); }
+auto Util::lightness(QColor color) noexcept -> qreal { return color.lightnessF(); }
 
 auto Util::tokenElevation() noexcept -> token::Elevation { return token::Elevation(); }
 auto Util::tokenShape() noexcept -> token::Shape { return token::Shape(); }
@@ -293,6 +294,8 @@ bool     Util::disconnectAll(QObject* obj, const QString& name) {
     auto signal = obj->metaObject()->method(signal_idx);
     return QObject::disconnect(obj, signal, nullptr, QMetaMethod {});
 }
+
+std::uint32_t Util::poolObjectCount() { return pool_object_count(); }
 
 } // namespace qml_material
 

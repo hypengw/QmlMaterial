@@ -32,6 +32,7 @@ T.ToolBar {
     rightPadding: leftPadding
 
     contentItem: Item {
+        id: m_content
         implicitWidth: children[0].implicitWidth
         implicitHeight: children[0].implicitHeight
 
@@ -103,5 +104,4 @@ T.ToolBar {
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
     }
-
 }

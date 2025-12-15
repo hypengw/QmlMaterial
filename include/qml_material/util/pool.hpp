@@ -9,6 +9,8 @@
 namespace qml_material
 {
 
+auto pool_object_count() -> std::size_t;
+
 class Pool;
 class PoolIncubator : public QQmlIncubator {
 public:
@@ -80,9 +82,10 @@ private:
     mutable qint64                                    m_serial;
     std::map<qint64, Task>                            m_tasks;
     std::map<QString, QPointer<QObject>, std::less<>> m_objs;
-    std::set<QObject*>                                m_nokey_objs;
+    std::set<QPointer<QObject>>                       m_nokey_objs;
 
     bool m_async;
+    bool m_drop;
 };
 
 } // namespace qml_material

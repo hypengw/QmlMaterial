@@ -4,6 +4,10 @@
 
 namespace
 {
+static std::atomic<std::size_t> the_pool_obj_count { 0 };
+
+void object_destroyed() { the_pool_obj_count--; }
+
 auto variant_map_to_string(const QVariantMap& m) -> QString {
     QString out;
     for (const auto& el : m.asKeyValueRange()) {
@@ -15,6 +19,8 @@ auto variant_map_to_string(const QVariantMap& m) -> QString {
 
 namespace qml_material
 {
+auto pool_object_count() -> std::size_t { return the_pool_obj_count; }
+
 PoolIncubator::PoolIncubator(Pool* p, qint64 id, IncubationMode mode)
     : QQmlIncubator(mode), m_pool(p), m_id(id) {}
 void PoolIncubator::statusChanged(Status s) {
@@ -26,18 +32,19 @@ void PoolIncubator::setInitialState(QObject* o) {
     m_pool->setInitialState(o);
 }
 
-Pool::Pool(QObject* parent): QObject(parent), m_serial(0), m_async(true) {
+Pool::Pool(QObject* parent): QObject(parent), m_serial(0), m_async(true), m_drop(false) {
     connect(this, &Pool::queueAdded, this, &Pool::onQueueAdded, Qt::QueuedConnection);
 }
 Pool::~Pool() {
-    for (const auto& el : m_objs) {
-        if (el.second) {
-            delete el.second.get();
-        }
+    m_drop = true;
+    for (auto o : m_nokey_objs) {
+        if (o) delete o;
     }
-    for (auto el : m_nokey_objs) {
-        delete el;
+    m_nokey_objs.clear();
+    for (const auto& o : m_objs) {
+        if (o.second) delete o.second;
     }
+    m_objs.clear();
     for (const auto& el : m_tasks) {
         if (el.second.object) {
             delete el.second.object;
@@ -55,6 +62,10 @@ void Pool::incubatorStateChanged(qint64 id, QQmlIncubator::Status status) {
     if (status == QQmlIncubator::Ready) {
         auto object = incubator->object();
         incubator->clear();
+
+        the_pool_obj_count++;
+        connect(object, &QObject::destroyed, object_destroyed);
+
         if (t.hasKey) {
             m_objs.insert({ t.key, object });
         } else {
@@ -67,7 +78,9 @@ void Pool::incubatorStateChanged(qint64 id, QQmlIncubator::Status status) {
         if (! incubator->errors().isEmpty()) {
             qCWarning(qml_material_logcat()) << incubator->errors();
         }
-        delete incubator->object();
+        if (auto object = incubator->object()) {
+            delete object;
+        }
         clearTask(it);
     }
 }
@@ -190,7 +203,9 @@ void Pool::onQueueAdded(qint64 id) {
         }
     }
 }
-void Pool::onUncacheObjectDeleted(QObject* o) { m_nokey_objs.erase(o); }
+void Pool::onUncacheObjectDeleted(QObject* o) {
+    if (! m_drop) m_nokey_objs.erase(o);
+}
 
 auto Pool::async() const -> bool { return m_async; }
 void Pool::setAsync(bool v) {
@@ -218,11 +233,11 @@ bool Pool::removeObject(QObject* o) {
 }
 void Pool::clear() {
     for (auto o : m_nokey_objs) {
-        o->deleteLater();
+        if (o) o->deleteLater();
     }
     m_nokey_objs.clear();
-    for (auto o : m_objs) {
-        o.second->deleteLater();
+    for (const auto& o : m_objs) {
+        if (o.second) o.second->deleteLater();
     }
     m_objs.clear();
 }
