@@ -295,7 +295,8 @@ bool     Util::disconnectAll(QObject* obj, const QString& name) {
     return QObject::disconnect(obj, signal, nullptr, QMetaMethod {});
 }
 
-std::uint32_t Util::poolObjectCount() { return pool_object_count(); }
+quint32 Util::poolObjectCount() noexcept { return pool_object_count(); }
+qint32  Util::i32Max() noexcept { return std::numeric_limits<qint32>::max(); }
 
 } // namespace qml_material
 

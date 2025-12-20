@@ -50,7 +50,7 @@ public:
     QQmlComponent*                 separatorDelegate   = nullptr;
     QQmlComponent*                 moreButton          = nullptr;
     qreal                          spacing             = 0.0;
-    Qt::Alignment                  alignment           = Qt::AlignLeft;
+    Qt::Alignment                  alignment           = Qt::AlignRight;
     qreal                          visibleActionsWidth = 0.0;
     qreal                          visibleWidth        = 0.0;
     Qt::LayoutDirection            layoutDirection     = Qt::LeftToRight;

@@ -81,8 +81,8 @@ public:
     Q_INVOKABLE static QObject* getParent(QObject* obj);
     Q_INVOKABLE static bool     disconnectAll(QObject* obj, const QString&);
 
-    Q_INVOKABLE static std::uint32_t poolObjectCount();
-
+    Q_INVOKABLE static quint32 poolObjectCount() noexcept;
+    Q_INVOKABLE static qint32 i32Max() noexcept;
 private:
     Q_SLOT void onPopupClosed();
 

@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Templates as T
@@ -7,12 +8,38 @@ import Qcm.Material as MD
 T.Control {
     id: root
 
-    readonly property alias actions: m_layout.actions
-    property int display: T.Button.IconOnly
+    property alias maxShowActionNum: m_layout.maxShowActionNum
     property alias alignment: m_layout.alignment
+
+    property int display: T.Button.IconOnly
+
+    property alias actions: m_layout.actions
     readonly property alias maximumContentWidth: m_layout.implicitWidth
+    readonly property MD.Action moreAction: MD.Action {
+        icon.name: MD.Token.icon.more_vert
+        property var oldPopup: null
+        onTriggered: {
+            if (!oldPopup || !oldPopup.visible) {
+                oldPopup = MD.Util.showPopup(m_comp_menu, {}, root);
+                oldPopup.y = root.height;
+            }
+        }
+    }
+    Component {
+        id: m_comp_menu
+        MD.ActionMenu {
+            actions: m_layout.hiddenActions
+        }
+    }
 
     property string overflowIconName: "overflow-menu"
+    property Component iconDelegate: MD.IconButton {
+        action: MD.ToolBarLayout.action
+    }
+    property Component fullDelegate: iconDelegate
+    property Component moreDelegate: MD.IconButton {
+        action: root.moreAction
+    }
 
     /**
      * @brief This property holds the combined width of all visible delegates.
@@ -54,34 +81,13 @@ T.Control {
 
     contentItem: MD.ToolBarLayout {
         id: m_layout
-        maxShowActionNum: 2
 
         separatorDelegate: MD.ToolSeparator {}
 
-        fullDelegate: MD.IconButton {
-            action: MD.ToolBarLayout.action
-        }
+        fullDelegate: root.fullDelegate
 
-        iconDelegate: MD.IconButton {
-            action: MD.ToolBarLayout.action
-        }
+        iconDelegate: root.iconDelegate
 
-        moreButton: MD.IconButton {
-            icon.name: MD.Token.icon.more_vert
-            property var oldPopup: null
-            onClicked: {
-                if (!oldPopup || !oldPopup.visible) {
-                    oldPopup = MD.Util.showPopup(comp_menu, {}, this);
-                    oldPopup.y = this.height;
-                }
-            }
-
-            Component {
-                id: comp_menu
-                MD.ActionMenu {
-                    actions: m_layout.hiddenActions
-                }
-            }
-        }
+        moreButton: root.moreDelegate
     }
 }
