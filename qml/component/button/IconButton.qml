@@ -29,6 +29,7 @@ T.Button {
 
     icon.width: action ? action.icon.width : 24
     icon.height: action ? action.icon.height : 24
+    property int implicitBackgroundSize: 40
 
     contentItem: Item {
         implicitWidth: control.icon.width
@@ -45,8 +46,8 @@ T.Button {
     }
 
     background: MD.ElevationRectangle {
-        implicitWidth: 40
-        implicitHeight: 40
+        implicitWidth: control.implicitBackgroundSize
+        implicitHeight: control.implicitBackgroundSize
 
         radius: Math.max(height / 2, 0)
         color: control.mdState.backgroundColor
@@ -68,5 +69,4 @@ T.Button {
             color: control.mdState.stateLayerColor
         }
     }
-
 }
