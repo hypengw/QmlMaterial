@@ -4,4 +4,6 @@ build
 /build*
 /doc/html
 /doc/doxygen-awesome-css
+/third_party/material-components-android
+/.llm
 CMakeLists.txt.user*
