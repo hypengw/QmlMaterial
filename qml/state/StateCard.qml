@@ -50,8 +50,8 @@ MD.MState {
                     }
                 }
                 root.backgroundColor: root.ctx.color.surface_variant
-                root.item.contentItem.opacity: 0.38
-                root.item.background.opacity: 0.12
+                root.item.contentItem.opacity: MD.Token.state.disabled_content
+                root.item.background.opacity: MD.Token.state.disabled_container
             }
         },
         State {

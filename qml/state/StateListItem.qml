@@ -23,8 +23,8 @@ MD.MState {
                 root.textColor: root.ctx.color.on_surface
                 root.supportTextColor: root.ctx.color.on_surface
                 root.backgroundColor: root.ctx.color.on_surface
-                root.contentOpacity: 0.38
-                root.backgroundOpacity: 0.38
+                root.contentOpacity: MD.Token.state.disabled_content
+                root.backgroundOpacity: MD.Token.state.disabled_content
             }
         },
         State {

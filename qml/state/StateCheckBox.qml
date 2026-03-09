@@ -28,7 +28,7 @@ MD.MState {
                 root.outlineColor: ctx.color.on_surface
                 root.iconBackgroundColor: ctx.color.on_surface
                 root.iconColor: root.ctx.color.on_surface
-                root.contentOpacity: 0.38
+                root.contentOpacity: MD.Token.state.disabled_content
             }
         },
         State {

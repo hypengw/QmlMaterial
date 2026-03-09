@@ -42,8 +42,8 @@ MD.MState {
             PropertyChanges {
                 root.placeholderColor: root.ctx.color.on_surface
                 root.supportTextColor: root.ctx.color.on_surface
-                placeholder.opacity: 0.38
-                //          root.item.background.opacity: 0.12
+                placeholder.opacity: MD.Token.state.disabled_content
+                //          root.item.background.opacity: MD.Token.state.disabled_container
             }
         },
         State {
@@ -98,8 +98,8 @@ MD.MState {
             PropertyChanges {
                 root.placeholderColor: root.ctx.color.on_surface
                 root.supportTextColor: root.ctx.color.on_surface
-                placeholder.opacity: 0.38
-                //          root.item.background.opacity: 0.12
+                placeholder.opacity: MD.Token.state.disabled_content
+                //          root.item.background.opacity: MD.Token.state.disabled_container
             }
         },
         State {
