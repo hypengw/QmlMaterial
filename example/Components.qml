@@ -439,15 +439,47 @@ MD.Page {
                     }
                     ComponentCard {
                         title: 'Sliders'
-                        MD.Slider {
-                            Layout.alignment: Qt.AlignHCenter
-                        }
-                        MD.Slider {
-                            Layout.alignment: Qt.AlignHCenter
-                            snapMode: T.Slider.SnapAlways
-                            from: 0
-                            stepSize: 20
-                            to: 100
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 24
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                MD.Slider {
+                                    Layout.alignment: Qt.AlignHCenter
+                                }
+                                MD.Slider {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    snapMode: T.Slider.SnapAlways
+                                    from: 0
+                                    stepSize: 20
+                                    to: 100
+                                }
+                                MD.SliderM2 {
+                                    Layout.alignment: Qt.AlignHCenter
+                                }
+                                MD.SliderM2 {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    snapMode: T.Slider.SnapAlways
+                                    from: 0
+                                    stepSize: 20
+                                    to: 100
+                                }
+                            }
+
+                            RowLayout {
+                                spacing: 24
+                                MD.Slider {
+                                    orientation: Qt.Vertical
+                                    snapMode: T.Slider.SnapAlways
+                                    from: 0
+                                    stepSize: 20
+                                    to: 100
+                                }
+                                MD.SliderM2 {
+                                    orientation: Qt.Vertical
+                                }
+                            }
                         }
                     }
                     ComponentCard {

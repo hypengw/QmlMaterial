@@ -24,16 +24,26 @@ T.Button {
     topInset: 0
     bottomInset: 0
     verticalPadding: 0
-    // https://m3.material.io/components/buttons/specs#256326ad-f934-40e7-b05f-0bcb41aa4382
-    leftPadding: flat ? 12 : (hasIcon ? 16 : 24)
-    rightPadding: flat ? (hasIcon ? 16 : 12) : 24
+    // https://m3.material.io/components/buttons/specs
+    leftPadding: {
+        if (type == MD.Enum.BtText) {
+            return hasIcon ? 12 : 12;
+        }
+        return hasIcon ? 16 : 24;
+    }
+    rightPadding: {
+        if (type == MD.Enum.BtText) {
+            return hasIcon ? 16 : 12;
+        }
+        return 24;
+    }
     spacing: 8
 
-    icon.width: 24
-    icon.height: 24
+    icon.width: 18 // M3 default is 18dp inside buttons
+    icon.height: 18
 
     property MD.typescale typescale: MD.Token.typescale.label_large
-    font.capitalization: Font.Capitalize
+    font.capitalization: Font.MixedCase // M3 uses mixed case for buttons
     font.pixelSize: typescale.size
     font.weight: typescale.weight
     font.letterSpacing: typescale.tracking
@@ -58,9 +68,9 @@ T.Button {
         opacity: control.mdState.backgroundOpacity
 
         border.width: control.type == MD.Enum.BtOutlined ? 1 : 0
-        border.color: control.mdState.ctx.color.outline
+        border.color: control.enabled ? control.mdState.ctx.color.outline : control.mdState.ctx.color.on_surface
         elevation: control.mdState.elevation
-        elevationVisible: !MD.Util.epsilonEqual(elevation, MD.Token.elevation.level0) && !control.flat && color.a > 0
+        elevationVisible: (control.type == MD.Enum.BtElevated) && !control.flat && color.a > 0
 
         MD.Ripple2 {
             anchors.fill: parent

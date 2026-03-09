@@ -8,7 +8,7 @@ MD.MState {
     property int type: MD.Enum.BtElevated
    
 
-    elevation: MD.Token.elevation.level1
+    elevation: root.type == MD.Enum.BtElevated ? MD.Token.elevation.level1 : MD.Token.elevation.level0
     textColor: {
         switch (root.type) {
         case MD.Enum.BtFilled:
@@ -50,19 +50,31 @@ MD.MState {
                     case MD.Enum.BtOutlined:
                     case MD.Enum.BtText:
                         return "transparent";
+                    case MD.Enum.BtElevated:
+                        return root.ctx.color.surface_container_low;
                     default:
                         return root.ctx.color.on_surface;
                     }
                 }
                 root.contentOpacity: 0.38
-                root.backgroundOpacity: 0.12
+                root.backgroundOpacity: {
+                    switch (root.type) {
+                    case MD.Enum.BtOutlined:
+                    case MD.Enum.BtText:
+                        return 1.0;
+                    case MD.Enum.BtElevated:
+                        return 0.38; // surface_container_low doesn't need much transparency, but M3 says 0.12 opacity for container if it has color
+                    default:
+                        return 0.12;
+                    }
+                }
             }
         },
         State {
             name: "Pressed"
             when: root.item.down
             PropertyChanges {
-                root.elevation: MD.Token.elevation.level1
+                root.elevation: root.type == MD.Enum.BtElevated ? MD.Token.elevation.level1 : MD.Token.elevation.level0
                 root.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
                 root.stateLayerColor: {
                     let c = null;
@@ -85,7 +97,7 @@ MD.MState {
             name: "Hovered"
             when: root.item.hovered
             PropertyChanges {
-                root.elevation: MD.Token.elevation.level2
+                root.elevation: root.type == MD.Enum.BtElevated ? MD.Token.elevation.level2 : MD.Token.elevation.level1
                 root.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
                 root.stateLayerColor: {
                     let c = null;
@@ -108,7 +120,7 @@ MD.MState {
             name: "Focus"
             when: root.item.visualFocus
             PropertyChanges {
-                root.elevation: MD.Token.elevation.level1
+                root.elevation: root.type == MD.Enum.BtElevated ? MD.Token.elevation.level1 : MD.Token.elevation.level0
                 root.stateLayerOpacity: MD.Token.state.focus.state_layer_opacity
                 root.stateLayerColor: {
                     let c = null;
@@ -126,6 +138,29 @@ MD.MState {
                     return c;
                 }
             }
+        }
+    ]
+
+    transitions: [
+        Transition {
+            from: "Pressed"; to: "Hovered"
+            NumberAnimation { properties: "elevation"; duration: MD.Token.duration.short2; easing: MD.Token.easing.standard }
+            ColorAnimation { duration: MD.Token.duration.short2 }
+            NumberAnimation { property: "stateLayerOpacity"; duration: MD.Token.duration.short2 }
+        },
+        Transition {
+            from: "*"; to: "Pressed"
+            NumberAnimation { properties: "elevation"; duration: MD.Token.duration.short1; easing: MD.Token.easing.standard }
+            ColorAnimation { duration: MD.Token.duration.short1 }
+            NumberAnimation { property: "stateLayerOpacity"; duration: MD.Token.duration.short1 }
+        },
+        Transition {
+            from: "*"; to: "*"
+            NumberAnimation { properties: "elevation"; duration: MD.Token.duration.short4; easing: MD.Token.easing.standard }
+            ColorAnimation { duration: MD.Token.duration.short4 }
+            NumberAnimation { property: "stateLayerOpacity"; duration: MD.Token.duration.short4 }
+            NumberAnimation { property: "contentOpacity"; duration: MD.Token.duration.short4 }
+            NumberAnimation { property: "backgroundOpacity"; duration: MD.Token.duration.short4 }
         }
     ]
 }

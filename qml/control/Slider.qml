@@ -13,22 +13,22 @@ T.Slider {
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitHandleWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitHandleHeight + topPadding + bottomPadding)
 
-    horizontalPadding: 0
-    topInset: 0
-    bottomInset: 0
-    topPadding: 0
-    bottomPadding: 0
     clip: false
 
-    property vector2d overlay: Qt.vector2d(0, 0)
+    // Cursor handling
+    PointHandler {
+        id: mouseHandler
+        cursorShape: control.pressed ? Qt.ClosedHandCursor : (control.hovered ? Qt.PointingHandCursor : Qt.ArrowCursor)
+    }
 
-    // The Slider is discrete if all of the following requirements are met:
-    // * stepSize is positive
-    // * snapMode is set to SnapAlways
-    // * the difference between to and from is cleanly divisible by the stepSize
-    // * the number of tick marks intended to be rendered is less than the width to height ratio, or vice versa for vertical sliders.
     readonly property real __steps: Math.abs(to - from) / stepSize
-    readonly property bool __isDiscrete: stepSize >= Number.EPSILON && snapMode === Slider.SnapAlways && Math.abs(Math.round(__steps) - __steps) < Number.EPSILON && Math.floor(__steps) < (horizontal ? background.width / background.height : background.height / background.width)
+    readonly property bool __isDiscrete: stepSize >= Number.EPSILON && snapMode === Slider.SnapAlways && Math.abs(Math.round(__steps) - __steps) < Number.EPSILON
+    readonly property real handleCenter: {
+        const w = control.horizontal ? control.availableWidth : control.availableHeight;
+        const hw = control.mdState.handleWidth;
+        const start = control.horizontal ? control.leftPadding : control.topPadding;
+        return control.visualPosition * (w - hw) + hw / 2 + start;
+    }
 
     handle: MD.SliderHandle {
         x: control.leftPadding + (control.horizontal ? control.visualPosition * (control.availableWidth - width) : (control.availableWidth - width) / 2)
@@ -37,62 +37,96 @@ T.Slider {
         handleHasFocus: control.visualFocus
         handlePressed: control.pressed
         handleHovered: control.hovered
+        horizontal: control.horizontal
+        handleWidth: control.mdState.handleWidth
+        handleHeight: control.mdState.handleHeight
+        handleLineWidth: control.mdState.handleLineWidth
     }
 
     background: Item {
-        x: control.leftPadding + (control.horizontal ? 0 : (control.availableWidth - width) / 2)
-        y: control.topPadding + (control.horizontal ? (control.availableHeight - height) / 2 : 0)
-        implicitWidth: control.horizontal ? 200 : 4
-        implicitHeight: control.horizontal ? 4 : 200
+        id: bgItem
         opacity: control.mdState.backgroundOpacity
+        implicitWidth: control.horizontal ? 200 : 44
+        implicitHeight: control.horizontal ? 44 : 200
 
-        Rectangle {
-            anchors.centerIn: parent
-            width: control.horizontal ? parent.width - (control.implicitHandleWidth - (control.__isDiscrete ? 4 : 0)) : 4
-            height: control.horizontal ? 4 : parent.height - (control.implicitHandleHeight - (control.__isDiscrete ? 4 : 0))
-            scale: control.horizontal && control.mirrored ? -1 : 1
-            radius: Math.min(width, height) / 2
+        readonly property bool isHandleSmall: control.pressed || control.visualFocus
+        readonly property real gapSize: 6 + control.mdState.handleLineWidth / 2
+
+        // Inactive Track (Right for horizontal, Top for vertical)
+        MD.Rectangle {
+            id: inactiveTrack
+            x: control.horizontal ? control.handleCenter + bgItem.gapSize : (bgItem.width - 16) / 2
+            y: control.horizontal ? (bgItem.height - 16) / 2 : 0
+            width: control.horizontal ? Math.max(0, bgItem.width - x) : 16
+            height: control.horizontal ? 16 : Math.max(0, control.handleCenter - bgItem.gapSize - y)
+            corners: control.horizontal ? MD.Util.corners(2, 8, 2, 8) : MD.Util.corners(8, 8, 2, 2)
             color: control.mdState.trackInactiveColor
+            visible: width > 0 && height > 0
+        }
 
-            Rectangle {
-                visible: control.overlay.length() > 0
-                x: control.horizontal ? control.overlay.x * parent.width : (parent.width - width) / 2
-                y: control.horizontal ? (parent.height - height) / 2 : control.overlay.y * parent.height
-                width: control.horizontal ? (control.overlay.y - control.overlay.x) * parent.width : 4
-                height: control.horizontal ? 4 : (control.overlay.y - control.overlay.x) * parent.height
-                radius: Math.min(width, height) / 2
-                color: control.mdState.trackOverlayColor
-                opacity: control.mdState.trackOverlayOpacity
+        // Active Track (Left for horizontal, Bottom for vertical)
+        MD.Rectangle {
+            id: activeTrack
+            x: control.horizontal ? 0 : (bgItem.width - 16) / 2
+            y: control.horizontal ? (bgItem.height - 16) / 2 : control.handleCenter + bgItem.gapSize
+            width: control.horizontal ? Math.max(0, control.handleCenter - bgItem.gapSize - x) : 16
+            height: control.horizontal ? 16 : Math.max(0, bgItem.height - y)
+            corners: control.horizontal ? MD.Util.corners(8, 2, 8, 2) : MD.Util.corners(2, 2, 8, 8)
+            color: control.mdState.trackColor
+            visible: width > 0 && height > 0
+        }
+        // Stop Indicators
+        MD.Rectangle {
+            id: stopEnd
+            width: 4
+            height: 4
+            radius: 2
+            scale: {
+                const diff_to_end = (control.horizontal ? parent.width - control.handleCenter - control.rightPadding : control.handleCenter) - control.mdState.handleWidth / 2 - 2;
+                return Math.min(Math.max(diff_to_end / 2, 0), 1);
             }
+            x: control.horizontal ? (parent.width - (control.mdState.handleWidth + 4) / 2) - control.rightPadding : (parent.width - 4) / 2
+            y: control.horizontal ? (parent.height - 4) / 2 : (control.mdState.handleWidth - 4) / 2
+            color: control.mdState.trackMarkInactiveColor
+            visible: !control.__isDiscrete
+        }
 
-            Rectangle {
-                x: control.horizontal ? 0 : (parent.width - width) / 2
-                y: control.horizontal ? (parent.height - height) / 2 : control.visualPosition * parent.height
-                width: control.horizontal ? control.position * parent.width : 4
-                height: control.horizontal ? 4 : control.position * parent.height
-                radius: Math.min(width, height) / 2
-                color: control.mdState.trackColor
-            }
-
-            // Declaring this as a property (in combination with the parent binding below) avoids ids,
-            // which prevent deferred execution.
-            property Repeater repeater: Repeater {
-                parent: control.background.children[0]
-                model: control.__isDiscrete ? Math.floor(control.__steps) + 1 : 0
-                delegate: Rectangle {
-                    width: 2
-                    height: 2
-                    radius: 2
-                    x: control.horizontal ? (parent.width - width * 2) * currentPosition + (width / 2) : (parent.width - width) / 2
-                    y: control.horizontal ? (parent.height - height) / 2 : (parent.height - height * 2) * currentPosition + (height / 2)
-                    color: active ? control.mdState.trackMarkColor : control.mdState.trackMarkInactiveColor
-
-                    required property int index
-                    readonly property real currentPosition: index / (parent.repeater.count - 1)
-                    readonly property bool active: (control.horizontal && control.visualPosition > currentPosition) || (!control.horizontal && control.visualPosition <= currentPosition)
+        // Discrete dots
+        Repeater {
+            model: control.__isDiscrete ? Math.floor(control.__steps) + 1 : 0
+            delegate: MD.Rectangle {
+                width: 4
+                height: 4
+                radius: 2
+                x: {
+                    if (control.horizontal) {
+                        const w = control.availableWidth;
+                        const hw = control.mdState.handleWidth;
+                        const pos = currentPosition * (w - hw) + hw / 2 + control.leftPadding;
+                        return pos - width / 2;
+                    } else
+                        return (bgItem.width - width) / 2;
                 }
+                y: {
+                    if (!control.horizontal) {
+                        const w = control.availableHeight;
+                        const hw = control.mdState.handleWidth;
+                        const pos = currentPosition * (w - hw) + hw / 2 + control.topPadding;
+                        return pos - height / 2;
+                    } else
+                        return (bgItem.height - height) / 2;
+                }
+                color: active ? control.mdState.trackMarkColor : control.mdState.trackMarkInactiveColor
+
+                readonly property real dotPos: control.horizontal ? x : y
+                readonly property real gapStart: control.handleCenter - bgItem.gapSize
+                readonly property real gapEnd: control.handleCenter + bgItem.gapSize
+                visible: dotPos < gapStart || dotPos > (gapEnd - 4)
+
+                required property int index
+                readonly property real currentPosition: index / (control.__steps)
+                readonly property bool active: (control.horizontal && control.visualPosition > currentPosition) || (!control.horizontal && control.visualPosition <= currentPosition)
             }
         }
     }
-
 }

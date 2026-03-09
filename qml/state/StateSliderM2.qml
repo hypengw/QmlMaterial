@@ -6,6 +6,7 @@ MD.MState {
     id: root
 
     required property T.Slider item
+   
 
     elevation: MD.Token.elevation.level0
     textColor: root.ctx.color.on_primary
@@ -20,16 +21,6 @@ MD.MState {
     property color trackMarkColor: root.supportTextColor
 
     property real trackOverlayOpacity: 0.12
-
-    property int handleLineWidth: item.pressed || item.visualFocus ? 2 : 4
-    property int handleWidth: 12
-    property int handleHeight: 44
-
-    Behavior on handleLineWidth {
-        NumberAnimation {
-            duration: MD.Token.duration.short2
-        }
-    }
 
     states: [
         State {

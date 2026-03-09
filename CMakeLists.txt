@@ -120,6 +120,7 @@ set(QML_FILES
     qml/control/StackView.qml
     qml/control/SplitView.qml
     qml/control/Slider.qml
+    qml/control/SliderM2.qml
     qml/control/Menu.qml
     qml/control/MenuItem.qml
     qml/control/Pane.qml
@@ -217,6 +218,7 @@ set(QML_FILES
     qml/state/StateTableViewDelegate.qml
     qml/state/StateListItem.qml
     qml/state/StateSlider.qml
+    qml/state/StateSliderM2.qml
     qml/state/StateSwitch.qml
     qml/state/StateIconButton.qml
     qml/state/StateStandardIconButton.qml
@@ -238,6 +240,7 @@ set(QML_FILES
     qml/internal/Ripple2.qml
     qml/internal/CursorDelegate.qml
     qml/internal/SliderHandle.qml
+    qml/internal/SliderHandleM2.qml
     qml/internal/TextFieldEmbed.qml
     qml/internal/RoundClip.qml
     qml/internal/Elevation.qml
