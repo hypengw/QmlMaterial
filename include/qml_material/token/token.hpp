@@ -305,11 +305,22 @@ struct State {
     Q_PROPERTY(qml_material::token::StateItem pressed MEMBER pressed CONSTANT FINAL)
     /// State appearance when element is focused
     Q_PROPERTY(qml_material::token::StateItem focus MEMBER focus CONSTANT FINAL)
+    /// State appearance when element is dragged
+    Q_PROPERTY(qml_material::token::StateItem dragged MEMBER dragged CONSTANT FINAL)
+
+    /// Opacity for disabled content (text/icons)
+    Q_PROPERTY(double disabled_content MEMBER disabled_content CONSTANT FINAL)
+    /// Opacity for disabled containers (backgrounds)
+    Q_PROPERTY(double disabled_container MEMBER disabled_container CONSTANT FINAL)
 
 public:
     StateItem hover { 0.08 };
     StateItem pressed { 0.1 };
     StateItem focus { 0.1 };
+    StateItem dragged { 0.16 };
+
+    double disabled_content { 0.38 };
+    double disabled_container { 0.12 };
 };
 
 /**
@@ -347,6 +358,42 @@ private:
 };
 
 /**
+ * @brief Defines standard spacing values
+ *
+ * Provides a set of consistent spacing values used for layout,
+ * padding, and margins throughout the UI.
+ */
+struct Spacing {
+    Q_GADGET
+    QML_ANONYMOUS
+    /// None (0dp)
+    Q_PROPERTY(qint32 none MEMBER none CONSTANT FINAL)
+    /// Extra small spacing (4dp)
+    Q_PROPERTY(qint32 extra_small MEMBER extra_small CONSTANT FINAL)
+    /// Small spacing (8dp)
+    Q_PROPERTY(qint32 small MEMBER small CONSTANT FINAL)
+    /// Medium-small spacing (12dp)
+    Q_PROPERTY(qint32 medium_small MEMBER medium_small CONSTANT FINAL)
+    /// Medium spacing (16dp)
+    Q_PROPERTY(qint32 medium MEMBER medium CONSTANT FINAL)
+    /// Large-medium spacing (24dp)
+    Q_PROPERTY(qint32 large_medium MEMBER large_medium CONSTANT FINAL)
+    /// Large spacing (32dp)
+    Q_PROPERTY(qint32 large MEMBER large CONSTANT FINAL)
+    /// Extra large spacing (48dp)
+    Q_PROPERTY(qint32 extra_large MEMBER extra_large CONSTANT FINAL)
+public:
+    i32 none { 0 };
+    i32 extra_small { 4 };
+    i32 small { 8 };
+    i32 medium_small { 12 };
+    i32 medium { 16 };
+    i32 large_medium { 24 };
+    i32 large { 32 };
+    i32 extra_large { 48 };
+};
+
+/**
  * @brief Main token container for Material Design system
  *
  * Centralizes access to various Material Design tokens including typography,
@@ -381,6 +428,8 @@ class Token : public QObject {
     Q_PROPERTY(qml_material::token::Shape shape READ shape CONSTANT FINAL)
     /// Window classification settings
     Q_PROPERTY(qml_material::token::WindowClass window_class READ window_class CONSTANT FINAL)
+    /// Standard spacing values
+    Q_PROPERTY(qml_material::token::Spacing spacing READ spacing CONSTANT FINAL)
 public:
     Token(QObject* = nullptr);
     ~Token();
@@ -399,6 +448,7 @@ public:
     auto window_class() const -> const WindowClass&;
     auto duration() const -> const Duration&;
     auto easing() const -> const Easing&;
+    auto spacing() const -> const Spacing&;
 
     auto datas() -> QQmlListProperty<QObject>;
 
@@ -414,6 +464,7 @@ private:
     State       m_state;
     Shape       m_shape;
     WindowClass m_win_class;
+    Spacing     m_spacing;
 
     QList<QObject*> m_datas;
 };

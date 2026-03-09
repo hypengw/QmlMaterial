@@ -23,6 +23,7 @@ auto Token::shape() const -> const Shape& { return m_shape; }
 auto Token::window_class() const -> const WindowClass& { return m_win_class; }
 auto Token::duration() const -> const Duration& { return m_duration; }
 auto Token::easing() const -> const Easing& { return m_easing; }
+auto Token::spacing() const -> const Spacing& { return m_spacing; }
 auto Token::cal_curve_scale(double dpr) const -> double { return dpr >= 2.0 ? 1.0 : 4.0; }
 
 auto Token::datas() -> QQmlListProperty<QObject> { return { this, &m_datas }; }
