@@ -10,29 +10,51 @@ T.Slider {
         item: control
     }
 
-    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitHandleWidth + leftPadding + rightPadding)
-    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitHandleHeight + topPadding + bottomPadding)
+    implicitWidth: {
+        const contentWidth = implicitBackgroundWidth + leftInset + rightInset;
+        const handleContentWidth = implicitHandleWidth + leftPadding + rightPadding;
+        return Math.max(contentWidth, handleContentWidth);
+    }
+    implicitHeight: {
+        const contentHeight = implicitBackgroundHeight + topInset + bottomInset;
+        const handleContentHeight = implicitHandleHeight + topPadding + bottomPadding;
+        return Math.max(contentHeight, handleContentHeight);
+    }
 
     clip: false
 
     // Cursor handling
     PointHandler {
         id: mouseHandler
-        cursorShape: control.pressed ? Qt.ClosedHandCursor : (control.hovered ? Qt.PointingHandCursor : Qt.ArrowCursor)
+        cursorShape: {
+            if (control.pressed)
+                return Qt.ClosedHandCursor;
+            if (control.hovered)
+                return Qt.PointingHandCursor;
+            return Qt.ArrowCursor;
+        }
     }
 
     readonly property real __steps: Math.abs(to - from) / stepSize
     readonly property bool __isDiscrete: stepSize >= Number.EPSILON && snapMode === Slider.SnapAlways && Math.abs(Math.round(__steps) - __steps) < Number.EPSILON
     readonly property real handleCenter: {
-        const w = control.horizontal ? control.availableWidth : control.availableHeight;
-        const hw = control.mdState.handleWidth;
-        const start = control.horizontal ? control.leftPadding : control.topPadding;
-        return control.visualPosition * (w - hw) + hw / 2 + start;
+        const trackLength = control.horizontal ? control.availableWidth : control.availableHeight;
+        const handleSize = control.mdState.handleWidth;
+        const paddingOffset = control.horizontal ? control.leftPadding : control.topPadding;
+        return control.visualPosition * (trackLength - handleSize) + handleSize / 2 + paddingOffset;
     }
 
     handle: MD.SliderHandle {
-        x: control.leftPadding + (control.horizontal ? control.visualPosition * (control.availableWidth - width) : (control.availableWidth - width) / 2)
-        y: control.topPadding + (control.horizontal ? (control.availableHeight - height) / 2 : control.visualPosition * (control.availableHeight - height))
+        x: {
+            const availableSpace = control.availableWidth - width;
+            const offset = control.horizontal ? control.visualPosition * availableSpace : availableSpace / 2;
+            return control.leftPadding + offset;
+        }
+        y: {
+            const availableSpace = control.availableHeight - height;
+            const offset = control.horizontal ? availableSpace / 2 : control.visualPosition * availableSpace;
+            return control.topPadding + offset;
+        }
         value: control.value
         handleHasFocus: control.visualFocus
         handlePressed: control.pressed
@@ -55,11 +77,36 @@ T.Slider {
         // Inactive Track (Right for horizontal, Top for vertical)
         MD.Rectangle {
             id: inactiveTrack
-            x: control.horizontal ? control.handleCenter + bgItem.gapSize : (bgItem.width - 16) / 2
-            y: control.horizontal ? (bgItem.height - 16) / 2 : 0
-            width: control.horizontal ? Math.max(0, bgItem.width - x) : 16
-            height: control.horizontal ? 16 : Math.max(0, control.handleCenter - bgItem.gapSize - y)
-            corners: control.horizontal ? MD.Util.corners(2, 8, 2, 8) : MD.Util.corners(8, 8, 2, 2)
+            x: {
+                if (control.horizontal) {
+                    return control.handleCenter + bgItem.gapSize;
+                }
+                return (bgItem.width - 16) / 2;
+            }
+            y: {
+                if (control.horizontal) {
+                    return (bgItem.height - 16) / 2;
+                }
+                return 0;
+            }
+            width: {
+                if (control.horizontal) {
+                    return Math.max(0, bgItem.width - x);
+                }
+                return 16;
+            }
+            height: {
+                if (control.horizontal) {
+                    return 16;
+                }
+                return Math.max(0, control.handleCenter - bgItem.gapSize - y);
+            }
+            corners: {
+                if (control.horizontal) {
+                    return MD.Util.corners(2, 8, 2, 8);
+                }
+                return MD.Util.corners(8, 8, 2, 2);
+            }
             color: control.mdState.trackInactiveColor
             visible: width > 0 && height > 0
         }
@@ -67,11 +114,36 @@ T.Slider {
         // Active Track (Left for horizontal, Bottom for vertical)
         MD.Rectangle {
             id: activeTrack
-            x: control.horizontal ? 0 : (bgItem.width - 16) / 2
-            y: control.horizontal ? (bgItem.height - 16) / 2 : control.handleCenter + bgItem.gapSize
-            width: control.horizontal ? Math.max(0, control.handleCenter - bgItem.gapSize - x) : 16
-            height: control.horizontal ? 16 : Math.max(0, bgItem.height - y)
-            corners: control.horizontal ? MD.Util.corners(8, 2, 8, 2) : MD.Util.corners(2, 2, 8, 8)
+            x: {
+                if (control.horizontal) {
+                    return 0;
+                }
+                return (bgItem.width - 16) / 2;
+            }
+            y: {
+                if (control.horizontal) {
+                    return (bgItem.height - 16) / 2;
+                }
+                return control.handleCenter + bgItem.gapSize;
+            }
+            width: {
+                if (control.horizontal) {
+                    return Math.max(0, control.handleCenter - bgItem.gapSize - x);
+                }
+                return 16;
+            }
+            height: {
+                if (control.horizontal) {
+                    return 16;
+                }
+                return Math.max(0, bgItem.height - y);
+            }
+            corners: {
+                if (control.horizontal) {
+                    return MD.Util.corners(8, 2, 8, 2);
+                }
+                return MD.Util.corners(2, 2, 8, 8);
+            }
             color: control.mdState.trackColor
             visible: width > 0 && height > 0
         }
@@ -82,11 +154,27 @@ T.Slider {
             height: 4
             radius: 2
             scale: {
-                const diff_to_end = (control.horizontal ? parent.width - control.handleCenter - control.rightPadding : control.handleCenter) - control.mdState.handleWidth / 2 - 2;
-                return Math.min(Math.max(diff_to_end / 2, 0), 1);
+                const centerPos = control.handleCenter;
+                const handleHalfWidth = control.mdState.handleWidth / 2;
+                const distToEnd = control.horizontal ? (parent.width - centerPos - control.rightPadding) : centerPos;
+                const clearDistance = distToEnd - handleHalfWidth - 2;
+                return Math.min(Math.max(clearDistance / 2, 0), 1);
             }
-            x: control.horizontal ? (parent.width - (control.mdState.handleWidth + 4) / 2) - control.rightPadding : (parent.width - 4) / 2
-            y: control.horizontal ? (parent.height - 4) / 2 : (control.mdState.handleWidth - 4) / 2
+            x: {
+                if (control.horizontal) {
+                    const trackEnd = parent.width - control.rightPadding;
+                    const stopOffset = (control.mdState.handleWidth + 4) / 2;
+                    return trackEnd - stopOffset;
+                }
+                return (parent.width - 4) / 2;
+            }
+            y: {
+                if (control.horizontal) {
+                    return (parent.height - 4) / 2;
+                }
+                const stopOffset = (control.mdState.handleWidth - 4) / 2;
+                return stopOffset;
+            }
             color: control.mdState.trackMarkInactiveColor
             visible: !control.__isDiscrete
         }
@@ -100,21 +188,21 @@ T.Slider {
                 radius: 2
                 x: {
                     if (control.horizontal) {
-                        const w = control.availableWidth;
-                        const hw = control.mdState.handleWidth;
-                        const pos = currentPosition * (w - hw) + hw / 2 + control.leftPadding;
-                        return pos - width / 2;
-                    } else
-                        return (bgItem.width - width) / 2;
+                        const trackWidth = control.availableWidth;
+                        const handleWidth = control.mdState.handleWidth;
+                        const dotCenter = currentPosition * (trackWidth - handleWidth) + handleWidth / 2 + control.leftPadding;
+                        return dotCenter - width / 2;
+                    }
+                    return (bgItem.width - width) / 2;
                 }
                 y: {
                     if (!control.horizontal) {
-                        const w = control.availableHeight;
-                        const hw = control.mdState.handleWidth;
-                        const pos = currentPosition * (w - hw) + hw / 2 + control.topPadding;
-                        return pos - height / 2;
-                    } else
-                        return (bgItem.height - height) / 2;
+                        const trackHeight = control.availableHeight;
+                        const handleWidth = control.mdState.handleWidth;
+                        const dotCenter = currentPosition * (trackHeight - handleWidth) + handleWidth / 2 + control.topPadding;
+                        return dotCenter - height / 2;
+                    }
+                    return (bgItem.height - height) / 2;
                 }
                 color: active ? control.mdState.trackMarkColor : control.mdState.trackMarkInactiveColor
 
@@ -125,7 +213,12 @@ T.Slider {
 
                 required property int index
                 readonly property real currentPosition: index / (control.__steps)
-                readonly property bool active: (control.horizontal && control.visualPosition > currentPosition) || (!control.horizontal && control.visualPosition <= currentPosition)
+                readonly property bool active: {
+                    if (control.horizontal) {
+                        return control.visualPosition > currentPosition;
+                    }
+                    return control.visualPosition <= currentPosition;
+                }
             }
         }
     }
