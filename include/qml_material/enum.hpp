@@ -31,6 +31,15 @@ public:
     };
     Q_ENUM(IconLabelStyle)
 
+    enum class ButtonSize {
+        XS = 0,
+        S,
+        M,
+        L,
+        XL
+    };
+    Q_ENUM(ButtonSize)
+
     enum class ButtonType
     {
         BtElevated = 0, ///< Elevated

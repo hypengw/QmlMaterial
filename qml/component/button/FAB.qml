@@ -53,7 +53,7 @@ T.Button {
         implicitWidth: control._size(control.type, 40, 56, 96)
         implicitHeight: control._size(control.type, 40, 56, 96)
 
-        radius: control._size(control.type, 12, 16, 28)
+        radius: control.mdState.corner
         color: control.mdState.backgroundColor
 
         border.width: control.type == MD.Enum.BtOutlined ? 1 : 0

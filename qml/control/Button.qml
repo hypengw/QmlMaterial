@@ -6,6 +6,8 @@ T.Button {
     id: control
 
     property int type: MD.Enum.BtElevated
+    property int size: MD.Enum.S
+    property bool isRound: true
     property int iconStyle: hasIcon ? MD.Enum.IconAndText : MD.Enum.TextOnly
     readonly property bool hasIcon: MD.Util.hasIcon(icon)
     property MD.StateButton mdState: MD.StateButton {
@@ -13,6 +15,12 @@ T.Button {
     }
     Binding {
         control.mdState.type: control.type
+    }
+    Binding {
+        control.mdState.size: control.size
+    }
+    Binding {
+        control.mdState.isRound: control.isRound
     }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
@@ -63,7 +71,7 @@ T.Button {
         implicitWidth: 64
         implicitHeight: 40
 
-        radius: height / 2
+        radius: control.mdState.corner
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
 

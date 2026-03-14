@@ -6,9 +6,37 @@ MD.MState {
     id: root
     required property T.Button item
     property int type: MD.Enum.BtElevated
+    property int size: MD.Enum.S
+    property bool isRound: true
    
 
     elevation: root.type == MD.Enum.BtElevated ? MD.Token.elevation.level1 : MD.Token.elevation.level0
+    property real corner: calcRadius(root.size, root.isRound, false)
+
+    function calcRadius(s, round, pressed) {
+        if (pressed) {
+            switch (s) {
+                case MD.Enum.XS: return 8;
+                case MD.Enum.S: return 8;
+                case MD.Enum.M: return 12;
+                case MD.Enum.L: return 16;
+                case MD.Enum.XL: return 16;
+            }
+        }
+        if (round) {
+            return item.background ? item.background.height / 2 : 20;
+        }
+        // Square button
+        switch (s) {
+            case MD.Enum.XS: return 12;
+            case MD.Enum.S: return 12;
+            case MD.Enum.M: return 16;
+            case MD.Enum.L: return 28;
+            case MD.Enum.XL: return 28;
+        }
+        return 12;
+    }
+
     textColor: {
         switch (root.type) {
         case MD.Enum.BtFilled:
@@ -56,16 +84,16 @@ MD.MState {
                         return root.ctx.color.on_surface;
                     }
                 }
-                root.contentOpacity: 0.38
+                root.contentOpacity: MD.Token.state.disabled_content
                 root.backgroundOpacity: {
                     switch (root.type) {
                     case MD.Enum.BtOutlined:
                     case MD.Enum.BtText:
                         return 1.0;
                     case MD.Enum.BtElevated:
-                        return 0.38; // surface_container_low doesn't need much transparency, but M3 says 0.12 opacity for container if it has color
+                        return MD.Token.state.disabled_content; // Elevated button container opacity when disabled
                     default:
-                        return 0.12;
+                        return MD.Token.state.disabled_container;
                     }
                 }
             }
@@ -75,6 +103,7 @@ MD.MState {
             when: root.item.down
             PropertyChanges {
                 root.elevation: root.type == MD.Enum.BtElevated ? MD.Token.elevation.level1 : MD.Token.elevation.level0
+                root.corner: calcRadius(root.size, root.isRound, true)
                 root.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
                 root.stateLayerColor: {
                     let c = null;
@@ -144,19 +173,19 @@ MD.MState {
     transitions: [
         Transition {
             from: "Pressed"; to: "Hovered"
-            NumberAnimation { properties: "elevation"; duration: MD.Token.duration.short2; easing: MD.Token.easing.standard }
+            NumberAnimation { properties: "elevation,corner"; duration: MD.Token.duration.short2; easing: MD.Token.easing.standard }
             ColorAnimation { duration: MD.Token.duration.short2 }
             NumberAnimation { property: "stateLayerOpacity"; duration: MD.Token.duration.short2 }
         },
         Transition {
             from: "*"; to: "Pressed"
-            NumberAnimation { properties: "elevation"; duration: MD.Token.duration.short1; easing: MD.Token.easing.standard }
+            NumberAnimation { properties: "elevation,corner"; duration: MD.Token.duration.short1; easing: MD.Token.easing.standard }
             ColorAnimation { duration: MD.Token.duration.short1 }
             NumberAnimation { property: "stateLayerOpacity"; duration: MD.Token.duration.short1 }
         },
         Transition {
             from: "*"; to: "*"
-            NumberAnimation { properties: "elevation"; duration: MD.Token.duration.short4; easing: MD.Token.easing.standard }
+            NumberAnimation { properties: "elevation,corner"; duration: MD.Token.duration.short4; easing: MD.Token.easing.standard }
             ColorAnimation { duration: MD.Token.duration.short4 }
             NumberAnimation { property: "stateLayerOpacity"; duration: MD.Token.duration.short4 }
             NumberAnimation { property: "contentOpacity"; duration: MD.Token.duration.short4 }

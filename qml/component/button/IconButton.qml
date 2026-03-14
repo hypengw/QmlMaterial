@@ -7,12 +7,22 @@ T.Button {
     id: control
 
     property int type: MD.Enum.IBtStandard
+    property int size: MD.Enum.S
+    property bool isRound: true
     property MD.StateIconButton mdState: MD.StateIconButton {
         item: control
     }
 
     Binding {
         control.mdState.type: control.type
+    }
+
+    Binding {
+        control.mdState.size: control.size
+    }
+
+    Binding {
+        control.mdState.isRound: control.isRound
     }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
@@ -49,7 +59,7 @@ T.Button {
         implicitWidth: control.implicitBackgroundSize
         implicitHeight: control.implicitBackgroundSize
 
-        radius: Math.max(height / 2, 0)
+        radius: control.mdState.corner
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
 
@@ -61,7 +71,7 @@ T.Button {
 
         MD.Ripple2 {
             anchors.fill: parent
-            radius: Math.max(height / 2, 0)
+            radius: control.mdState.corner
             pressX: control.pressX
             pressY: control.pressY
             pressed: control.pressed

@@ -10,9 +10,20 @@ MD.MState {
    
 
     elevation: MD.Token.elevation.level3
+    property int corner: {
+        switch (item.type) {
+        case MD.Enum.FABSmall:
+            return MD.Token.shape.corner.extra_small; 
+        case MD.Enum.FABLarge:
+            return MD.Token.shape.corner.extra_large; 
+        case MD.Enum.FABNormal:
+        default:
+            return MD.Token.shape.corner.large; 
+        }
+    }
     textColor: {
         switch (root.color) {
-        case MD.Enum.FABColorSurfaec:
+        case MD.Enum.FABColorSurface:
             return root.ctx.color.primary;
         case MD.Enum.FABColorSecondary:
             return root.ctx.color.on_secondary_container;
@@ -25,7 +36,7 @@ MD.MState {
     }
     backgroundColor: {
         switch (root.color) {
-        case MD.Enum.FABColorSurfaec:
+        case MD.Enum.FABColorSurface:
             return root.ctx.color.surface_container_high;
         case MD.Enum.FABColorSecondary:
             return root.ctx.color.secondary_container;
@@ -45,6 +56,17 @@ MD.MState {
             PropertyChanges {
                 root.elevation: MD.Token.elevation.level3
                 root.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
+                root.corner: {
+                    switch (item.type) {
+                    case MD.Enum.FABSmall:
+                        return MD.Token.shape.corner.small;
+                    case MD.Enum.FABLarge:
+                        return MD.Token.shape.corner.large;
+                    case MD.Enum.FABNormal:
+                    default:
+                        return MD.Token.shape.corner.medium;
+                    }
+                }
             }
         },
         State {
@@ -54,6 +76,13 @@ MD.MState {
                 root.elevation: MD.Token.elevation.level4
                 root.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
             }
+        }
+    ]
+
+    transitions: [
+        Transition {
+            NumberAnimation { properties: "elevation,corner"; duration: MD.Token.duration.short2; easing: MD.Token.easing.standard }
+            NumberAnimation { property: "stateLayerOpacity"; duration: MD.Token.duration.short2 }
         }
     ]
 }

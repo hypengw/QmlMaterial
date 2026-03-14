@@ -6,9 +6,37 @@ MD.MState {
     id: root
     required property T.Button item
     property int type
+    property int size: MD.Enum.S
+    property bool isRound: true
    
 
     elevation: MD.Token.elevation.level1
+    property real corner: calcRadius(root.size, root.isRound, false)
+
+    function calcRadius(s, round, pressed) {
+        if (pressed) {
+            switch (s) {
+                case MD.Enum.XS: return 8;
+                case MD.Enum.S: return 8;
+                case MD.Enum.M: return 12;
+                case MD.Enum.L: return 16;
+                case MD.Enum.XL: return 16;
+            }
+        }
+        if (round) {
+            return item.background ? item.background.height / 2 : 20;
+        }
+        // Square button
+        switch (s) {
+            case MD.Enum.XS: return 12;
+            case MD.Enum.S: return 12;
+            case MD.Enum.M: return 16;
+            case MD.Enum.L: return 28;
+            case MD.Enum.XL: return 28;
+        }
+        return 12;
+    }
+
     stateLayerColor: "transparent"
 
     textColor: {
@@ -74,8 +102,8 @@ MD.MState {
                         return root.ctx.color.on_surface;
                     }
                 }
-                root.contentOpacity: 0.38
-                root.backgroundOpacity: 0.12
+                root.contentOpacity: MD.Token.state.disabled_content
+                root.backgroundOpacity: MD.Token.state.disabled_container
             }
         },
         State {
@@ -83,6 +111,7 @@ MD.MState {
             when: root.item.down || root.item.visualFocus
             PropertyChanges {
                 root.elevation: MD.Token.elevation.level1
+                root.corner: calcRadius(root.size, root.isRound, true)
                 root.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
                 root.stateLayerColor: {
                     let c = null;
@@ -154,6 +183,29 @@ MD.MState {
                     return c;
                 }
             }
+        }
+    ]
+
+    transitions: [
+        Transition {
+            from: "Pressed"; to: "Hovered"
+            NumberAnimation { properties: "elevation,corner"; duration: MD.Token.duration.short2; easing: MD.Token.easing.standard }
+            ColorAnimation { duration: MD.Token.duration.short2 }
+            NumberAnimation { property: "stateLayerOpacity"; duration: MD.Token.duration.short2 }
+        },
+        Transition {
+            from: "*"; to: "Pressed"
+            NumberAnimation { properties: "elevation,corner"; duration: MD.Token.duration.short1; easing: MD.Token.easing.standard }
+            ColorAnimation { duration: MD.Token.duration.short1 }
+            NumberAnimation { property: "stateLayerOpacity"; duration: MD.Token.duration.short1 }
+        },
+        Transition {
+            from: "*"; to: "*"
+            NumberAnimation { properties: "elevation,corner"; duration: MD.Token.duration.short4; easing: MD.Token.easing.standard }
+            ColorAnimation { duration: MD.Token.duration.short4 }
+            NumberAnimation { property: "stateLayerOpacity"; duration: MD.Token.duration.short4 }
+            NumberAnimation { property: "contentOpacity"; duration: MD.Token.duration.short4 }
+            NumberAnimation { property: "backgroundOpacity"; duration: MD.Token.duration.short4 }
         }
     ]
 }

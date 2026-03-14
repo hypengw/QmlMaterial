@@ -189,7 +189,7 @@ Item {
             m_back.opacity = Qt.binding(function () {
                 return root.stateOpacity;
             });
-            m_circle.opacity = 0
+            m_circle.opacity = 0;
         }
 
         NumberAnimation {
