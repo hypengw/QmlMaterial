@@ -42,7 +42,7 @@ MD.MState {
     readonly property real iconSize: sizeToken.icon_size
 
     elevation: MD.Token.elevation.level1
-    property real corner: calcRadius(root.size, root.isRound, false)
+    property real corner: calcRadius(root.isRound, root.item.down, root.item.checked)
     property MD.corners corners: MD.Util.corners(root.corner)
     Behavior on corners {
         PropertyAnimation {
@@ -50,38 +50,17 @@ MD.MState {
         }
     }
 
-    function calcRadius(s, round, pressed) {
+    function calcRadius(round, pressed, checked) {
         if (pressed) {
-            switch (s) {
-            case MD.Enum.XS:
-                return 8;
-            case MD.Enum.S:
-                return 8;
-            case MD.Enum.M:
-                return 12;
-            case MD.Enum.L:
-                return 16;
-            case MD.Enum.XL:
-                return 16;
-            }
+            return sizeToken.pressed_corner_size;
+        }
+        if (checked) {
+            return sizeToken.corner_size;
         }
         if (round) {
             return item.background ? item.background.height / 2 : 20;
         }
-        // Square button
-        switch (s) {
-        case MD.Enum.XS:
-            return 12;
-        case MD.Enum.S:
-            return 12;
-        case MD.Enum.M:
-            return 16;
-        case MD.Enum.L:
-            return 28;
-        case MD.Enum.XL:
-            return 28;
-        }
-        return 12;
+        return sizeToken.corner_size;
     }
 
     stateLayerColor: "transparent"
@@ -158,7 +137,6 @@ MD.MState {
             when: root.item.down || root.item.visualFocus
             PropertyChanges {
                 root.elevation: MD.Token.elevation.level1
-                root.corner: calcRadius(root.size, root.isRound, true)
                 root.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
                 root.stateLayerColor: {
                     let c = null;

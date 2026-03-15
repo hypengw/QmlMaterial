@@ -123,6 +123,10 @@ struct IconButtonSizeItem {
     Q_PROPERTY(qreal narrow_width MEMBER narrow_width CONSTANT FINAL)
     /// Wide button container width (dp)
     Q_PROPERTY(qreal wide_width MEMBER wide_width CONSTANT FINAL)
+    /// Corner radius (dp)
+    Q_PROPERTY(qreal corner_size MEMBER corner_size CONSTANT FINAL)
+    /// Corner radius when pressed or checked (dp)
+    Q_PROPERTY(qreal pressed_corner_size MEMBER pressed_corner_size CONSTANT FINAL)
 
 public:
     qreal icon_size;
@@ -130,6 +134,8 @@ public:
     qreal default_width;
     qreal narrow_width;
     qreal wide_width;
+    qreal corner_size;
+    qreal pressed_corner_size;
 };
 
 /**
@@ -152,7 +158,9 @@ public:
         32.0, // container_height
         32.0, // default_width
         28.0, // narrow_width
-        40.0  // wide_width
+        40.0, // wide_width
+        12.0, // corner_size
+        8.0   // pressed_corner_size
     };
 
     IconButtonSizeItem small {
@@ -160,7 +168,9 @@ public:
         40.0, // container_height
         40.0, // default_width
         32.0, // narrow_width
-        52.0  // wide_width
+        52.0, // wide_width
+        12.0, // corner_size
+        8.0   // pressed_corner_size
     };
 
     IconButtonSizeItem medium {
@@ -168,7 +178,9 @@ public:
         56.0, // container_height
         56.0, // default_width
         48.0, // narrow_width
-        72.0  // wide_width
+        72.0, // wide_width
+        16.0, // corner_size
+        12.0  // pressed_corner_size
     };
 
     IconButtonSizeItem large {
@@ -176,15 +188,19 @@ public:
         96.0, // container_height
         96.0, // default_width
         64.0, // narrow_width
-        128.0 // wide_width
+        128.0,// wide_width
+        28.0, // corner_size
+        16.0  // pressed_corner_size
     };
 
     IconButtonSizeItem xlarge {
         40.0, // icon_size
-        136.0, // container_height
-        136.0, // default_width
-        104.0, // narrow_width
-        184.0  // wide_width
+        136.0,// container_height
+        136.0,// default_width
+        104.0,// narrow_width
+        184.0,// wide_width
+        28.0, // corner_size
+        16.0  // pressed_corner_size
     };
 };
 
