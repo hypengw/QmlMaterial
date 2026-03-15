@@ -5,20 +5,19 @@ import Qcm.Material as MD
 MD.MState {
     id: root
     required property T.Button item
+    property int type: MD.Enum.FABNormal
     property int color: MD.Enum.FABColorPrimary
-
-   
 
     elevation: MD.Token.elevation.level3
     property int corner: {
-        switch (item.type) {
+        switch (type) {
         case MD.Enum.FABSmall:
-            return MD.Token.shape.corner.extra_small; 
+            return MD.Token.shape.corner.extra_small;
         case MD.Enum.FABLarge:
-            return MD.Token.shape.corner.extra_large; 
+            return MD.Token.shape.corner.extra_large;
         case MD.Enum.FABNormal:
         default:
-            return MD.Token.shape.corner.large; 
+            return MD.Token.shape.corner.large;
         }
     }
     textColor: {
@@ -56,17 +55,6 @@ MD.MState {
             PropertyChanges {
                 root.elevation: MD.Token.elevation.level3
                 root.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
-                root.corner: {
-                    switch (item.type) {
-                    case MD.Enum.FABSmall:
-                        return MD.Token.shape.corner.small;
-                    case MD.Enum.FABLarge:
-                        return MD.Token.shape.corner.large;
-                    case MD.Enum.FABNormal:
-                    default:
-                        return MD.Token.shape.corner.medium;
-                    }
-                }
             }
         },
         State {
@@ -81,8 +69,15 @@ MD.MState {
 
     transitions: [
         Transition {
-            NumberAnimation { properties: "elevation,corner"; duration: MD.Token.duration.short2; easing: MD.Token.easing.standard }
-            NumberAnimation { property: "stateLayerOpacity"; duration: MD.Token.duration.short2 }
+            NumberAnimation {
+                properties: "elevation,corner"
+                duration: MD.Token.duration.short2
+                easing: MD.Token.easing.standard
+            }
+            NumberAnimation {
+                property: "stateLayerOpacity"
+                duration: MD.Token.duration.short2
+            }
         }
     ]
 }

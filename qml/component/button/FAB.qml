@@ -5,7 +5,6 @@ import Qcm.Material as MD
 T.Button {
     id: control
 
-    property int type: MD.Enum.FABNormal
     property int color: MD.Enum.FABColorPrimary
     property QtObject flickable: null
     property MD.StateFAB mdState: MD.StateFAB {
@@ -26,11 +25,11 @@ T.Button {
     leftInset: 0
     rightInset: 0
 
-    padding: _size(type, 8, 16, 30)
+    padding: _size(mdState.type, 8, 16, 30)
     spacing: 0
 
-    icon.width: _size(type, 24, 24, 36)
-    icon.height: _size(type, 24, 24, 36)
+    icon.width: _size(mdState.type, 24, 24, 36)
+    icon.height: _size(mdState.type, 24, 24, 36)
 
     font.weight: MD.Token.typescale.label_large.weight
     font.pixelSize: Math.min(icon.width, icon.height)
@@ -50,13 +49,13 @@ T.Button {
     }
 
     background: MD.ElevationRectangle {
-        implicitWidth: control._size(control.type, 40, 56, 96)
-        implicitHeight: control._size(control.type, 40, 56, 96)
+        implicitWidth: control._size(control.mdState.type, 40, 56, 96)
+        implicitHeight: control._size(control.mdState.type, 40, 56, 96)
 
         radius: control.mdState.corner
         color: control.mdState.backgroundColor
 
-        border.width: control.type == MD.Enum.BtOutlined ? 1 : 0
+        border.width: control.mdState.type == MD.Enum.BtOutlined ? 1 : 0
         border.color: control.mdState.ctx.color.outline
 
         elevationVisible: elevation && color.a > 0 && !control.flat

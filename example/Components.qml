@@ -186,15 +186,15 @@ MD.Page {
                             spacing: 36
 
                             MD.FAB {
-                                type: MD.Enum.FABSmall
+                                mdState.type: MD.Enum.FABSmall
                                 icon.name: MD.Token.icon.add
                             }
                             MD.FAB {
-                                type: MD.Enum.FABNormal
+                                mdState.type: MD.Enum.FABNormal
                                 icon.name: MD.Token.icon.add
                             }
                             MD.FAB {
-                                type: MD.Enum.FABLarge
+                                mdState.type: MD.Enum.FABLarge
                                 icon.name: MD.Token.icon.add
                             }
                         }
