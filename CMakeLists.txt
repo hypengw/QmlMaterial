@@ -11,7 +11,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOMOC_PATH_PREFIX ON)
 
-option(QM_BUILD_EXAMPLE ON)
+option(QM_BUILD_EXAMPLE "" ON)
 
 set(QM_ICON_FONT_URL
     ""
@@ -111,6 +111,8 @@ set(QML_FILES
     qml/control/Button.qml
     qml/control/SegmentedButton.qml
     qml/control/SegmentedButtonGroup.qml
+    qml/control/SplitButton.qml
+    qml/control/SplitButtonIndicator.qml
     qml/control/Control.qml
     qml/control/ComboBox.qml
     qml/control/ButtonGroup.qml
