@@ -6,4 +6,6 @@ build
 /doc/doxygen-awesome-css
 /third_party/material-components-android
 /.llm
+/compile_commands.json
+/.vscode
 CMakeLists.txt.user*
