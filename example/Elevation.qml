@@ -5,7 +5,7 @@ import Qcm.Material as MD
 
 MD.Page {
     id: root
-    title: 'Elevation & Shadow'
+    title: 'Elevation'
     padding: 0
 
     MD.VerticalFlickable {
@@ -26,7 +26,7 @@ MD.Page {
                     spacing: 16
                     MD.Text {
                         Layout.alignment: Qt.AlignHCenter
-                        text: 'Uniform Shadows'
+                        text: 'Elevation'
                         typescale: MD.Token.typescale.title_large
                     }
 
@@ -63,7 +63,7 @@ MD.Page {
                     spacing: 16
                     MD.Text {
                         Layout.alignment: Qt.AlignHCenter
-                        text: 'Custom Shapes & Corners'
+                        text: 'Custom Shapes'
                         typescale: MD.Token.typescale.title_large
                     }
 
@@ -71,20 +71,6 @@ MD.Page {
                         Layout.fillWidth: true
                         spacing: 32
                         Layout.margins: 20
-
-                        // Split Button Style (Leading)
-                        ShapeBox {
-                            title: "Split Leading"
-                            elevation: 2
-                            corners: MD.Util.corners(m_slider_radius.value, 4, m_slider_radius.value, 4)
-                        }
-
-                        // Split Button Style (Trailing)
-                        ShapeBox {
-                            title: "Split Trailing"
-                            elevation: 2
-                            corners: MD.Util.corners(4, m_slider_radius.value, 4, m_slider_radius.value)
-                        }
 
                         // Segmented (First)
                         ShapeBox {

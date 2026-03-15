@@ -11,11 +11,20 @@
 
 /**
  * @file skia_shadow.h
- * @brief Shadow rendering implementation based on Skia's ShadowRRectOp.
+ * @brief High-fidelity shadow rendering based on Skia's analytic shadow model.
  * 
- * This module provides the mathematical foundation and mesh generation logic for 
- * high-fidelity shadows. It supports Material Design 3 elevation standards including
- * ambient and spot shadows with independent corner radii.
+ * ### Architecture Overview
+ * This module implements a specialized mesh generator for Material Design 3 shadows.
+ * Instead of using Gaussian blur (which is expensive and hard to clip), we use:
+ * 1. **Analytic Geometry**: A 9-patch mesh where corners are vertex fans.
+ * 2. **Distance Fields**: Vertices carry a 2D "offset" representing the normalized 
+ *    distance to the nearest edge/corner.
+ * 3. **LUT-based Falloff**: The fragment shader uses these offsets to sample a 
+ *    1D strength texture (fade-off LUT) to create smooth, physically-accurate penumbras.
+ * 
+ * ### Mesh Structure (Rounded Rectangle)
+ * The mesh consists of 4 corners (6 vertices each) and an optional inner quad for 
+ * overstroked shadows.
  */
 
 namespace qml_material::sk
@@ -30,7 +39,10 @@ using scalar = float;
 static constexpr scalar SK_Scalar1          = 1.0f;
 static constexpr scalar SK_ScalarNearlyZero = (SK_Scalar1 / (1 << 12));
 
-/** Linearly divide and pin the result between min and max. */
+/** 
+ * @brief Linearly divide and pin the result between min and max. 
+ * Prevents NaN and ensures values stay within valid sampling ranges.
+ */
 static inline float divide_and_pin(float numer, float denom, float min, float max) {
     float result = std::max(min, std::min(numer / denom, max));
     return result;
@@ -65,8 +77,7 @@ static constexpr auto kAmbientGeomFactor   = 64.0f;
 static constexpr auto kMaxAmbientRadius    = 300 * kAmbientHeightFactor * kAmbientGeomFactor;
 
 /**
- * @brief Calculates the blur radius for ambient shadows.
- * @param height The elevation/Z-height of the occluder.
+ * @brief Calculates the blur radius for ambient shadows based on Z-height.
  */
 inline scalar AmbientBlurRadius(scalar height) {
     return std::min(height * kAmbientHeightFactor * kAmbientGeomFactor, kMaxAmbientRadius);
@@ -97,25 +108,14 @@ void GetDirectionalParams(scalar occluderZ, scalar lightX, scalar lightY, scalar
 // Shadow Geometry Operator
 // =============================================================================
 
-/**
- * @class ShadowCircularRRectOp
- * @brief Generates a specialized mesh for a single shadow pass (Ambient or Spot).
- * 
- * This class encapsulates the logic for building a 9-patch-like vertex buffer
- * where the "edges" and "corners" are computed to represent a distance field
- * that creates a smooth shadow falloff in the fragment shader.
- */
 class ShadowCircularRRectOp {
 public:
     enum RRectType {
-        kFill_RRectType,        ///< Standard filled shadow
-        kStroke_RRectType,      ///< Shadow for a stroked shape
-        kOverstroke_RRectType,  ///< Optimized handling for small/blurry shadows
+        kFill_RRectType,        ///< Normal shadow filling the entire interior.
+        kStroke_RRectType,      ///< Hollow shadow for outlined shapes.
+        kOverstroke_RRectType,  ///< Optimized for large blurs where the umbra is tiny.
     };
 
-    /**
-     * @brief Raw geometric parameters for the operator.
-     */
     struct Geometry {
         QRgb      color;
         QVector4D outer_radius; // TL, TR, BL, BR
@@ -126,32 +126,17 @@ public:
         bool      is_circle;
     };
 
-    /**
-     * @brief Constructs the operator and determines the required mesh complexity.
-     */
     ShadowCircularRRectOp(QRgb color, const QRectF& devRect, QVector4D devRadius, bool isCircle,
                           float blurRadius, float insetWidth);
 
-    /**
-     * @brief Fills the circular (octagon-based) vertex buffer.
-     */
     void fillInCircleVerts(bool isStroked, sg::ShadowVertex** vp) const;
-
-    /**
-     * @brief Fills the rounded-rectangle vertex buffer.
-     * 
-     * Handles asymmetrical corners by aligning distance-field offsets with 
-     * the actual geometric boundaries to prevent interpolation artifacts.
-     */
     void fillInRRectVerts(sg::ShadowVertex** vp) const;
 
-    // Mesh configuration
     Geometry        fGeoData;
     int             fVertCount;
     int             fIndexCount;
     const uint16_t* fIndexPtr;
 
-    // Static helper to map types to index pointers
     static const uint16_t* circle_type_to_indices(bool stroked);
     static const uint16_t* rrect_type_to_indices(RRectType type);
 };

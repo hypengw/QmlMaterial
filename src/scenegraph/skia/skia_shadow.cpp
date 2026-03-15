@@ -9,6 +9,10 @@ namespace qml_material::sk
 // Parameter Calculations Implementation
 // =============================================================================
 
+/**
+ * Calculates spot shadow geometry parameters based on a point light model.
+ * zRatio determines the blur radius and the projection scale of the shadow.
+ */
 void GetSpotParams(scalar occluderZ, scalar lightX, scalar lightY, scalar lightZ,
                    scalar lightRadius, scalar* blurRadius, scalar* scale,
                    QVector2D* translate) {
@@ -18,12 +22,16 @@ void GetSpotParams(scalar occluderZ, scalar lightX, scalar lightY, scalar lightZ
     *translate    = QVector2D(-zRatio * lightX, -zRatio * lightY);
 }
 
+/**
+ * Calculates directional shadow parameters. This is a simplified version of the spot
+ * model where the light source is assumed to be at infinity.
+ */
 void GetDirectionalParams(scalar occluderZ, scalar lightX, scalar lightY, scalar lightZ,
                           scalar lightRadius, scalar* blurRadius, scalar* scale,
                           QVector2D* translate) {
     *blurRadius = lightRadius * occluderZ;
     *scale      = 1;
-    // Max z-ratio calculation
+    // Max z-ratio is "max expected elevation" / "min allowable z"
     constexpr scalar kMaxZRatio = 64 / SK_ScalarNearlyZero;
     scalar           zRatio     = divide_and_pin(occluderZ, lightZ, 0.0f, kMaxZRatio);
     *translate                  = QVector2D(-zRatio * lightX, -zRatio * lightY);
@@ -33,13 +41,18 @@ void GetDirectionalParams(scalar occluderZ, scalar lightX, scalar lightY, scalar
 // ShadowCircularRRectOp Mesh Index Constants
 // =============================================================================
 
-// In the case of a normal fill, we draw geometry for the circle as an octagon.
+/**
+ * Circle mesh indices (Octagon-based).
+ * Layout: 8 outer vertices, 1 center vertex.
+ */
 static constexpr uint16_t gFillCircleIndices[] = {
     0, 1, 8, 1, 2, 8, 2, 3, 8, 3, 4, 8,
     4, 5, 8, 5, 6, 8, 6, 7, 8, 7, 0, 8,
 };
 
-// For stroked circles, we use two nested octagons.
+/**
+ * Stroked circle mesh indices (Two nested octagons).
+ */
 static constexpr uint16_t gStrokeCircleIndices[] = {
     0, 1,  9, 0,  9,  8, 1, 2, 10, 1, 10,  9,
     2, 3, 11, 2, 11, 10, 3, 4, 12, 3, 12, 11,
@@ -47,20 +60,38 @@ static constexpr uint16_t gStrokeCircleIndices[] = {
     6, 7, 15, 6, 15, 14, 7, 0,  8, 7,  8, 15,
 };
 
-// Index buffer for rounded rectangles (includes overstroke, corners, edges, and fill)
+/**
+ * RRect Index Buffer (The 9-patch shadow engine).
+ * 
+ * ASCII Visualization of the 9-patch structure:
+ * (Numbers represent the starting vertex of each corner's 6-vertex block)
+ * 
+ *    0 --- (E) --- 6
+ *    |             |
+ *   (E)   [Quad]  (E)
+ *    |             |
+ *    12--- (E) --- 18
+ */
 static constexpr uint16_t gRRectIndices[] = {
-    // overstroke quads
+    // --- Overstroke quads (Optional inner ring) ---
     0, 6, 25, 0, 25, 24, 6, 18, 27, 6, 27, 25,
     18, 12, 26, 18, 26, 27, 12, 0, 24, 12, 24, 26,
-    // corners
+    
+    // --- Corners (Each corner is a 4-triangle fan) ---
+    // TL (0..5)
     0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 5,
+    // TR (6..11) - Note: Static indices handle reverse winding
     6, 11, 10, 6, 10, 9, 6, 9, 8, 6, 8, 7,
+    // BL (12..17) - Reverse winding in indices
     12, 17, 16, 12, 16, 15, 12, 15, 14, 12, 14, 13,
+    // BR (18..23) - Forward winding
     18, 19, 20, 18, 20, 21, 18, 21, 22, 18, 22, 23,
-    // edges
+    
+    // --- Edge quads (Connecting the corners) ---
     0, 5, 11, 0, 11, 6, 6, 7, 19, 6, 19, 18,
     18, 23, 17, 18, 17, 12, 12, 13, 1, 12, 1, 0,
-    // fill quad
+    
+    // --- Center fill quad ---
     0, 6, 18, 0, 18, 12,
 };
 
@@ -83,7 +114,7 @@ const uint16_t* ShadowCircularRRectOp::circle_type_to_indices(bool stroked) {
 const uint16_t* ShadowCircularRRectOp::rrect_type_to_indices(RRectType type) {
     switch (type) {
     case kFill_RRectType:
-    case kStroke_RRectType: return gRRectIndices + 6 * 4;
+    case kStroke_RRectType: return gRRectIndices + 6 * 4; // Skip overstroke quads
     case kOverstroke_RRectType: return gRRectIndices;
     }
     return nullptr;
@@ -135,7 +166,7 @@ void ShadowCircularRRectOp::fillInCircleVerts(bool isStroked, sg::ShadowVertex**
     const QRectF& bounds = args.dev_bounds;
     auto   center    = QVector2D(bounds.center().x(), bounds.center().y());
     scalar halfWidth = 0.5f * bounds.width();
-    scalar octOffset = 0.41421356237f;
+    scalar octOffset = 0.41421356237f; // tan(pi/8)
 
     auto v = vp[0];
     QVector2D offsets[8] = {
@@ -168,6 +199,16 @@ void ShadowCircularRRectOp::fillInCircleVerts(bool isStroked, sg::ShadowVertex**
     vp[0] = v;
 }
 
+/**
+ * Fills the vertex buffer for a rounded rectangle shadow.
+ * 
+ * ASCII Visualization of a Corner Fan:
+ * 
+ * (Slot 5) -- [Slot 0] -- (Slot 1)  <-- Slot 0 is the Umbra point (offset 0,0)
+ *    |         /  |  \       |
+ *    |       /    |    \     |      Slots 1-5 are on the outer edge.
+ * (Slot 4) -- [Slot 3] -- (Slot 2)  <-- Slot 3 is the true geometric corner.
+ */
 void ShadowCircularRRectOp::fillInRRectVerts(sg::ShadowVertex** vp) const {
     const Geometry& args         = this->fGeoData;
     QRgb            color        = args.color;
@@ -203,7 +244,7 @@ void ShadowCircularRRectOp::fillInRRectVerts(sg::ShadowVertex** vp) const {
             yi = bounds.bottom() - umbra_inset; ym = bounds.bottom() - r;
         }
 
-        // Matching original Skia logic with refined denominator check.
+        // Distance Field Offset Math (Normalized to unified abs() system in shader)
         QVector2D outerVec = QVector2D(r - umbra_inset, -r - umbra_inset).normalized();
         scalar    denom    = SK_FloatSqrt2 * (r - umbra_inset) - r;
         scalar    diagVal  = (std::abs(denom) > SK_ScalarNearlyZero) ? umbra_inset / denom : -1.0f / SK_FloatSqrt2;
@@ -214,36 +255,16 @@ void ShadowCircularRRectOp::fillInRRectVerts(sg::ShadowVertex** vp) const {
             v->distance_correction = distance_correction; v++;
         };
 
-        setV(xi,        yi,        {  0,  0      });   // 0
-        setV(xOuter[i], yi,        {  0, -1      });   // 1
-        setV(xOuter[i], ym,        outerVec       );   // 2
-        setV(xOuter[i], yOuter[i], diagVec        );   // 3
-        setV(xm,        yOuter[i], outerVec       );   // 4
-        setV(xi,        yOuter[i], {  0, -1      });   // 5
-
-        // slot order derived directly from index buffer fan direction:
-        //   TL: 0,1,2|0,2,3|0,3,4|0,4,5  → slots 1..5 = x-edge→arc→corner→arc→y-edge
-        //   TR: 0,5,4|0,4,3|0,3,2|0,2,1  → slots 1..5 = y-edge→arc→corner→arc→x-edge
-        //   BL: 0,5,4|0,4,3|0,3,2|0,2,1  → same as TR
-        //   BR: 0,1,2|0,2,3|0,3,4|0,4,5  → same as TL
-        /*
-        setV(xi,        yi,        {  0,  0   });  // slot0: umbra (all corners)
-        if (i == 0 || i == 3) {
-            // TL / BR: fan goes x-edge → arc-start → corner → arc-end → y-edge
-            setV(xOuter[i], yi,        {  0, -1   });  // slot1: x-edge
-            setV(xOuter[i], ym,        outerVec    );  // slot2: arc start
-            setV(xOuter[i], yOuter[i], diagVec     );  // slot3: corner
-            setV(xm,        yOuter[i], outerVec    );  // slot4: arc end
-            setV(xi,        yOuter[i], {  0, -1   });  // slot5: y-edge
-        } else {
-            // TR / BL: fan goes y-edge → arc-end → corner → arc-start → x-edge
-            setV(xi,        yOuter[i], {  0, -1   });  // slot1: y-edge
-            setV(xm,        yOuter[i], outerVec    );  // slot2: arc end
-            setV(xOuter[i], yOuter[i], diagVec     );  // slot3: corner
-            setV(xOuter[i], ym,        outerVec    );  // slot4: arc start
-            setV(xOuter[i], yi,        {  0, -1   });  // slot5: x-edge
-        }
-            */
+        // All corners use the same local vertex fill order (0..5).
+        // The static index buffer (gRRectIndices) is already pre-configured to 
+        // handle the symmetry and correct winding for TR, BL, and BR corners
+        // by picking these vertices in the appropriate order.
+        setV(xi,        yi,        {  0,  0   });  // 0: umbra
+        setV(xOuter[i], yi,        {  0, -1   });  // 1: x-axis edge
+        setV(xOuter[i], ym,        outerVec    );  // 2: arc start
+        setV(xOuter[i], yOuter[i], diagVec     );  // 3: corner
+        setV(xm,        yOuter[i], outerVec    );  // 4: arc end
+        setV(xi,        yOuter[i], {  0, -1   });  // 5: y-axis edge
     }
 
     if (kOverstroke_RRectType == args.type) {
