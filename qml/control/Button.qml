@@ -21,22 +21,12 @@ T.Button {
     bottomInset: 0
     verticalPadding: 0
     // https://m3.material.io/components/buttons/specs
-    leftPadding: {
-        if (mdState.type == MD.Enum.BtText) {
-            return hasIcon ? 12 : 12;
-        }
-        return hasIcon ? 16 : 24;
-    }
-    rightPadding: {
-        if (mdState.type == MD.Enum.BtText) {
-            return hasIcon ? 16 : 12;
-        }
-        return 24;
-    }
-    spacing: 8
+    leftPadding: mdState.leadingSpace
+    rightPadding: mdState.trailingSpace
+    spacing: mdState.spacing
 
-    icon.width: 18 // M3 default is 18dp inside buttons
-    icon.height: 18
+    icon.width: mdState.iconSize
+    icon.height: mdState.iconSize
 
     property MD.typescale typescale: MD.Token.typescale.label_large
     font.capitalization: Font.MixedCase // M3 uses mixed case for buttons
@@ -57,11 +47,12 @@ T.Button {
 
     background: MD.ElevationRectangle {
         implicitWidth: 64
-        implicitHeight: 40
+        implicitHeight: control.mdState.containerHeight
 
         corners: control.mdState.corners
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
+
 
         border.width: control.mdState.type == MD.Enum.BtOutlined ? 1 : 0
         border.color: control.enabled ? control.mdState.ctx.color.outline : control.mdState.ctx.color.on_surface

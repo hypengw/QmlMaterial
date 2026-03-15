@@ -8,6 +8,8 @@
 
 #include "qml_material/core.hpp"
 #include "qml_material/token/type_scale.hpp"
+#include "qml_material/token/split_button.hpp"
+#include "qml_material/token/button.hpp"
 #include "qml_material/anim/interpolator.hpp"
 #include "qml_material/enum.hpp"
 Q_MOC_INCLUDE("qml_material/token/icon.hpp")
@@ -430,7 +432,11 @@ class Token : public QObject {
     Q_PROPERTY(qml_material::token::WindowClass window_class READ window_class CONSTANT FINAL)
     /// Standard spacing values
     Q_PROPERTY(qml_material::token::Spacing spacing READ spacing CONSTANT FINAL)
-public:
+    /// Split button size settings
+    Q_PROPERTY(qml_material::token::SplitButtonSize split_button READ split_button CONSTANT FINAL)
+    /// Button size settings
+    Q_PROPERTY(qml_material::token::ButtonSize button READ button CONSTANT FINAL)
+    public:
     Token(QObject* = nullptr);
     ~Token();
 
@@ -449,12 +455,14 @@ public:
     auto duration() const -> const Duration&;
     auto easing() const -> const Easing&;
     auto spacing() const -> const Spacing&;
+    auto split_button() const -> const SplitButtonSize&;
+    auto button() const -> const ButtonSize&;
 
     auto datas() -> QQmlListProperty<QObject>;
 
     Q_INVOKABLE double cal_curve_scale(double dpr) const;
 
-private:
+    private:
     TypeScale*  m_typescale;
     IconToken*  m_icon;
     Flick*      m_flick;
@@ -465,7 +473,10 @@ private:
     Shape       m_shape;
     WindowClass m_win_class;
     Spacing     m_spacing;
+    SplitButtonSize m_split_button;
+    ButtonSize      m_button;
 
     QList<QObject*> m_datas;
-};
-} // namespace qml_material::token
+    };
+
+    } // namespace qml_material::token

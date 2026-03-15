@@ -1,9 +1,9 @@
 #include "qml_material/util/qml_util.hpp"
 
-#include <format>
-#include <QQmlEngine>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QQmlEngine>
+#include <format>
 
 #include "qml_material/util/loggingcategory.hpp"
 #include "qml_material/util/pool.hpp"
@@ -23,6 +23,7 @@ namespace qml_material
 {
 
 Util::Util(QObject* parent): QObject(parent) {}
+
 Util::~Util() {}
 
 bool Util::hasIcon(const QJSValue& v) const {

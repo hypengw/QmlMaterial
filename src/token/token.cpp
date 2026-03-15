@@ -24,6 +24,8 @@ auto Token::window_class() const -> const WindowClass& { return m_win_class; }
 auto Token::duration() const -> const Duration& { return m_duration; }
 auto Token::easing() const -> const Easing& { return m_easing; }
 auto Token::spacing() const -> const Spacing& { return m_spacing; }
+auto Token::split_button() const -> const SplitButtonSize& { return m_split_button; }
+auto Token::button() const -> const ButtonSize& { return m_button; }
 auto Token::cal_curve_scale(double dpr) const -> double { return dpr >= 2.0 ? 1.0 : 4.0; }
 
 auto Token::datas() -> QQmlListProperty<QObject> { return { this, &m_datas }; }
@@ -46,3 +48,5 @@ auto Flick::maximumFlickVelocity() const -> double { return m_maximum_flickVeloc
 } // namespace qml_material::token
 
 #include <qml_material/token/moc_token.cpp>
+#include <qml_material/token/moc_button.cpp>
+#include <qml_material/token/moc_split_button.cpp>

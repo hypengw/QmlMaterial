@@ -137,9 +137,15 @@ QSGNode* Elevation::updatePaintNode(QSGNode* node, QQuickItem::UpdatePaintNodeDa
     }
     shadowNode->rect      = boundingRect();
     shadowNode->elevation = m_elevation;
-    shadowNode->radius    = m_corners.toVector4D();
-    shadowNode->color     = m_color.rgb();
+    shadowNode->color = m_color.rgb();
+    {
+        auto vec = m_corners.toVector4D();
+        vec[0] = std::exchange(vec[3], vec[0]);
+        shadowNode->radius = vec;
+    }
+
     shadowNode->updateGeometry();
+
     return shadowNode;
 }
 } // namespace qml_material
