@@ -26,6 +26,20 @@ T.Button {
             if (control.menu.visible) {
                 control.menu.close();
             } else {
+                // Position the menu below the whole SplitButton component
+                // control.parent is Row, control.parent.parent is T.Control (SplitButton)
+                let splitButton = control.parent.parent;
+                
+                // If menu parent is not set or is the SplitButton, we can set x/y directly
+                // T.Menu positions are relative to its parent.
+                if (!control.menu.parent) {
+                    control.menu.parent = splitButton;
+                }
+                
+                // Align with the left edge of the SplitButton by default
+                control.menu.x = 0;
+                control.menu.y = splitButton.height;
+                
                 control.menu.open();
             }
         }
