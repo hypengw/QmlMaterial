@@ -146,6 +146,15 @@ public:
         PaletteFruitSalad,
     };
     Q_ENUM(PaletteType)
+
+    enum class ItemPosition
+    {
+        PosFirst = 0, ///< First item in a group
+        PosMiddle,    ///< Middle item in a group
+        PosLast,      ///< Last item in a group
+        PosSingle     ///< Single item (not in a group or alone)
+    };
+    Q_ENUM(ItemPosition)
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(Enum::ToastFlags);
 } // namespace qml_material

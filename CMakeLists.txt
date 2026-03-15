@@ -109,6 +109,8 @@ set(QML_FILES
     qml/Token.qml
     qml/Util.qml
     qml/control/Button.qml
+    qml/control/SegmentedButton.qml
+    qml/control/SegmentedButtonGroup.qml
     qml/control/Control.qml
     qml/control/ComboBox.qml
     qml/control/ButtonGroup.qml
@@ -211,6 +213,7 @@ set(QML_FILES
     qml/state/StateAppBar.qml
     qml/state/StateSnakeBar.qml
     qml/state/StateButton.qml
+    qml/state/StateSegmentedButton.qml
     qml/state/StateCard.qml
     qml/state/StateDragHandle.qml
     qml/state/StateDrawerItem.qml

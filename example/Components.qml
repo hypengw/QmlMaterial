@@ -117,6 +117,42 @@ MD.Page {
                     }
 
                     ComponentCard {
+                        title: 'Segmented buttons'
+
+                        MD.SegmentedButtonGroup {
+                            Layout.alignment: Qt.AlignHCenter
+                            MD.SegmentedButton {
+                                text: 'Day'
+                            }
+                            MD.SegmentedButton {
+                                text: 'Week'
+                                checked: true
+                            }
+                            MD.SegmentedButton {
+                                text: 'Month'
+                            }
+                            MD.SegmentedButton {
+                                text: 'Year'
+                            }
+                        }
+
+                        MD.SegmentedButtonGroup {
+                            Layout.alignment: Qt.AlignHCenter
+                            exclusive: false
+                            MD.SegmentedButton {
+                                icon.name: MD.Token.icon.check
+                                text: 'Option 1'
+                            }
+                            MD.SegmentedButton {
+                                text: 'Option 2'
+                            }
+                            MD.SegmentedButton {
+                                text: 'Option 3'
+                            }
+                        }
+                    }
+
+                    ComponentCard {
                         title: 'Floating action buttons'
                         RowLayout {
                             Layout.alignment: Qt.AlignHCenter
