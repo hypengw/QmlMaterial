@@ -6,29 +6,14 @@ import Qcm.Material as MD
 T.Button {
     id: control
 
-    property int type: MD.Enum.IBtStandard
-    property int size: MD.Enum.S
-    property bool isRound: true
     property MD.StateIconButton mdState: MD.StateIconButton {
         item: control
-    }
-
-    Binding {
-        control.mdState.type: control.type
-    }
-
-    Binding {
-        control.mdState.size: control.size
-    }
-
-    Binding {
-        control.mdState.isRound: control.isRound
     }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
-    flat: type == MD.Enum.IBtStandard || (type == MD.Enum.IBtOutlined && !control.checked)
+    flat: mdState.type == MD.Enum.IBtStandard || (mdState.type == MD.Enum.IBtOutlined && !control.checked)
     topInset: 4
     bottomInset: 4
     leftInset: 4
@@ -59,11 +44,11 @@ T.Button {
         implicitWidth: control.implicitBackgroundSize
         implicitHeight: control.implicitBackgroundSize
 
-        radius: control.mdState.corner
+        corners: control.mdState.corners
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
 
-        border.width: control.type == MD.Enum.IBtOutlined ? 1 : 0
+        border.width: mdState.type == MD.Enum.IBtOutlined ? 1 : 0
         border.color: control.mdState.ctx.color.outline
 
         elevationVisible: elevation && color.a > 0 && !control.flat
@@ -71,7 +56,7 @@ T.Button {
 
         MD.Ripple2 {
             anchors.fill: parent
-            radius: control.mdState.corner
+            corners: parent.corners
             pressX: control.pressX
             pressY: control.pressY
             pressed: control.pressed

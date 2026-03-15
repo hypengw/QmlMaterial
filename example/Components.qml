@@ -32,16 +32,16 @@ MD.Page {
                         RowLayout {
                             Layout.alignment: Qt.AlignHCenter
                             MD.Button {
-                                type: MD.Enum.BtElevated
+                                mdState.type: MD.Enum.BtElevated
                                 text: 'Elevated'
                             }
                             MD.Button {
-                                type: MD.Enum.BtElevated
+                                mdState.type: MD.Enum.BtElevated
                                 text: 'Icon'
                                 icon.name: MD.Token.icon.add
                             }
                             MD.Button {
-                                type: MD.Enum.BtElevated
+                                mdState.type: MD.Enum.BtElevated
                                 enabled: false
                                 text: 'Elevated'
                             }
@@ -49,16 +49,16 @@ MD.Page {
                         RowLayout {
                             Layout.alignment: Qt.AlignHCenter
                             MD.Button {
-                                type: MD.Enum.BtFilled
+                                mdState.type: MD.Enum.BtFilled
                                 text: 'Filled'
                             }
                             MD.Button {
-                                type: MD.Enum.BtFilled
+                                mdState.type: MD.Enum.BtFilled
                                 text: 'Icon'
                                 icon.name: MD.Token.icon.add
                             }
                             MD.Button {
-                                type: MD.Enum.BtFilled
+                                mdState.type: MD.Enum.BtFilled
                                 enabled: false
                                 text: 'Filled'
                             }
@@ -66,16 +66,16 @@ MD.Page {
                         RowLayout {
                             Layout.alignment: Qt.AlignHCenter
                             MD.Button {
-                                type: MD.Enum.BtFilledTonal
+                                mdState.type: MD.Enum.BtFilledTonal
                                 text: 'FilledTonal'
                             }
                             MD.Button {
-                                type: MD.Enum.BtFilledTonal
+                                mdState.type: MD.Enum.BtFilledTonal
                                 text: 'Icon'
                                 icon.name: MD.Token.icon.add
                             }
                             MD.Button {
-                                type: MD.Enum.BtFilledTonal
+                                mdState.type: MD.Enum.BtFilledTonal
                                 enabled: false
                                 text: 'FilledTonal'
                             }
@@ -83,16 +83,16 @@ MD.Page {
                         RowLayout {
                             Layout.alignment: Qt.AlignHCenter
                             MD.Button {
-                                type: MD.Enum.BtOutlined
+                                mdState.type: MD.Enum.BtOutlined
                                 text: 'Outlined'
                             }
                             MD.Button {
-                                type: MD.Enum.BtOutlined
+                                mdState.type: MD.Enum.BtOutlined
                                 text: 'Icon'
                                 icon.name: MD.Token.icon.add
                             }
                             MD.Button {
-                                type: MD.Enum.BtOutlined
+                                mdState.type: MD.Enum.BtOutlined
                                 enabled: false
                                 text: 'Outlined'
                             }
@@ -100,16 +100,16 @@ MD.Page {
                         RowLayout {
                             Layout.alignment: Qt.AlignHCenter
                             MD.Button {
-                                type: MD.Enum.BtText
+                                mdState.type: MD.Enum.BtText
                                 text: 'Text'
                             }
                             MD.Button {
-                                type: MD.Enum.BtText
+                                mdState.type: MD.Enum.BtText
                                 text: 'Icon'
                                 icon.name: MD.Token.icon.add
                             }
                             MD.Button {
-                                type: MD.Enum.BtText
+                                mdState.type: MD.Enum.BtText
                                 enabled: false
                                 text: 'Text'
                             }
@@ -153,6 +153,33 @@ MD.Page {
                     }
 
                     ComponentCard {
+                        title: 'Split buttons'
+
+                        RowLayout {
+                            Layout.alignment: Qt.AlignHCenter
+                            spacing: 16
+
+                            MD.SplitButton {
+                                text: 'Filled'
+                                mdState.type: MD.Enum.BtFilled
+                                menu: MD.Menu {
+                                    MD.MenuItem { text: 'Action 1' }
+                                    MD.MenuItem { text: 'Action 2' }
+                                }
+                            }
+
+                            MD.SplitButton {
+                                text: 'Tonal'
+                                mdState.type: MD.Enum.BtFilledTonal
+                                menu: MD.Menu {
+                                    MD.MenuItem { text: 'Action A' }
+                                    MD.MenuItem { text: 'Action B' }
+                                }
+                            }
+                        }
+                    }
+
+                    ComponentCard {
                         title: 'Floating action buttons'
                         RowLayout {
                             Layout.alignment: Qt.AlignHCenter
@@ -180,22 +207,22 @@ MD.Page {
                             Layout.alignment: Qt.AlignHCenter
                             spacing: 36
                             MD.IconButton {
-                                type: MD.Enum.IBtStandard
+                                mdState.type: MD.Enum.IBtStandard
                                 icon.name: MD.Token.icon.settings
                                 checkable: true
                             }
                             MD.IconButton {
-                                type: MD.Enum.IBtFilled
+                                mdState.type: MD.Enum.IBtFilled
                                 icon.name: MD.Token.icon.settings
                                 checkable: true
                             }
                             MD.IconButton {
-                                type: MD.Enum.IBtFilledTonal
+                                mdState.type: MD.Enum.IBtFilledTonal
                                 icon.name: MD.Token.icon.settings
                                 checkable: true
                             }
                             MD.IconButton {
-                                type: MD.Enum.IBtOutlined
+                                mdState.type: MD.Enum.IBtOutlined
                                 icon.name: MD.Token.icon.settings
                                 checkable: true
                             }
@@ -204,25 +231,25 @@ MD.Page {
                             Layout.alignment: Qt.AlignHCenter
                             spacing: 36
                             MD.IconButton {
-                                type: MD.Enum.IBtStandard
+                                mdState.type: MD.Enum.IBtStandard
                                 icon.name: MD.Token.icon.settings
                                 checkable: true
                                 enabled: false
                             }
                             MD.IconButton {
-                                type: MD.Enum.IBtFilled
+                                mdState.type: MD.Enum.IBtFilled
                                 icon.name: MD.Token.icon.settings
                                 checkable: true
                                 enabled: false
                             }
                             MD.IconButton {
-                                type: MD.Enum.IBtFilledTonal
+                                mdState.type: MD.Enum.IBtFilledTonal
                                 icon.name: MD.Token.icon.settings
                                 checkable: true
                                 enabled: false
                             }
                             MD.IconButton {
-                                type: MD.Enum.IBtOutlined
+                                mdState.type: MD.Enum.IBtOutlined
                                 icon.name: MD.Token.icon.settings
                                 checkable: true
                                 enabled: false
@@ -322,7 +349,7 @@ MD.Page {
 
                         MD.Button {
                             Layout.alignment: Qt.AlignHCenter
-                            type: MD.Enum.BtText
+                            mdState.type: MD.Enum.BtText
                             text: 'Show snakeBar'
                             onClicked: {
                                 m_snake.show("test");
@@ -422,7 +449,7 @@ MD.Page {
                         spacing: 12
                         MD.Button {
                             Layout.alignment: Qt.AlignHCenter
-                            type: MD.Enum.BtText
+                            mdState.type: MD.Enum.BtText
                             text: 'Open menu'
                             onClicked: m_menu.open()
                             MD.Menu {

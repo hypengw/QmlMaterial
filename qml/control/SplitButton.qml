@@ -1,0 +1,45 @@
+import QtQuick
+import QtQuick.Templates as T
+import Qcm.Material as MD
+
+T.Control {
+    id: control
+    property MD.StateSplitButton mdState: MD.StateSplitButton {
+        item: m_button
+    }
+
+    property MD.StateSplitButtonIndicator indicatorMdState: MD.StateSplitButtonIndicator {
+        item: m_indicator
+    }
+
+    // Synchronize indicator state with main state by default
+    Binding {
+        control.indicatorMdState.type: control.mdState.type
+        control.indicatorMdState.size: control.mdState.size
+        control.indicatorMdState.isRound: control.mdState.isRound
+        control.indicatorMdState.corners: control.mdState.trailingCorners
+    }
+
+    property alias text: m_button.text
+    property alias icon: m_button.icon
+    property alias menu: m_indicator.menu
+
+    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
+    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
+
+    spacing: 2
+
+    contentItem: Row {
+        spacing: control.spacing
+
+        MD.Button {
+            id: m_button
+            mdState: control.mdState
+        }
+
+        MD.SplitButtonIndicator {
+            id: m_indicator
+            mdState: control.indicatorMdState
+        }
+    }
+}

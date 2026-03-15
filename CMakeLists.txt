@@ -215,6 +215,8 @@ set(QML_FILES
     qml/state/StateAppBar.qml
     qml/state/StateSnakeBar.qml
     qml/state/StateButton.qml
+    qml/state/StateSplitButton.qml
+    qml/state/StateSplitButtonIndicator.qml
     qml/state/StateSegmentedButton.qml
     qml/state/StateCard.qml
     qml/state/StateDragHandle.qml

@@ -5,28 +5,16 @@ import Qcm.Material as MD
 T.Button {
     id: control
 
-    property int type: MD.Enum.BtElevated
-    property int size: MD.Enum.S
-    property bool isRound: true
     property int iconStyle: hasIcon ? MD.Enum.IconAndText : MD.Enum.TextOnly
     readonly property bool hasIcon: MD.Util.hasIcon(icon)
     property MD.StateButton mdState: MD.StateButton {
         item: control
     }
-    Binding {
-        control.mdState.type: control.type
-    }
-    Binding {
-        control.mdState.size: control.size
-    }
-    Binding {
-        control.mdState.isRound: control.isRound
-    }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
-    flat: type == MD.Enum.BtText || type == MD.Enum.BtOutlined
+    flat: mdState.type == MD.Enum.BtText || mdState.type == MD.Enum.BtOutlined
     leftInset: 0
     rightInset: 0
     topInset: 0
@@ -34,13 +22,13 @@ T.Button {
     verticalPadding: 0
     // https://m3.material.io/components/buttons/specs
     leftPadding: {
-        if (type == MD.Enum.BtText) {
+        if (mdState.type == MD.Enum.BtText) {
             return hasIcon ? 12 : 12;
         }
         return hasIcon ? 16 : 24;
     }
     rightPadding: {
-        if (type == MD.Enum.BtText) {
+        if (mdState.type == MD.Enum.BtText) {
             return hasIcon ? 16 : 12;
         }
         return 24;
@@ -71,18 +59,18 @@ T.Button {
         implicitWidth: 64
         implicitHeight: 40
 
-        radius: control.mdState.corner
+        corners: control.mdState.corners
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
 
-        border.width: control.type == MD.Enum.BtOutlined ? 1 : 0
+        border.width: control.mdState.type == MD.Enum.BtOutlined ? 1 : 0
         border.color: control.enabled ? control.mdState.ctx.color.outline : control.mdState.ctx.color.on_surface
         elevation: control.mdState.elevation
-        elevationVisible: (control.type == MD.Enum.BtElevated) && !control.flat && color.a > 0
+        elevationVisible: (control.mdState.type == MD.Enum.BtElevated) && !control.flat && color.a > 0
 
         MD.Ripple2 {
             anchors.fill: parent
-            radius: parent.radius
+            corners: parent.corners
             pressX: control.pressX
             pressY: control.pressY
             pressed: control.pressed

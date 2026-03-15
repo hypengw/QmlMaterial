@@ -8,7 +8,7 @@ MD.MState {
     property int position: MD.Enum.PosSingle
     property real cornerRadius: 20
 
-    property MD.corners corner: {
+    property MD.corners corners: {
         switch (root.position) {
         case MD.Enum.PosFirst:
             return MD.Util.corners(root.cornerRadius, 0, root.cornerRadius, 0);

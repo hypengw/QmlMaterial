@@ -5,13 +5,14 @@ import Qcm.Material as MD
 MD.MState {
     id: root
     required property T.Button item
-    property int type
+    property int type: MD.Enum.IBtStandard
     property int size: MD.Enum.S
     property bool isRound: true
    
 
     elevation: MD.Token.elevation.level1
     property real corner: calcRadius(root.size, root.isRound, false)
+    property MD.corners corners: MD.Util.corners(root.corner)
 
     function calcRadius(s, round, pressed) {
         if (pressed) {

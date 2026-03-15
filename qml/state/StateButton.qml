@@ -12,6 +12,7 @@ MD.MState {
 
     elevation: root.type == MD.Enum.BtElevated ? MD.Token.elevation.level1 : MD.Token.elevation.level0
     property real corner: calcRadius(root.size, root.isRound, false)
+    property MD.corners corners: MD.Util.corners(root.corner)
 
     function calcRadius(s, round, pressed) {
         if (pressed) {

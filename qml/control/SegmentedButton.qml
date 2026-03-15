@@ -58,7 +58,7 @@ T.Button {
         implicitWidth: 40
         implicitHeight: 40
 
-        corners: control.mdState.corner
+        corners: control.mdState.corners
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
 
