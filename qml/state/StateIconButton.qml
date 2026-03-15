@@ -7,21 +7,62 @@ MD.MState {
     required property T.Button item
     property int type: MD.Enum.IBtStandard
     property int size: MD.Enum.S
+    property int widthMode: MD.Enum.DefaultWidth
     property bool isRound: true
-   
+
+    readonly property MD.IconButtonSizeItem sizeToken: {
+        switch (root.size) {
+        case MD.Enum.XS:
+            return MD.Token.icon_button.xsmall;
+        case MD.Enum.S:
+            return MD.Token.icon_button.small;
+        case MD.Enum.M:
+            return MD.Token.icon_button.medium;
+        case MD.Enum.L:
+            return MD.Token.icon_button.large;
+        case MD.Enum.XL:
+            return MD.Token.icon_button.xlarge;
+        default:
+            return MD.Token.icon_button.small;
+        }
+    }
+
+    readonly property real containerWidth: {
+        switch (root.widthMode) {
+        case MD.Enum.NarrowWidth:
+            return sizeToken.narrow_width;
+        case MD.Enum.WideWidth:
+            return sizeToken.wide_width;
+        case MD.Enum.DefaultWidth:
+        default:
+            return sizeToken.default_width;
+        }
+    }
+    readonly property real containerHeight: sizeToken.container_height
+    readonly property real iconSize: sizeToken.icon_size
 
     elevation: MD.Token.elevation.level1
     property real corner: calcRadius(root.size, root.isRound, false)
     property MD.corners corners: MD.Util.corners(root.corner)
+    Behavior on corners {
+        PropertyAnimation {
+            duration: MD.Token.duration.short2
+        }
+    }
 
     function calcRadius(s, round, pressed) {
         if (pressed) {
             switch (s) {
-                case MD.Enum.XS: return 8;
-                case MD.Enum.S: return 8;
-                case MD.Enum.M: return 12;
-                case MD.Enum.L: return 16;
-                case MD.Enum.XL: return 16;
+            case MD.Enum.XS:
+                return 8;
+            case MD.Enum.S:
+                return 8;
+            case MD.Enum.M:
+                return 12;
+            case MD.Enum.L:
+                return 16;
+            case MD.Enum.XL:
+                return 16;
             }
         }
         if (round) {
@@ -29,11 +70,16 @@ MD.MState {
         }
         // Square button
         switch (s) {
-            case MD.Enum.XS: return 12;
-            case MD.Enum.S: return 12;
-            case MD.Enum.M: return 16;
-            case MD.Enum.L: return 28;
-            case MD.Enum.XL: return 28;
+        case MD.Enum.XS:
+            return 12;
+        case MD.Enum.S:
+            return 12;
+        case MD.Enum.M:
+            return 16;
+        case MD.Enum.L:
+            return 28;
+        case MD.Enum.XL:
+            return 28;
         }
         return 12;
     }
@@ -189,24 +235,60 @@ MD.MState {
 
     transitions: [
         Transition {
-            from: "Pressed"; to: "Hovered"
-            NumberAnimation { properties: "elevation,corner"; duration: MD.Token.duration.short2; easing: MD.Token.easing.standard }
-            ColorAnimation { duration: MD.Token.duration.short2 }
-            NumberAnimation { property: "stateLayerOpacity"; duration: MD.Token.duration.short2 }
+            from: "Pressed"
+            to: "Hovered"
+            NumberAnimation {
+                properties: "elevation,corner"
+                duration: MD.Token.duration.short2
+                easing: MD.Token.easing.standard
+            }
+            ColorAnimation {
+                duration: MD.Token.duration.short2
+            }
+            NumberAnimation {
+                property: "stateLayerOpacity"
+                duration: MD.Token.duration.short2
+            }
         },
         Transition {
-            from: "*"; to: "Pressed"
-            NumberAnimation { properties: "elevation,corner"; duration: MD.Token.duration.short1; easing: MD.Token.easing.standard }
-            ColorAnimation { duration: MD.Token.duration.short1 }
-            NumberAnimation { property: "stateLayerOpacity"; duration: MD.Token.duration.short1 }
+            from: "*"
+            to: "Pressed"
+            NumberAnimation {
+                properties: "elevation,corner"
+                duration: MD.Token.duration.short1
+                easing: MD.Token.easing.standard
+            }
+            ColorAnimation {
+                duration: MD.Token.duration.short1
+            }
+            NumberAnimation {
+                property: "stateLayerOpacity"
+                duration: MD.Token.duration.short1
+            }
         },
         Transition {
-            from: "*"; to: "*"
-            NumberAnimation { properties: "elevation,corner"; duration: MD.Token.duration.short4; easing: MD.Token.easing.standard }
-            ColorAnimation { duration: MD.Token.duration.short4 }
-            NumberAnimation { property: "stateLayerOpacity"; duration: MD.Token.duration.short4 }
-            NumberAnimation { property: "contentOpacity"; duration: MD.Token.duration.short4 }
-            NumberAnimation { property: "backgroundOpacity"; duration: MD.Token.duration.short4 }
+            from: "*"
+            to: "*"
+            NumberAnimation {
+                properties: "elevation,corner"
+                duration: MD.Token.duration.short4
+                easing: MD.Token.easing.standard
+            }
+            ColorAnimation {
+                duration: MD.Token.duration.short4
+            }
+            NumberAnimation {
+                property: "stateLayerOpacity"
+                duration: MD.Token.duration.short4
+            }
+            NumberAnimation {
+                property: "contentOpacity"
+                duration: MD.Token.duration.short4
+            }
+            NumberAnimation {
+                property: "backgroundOpacity"
+                duration: MD.Token.duration.short4
+            }
         }
     ]
 }

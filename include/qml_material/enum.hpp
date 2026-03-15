@@ -40,6 +40,14 @@ public:
     };
     Q_ENUM(ButtonSize)
 
+    enum class ButtonWidthMode
+    {
+        DefaultWidth = 0,
+        NarrowWidth,
+        WideWidth
+    };
+    Q_ENUM(ButtonWidthMode)
+
     enum class ButtonType
     {
         BtElevated = 0, ///< Elevated

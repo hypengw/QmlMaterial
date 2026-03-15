@@ -436,6 +436,8 @@ class Token : public QObject {
     Q_PROPERTY(qml_material::token::SplitButtonSize split_button READ split_button CONSTANT FINAL)
     /// Button size settings
     Q_PROPERTY(qml_material::token::ButtonSize button READ button CONSTANT FINAL)
+    /// Icon button size settings
+    Q_PROPERTY(qml_material::token::IconButtonSize icon_button READ icon_button CONSTANT FINAL)
     public:
     Token(QObject* = nullptr);
     ~Token();
@@ -457,6 +459,7 @@ class Token : public QObject {
     auto spacing() const -> const Spacing&;
     auto split_button() const -> const SplitButtonSize&;
     auto button() const -> const ButtonSize&;
+    auto icon_button() const -> const IconButtonSize&;
 
     auto datas() -> QQmlListProperty<QObject>;
 
@@ -475,6 +478,7 @@ class Token : public QObject {
     Spacing     m_spacing;
     SplitButtonSize m_split_button;
     ButtonSize      m_button;
+    IconButtonSize  m_icon_button;
 
     QList<QObject*> m_datas;
     };

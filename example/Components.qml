@@ -255,6 +255,57 @@ MD.Page {
                                 enabled: false
                             }
                         }
+
+                        MD.Label {
+                            text: "Sizes & Width Modes"
+                            Layout.alignment: Qt.AlignHCenter
+                            font: MD.Token.typescale.title.medium.font
+                        }
+
+                        RowLayout {
+                            Layout.alignment: Qt.AlignHCenter
+                            spacing: 24
+                            MD.IconButton {
+                                mdState.size: MD.Enum.XS
+                                icon.name: MD.Token.icon.settings
+                            }
+                            MD.IconButton {
+                                mdState.size: MD.Enum.S
+                                icon.name: MD.Token.icon.settings
+                            }
+                            MD.IconButton {
+                                mdState.size: MD.Enum.M
+                                icon.name: MD.Token.icon.settings
+                            }
+                            MD.IconButton {
+                                mdState.size: MD.Enum.L
+                                icon.name: MD.Token.icon.settings
+                            }
+                            MD.IconButton {
+                                mdState.size: MD.Enum.XL
+                                icon.name: MD.Token.icon.settings
+                            }
+                        }
+
+                        RowLayout {
+                            Layout.alignment: Qt.AlignHCenter
+                            spacing: 24
+                            MD.IconButton {
+                                mdState.size: MD.Enum.S
+                                mdState.widthMode: MD.Enum.NarrowWidth
+                                icon.name: MD.Token.icon.settings
+                            }
+                            MD.IconButton {
+                                mdState.size: MD.Enum.S
+                                mdState.widthMode: MD.Enum.DefaultWidth
+                                icon.name: MD.Token.icon.settings
+                            }
+                            MD.IconButton {
+                                mdState.size: MD.Enum.S
+                                mdState.widthMode: MD.Enum.WideWidth
+                                icon.name: MD.Token.icon.settings
+                            }
+                        }
                     }
                 }
             }
