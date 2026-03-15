@@ -4,7 +4,7 @@
 #include <QImage>
 #include <QQuickWindow>
 #include <QSGTexture>
-#include "qml_material/scenegraph/skia_shadow.h"
+#include "qml_material/scenegraph/skia/skia_shadow.h"
 
 namespace qml_material::sg
 {

@@ -74,6 +74,7 @@ set(SOURCES
     include/qml_material/scenegraph/rectangle_material.h
     include/qml_material/scenegraph/elevation_material.h
     src/scenegraph/geometry.cpp
+    src/scenegraph/skia/skia_shadow.cpp
     src/scenegraph/rectangle_material.cpp
     src/scenegraph/elevation_material.cpp
     src/kirigami/displayhint.cpp
@@ -367,7 +368,6 @@ set(SHADER_SOURCES
     "assets/shader/default.vert"
     "assets/shader/round_clip.frag"
     "assets/shader/sdf_rectangle.frag"
-    "assets/shader/shadow_.frag"
     "assets/shader/rectangle.vert"
     "assets/shader/rectangle.frag"
     "assets/shader/shadow.vert"

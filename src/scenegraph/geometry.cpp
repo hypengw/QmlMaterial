@@ -1,403 +1,159 @@
 #include "qml_material/scenegraph/geometry.h"
-#include "qml_material/scenegraph/skia_shadow.h"
+#include "qml_material/scenegraph/skia/skia_shadow.h"
 #include "qml_material/util/loggingcategory.hpp"
 
-namespace qml_material
+namespace qml_material::sg
 {
-using scalar = float;
 
-namespace sg
-{
-namespace
-{
-/*
-  0 ------- 1
-   |      /
-   |     /
-   |    /
-   |   /
-   |  /
-   | /
-  2
-            5
-          / |
-         /  |
-        /   |
-       /    |
-      /     |
-     /      |
-  3 ------- 4
-*/
+// =============================================================================
+// Rectangle Geometry (SDF Based)
+// =============================================================================
 
-template<typename T>
-inline void set_rect(T* v, T* lt, T* rt, T* lb, T* rb) {
-    v[0] = *lt;
-    v[1] = *rt;
-    v[2] = *lb;
-    v[3] = *lb;
-    v[4] = *rb;
-    v[5] = *rt;
-}
-template<typename T>
-inline void set_rect_flip(T* v, T* lt, T* rt, T* lb, T* rb) {
-    v[0] = *lt;
-    v[1] = *rt;
-    v[2] = *rb;
-    v[3] = *rb;
-    v[4] = *lt;
-    v[5] = *lb;
-}
-
-// four points
-
-inline void secorners(RectangleVertex* v, QVector2D o, QVector2D s, float outter, float inner) {
-    auto helper = [](RectangleVertex* v,
-                     QVector2D        lt,
-                     QVector2D        rt,
-                     QVector2D        lb,
-                     QVector2D        rb,
-                     float            outter,
-                     float            inner) {
-        v[0].set_point(lt);
-        v[0].ce_x                  = 0;
-        v[0].ce_y                  = 0;
-        v[0].ce_distance_to_outter = outter;
-        v[0].ce_distance_to_inner  = inner;
-
-        v[1].set_point(rt);
-        v[1].ce_x                  = 0;
-        v[1].ce_y                  = 0;
-        v[1].ce_distance_to_outter = outter;
-        v[1].ce_distance_to_inner  = inner;
-
-        v[2].set_point(lb);
-        v[2].ce_x                  = 0;
-        v[2].ce_y                  = 0;
-        v[2].ce_distance_to_outter = outter;
-        v[2].ce_distance_to_inner  = inner;
-
-        v[3].set_point(lb);
-        v[3].ce_x                  = 0;
-        v[3].ce_y                  = 0;
-        v[3].ce_distance_to_outter = outter;
-        v[3].ce_distance_to_inner  = inner;
-
-        v[4].set_point(rb);
-        v[4].ce_x                  = 0;
-        v[4].ce_y                  = 0;
-        v[4].ce_distance_to_outter = outter;
-        v[4].ce_distance_to_inner  = inner;
-
-        v[5].set_point(rt);
-        v[5].ce_x                  = 0;
-        v[5].ce_y                  = 0;
-        v[5].ce_distance_to_outter = outter;
-        v[5].ce_distance_to_inner  = inner;
-    };
-    QVector2D lt = o;
-    QVector2D rt = o + QVector2D { s.x(), 0 };
-    QVector2D lb = o + QVector2D { 0, s.y() };
-    QVector2D rb = o + s;
-    helper(v, lt, rt, lb, rb, outter, inner);
-};
-template<typename T>
-inline void set_right_bottom_corner(T* v, QVector2D size, float r, float outter, float inner) {
-    secorners(v, { size.x() - r, size.y() - r }, { r, r }, outter, inner);
-
-    float offset = 1.0;
-    v[1].ce_x    = offset;
-    v[5].ce_x    = offset;
-
-    v[2].ce_y = offset;
-    v[3].ce_y = offset;
-
-    v[4].ce_x = 1;
-    v[4].ce_y = 1;
-}
-template<typename T>
-inline void set_right_top_corner(T* v, QVector2D size, float r, float outter, float inner) {
-    secorners(v, { size.x() - r, 0 }, { r, r }, outter, inner);
-    float offset = 1.0;
-    v[4].ce_x    = offset;
-    v[0].ce_y    = offset;
-
-    v[1].ce_x = 1;
-    v[1].ce_y = 1;
-    v[5].ce_x = 1;
-    v[5].ce_y = 1;
-}
-template<typename T>
-inline void set_left_bottom_corner(T* v, QVector2D size, float r, float outter, float inner) {
-    secorners(v, { 0, size.y() - r }, { r, r }, outter, inner);
-    float offset = 1.0;
-    v[0].ce_x    = offset;
-    v[4].ce_y    = offset;
-
-    v[2].ce_x = 1;
-    v[2].ce_y = 1;
-    v[3].ce_x = 1;
-    v[3].ce_y = 1;
-}
-template<typename T>
-inline void set_left_top_corner(T* v, QVector2D, float r, float outter, float inner) {
-    secorners(v, {}, { r, r }, outter, inner);
-    float offset = 1.0;
-    v[2].ce_x    = offset;
-    v[3].ce_x    = offset;
-
-    v[1].ce_y = offset;
-    v[5].ce_y = offset;
-
-    v[0].ce_x = 1;
-    v[0].ce_y = 1;
-}
-
-} // namespace
-} // namespace sg
-
-auto sg::create_rectangle_geometry() -> up<QSGGeometry> {
+auto create_rectangle_geometry() -> up<QSGGeometry> {
     static QSGGeometry::Attribute attrs[] = {
-        QSGGeometry::Attribute::createWithAttributeType(
-            0, 2, QSGGeometry::FloatType, QSGGeometry::PositionAttribute),
-        QSGGeometry::Attribute::createWithAttributeType(
-            1, 4, QSGGeometry::FloatType, QSGGeometry::UnknownAttribute),
-        QSGGeometry::Attribute::createWithAttributeType(
-            2, 4, QSGGeometry::FloatType, QSGGeometry::UnknownAttribute),
+        QSGGeometry::Attribute::createWithAttributeType(0, 2, QSGGeometry::FloatType, QSGGeometry::PositionAttribute),
+        QSGGeometry::Attribute::createWithAttributeType(1, 4, QSGGeometry::FloatType, QSGGeometry::UnknownAttribute),
+        QSGGeometry::Attribute::createWithAttributeType(2, 4, QSGGeometry::FloatType, QSGGeometry::UnknownAttribute),
     };
-
     static QSGGeometry::AttributeSet attrset = { 3, sizeof(RectangleVertex), attrs };
 
-    auto out = std::make_unique<QSGGeometry>(attrset, 6 * 9);
+    auto out = std::make_unique<QSGGeometry>(attrset, 6 * 9); // 9-patch mesh
     out->setDrawingMode(QSGGeometry::DrawTriangles);
     return out;
 }
 
-void sg::update_rectangle_geometry(RectangleVertex* v, QVector2D size, QRgb color,
-                                   QVector4D radius) {
-    const auto u = 6;
-
-    auto lt = v;
-    auto rt = v + u;
-    auto lb = v + u * 2;
-    auto rb = v + u * 3;
-
-    auto outter = std::max({ radius[0], radius[1], radius[2], radius[3], 2.0f });
-    auto inner  = -1.0f / outter;
-
-    set_left_top_corner(lt, size, radius[0], std::max(radius[0], 2.0f), inner);
-    set_right_top_corner(rt, size, radius[1], std::max(radius[1], 2.0f), inner);
-    set_left_bottom_corner(lb, size, radius[2], std::max(radius[2], 2.0f), inner);
-    set_right_bottom_corner(rb, size, radius[3], std::max(radius[3], 2.0f), inner);
-
-    auto top    = v + u * 4;
-    auto left   = v + u * 5;
-    auto bottom = v + u * 6;
-    auto right  = v + u * 7;
-    auto middle = v + u * 8;
-
-    set_rect(top, lt + 5, rt + 0, lt + 4, rt + 2);
-    if (top[0].ce_distance_to_outter - top[1].ce_distance_to_outter > 0.1f) {
-        top[1].ce_distance_to_outter = top[0].ce_distance_to_outter * 10.0f;
-    }
-    set_rect_flip(bottom, lb + 1, rb + 0, lb + 4, rb + 2);
-    if (bottom[0].ce_distance_to_outter - bottom[1].ce_distance_to_outter > 0.1f) {
-        bottom[1].ce_distance_to_outter = bottom[0].ce_distance_to_outter * 10.0f;
-    }
-    set_rect(left, lt + 3, lt + 4, lb + 0, lb + 1);
-    if (left[0].ce_distance_to_outter - left[2].ce_distance_to_outter > 0.1f) {
-        left[2].ce_distance_to_outter = left[0].ce_distance_to_outter * 10.0f;
-    }
-    set_rect_flip(right, rt + 2, rt + 4, rb + 0, rb + 1);
-    if (right[0].ce_distance_to_outter - right[2].ce_distance_to_outter > 0.1f) {
-        right[2].ce_distance_to_outter = right[0].ce_distance_to_outter * 10.0f;
-    }
-    set_rect(middle, lt + 4, rt + 2, lb + 1, rb + 0);
-
-    for (int i = 0; i < u * 9; i++) {
-        v[i].set_color(color);
-    }
+namespace {
+/**
+ * @brief Helper to set a rectangular quad (6 vertices for 2 triangles).
+ */
+template<typename T>
+inline void set_quad(T* v, T* lt, T* rt, T* lb, T* rb) {
+    v[0] = *lt; v[1] = *rt; v[2] = *lb;
+    v[3] = *lb; v[4] = *rb; v[5] = *rt;
 }
 
-auto sg::create_shadow_geometry() -> up<QSGGeometry> {
-    static QSGGeometry::Attribute attrs[] = {
-        QSGGeometry::Attribute::createWithAttributeType(
-            0, 2, QSGGeometry::FloatType, QSGGeometry::PositionAttribute),
-        QSGGeometry::Attribute::createWithAttributeType(
-            1, 4, QSGGeometry::FloatType, QSGGeometry::UnknownAttribute),
-        QSGGeometry::Attribute::createWithAttributeType(
-            2, 3, QSGGeometry::FloatType, QSGGeometry::UnknownAttribute),
+/**
+ * @brief Helper to set a corner mesh cell.
+ */
+inline void set_corner_vertices(RectangleVertex* v, QVector2D origin, QVector2D size, float outer, float inner, 
+                                float cx, float cy, float edge_cx, float edge_cy) {
+    auto set_v = [&](int i, QVector2D pos, float x, float y) {
+        v[i].set_point(pos); v[i].ce_x = x; v[i].ce_y = y;
+        v[i].ce_distance_to_outter = outer; v[i].ce_distance_to_inner = inner;
     };
+    QVector2D lt = origin, rt = origin + QVector2D{size.x(), 0}, lb = origin + QVector2D{0, size.y()}, rb = origin + size;
+    
+    // Fill the 6 vertices for the corner cell
+    set_v(0, lt, edge_cx, edge_cy); set_v(1, rt, edge_cx, edge_cy); set_v(2, lb, edge_cx, edge_cy);
+    set_v(3, lb, edge_cx, edge_cy); set_v(4, rb, edge_cx, edge_cy); set_v(5, rt, edge_cx, edge_cy);
 
+    // Apply corner specific weights
+    v[cx == 1 ? 4 : 0].ce_x = 1;
+    v[cy == 1 ? 4 : 0].ce_y = 1;
+}
+}
+
+void update_rectangle_geometry(RectangleVertex* v, QVector2D size, QRgb color, QVector4D radius) {
+    const auto u = 6;
+    auto outer = std::max({ radius[0], radius[1], radius[2], radius[3], 2.0f });
+    auto inner = -1.0f / outer;
+
+    // Build 4 corners
+    set_corner_vertices(v, {0, 0}, {radius[0], radius[0]}, outer, inner, 0, 0, 1, 1); // TL
+    set_corner_vertices(v + u, {size.x() - radius[1], 0}, {radius[1], radius[1]}, outer, inner, 1, 0, 1, 1); // TR
+    set_corner_vertices(v + u*2, {0, size.y() - radius[2]}, {radius[2], radius[2]}, outer, inner, 0, 1, 1, 1); // BL
+    set_corner_vertices(v + u*3, {size.x() - radius[3], size.y() - radius[3]}, {radius[3], radius[3]}, outer, inner, 1, 1, 1, 1); // BR
+
+    // Connect edges and middle using the 9-patch structure
+    set_quad(v + u*4, v + 5, v + u + 0, v + 4, v + u + 2); // Top
+    set_quad(v + u*5, v + u*2 + 1, v + u*3 + 0, v + u*2 + 4, v + u*3 + 2); // Bottom
+    set_quad(v + u*6, v + 3, v + 4, v + u*2 + 0, v + u*2 + 1); // Left
+    set_quad(v + u*7, v + u + 2, v + u + 4, v + u*3 + 0, v + u*3 + 1); // Right
+    set_quad(v + u*8, v + 4, v + u + 2, v + u*2 + 1, v + u*3 + 0); // Middle
+
+    for (int i = 0; i < u * 9; i++) v[i].set_color(color);
+}
+
+// =============================================================================
+// Shadow Geometry (High-Fidelity)
+// =============================================================================
+
+auto create_shadow_geometry() -> up<QSGGeometry> {
+    static QSGGeometry::Attribute attrs[] = {
+        QSGGeometry::Attribute::createWithAttributeType(0, 2, QSGGeometry::FloatType, QSGGeometry::PositionAttribute),
+        QSGGeometry::Attribute::createWithAttributeType(1, 4, QSGGeometry::FloatType, QSGGeometry::UnknownAttribute),
+        QSGGeometry::Attribute::createWithAttributeType(2, 3, QSGGeometry::FloatType, QSGGeometry::UnknownAttribute),
+    };
     static QSGGeometry::AttributeSet attrset = { 3, sizeof(ShadowVertex), attrs };
-
     auto out = std::make_unique<QSGGeometry>(attrset, 0);
     out->setDrawingMode(QSGGeometry::DrawTriangles);
     return out;
 }
-void sg::update_shadow_geometry(QSGGeometry* geo, const ShadowParams& params, const QRectF& rect) {
-    float occluderHeight = params.z_plane_params.z();
-    bool  transparent    = (params.flags & ShadowFlags::TransparentOccluder_ShadowFlag);
-    bool  directional    = (params.flags & ShadowFlags::DirectionalLight_ShadowFlag);
-    auto  devLightPos    = params.light_pos;
-    auto  max_radius     = std::min(rect.height(), rect.height()) / 2.0;
-    bool  is_oval = params.radius.x() >= max_radius && qFuzzyCompare(rect.width(), rect.height());
+
+void update_shadow_geometry(QSGGeometry* geo, const ShadowParams& params, const QRectF& rect) {
+    const float occluderHeight = params.z_plane_params.z();
+    const bool  transparent    = (params.flags & ShadowFlags::TransparentOccluder_ShadowFlag);
+    const bool  directional    = (params.flags & ShadowFlags::DirectionalLight_ShadowFlag);
+    const auto  max_radius     = std::min<float>(rect.width(), rect.height()) / 2.0f;
+    
+    // Detect if we can use circle optimization
+    bool is_oval = qFuzzyCompare((float)params.radius.x(), max_radius) && qFuzzyCompare((float)params.radius.y(), max_radius) &&
+                   qFuzzyCompare((float)params.radius.z(), max_radius) && qFuzzyCompare((float)params.radius.w(), max_radius) &&
+                   qFuzzyCompare((float)rect.width(), (float)rect.height());
 
     std::array<std::optional<sk::ShadowCircularRRectOp>, 2> ops;
 
+    // 1. Ambient Shadow Pass
     if (params.ambient_color > 0) {
-        scalar       devSpaceInsetWidth  = sk::AmbientBlurRadius(occluderHeight);
-        const scalar umbraRecipAlpha     = sk::AmbientRecipAlpha(occluderHeight);
-        const scalar devSpaceAmbientBlur = devSpaceInsetWidth * umbraRecipAlpha;
+        sk::scalar devSpaceInsetWidth = sk::AmbientBlurRadius(occluderHeight);
+        sk::scalar devSpaceAmbientBlur = devSpaceInsetWidth * sk::AmbientRecipAlpha(occluderHeight);
+        QRectF ambientRRect = rect.adjusted(-devSpaceInsetWidth, -devSpaceInsetWidth, devSpaceInsetWidth, devSpaceInsetWidth);
+        QVector4D ambientRadius = params.radius + QVector4D(devSpaceInsetWidth, devSpaceInsetWidth, devSpaceInsetWidth, devSpaceInsetWidth);
+        for(int i=0; i<4; ++i) ambientRadius[i] = std::min<float>(ambientRadius[i], max_radius + devSpaceInsetWidth);
 
-        // Outset the shadow rrect to the border of the penumbra
-        scalar ambientPathOutset = devSpaceInsetWidth; // * devToSrcScale;
-        QRectF ambientRRect      = rect.adjusted(
-            -ambientPathOutset, -ambientPathOutset, ambientPathOutset, ambientPathOutset);
-        auto ambientRadius = std::min<float>(params.radius.x() + ambientPathOutset, max_radius);
-
-        if (transparent) {
-            // set a large inset to force a fill
-            devSpaceInsetWidth = ambientRRect.width();
-        }
-        ops[0] = sk::ShadowCircularRRectOp(params.ambient_color,
-                                           ambientRRect,
-                                           ambientRadius,
-                                           is_oval,
-                                           devSpaceAmbientBlur,
-                                           devSpaceInsetWidth);
+        ops[0] = sk::ShadowCircularRRectOp(params.ambient_color, ambientRRect, ambientRadius, is_oval, devSpaceAmbientBlur, 
+                                           transparent ? ambientRRect.width() : devSpaceInsetWidth);
     }
 
+    // 2. Spot Shadow Pass
     if (params.spot_color > 0) {
-        scalar    devSpaceSpotBlur;
-        scalar    spotScale;
-        QVector2D spotOffset;
-        if (directional) {
-            sk::GetDirectionalParams(occluderHeight,
-                                     devLightPos.x(),
-                                     devLightPos.y(),
-                                     devLightPos.z(),
-                                     params.light_radius,
-                                     &devSpaceSpotBlur,
-                                     &spotScale,
-                                     &spotOffset);
-        } else {
-            sk::GetSpotParams(occluderHeight,
-                              devLightPos.x(),
-                              devLightPos.y(),
-                              devLightPos.z(),
-                              params.light_radius,
-                              &devSpaceSpotBlur,
-                              &spotScale,
-                              &spotOffset);
-        }
-        // handle scale of radius due to CTM
-        const scalar srcSpaceSpotBlur = devSpaceSpotBlur; // * devToSrcScale;
+        sk::scalar blur, scale; QVector2D offset;
+        if (directional) sk::GetDirectionalParams(occluderHeight, params.light_pos.x(), params.light_pos.y(), params.light_pos.z(), params.light_radius, &blur, &scale, &offset);
+        else sk::GetSpotParams(occluderHeight, params.light_pos.x(), params.light_pos.y(), params.light_pos.z(), params.light_radius, &blur, &scale, &offset);
 
-        // // This offset is in dev space, need to transform it into source space.
-        // SkMatrix ctmInverse;
-        // if (viewMatrix.invert(&ctmInverse)) {
-        //     ctmInverse.mapPoints(&spotOffset, 1);
-        // } else {
-        //     // Since the matrix is a similarity, this should never happen, but just in case...
-        //     SkDebugf("Matrix is degenerate. Will not render spot shadow correctly!\n");
-        //     SkASSERT(false);
-        // }
+        float dw = (scale - 1.0f) * rect.width() / 2.0f, dh = (scale - 1.0f) * rect.height() / 2.0f;
+        QRectF spotRRect = rect.translated(offset.x(), offset.y()).adjusted(-dw, -dh, dw, dh);
+        QVector4D spotRadius = params.radius * scale;
 
-        // Compute the transformed shadow rrect
-        QRectF spotShadowRRect;
-        {
-            auto dw = (spotScale - 1.0f) * rect.width() / 2.0f;
-            auto dh = (spotScale - 1.0f) * rect.height() / 2.0f;
-            spotShadowRRect =
-                rect.translated(spotOffset.x(), spotOffset.y()).adjusted(-dw, -dh, dw, dh);
-        }
-        // SkMatrix shadowTransform;
-        // shadowTransform.setScaleTranslate(spotScale, spotScale, spotOffset.fX, spotOffset.fY);
-        // rrect.transform(shadowTransform, &spotShadowRRect);
-        QVector4D spotRadius = params.radius * spotScale; // spotShadowRRect.getSimpleRadii().fX;
-
-        // Compute the insetWidth
-        scalar blurOutset = srcSpaceSpotBlur;
-        scalar insetWidth = blurOutset;
-        if (transparent) {
-            // If transparent, just do a fill
-            insetWidth += spotShadowRRect.width();
-        } else {
-            // For shadows, instead of using a stroke we specify an inset from the penumbra
-            // border. We want to extend this inset area so that it meets up with the caster
-            // geometry. The inset geometry will by default already be inset by the blur width.
-            //
-            // We compare the min and max corners inset by the radius between the original
-            // rrect and the shadow rrect. The distance between the two plus the difference
-            // between the scaled radius and the original radius gives the distance from the
-            // transformed shadow shape to the original shape in that corner. The max
-            // of these gives the maximum distance we need to cover.
-            //
-            // Since we are outsetting by 1/2 the blur distance, we just add the maxOffset to
-            // that to get the full insetWidth.
-            scalar maxOffset;
-            // is rect
-            if (params.radius.length() == 0) {
-                // Manhattan distance works better for rects
-                maxOffset = std::max(std::max(std::abs(spotShadowRRect.left() - rect.left()),
-                                              std::abs(spotShadowRRect.top() - rect.top())),
-                                     std::max(std::abs(spotShadowRRect.right() - rect.right()),
-                                              std::abs(spotShadowRRect.bottom() - rect.bottom())));
-            } else {
-                scalar    dr              = spotRadius.x() - params.radius.x();
-                QVector2D upperLeftOffset = QVector2D(spotShadowRRect.left() - rect.left() + dr,
-                                                      spotShadowRRect.top() - rect.top() + dr);
-                QVector2D lowerRightOffset =
-                    QVector2D(spotShadowRRect.right() - rect.right() - dr,
-                              spotShadowRRect.bottom() - rect.bottom() - dr);
-                maxOffset = std::sqrt(std::max(upperLeftOffset.lengthSquared(),
-                                               lowerRightOffset.lengthSquared())) +
-                            dr;
-            }
-            insetWidth += std::max(blurOutset, maxOffset);
+        // InsetWidth calculation to cover the penumbra
+        sk::scalar insetWidth = blur;
+        if (transparent) insetWidth += spotRRect.width();
+        else {
+            float maxR = std::max({params.radius.x(), params.radius.y(), params.radius.z(), params.radius.w()});
+            sk::scalar dr = maxR * scale - maxR;
+            QVector2D offUL = QVector2D(spotRRect.left() - rect.left() + dr, spotRRect.top() - rect.top() + dr);
+            QVector2D offBR = QVector2D(spotRRect.right() - rect.right() - dr, spotRRect.bottom() - rect.bottom() - dr);
+            insetWidth += std::max(blur, (sk::scalar)std::sqrt(std::max(offUL.lengthSquared(), offBR.lengthSquared())) + dr);
         }
 
-        // Outset the shadow rrect to the border of the penumbra
-        spotShadowRRect.adjust(-blurOutset, -blurOutset, blurOutset, blurOutset);
-        spotRadius += QVector4D(blurOutset, blurOutset, blurOutset, blurOutset);
-
-        ops[1] = sk::ShadowCircularRRectOp(params.spot_color,
-                                           spotShadowRRect,
-                                           spotRadius.x(),
-                                           is_oval,
-                                           2.0f * devSpaceSpotBlur,
-                                           insetWidth);
+        spotRRect.adjust(-blur, -blur, blur, blur);
+        ops[1] = sk::ShadowCircularRRectOp(params.spot_color, spotRRect, spotRadius + QVector4D(blur, blur, blur, blur), is_oval, 2.0f * blur, insetWidth);
     }
 
-    int vertex_count = 0;
-    int index_count  = 0;
-    for (auto& p : ops) {
-        if (p) {
-            vertex_count += p->fVertCount;
-            index_count += p->fIndexCount;
-        }
-    }
-    geo->allocate(vertex_count, index_count);
+    // Finalize mesh allocation and filling
+    int v_count = 0, i_count = 0;
+    for (auto& p : ops) if (p) { v_count += p->fVertCount; i_count += p->fIndexCount; }
+    geo->allocate(v_count, i_count);
 
-    auto vertices       = static_cast<ShadowVertex*>(geo->vertexData());
-    auto indexes        = (std::uint16_t*)geo->indexData();
-    int  vertice_offset = 0;
-    for (auto& p : ops) {
-        if (p) {
-            auto type = p->fGeoData.type;
-            if (p->fGeoData.is_circle) {
-                bool isStroked = (sk::ShadowCircularRRectOp::kStroke_RRectType == type);
-                p->fillInCircleVerts(isStroked, &vertices);
-            } else {
-                p->fillInRRectVerts(&vertices);
-            }
-            for (int i = 0; i < p->fIndexCount; i++) {
-                indexes[i] = p->fIndexPtr[i] + vertice_offset;
-            }
-            indexes += p->fIndexCount;
-            vertice_offset += p->fVertCount;
-        }
+    auto v = static_cast<ShadowVertex*>(geo->vertexData());
+    auto idx = (std::uint16_t*)geo->indexData();
+    int v_off = 0;
+    for (auto& p : ops) if (p) {
+        if (p->fGeoData.is_circle) p->fillInCircleVerts(sk::ShadowCircularRRectOp::kStroke_RRectType == p->fGeoData.type, &v);
+        else p->fillInRRectVerts(&v);
+        for (int i = 0; i < p->fIndexCount; i++) idx[i] = p->fIndexPtr[i] + v_off;
+        idx += p->fIndexCount; v_off += p->fVertCount;
     }
 }
 
-} // namespace qml_material
+} // namespace qml_material::sg

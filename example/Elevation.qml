@@ -5,7 +5,7 @@ import Qcm.Material as MD
 
 MD.Page {
     id: root
-    title: 'Components'
+    title: 'Elevation & Shadow'
     padding: 0
 
     MD.VerticalFlickable {
@@ -15,92 +15,158 @@ MD.Page {
 
         ColumnLayout {
             width: parent.width
+            spacing: 24
 
             MD.Pane {
-                Layout.fillWidth: parent.width <= implicitWidth
                 Layout.alignment: Qt.AlignHCenter
+                Layout.preferredWidth: Math.min(parent.width - 32, 800)
 
                 ColumnLayout {
                     anchors.fill: parent
                     spacing: 16
                     MD.Text {
                         Layout.alignment: Qt.AlignHCenter
-                        text: 'Elevation'
+                        text: 'Uniform Shadows'
                         typescale: MD.Token.typescale.title_large
                     }
 
-                    ColumnLayout {
+                    MD.Slider {
+                        id: m_slider_radius
+                        Layout.fillWidth: true
+                        Layout.margins: 20
+                        value: 20
+                        from: 0
+                        to: 80
+                    }
+
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: 24
+                        Layout.margins: 20
+                        
+                        ElevationBox { elevation: MD.Token.elevation.level0; text: "L0" }
+                        ElevationBox { elevation: MD.Token.elevation.level1; text: "L1" }
+                        ElevationBox { elevation: MD.Token.elevation.level2; text: "L2" }
+                        ElevationBox { elevation: MD.Token.elevation.level3; text: "L3" }
+                        ElevationBox { elevation: MD.Token.elevation.level4; text: "L4" }
+                        ElevationBox { elevation: MD.Token.elevation.level5; text: "L5" }
+                    }
+                }
+            }
+
+            MD.Pane {
+                Layout.alignment: Qt.AlignHCenter
+                Layout.preferredWidth: Math.min(parent.width - 32, 800)
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    spacing: 16
+                    MD.Text {
                         Layout.alignment: Qt.AlignHCenter
+                        text: 'Custom Shapes & Corners'
+                        typescale: MD.Token.typescale.title_large
+                    }
 
-                        MD.Text {
-                            Layout.alignment: Qt.AlignHCenter
-                            text: 'Shadow'
-                            typescale: MD.Token.typescale.title_medium
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: 32
+                        Layout.margins: 20
+
+                        // Split Button Style (Leading)
+                        ShapeBox {
+                            title: "Split Leading"
+                            elevation: 2
+                            corners: MD.Util.corners(m_slider_radius.value, 4, m_slider_radius.value, 4)
                         }
-                        MD.Pane {
-                            Layout.fillWidth: true
-                            padding: 36
-                            radius: MD.Token.shape.corner.medium
 
-                            ColumnLayout {
-                                anchors.fill: parent
-                                spacing: 24
+                        // Split Button Style (Trailing)
+                        ShapeBox {
+                            title: "Split Trailing"
+                            elevation: 2
+                            corners: MD.Util.corners(4, m_slider_radius.value, 4, m_slider_radius.value)
+                        }
 
-                                MD.Slider {
-                                    id: m_slider_radius
-                                    value: 8
-                                    from: 0
-                                    to: 80
-                                }
+                        // Segmented (First)
+                        ShapeBox {
+                            title: "Seg First"
+                            elevation: 1
+                            corners: MD.Util.corners(m_slider_radius.value, 0, m_slider_radius.value, 0)
+                        }
 
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    spacing: 36
-                                    Elevation {
-                                        elevation: MD.Token.elevation.level0
-                                    }
-                                    Elevation {
-                                        elevation: MD.Token.elevation.level1
-                                    }
-                                    Elevation {
-                                        elevation: MD.Token.elevation.level2
-                                    }
-                                }
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    spacing: 36
-                                    Elevation {
-                                        elevation: MD.Token.elevation.level3
-                                    }
-                                    Elevation {
-                                        elevation: MD.Token.elevation.level4
-                                    }
-                                    Elevation {
-                                        elevation: MD.Token.elevation.level5
-                                    }
-                                }
-                            }
+                        // Segmented (Middle)
+                        ShapeBox {
+                            title: "Seg Middle"
+                            elevation: 1
+                            corners: MD.Util.corners(0)
+                        }
+
+                        // Segmented (Last)
+                        ShapeBox {
+                            title: "Seg Last"
+                            elevation: 1
+                            corners: MD.Util.corners(0, m_slider_radius.value, 0, m_slider_radius.value)
+                        }
+
+                        // Mixed
+                        ShapeBox {
+                            title: "Mixed"
+                            elevation: 3
+                            corners: MD.Util.corners(m_slider_radius.value, 0, 0, m_slider_radius.value / 2)
                         }
                     }
                 }
             }
         }
     }
-    component Elevation: MD.Elevation {
+
+    component ElevationBox: MD.Rectangle {
+        id: eb_root
+        property alias elevation: m_elev.elevation
+        property string text: ""
+        
+        implicitWidth: 100
+        implicitHeight: 100
         radius: m_slider_radius.value
-        Layout.fillWidth: true
-        Layout.preferredWidth: 160
-        Layout.preferredHeight: width
-        Layout.maximumWidth: 160
-        Layout.maximumHeight: 160
-        implicitWidth: 40
-        implicitHeight: width
-        visible: true
+        color: MD.MProp.color.surface_container
+        
+        MD.Elevation {
+            id: m_elev
+            anchors.fill: parent
+            corners: eb_root.corners
+            z: -1
+        }
+
+        MD.Text {
+            anchors.centerIn: parent
+            text: eb_root.text
+        }
+    }
+
+    component ShapeBox: ColumnLayout {
+        id: sb_root
+        property string title: ""
+        property alias elevation: m_elev.elevation
+        property alias corners: m_rect.corners
+        spacing: 8
 
         MD.Rectangle {
-            anchors.fill: parent
-            radius: parent.radius
-            color: MD.MProp.color.surface_container
+            id: m_rect
+            implicitWidth: 120
+            implicitHeight: 60
+            color: MD.MProp.color.surface_container_high
+            
+            MD.Elevation {
+                id: m_elev
+                anchors.fill: parent
+                corners: m_rect.corners
+                z: -1
+            }
+        }
+        
+        MD.Text {
+            Layout.alignment: Qt.AlignHCenter
+            text: sb_root.title
+            typescale: MD.Token.typescale.label_medium
         }
     }
 }

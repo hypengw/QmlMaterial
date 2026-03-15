@@ -15,7 +15,9 @@ layout(std140, binding = 0) uniform buf {
 };
 
 void main() {
-    float d      = length(out_shadow_params.xy);
+    // Take abs before length so all four corners can share the same offset
+    // values without per-corner sign correction on the CPU side.
+    float d      = length(abs(out_shadow_params.xy));
     vec2  uv     = vec2(out_shadow_params.z * (1.0 - d), 0.5);
     float factor = texture(strength_tex, uv, -0.475).x;
     vec4  alpha  = vec4(factor) * qt_Opacity;
