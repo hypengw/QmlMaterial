@@ -163,8 +163,12 @@ MD.Page {
                                 text: 'Filled'
                                 mdState.type: MD.Enum.BtFilled
                                 menu: MD.Menu {
-                                    MD.MenuItem { text: 'Action 1' }
-                                    MD.MenuItem { text: 'Action 2' }
+                                    MD.MenuItem {
+                                        text: 'Action 1'
+                                    }
+                                    MD.MenuItem {
+                                        text: 'Action 2'
+                                    }
                                 }
                             }
 
@@ -172,8 +176,12 @@ MD.Page {
                                 text: 'Tonal'
                                 mdState.type: MD.Enum.BtFilledTonal
                                 menu: MD.Menu {
-                                    MD.MenuItem { text: 'Action A' }
-                                    MD.MenuItem { text: 'Action B' }
+                                    MD.MenuItem {
+                                        text: 'Action A'
+                                    }
+                                    MD.MenuItem {
+                                        text: 'Action B'
+                                    }
                                 }
                             }
                         }
@@ -259,7 +267,7 @@ MD.Page {
                         MD.Label {
                             text: "Sizes & Width Modes"
                             Layout.alignment: Qt.AlignHCenter
-                            font: MD.Token.typescale.title.medium.font
+                            typescale: MD.Token.typescale.title_medium
                         }
 
                         RowLayout {
@@ -279,10 +287,6 @@ MD.Page {
                             }
                             MD.IconButton {
                                 mdState.size: MD.Enum.L
-                                icon.name: MD.Token.icon.settings
-                            }
-                            MD.IconButton {
-                                mdState.size: MD.Enum.XL
                                 icon.name: MD.Token.icon.settings
                             }
                         }
@@ -318,6 +322,31 @@ MD.Page {
                         Layout.alignment: Qt.AlignHCenter
                         text: 'Communication'
                         typescale: MD.Token.typescale.title_large
+                    }
+                    ComponentCard {
+                        title: 'Loading indicators'
+
+                        RowLayout {
+                            spacing: 0
+                            Item {
+                                MD.IconButton {
+                                    id: m_loading_indicator_play
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    checkable: true
+                                    icon.name: checked ? MD.Token.icon.pause : MD.Token.icon.play_arrow
+                                }
+                            }
+
+                            Item {
+                                Layout.fillWidth: true
+                                implicitHeight: children[0].implicitHeight
+
+                                MD.BusyIndicator {
+                                    anchors.centerIn: parent
+                                    running: m_loading_indicator_play.checked
+                                }
+                            }
+                        }
                     }
                     ComponentCard {
                         title: 'Progress indicators'

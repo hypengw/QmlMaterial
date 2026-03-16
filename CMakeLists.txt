@@ -86,6 +86,7 @@ set(SOURCES
     src/helper.cpp
     src/anim/circular_indicator_updator.cpp
     src/anim/linear_indicator_updator.cpp
+    src/anim/loading_indicator_updator.cpp
     src/util/corner.cpp
     src/util/pool.cpp
     src/util/input_block.cpp
@@ -147,6 +148,8 @@ set(QML_FILES
     qml/control/HorizontalHeaderView.qml
     qml/control/HorizontalHeaderViewDelegate.qml
     qml/control/Label.qml
+    qml/control/BusyIndicator.qml
+    qml/control/BusyIndicatorShape.qml
     qml/component/MState.qml
     qml/component/Image.qml
     qml/component/Loader.qml
