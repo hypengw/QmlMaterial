@@ -249,6 +249,7 @@ set(QML_FILES
     qml/state/StateCheckBox.qml
     qml/internal/ListBusyFooter.qml
     qml/internal/Ripple2.qml
+    qml/internal/RippleSkia.qml
     qml/internal/CursorDelegate.qml
     qml/internal/SliderHandle.qml
     qml/internal/SliderHandleM2.qml
@@ -378,6 +379,7 @@ set(SHADER_SOURCES
     "assets/shader/rectangle.frag"
     "assets/shader/shadow.vert"
     "assets/shader/shadow.frag"
+    "assets/shader/ripple.frag"
     "assets/shader/rect_glow.frag")
 set(SHADER_OPT BATCHABLE OPTIMIZED)
 if(CMAKE_BUILD_TYPE MATCHES Debug)
