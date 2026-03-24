@@ -7,4 +7,5 @@ build
 /.llm
 /compile_commands.json
 /.vscode
+/qml-explore
 CMakeLists.txt.user*
