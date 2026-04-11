@@ -15,7 +15,7 @@ T.DialogButtonBox {
     buttonLayout: T.DialogButtonBox.AndroidLayout
 
     delegate: MD.Button {
-        type: MD.Enum.BtText
+        mdState.type: MD.Enum.BtText
     }
 
     contentItem: ListView {
