@@ -203,6 +203,7 @@ set(QML_FILES
     qml/component/extra/Space.qml
     qml/component/extra/SdfRectangle.qml
     qml/component/extra/SnakeView.qml
+    qml/component/extra/DialogHeader.qml
     qml/delegate/ListItem.qml
     qml/delegate/ListGridBaseDelegate.qml
     qml/flickable/Flickable.qml

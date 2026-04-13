@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Templates as T
@@ -81,19 +82,8 @@ T.Dialog {
         elevation: control.mdState.elevation
     }
 
-    header: MD.Control {
-        topPadding: 24
-        horizontalPadding: 24
-        contentItem: ColumnLayout {
-            spacing: 0
-            MD.Text {
-                visible: control.title
-                text: control.title
-                typescale: MD.Token.typescale.headline_small
-                color: control.mdState.ctx.color.on_surface
-                font.capitalization: control.titleCapitalization
-            }
-        }
+    header: MD.DialogHeader {
+        title: control.title
     }
 
     footer: MD.DialogButtonBox {
