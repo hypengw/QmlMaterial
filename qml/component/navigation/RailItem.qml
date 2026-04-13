@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Layouts
 import QtQuick.Templates as T
 import Qcm.Material as MD
 
@@ -22,165 +21,181 @@ T.Button {
     rightInset: 0
 
     padding: 0
-    spacing: 8
+    spacing: 0
 
     icon.width: 24
     icon.height: 24
 
-    font.weight: MD.Token.typescale.label_large.weight
-    font.pointSize: MD.Token.typescale.label_large.size
-
-    property bool expand: width > 80
-    property int lineHeight: MD.Token.typescale.label_large.line_height
+    property bool expand: false
     property Item trailing: null
-    readonly property real range: (control.width - (56 + 24)) / (336 - 56)
+
+    // -- metrics --
+    readonly property real _collapsedWidth: 80
+    readonly property real _collapsedIndicatorW: 56
+    readonly property real _collapsedIndicatorH: 32
+    readonly property real _expandedIndicatorH: 56
+    readonly property real _expandedLeadingPad: 16
+    readonly property real _expandedTrailingPad: 24
+    readonly property real _iconLabelSpacing: 12
+
+    // expanded indicator wraps content
+    readonly property real _expandedIndicatorW: _expandedLeadingPad + control.icon.width + _iconLabelSpacing + m_label.implicitWidth + _expandedTrailingPad
 
     contentItem: Item {
-        implicitHeight: m_content_main.implicitHeight + (control.expand ? 0 : m_text.implicitHeight)
-        implicitWidth: m_content_main.implicitWidth
+        id: m_content
+        implicitWidth: control.expand ? Math.max(control._expandedIndicatorW, 220) : control._collapsedWidth
+        implicitHeight: control.expand ? control._expandedIndicatorH : (control._collapsedIndicatorH + 4 + m_label.implicitHeight)
 
-        MD.Control {
-            id: m_content_main
-            height: parent.height - (control.expand ? 0 : m_text.implicitHeight)
-            width: parent.width
-
-            hoverEnabled: false
-            focusPolicy: Qt.NoFocus
-            leftInset: 12
-            rightInset: 12
-            contentItem: Row {
-                Item {
-                    height: 2
-                    width: (56 + 24 - control.icon.width) / 2
-                }
-                MD.Icon {
-                    anchors.verticalCenter: parent.verticalCenter
-                    name: control.icon.name
-                    size: control.icon.width
-                    color: control.mdState.supportTextColor
-                    fill: control.checked
-                }
-                MD.ItemProxy {
-                    item: control.trailing
-                }
+        Behavior on implicitWidth {
+            NumberAnimation {
+                duration: MD.Token.duration.long2
+                easing: MD.Token.easing.emphasized
             }
+        }
+        Behavior on implicitHeight {
+            NumberAnimation {
+                duration: MD.Token.duration.long2
+                easing: MD.Token.easing.emphasized
+            }
+        }
 
-            background: Item {
-                id: m_background
-                implicitWidth: control.expand ? 336 : 56
-                implicitHeight: control.expand ? 56 : 32
+        // -- icon --
+        MD.Icon {
+            id: m_icon
+            name: control.icon.name
+            size: control.icon.width
+            color: control.mdState.supportTextColor
+            fill: control.checked
 
-                MD.ElevationRectangle {
-                    x: 0
-                    y: 0
-                    width: m_background.width
-                    height: m_background.height
+            // positioned by states
+        }
 
-                    radius: 28
-                    color: control.mdState.backgroundColor
+        // -- label --
+        MD.Text {
+            id: m_label
+            text: control.text
+            font.capitalization: Font.Capitalize
+            typescale: control.expand ? MD.Token.typescale.label_large : MD.Token.typescale.label_medium
+            prominent: control.checked
+            color: control.mdState.textColor
+            // positioned by states
+        }
 
-                    elevationVisible: control.enabled && color.a > 0
-                    elevation: control.mdState.elevation
-
-                    MD.Ripple2 {
-                        anchors.fill: parent
-                        readonly property point p: control.mapToItem(this, control.pressX, control.pressY)
-                        radius: height / 2
-                        pressX: p.x
-                        pressY: p.y
-                        pressed: control.pressed
-                        stateOpacity: control.mdState.stateLayerOpacity
-                        color: control.mdState.stateLayerColor
+        states: [
+            State {
+                name: "collapsed"
+                when: !control.expand
+                PropertyChanges {
+                    m_icon {
+                        x: (_collapsedWidth - control.icon.width) / 2
+                        y: (_collapsedIndicatorH - control.icon.height) / 2
+                    }
+                    m_label {
+                        x: (_collapsedWidth - m_label.implicitWidth) / 2
+                        y: _collapsedIndicatorH + 4
+                    }
+                }
+            },
+            State {
+                name: "expanded"
+                when: control.expand
+                PropertyChanges {
+                    m_icon {
+                        x: _expandedLeadingPad
+                        y: (_expandedIndicatorH - control.icon.height) / 2
+                    }
+                    m_label {
+                        x: _expandedLeadingPad + control.icon.width + _iconLabelSpacing
+                        y: (_expandedIndicatorH - m_label.implicitHeight) / 2
                     }
                 }
             }
-        }
-        MD.Text {
-            id: m_text
-            x: {
-                const min = ((56 + 24) - width) / 2;
-                const max = ((56 + 24 + control.icon.width) / 2 + 12);
-                return min + (max - min) * control.range;
-            }
-            y: {
-                const min = m_content_main.height + 2;
-                const max = (m_content_main.height - height) / 2;
-                return min + (max - min) * control.range;
-            }
-            opacity: {
-                const left = 0.2;
-                const right = 0.8;
-                const w = control.range;
-                return MD.Util.teleportCurve(w, left, right);
-            }
-            typescale: {
-                control.range > 0.5 ? MD.Token.typescale.label_large : MD.Token.typescale.label_medium;
-            }
-            font.capitalization: Font.Capitalize
-            text: control.text
-            prominent: control.checked
-        }
-    }
+        ]
 
-    /*
-    contentItem: ColumnLayout {
-        spacing: 4
-        MD.Control {
-            Layout.alignment: Qt.AlignHCenter
-            hoverEnabled: false
-            focusPolicy: Qt.NoFocus
-            leftInset: 12
-            rightInset: 12
-
-            contentItem: MD.Icon {
-                name: control.icon.name
-                size: control.icon.width
-                color: control.mdState.supportTextColor
-                fill: control.checked
-            }
-
-            background: Item {
-                implicitWidth: 56
-                implicitHeight: 32
-                MD.ElevationRectangle {
-                    anchors.centerIn: parent
-                    height: parent.height
-                    width: 56
-
-                    NumberAnimation on width {
-                        alwaysRunToEnd: true
-                        from: 48
-                        to: 56
-                        duration: 200
-                        running: control.checked
-                    }
-
-                    radius: height / 2
-                    color: control.mdState.backgroundColor
-                    elevation: control.mdState.elevation
+        transitions: [
+            Transition {
+                from: "collapsed"
+                to: "expanded"
+                NumberAnimation {
+                    targets: [m_icon, m_label]
+                    properties: "x,y"
+                    duration: MD.Token.duration.long2
+                    easing: MD.Token.easing.emphasized
                 }
-                MD.Ripple2 {
-                    readonly property point p: control.mapToItem(this, control.pressX, control.pressY)
-                    anchors.fill: parent
-                    radius: height / 2
-                    pressX: p.x
-                    pressY: p.y
-                    pressed: control.pressed
-                    stateOpacity: control.mdState.stateLayerOpacity
-                    color: control.mdState.stateLayerColor
+            },
+            Transition {
+                from: "expanded"
+                to: "collapsed"
+                NumberAnimation {
+                    targets: [m_icon, m_label]
+                    properties: "x,y"
+                    duration: MD.Token.duration.long2
+                    easing: MD.Token.easing.emphasized
                 }
             }
+        ]
+    }
+
+    background: Item {
+        implicitWidth: control.expand ? Math.max(control._expandedIndicatorW, 220) : control._collapsedWidth
+        implicitHeight: control.expand ? control._expandedIndicatorH : (control._collapsedIndicatorH + 4 + m_label.implicitHeight)
+
+        Behavior on implicitWidth {
+            NumberAnimation {
+                duration: MD.Token.duration.long2
+                easing: MD.Token.easing.emphasized
+            }
+        }
+        Behavior on implicitHeight {
+            NumberAnimation {
+                duration: MD.Token.duration.long2
+                easing: MD.Token.easing.emphasized
+            }
         }
 
-        MD.Text {
-            Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
-            font.capitalization: Font.Capitalize
-            typescale: MD.Token.typescale.label_medium
-            text: control.text
-            prominent: control.checked
+        MD.ElevationRectangle {
+            id: m_indicator
+            x: control.expand ? 0 : (control._collapsedWidth - control._collapsedIndicatorW) / 2
+            y: 0
+            width: control.expand ? control.width : control._collapsedIndicatorW
+            height: control.expand ? control._expandedIndicatorH : control._collapsedIndicatorH
+
+            radius: height / 2
+            color: control.mdState.backgroundColor
+
+            elevationVisible: control.enabled && color.a > 0
+            elevation: control.mdState.elevation
+
+            Behavior on width {
+                enabled: !control.expand
+                NumberAnimation {
+                    duration: MD.Token.duration.long2
+                    easing: MD.Token.easing.emphasized
+                }
+            }
+            Behavior on height {
+                NumberAnimation {
+                    duration: MD.Token.duration.long2
+                    easing: MD.Token.easing.emphasized
+                }
+            }
+            Behavior on x {
+                NumberAnimation {
+                    duration: MD.Token.duration.long2
+                    easing: MD.Token.easing.emphasized
+                }
+            }
+
+            MD.Ripple2 {
+                anchors.fill: parent
+                readonly property point p: control.mapToItem(this, control.pressX, control.pressY)
+                radius: parent.radius
+                pressX: p.x
+                pressY: p.y
+                pressed: control.pressed
+                stateOpacity: control.mdState.stateLayerOpacity
+                color: control.mdState.stateLayerColor
+            }
         }
     }
-    */
-
-    background: Item {}
 }

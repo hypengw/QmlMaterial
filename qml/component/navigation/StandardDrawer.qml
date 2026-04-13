@@ -1,6 +1,5 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Layouts
 import QtQuick.Templates as T
 
 import Qcm.Material as MD
@@ -11,7 +10,18 @@ T.Control {
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
-    readonly property bool useLarge: MD.MProp.size.windowClass >= MD.Enum.WindowClassLarge || drawerOpened
+    // whether to show embedded sidebar (large window) vs popup-only
+    readonly property bool useEmbed: MD.MProp.size.windowClass >= MD.Enum.WindowClassLarge
+    // whether items are in expanded layout (icon+label horizontal)
+    readonly property bool useLarge: expanded || drawerOpened
+    // user-togglable expanded state for embedded mode
+    property bool expanded: false
+    onUseEmbedChanged: expanded = useEmbed
+
+    // configurable sizes for collapsed/expanded states
+    property real collapsedWidth: 80
+    property real expandedWidth: 360
+
     property int currentIndex: 0
     property var model: null
     property bool showDivider: true
@@ -28,27 +38,41 @@ T.Control {
     readonly property MD.Action defaultHeaderAction: MD.Action {
         icon.name: MD.Token.icon.menu
         text: ''
-        onTriggered: m_drawer.open()
+        onTriggered: control.open()
     }
 
     QtObject {
         id: m_private
-        readonly property bool drawerOpened: m_drawer.position > 80 / m_drawer.implicitWidth
-        property bool drawerOpenedSet: drawerOpened
+        readonly property bool drawerOpened: m_drawer.position > control.collapsedWidth / m_drawer.implicitWidth
+        property bool drawerOpenedSet: false
     }
 
     function open() {
-        m_drawer.open();
+        if (useEmbed) {
+            expanded = !expanded;
+        } else {
+            m_drawer.open();
+        }
     }
 
     function close() {
-        m_drawer.close();
+        if (useEmbed) {
+            expanded = false;
+        } else {
+            m_drawer.close();
+        }
     }
 
     signal clicked(var model)
 
     background: Item {
-        implicitWidth: control.useLarge && !control.drawerOpened ? 360 : 0
+        implicitWidth: {
+            if (MD.MProp.size.windowClass >= MD.Enum.WindowClassLarge)
+                return control.expanded ? control.expandedWidth : control.collapsedWidth;
+            if (!MD.MProp.size.isCompact)
+                return control.collapsedWidth;
+            return 0;
+        }
         implicitHeight: 400
     }
 
@@ -59,7 +83,7 @@ T.Control {
     Component {
         id: m_menu_comp
         MD.RailItem {
-            visible: !control.useLarge
+            visible: !control.useEmbed
             action: control.headerAction
         }
     }
@@ -74,6 +98,8 @@ T.Control {
         bottomPadding: 4
         contentItem: Item {
             id: m_popup_content
+            implicitWidth: m_flick.implicitWidth
+            implicitHeight: m_flick.implicitHeight
         }
     }
 
@@ -88,17 +114,7 @@ T.Control {
                     target: m_flick
                     parent: m_embed_content
                 }
-                StateChangeScript {
-                    script: {
-                        // break bind
-                        m_popup_content.implicitHeight = m_flick.implicitHeight;
-                        m_popup_content.implicitWidth = m_flick.implicitWidth;
-                    }
-                }
                 PropertyChanges {
-                    restoreEntryValues: false
-                    m_embed_content.implicitHeight: m_flick.implicitHeight
-                    m_embed_content.implicitWidth: m_flick.implicitWidth
                     m_flick.visible: true
                     m_private.drawerOpenedSet: false
                 }
@@ -109,17 +125,7 @@ T.Control {
                     target: m_flick
                     parent: m_popup_content
                 }
-                StateChangeScript {
-                    script: {
-                        // break bind
-                        m_embed_content.implicitHeight = m_flick.implicitHeight;
-                        m_embed_content.implicitWidth = m_flick.implicitWidth;
-                    }
-                }
                 PropertyChanges {
-                    restoreEntryValues: false
-                    m_popup_content.implicitHeight: m_flick.implicitHeight
-                    m_popup_content.implicitWidth: m_flick.implicitWidth
                     m_flick.visible: true
                     m_private.drawerOpenedSet: true
                 }
@@ -135,34 +141,42 @@ T.Control {
 
             opacity: {
                 const v = m_drawer.position;
-                const left = 80 / m_drawer.implicitWidth;
+                const left = control.collapsedWidth / m_drawer.implicitWidth;
                 const right = left + 0.1;
                 return MD.Util.teleportCurve(v, left, right);
             }
 
-            ColumnLayout {
+            Item {
                 id: m_content
                 width: parent.width
                 height: Math.max(implicitHeight, m_flick.height - 12 * 2)
+                implicitWidth: Math.min(control.expandedWidth, Math.max(m_rail_view.implicitWidth, m_footer_loader.implicitWidth))
+                implicitHeight: m_header_loader.height + m_rail_container.implicitHeight + m_divider.height + m_footer_container.implicitHeight
 
-                spacing: 0
-
+                // -- header --
                 Loader {
+                    id: m_header_loader
+                    width: parent.width
+                    y: 0
                     visible: sourceComponent
                     sourceComponent: control.useLarge ? control.drawerHeader : control.header
                 }
 
+                // -- rail items --
                 Item {
-                    Layout.fillHeight: !control.useLarge
-                    Layout.fillWidth: true
+                    id: m_rail_container
+                    y: m_header_loader.y + m_header_loader.height
+                    width: parent.width
+                    height: control.useLarge ? implicitHeight : Math.max(implicitHeight, m_content.height - m_header_loader.height - m_divider.height - m_footer_container.implicitHeight)
                     implicitHeight: m_rail_view.implicitHeight
                     implicitWidth: m_rail_view.implicitWidth
+
                     MD.VerticalListView {
                         id: m_rail_view
                         y: {
                             if (control.useLarge)
                                 return 0;
-                            const center = -parent.y + (m_content.height - height) / 2;
+                            const center = (parent.height - height) / 2;
                             const min = 0;
                             const max = Math.max(parent.height - height, 0);
                             return MD.Util.clamp(center, min, max);
@@ -208,20 +222,23 @@ T.Control {
                     }
                 }
 
+                // -- divider --
                 MD.Divider {
+                    id: m_divider
                     visible: control.showDivider && control.useLarge && control.drawerContent
-                    Layout.topMargin: 8
-                    Layout.leftMargin: 16
-                    Layout.rightMargin: 16
-                    Layout.bottomMargin: 8
+                    y: m_rail_container.y + m_rail_container.height + (visible ? 8 : 0)
+                    width: parent.width - 32
+                    x: 16
+                    height: visible ? (implicitHeight + 16) : 0
                 }
 
+                // -- footer / drawer content --
                 Item {
-                    Layout.fillHeight: control.useLarge
-                    Layout.fillWidth: true
+                    id: m_footer_container
+                    y: m_divider.y + m_divider.height
+                    width: parent.width
+                    height: control.useLarge ? (m_content.height - y) : implicitHeight
                     implicitHeight: m_footer_loader.sourceComponent ? m_footer_loader.implicitHeight : 0
-                    // TODO: set real implicitWidth
-                    implicitWidth: 0
 
                     Loader {
                         id: m_footer_loader

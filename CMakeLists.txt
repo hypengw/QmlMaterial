@@ -182,6 +182,8 @@ set(QML_FILES
     qml/component/navigation/RailItem.qml
     qml/component/navigation/StandardDrawer.qml
     qml/component/navigation/DrawerItem.qml
+    qml/component/navigation/DrawerDivider.qml
+    qml/component/navigation/DrawerSubheader.qml
     qml/component/progressindicator/CircleProgressBar.qml
     qml/component/progressindicator/CircularIndicator.qml
     qml/component/progressindicator/CircleProgressShape.qml
