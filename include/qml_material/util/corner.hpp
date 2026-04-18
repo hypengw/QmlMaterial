@@ -58,7 +58,8 @@ public:
     void  setBottomRight(qreal newBottomRight) noexcept;
 
     Q_INVOKABLE QVector4D toVector4D() const noexcept;
-                          operator QVector4D() const noexcept;
+
+    QML_MATERIAL_API operator QVector4D() const noexcept;
 
     QML_MATERIAL_API static auto interpolated(const CornersGroup& from, const CornersGroup& to,
                                               qreal progress) -> QVariant;
