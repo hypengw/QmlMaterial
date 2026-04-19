@@ -124,6 +124,10 @@ QVector4D CornersGroup::toVector4D() const noexcept {
         (float)m_bottomRight, (float)m_topRight, (float)m_bottomLeft, (float)m_topLeft
     };
 }
+bool CornersGroup::isUniform() const noexcept {
+    return qFuzzyCompare(m_bottomLeft, m_bottomRight) && qFuzzyCompare(m_bottomRight, m_topLeft) &&
+           qFuzzyCompare(m_topLeft, m_topRight);
+}
 CornersGroup::operator QVector4D() const noexcept { return toVector4D(); }
 
 auto CornersGroup::interpolated(const CornersGroup& from, const CornersGroup& to, qreal progress)

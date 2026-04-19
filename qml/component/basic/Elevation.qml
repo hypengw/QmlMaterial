@@ -19,10 +19,7 @@ Item {
 
     // Uniform 4-corner radius → analytic 9-patch path (RRectShadowImpl).
     // Non-uniform radius → BlurMask path, which accepts per-corner radii.
-    readonly property bool _uniform_radius:
-        corners.topLeftRadius === corners.topRightRadius
-        && corners.topLeftRadius === corners.bottomLeftRadius
-        && corners.topLeftRadius === corners.bottomRightRadius
+    readonly property bool _uniform_radius: corners.isUniform()
 
     Loader {
         anchors.fill: parent

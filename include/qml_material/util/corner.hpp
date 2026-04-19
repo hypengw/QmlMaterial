@@ -58,6 +58,7 @@ public:
     void  setBottomRight(qreal newBottomRight) noexcept;
 
     Q_INVOKABLE QVector4D toVector4D() const noexcept;
+    Q_INVOKABLE bool isUniform() const noexcept;
 
     QML_MATERIAL_API operator QVector4D() const noexcept;
 
