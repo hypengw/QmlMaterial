@@ -12,7 +12,7 @@ namespace qml_material
 /// QQuickItem that draws a gaussian-blurred mask of a rect / rrect.
 /// Thin shell around `sg::BlurMaskMaterial` + `sg::create_blur_mask_geometry` —
 /// the decision whether to use this vs `RRectShadowImpl` belongs in the QML
-/// wrapper layer (see qml/internal/Elevation.qml).
+/// wrapper layer (see qml/component/basic/Elevation.qml).
 class BlurMask : public QQuickItem {
     Q_OBJECT
     QML_NAMED_ELEMENT(BlurMaskImpl)

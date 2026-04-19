@@ -262,21 +262,21 @@ set(QML_FILES
     qml/state/StateMenuItem.qml
     qml/state/StateRadioButton.qml
     qml/state/StateCheckBox.qml
-    qml/internal/ListBusyFooter.qml
-    qml/internal/Ripple2.qml
-    qml/internal/RippleSkia.qml
-    qml/internal/CursorDelegate.qml
-    qml/internal/SliderHandle.qml
-    qml/internal/SliderHandleM2.qml
-    qml/internal/TextFieldEmbed.qml
-    qml/internal/RoundClip.qml
-    qml/internal/Elevation.qml
-    qml/internal/Rectangle.qml
-    qml/internal/ElevationRectangle.qml
-    qml/internal/Shape.qml
-    qml/internal/RoundPath.qml
-    qml/internal/RectPath.qml
-    qml/internal/ItemHolder.qml)
+    qml/component/basic/Ripple2.qml
+    qml/component/basic/RippleSkia.qml
+    qml/delegate/CursorDelegate.qml
+    qml/delegate/SliderHandle.qml
+    qml/delegate/SliderHandleM2.qml
+    qml/component/TextFieldEmbed.qml
+    qml/component/basic/RoundClip.qml
+    qml/component/basic/Elevation.qml
+    qml/component/Rectangle.qml
+    qml/component/basic/ElevationRectangle.qml
+    qml/component/Shape.qml
+    qml/component/path/RoundPath.qml
+    qml/component/path/RectPath.qml
+    qml/component/ListBusyFooter.qml
+    qml/component/helper/ItemHolder.qml)
 
 set(RESOURCES assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2)
 
