@@ -31,19 +31,24 @@ T.Control {
 
     spacing: 2
 
-    contentItem: Row {
-        spacing: control.spacing
+    contentItem: Item {
+        implicitHeight: Math.max(m_button.implicitHeight, m_indicator.implicitHeight)
+        implicitWidth: m_button.implicitWidth + m_indicator.implicitWidth + control.spacing
 
         MD.Button {
             id: m_button
-            width: parent.width - m_indicator.width - control.spacing
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
             mdState: control.mdState
             onClicked: control.clicked()
+            width: parent.width - m_indicator.width - control.spacing
         }
 
         MD.SplitButtonIndicator {
             id: m_indicator
             mdState: control.indicatorMdState
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.right: parent.right
         }
     }
 }
