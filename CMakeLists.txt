@@ -125,8 +125,6 @@ set(QML_FILES
     qml/control/Button.qml
     qml/control/SegmentedButton.qml
     qml/control/SegmentedButtonGroup.qml
-    qml/control/SplitButton.qml
-    qml/control/SplitButtonIndicator.qml
     qml/control/Control.qml
     qml/control/ComboBox.qml
     qml/control/ButtonGroup.qml
@@ -184,6 +182,8 @@ set(QML_FILES
     qml/component/button/StandardIconButton.qml
     qml/component/button/SmallIconButton.qml
     qml/component/button/RadioIndicatorShape.qml
+    qml/component/button/SplitButton.qml
+    qml/component/button/SplitButtonIndicator.qml
     qml/component/checkbox/CheckShape.qml
     qml/component/card/Card.qml
     qml/component/chip/AssistChip.qml
