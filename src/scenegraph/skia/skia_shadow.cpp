@@ -1,41 +1,19 @@
 #include "qml_material/scenegraph/skia/skia_shadow.h"
-#include <cmath>
+
 #include <algorithm>
+#include <cmath>
+
+#include "qml_material/math/scalar.hpp"
+#include "qml_material/scenegraph/mesh/corner_fan.hpp"
+
+namespace {
+using scalar = qml_material::math::scalar;
+inline constexpr scalar k_nearly_zero = qml_material::math::k_nearly_zero;
+inline constexpr scalar k_float_sqrt2 = qml_material::math::k_float_sqrt2;
+} // namespace
 
 namespace qml_material::sk
 {
-
-// =============================================================================
-// Parameter Calculations Implementation
-// =============================================================================
-
-/**
- * Calculates spot shadow geometry parameters based on a point light model.
- * zRatio determines the blur radius and the projection scale of the shadow.
- */
-void GetSpotParams(scalar occluderZ, scalar lightX, scalar lightY, scalar lightZ,
-                   scalar lightRadius, scalar* blurRadius, scalar* scale,
-                   QVector2D* translate) {
-    scalar zRatio = divide_and_pin(occluderZ, lightZ - occluderZ, 0.0f, 0.95f);
-    *blurRadius   = lightRadius * zRatio;
-    *scale        = divide_and_pin(lightZ, lightZ - occluderZ, 1.0f, 1.95f);
-    *translate    = QVector2D(-zRatio * lightX, -zRatio * lightY);
-}
-
-/**
- * Calculates directional shadow parameters. This is a simplified version of the spot
- * model where the light source is assumed to be at infinity.
- */
-void GetDirectionalParams(scalar occluderZ, scalar lightX, scalar lightY, scalar lightZ,
-                          scalar lightRadius, scalar* blurRadius, scalar* scale,
-                          QVector2D* translate) {
-    *blurRadius = lightRadius * occluderZ;
-    *scale      = 1;
-    // Max z-ratio is "max expected elevation" / "min allowable z"
-    constexpr scalar kMaxZRatio = 64 / SK_ScalarNearlyZero;
-    scalar           zRatio     = divide_and_pin(occluderZ, lightZ, 0.0f, kMaxZRatio);
-    *translate                  = QVector2D(-zRatio * lightX, -zRatio * lightY);
-}
 
 // =============================================================================
 // ShadowCircularRRectOp Mesh Index Constants
@@ -101,7 +79,6 @@ static constexpr int kVertsPerFillRRect       = 24;
 static constexpr int kVertsPerStrokeCircle   = 16;
 static constexpr int kVertsPerFillCircle     = 9;
 
-static constexpr float SK_FloatSqrt2 = 1.41421356f;
 
 // =============================================================================
 // ShadowCircularRRectOp Methods
@@ -222,32 +199,14 @@ void ShadowCircularRRectOp::fillInRRectVerts(sg::ShadowVertex** vp) const {
     scalar umbra_inset         = std::min(std::max(maxR, blurRadius), min_dim);
     scalar distance_correction = umbra_inset / blurRadius;
 
-    scalar xOuter[4] = { (float)bounds.left(), (float)bounds.right(), (float)bounds.left(), (float)bounds.right() };
-    scalar yOuter[4] = { (float)bounds.top(), (float)bounds.top(), (float)bounds.bottom(), (float)bounds.bottom() };
-
     auto v = vp[0];
-    for (int i = 0; i < 4; ++i) {
-        scalar r = args.outer_radius[i];
-
-        scalar xi, xm, yi, ym;
-        if (i == 0) { // TL
-            xi = bounds.left() + umbra_inset; xm = bounds.left() + r;
-            yi = bounds.top() + umbra_inset;  ym = bounds.top() + r;
-        } else if (i == 1) { // TR
-            xi = bounds.right() - umbra_inset; xm = bounds.right() - r;
-            yi = bounds.top() + umbra_inset;   ym = bounds.top() + r;
-        } else if (i == 2) { // BL
-            xi = bounds.left() + umbra_inset;  xm = bounds.left() + r;
-            yi = bounds.bottom() - umbra_inset; ym = bounds.bottom() - r;
-        } else { // BR
-            xi = bounds.right() - umbra_inset; xm = bounds.right() - r;
-            yi = bounds.bottom() - umbra_inset; ym = bounds.bottom() - r;
-        }
+    sg::mesh::for_each_rrect_corner(bounds, args.outer_radius, umbra_inset, [&](const sg::mesh::rrect_corner& c) {
+        const scalar r = c.radius;
 
         // Distance Field Offset Math (Normalized to unified abs() system in shader)
         QVector2D outerVec = QVector2D(r - umbra_inset, -r - umbra_inset).normalized();
-        scalar    denom    = SK_FloatSqrt2 * (r - umbra_inset) - r;
-        scalar    diagVal  = (std::abs(denom) > SK_ScalarNearlyZero) ? umbra_inset / denom : -1.0f / SK_FloatSqrt2;
+        scalar    denom    = k_float_sqrt2 * (r - umbra_inset) - r;
+        scalar    diagVal  = (std::abs(denom) > k_nearly_zero) ? umbra_inset / denom : -1.0f / k_float_sqrt2;
         QVector2D diagVec  = QVector2D(diagVal, diagVal);
 
         auto setV = [&](float x, float y, QVector2D off) {
@@ -256,16 +215,16 @@ void ShadowCircularRRectOp::fillInRRectVerts(sg::ShadowVertex** vp) const {
         };
 
         // All corners use the same local vertex fill order (0..5).
-        // The static index buffer (gRRectIndices) is already pre-configured to 
+        // The static index buffer (gRRectIndices) is already pre-configured to
         // handle the symmetry and correct winding for TR, BL, and BR corners
         // by picking these vertices in the appropriate order.
-        setV(xi,        yi,        {  0,  0   });  // 0: umbra
-        setV(xOuter[i], yi,        {  0, -1   });  // 1: x-axis edge
-        setV(xOuter[i], ym,        outerVec    );  // 2: arc start
-        setV(xOuter[i], yOuter[i], diagVec     );  // 3: corner
-        setV(xm,        yOuter[i], outerVec    );  // 4: arc end
-        setV(xi,        yOuter[i], {  0, -1   });  // 5: y-axis edge
-    }
+        setV(c.inner_x, c.inner_y, {  0,  0 });  // 0: umbra
+        setV(c.outer_x, c.inner_y, {  0, -1 });  // 1: x-axis edge
+        setV(c.outer_x, c.arc_y,   outerVec );   // 2: arc start
+        setV(c.outer_x, c.outer_y, diagVec  );   // 3: corner
+        setV(c.arc_x,   c.outer_y, outerVec );   // 4: arc end
+        setV(c.inner_x, c.outer_y, {  0, -1 });  // 5: y-axis edge
+    });
 
     if (kOverstroke_RRectType == args.type) {
         scalar inset = umbra_inset + args.inner_radius;

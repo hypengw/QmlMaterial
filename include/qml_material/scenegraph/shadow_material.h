@@ -5,10 +5,10 @@
 namespace qml_material::sg
 {
 
-class ElevationMaterial : public QSGMaterial {
+class ShadowMaterial : public QSGMaterial {
 public:
-    ElevationMaterial();
-    ~ElevationMaterial();
+    ShadowMaterial();
+    ~ShadowMaterial();
 
     QSGMaterialShader* createShader(QSGRendererInterface::RenderMode) const override;
     QSGMaterialType*   type() const override;
@@ -21,9 +21,9 @@ private:
     QSGTexture* m_fadeoff_texture;
 };
 
-class ElevationShader : public QSGMaterialShader {
+class ShadowShader : public QSGMaterialShader {
 public:
-    ElevationShader();
+    ShadowShader();
 
     bool updateUniformData(QSGMaterialShader::RenderState& state, QSGMaterial* newMaterial,
                            QSGMaterial* oldMaterial) override;

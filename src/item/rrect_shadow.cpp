@@ -1,4 +1,4 @@
-#include "qml_material/item/elevation.hpp"
+#include "qml_material/item/rrect_shadow.hpp"
 
 #include <QQuickWindow>
 #include <QSGRendererInterface>
@@ -6,9 +6,9 @@
 #include <QSGFlatColorMaterial>
 
 #include "qml_material/scenegraph/geometry.h"
-#include "qml_material/scenegraph/elevation_material.h"
+#include "qml_material/scenegraph/shadow_material.h"
 
-// some parms comes from
+// Shadow constants — see Skia/Flutter references:
 // https://github.com/flutter/engine/blob/3.24.3/display_list/skia/dl_sk_dispatcher.cc#L295
 // https://github.com/google/skia/blob/canvaskit/0.38.2/src/gpu/ganesh/SurfaceDrawContext.cpp#L1077
 constexpr float     kAmbientAlpha      = 0.039f;
@@ -21,20 +21,19 @@ namespace qml_material
 {
 namespace sg
 {
-class ElevationNode : public QSGGeometryNode {
+class RRectShadowNode : public QSGGeometryNode {
 public:
-    ElevationNode() {
+    RRectShadowNode() {
         setGeometry(create_shadow_geometry().release());
-        setMaterial(new ElevationMaterial {});
+        setMaterial(new ShadowMaterial {});
         setFlags(QSGNode::OwnsGeometry | QSGNode::OwnsMaterial);
     }
 
     void init(QQuickItem* item) {
-        static_cast<ElevationMaterial*>(material())->init_fadeoff_texture(item->window());
+        static_cast<ShadowMaterial*>(material())->init_fadeoff_texture(item->window());
     }
 
     void updateGeometry() {
-        // auto             vertices = static_cast<ShadowVertex*>(geometry()->vertexData());
         sg::ShadowParams params;
         {
             params.z_plane_params = QVector3D(0, 0, elevation);
@@ -67,32 +66,32 @@ public:
 };
 } // namespace sg
 
-Elevation::Elevation(QQuickItem* parentItem)
+RRectShadow::RRectShadow(QQuickItem* parentItem)
     : QQuickItem(parentItem), m_elevation(0), m_corners(), m_radius(0), m_color(Qt::black) {
     setFlag(QQuickItem::ItemHasContents, true);
-    connect(this, &Elevation::elevationChanged, this, &Elevation::update);
-    connect(this, &Elevation::colorChanged, this, &Elevation::update);
-    connect(this, &Elevation::cornersChanged, this, &Elevation::update);
+    connect(this, &RRectShadow::elevationChanged, this, &RRectShadow::update);
+    connect(this, &RRectShadow::colorChanged, this, &RRectShadow::update);
+    connect(this, &RRectShadow::cornersChanged, this, &RRectShadow::update);
 }
 
-Elevation::~Elevation() {}
+RRectShadow::~RRectShadow() {}
 
-auto Elevation::elevation() const -> double { return m_elevation; }
-void Elevation::setelevation(double l) {
+auto RRectShadow::elevation() const -> double { return m_elevation; }
+void RRectShadow::setelevation(double l) {
     if (! qFuzzyCompare(l, m_elevation)) {
         m_elevation = l;
         elevationChanged(m_elevation);
     }
 }
-auto Elevation::corners() const -> const CornersGroup& { return m_corners; }
-void Elevation::setCorners(const CornersGroup& c) {
+auto RRectShadow::corners() const -> const CornersGroup& { return m_corners; }
+void RRectShadow::setCorners(const CornersGroup& c) {
     m_corners = c;
     cornersChanged(c);
 }
 
-qreal Elevation::radius() const { return m_radius; }
+qreal RRectShadow::radius() const { return m_radius; }
 
-void Elevation::setRadius(qreal newRadius) {
+void RRectShadow::setRadius(qreal newRadius) {
     if (qFuzzyCompare(m_radius, newRadius)) {
         return;
     }
@@ -101,9 +100,9 @@ void Elevation::setRadius(qreal newRadius) {
     radiusChanged(m_radius);
 }
 
-QColor Elevation::color() const { return m_color; }
+QColor RRectShadow::color() const { return m_color; }
 
-void Elevation::setColor(const QColor& newColor) {
+void RRectShadow::setColor(const QColor& newColor) {
     if (newColor == m_color) {
         return;
     }
@@ -112,35 +111,34 @@ void Elevation::setColor(const QColor& newColor) {
     colorChanged(m_color);
 }
 
-void Elevation::componentComplete() { QQuickItem::componentComplete(); }
+void RRectShadow::componentComplete() { QQuickItem::componentComplete(); }
 
-void Elevation::itemChange(QQuickItem::ItemChange change, const QQuickItem::ItemChangeData& value) {
-    if (change == QQuickItem::ItemSceneChange && value.window) {
-        // checkSoftwareItem();
-    }
-
+void RRectShadow::itemChange(QQuickItem::ItemChange            change,
+                             const QQuickItem::ItemChangeData& value) {
+    Q_UNUSED(value);
+    Q_UNUSED(change);
     QQuickItem::itemChange(change, value);
 }
 
-QSGNode* Elevation::updatePaintNode(QSGNode* node, QQuickItem::UpdatePaintNodeData* data) {
+QSGNode* RRectShadow::updatePaintNode(QSGNode* node, QQuickItem::UpdatePaintNodeData* data) {
     Q_UNUSED(data);
 
     if (boundingRect().isEmpty()) {
         delete node;
         return nullptr;
     }
-    auto shadowNode = static_cast<sg::ElevationNode*>(node);
+    auto shadowNode = static_cast<sg::RRectShadowNode*>(node);
 
     if (! shadowNode) {
-        shadowNode = new sg::ElevationNode {};
+        shadowNode = new sg::RRectShadowNode {};
         shadowNode->init(this);
     }
     shadowNode->rect      = boundingRect();
     shadowNode->elevation = m_elevation;
-    shadowNode->color = m_color.rgb();
+    shadowNode->color     = m_color.rgb();
     {
         auto vec = m_corners.toVector4D();
-        vec[0] = std::exchange(vec[3], vec[0]);
+        vec[0]   = std::exchange(vec[3], vec[0]);
         shadowNode->radius = vec;
     }
 
@@ -150,4 +148,4 @@ QSGNode* Elevation::updatePaintNode(QSGNode* node, QQuickItem::UpdatePaintNodeDa
 }
 } // namespace qml_material
 
-#include "qml_material/item/moc_elevation.cpp"
+#include "qml_material/item/moc_rrect_shadow.cpp"

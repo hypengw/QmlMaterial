@@ -20,9 +20,11 @@ T.Control {
         control.indicatorMdState.corners: control.mdState.trailingCorners
     }
 
+    property alias action: m_button.action
     property alias text: m_button.text
     property alias icon: m_button.icon
     property alias menu: m_indicator.menu
+    signal clicked()
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
@@ -34,7 +36,9 @@ T.Control {
 
         MD.Button {
             id: m_button
+            width: parent.width - m_indicator.width - control.spacing
             mdState: control.mdState
+            onClicked: control.clicked()
         }
 
         MD.SplitButtonIndicator {

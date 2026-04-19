@@ -8,9 +8,9 @@
 namespace qml_material
 {
 
-class Elevation : public QQuickItem {
+class RRectShadow : public QQuickItem {
     Q_OBJECT
-    QML_NAMED_ELEMENT(ElevationImpl)
+    QML_NAMED_ELEMENT(RRectShadowImpl)
 
     Q_PROPERTY(double elevation READ elevation WRITE setelevation NOTIFY elevationChanged FINAL)
     Q_PROPERTY(qreal radius READ radius WRITE setRadius NOTIFY radiusChanged FINAL)
@@ -18,8 +18,8 @@ class Elevation : public QQuickItem {
     Q_PROPERTY(qml_material::CornersGroup corners READ corners WRITE setCorners NOTIFY
                    cornersChanged FINAL)
 public:
-    Elevation(QQuickItem* parent = nullptr);
-    ~Elevation() override;
+    RRectShadow(QQuickItem* parent = nullptr);
+    ~RRectShadow() override;
 
     auto          elevation() const -> double;
     void          setelevation(double);

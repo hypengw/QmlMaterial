@@ -63,3 +63,4 @@ Set the option to it if you need animation when switching `FILL`.
 - [material-color-utilities](https://github.com/material-foundation/material-color-utilities)
 - [kirigami](https://invent.kde.org/frameworks/kirigami)
 - [quickshell](https://git.outfoxxed.me/quickshell/quickshell)
+- [skia](https://skia.org) (principles behind shadow / blur mask math; BSD-3)

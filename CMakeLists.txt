@@ -70,13 +70,24 @@ set(LIBNAME qml_material)
 set(SOURCES
     include/qml_material/helper.hpp
     include/qml_material/util/loggingcategory.hpp
+    include/qml_material/math/scalar.hpp
+    include/qml_material/math/gaussian.hpp
+    include/qml_material/math/rrect.hpp
+    include/qml_material/math/shadow_light.hpp
     include/qml_material/scenegraph/geometry.h
     include/qml_material/scenegraph/rectangle_material.h
-    include/qml_material/scenegraph/elevation_material.h
+    include/qml_material/scenegraph/shadow_material.h
+    include/qml_material/scenegraph/blur_mask_material.h
+    include/qml_material/scenegraph/mesh/quad.hpp
+    include/qml_material/scenegraph/mesh/nine_patch.hpp
+    include/qml_material/scenegraph/mesh/corner_fan.hpp
+    src/math/gaussian.cpp
+    src/math/shadow_light.cpp
     src/scenegraph/geometry.cpp
     src/scenegraph/skia/skia_shadow.cpp
     src/scenegraph/rectangle_material.cpp
-    src/scenegraph/elevation_material.cpp
+    src/scenegraph/shadow_material.cpp
+    src/scenegraph/blur_mask_material.cpp
     src/kirigami/displayhint.cpp
     src/kirigami/toolbarlayout.cpp
     src/kirigami/toolbarlayoutdelegate.cpp
@@ -105,7 +116,8 @@ set(SOURCES
     src/item/round_item.cpp
     src/item/state.cpp
     src/item/rectangle.cpp
-    src/item/elevation.cpp)
+    src/item/rrect_shadow.cpp
+    src/item/blur_mask.cpp)
 
 set(QML_FILES
     qml/Token.qml
@@ -382,6 +394,8 @@ set(SHADER_SOURCES
     "assets/shader/rectangle.frag"
     "assets/shader/shadow.vert"
     "assets/shader/shadow.frag"
+    "assets/shader/blur_mask.vert"
+    "assets/shader/blur_mask.frag"
     "assets/shader/ripple.frag"
     "assets/shader/rect_glow.frag")
 set(SHADER_OPT BATCHABLE OPTIMIZED)

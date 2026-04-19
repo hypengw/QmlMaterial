@@ -51,6 +51,14 @@ auto create_rectangle_geometry() -> up<QSGGeometry>;
 void update_rectangle_geometry(RectangleVertex* vertexs, QVector2D size, QRgb color,
                                QVector4D radius);
 
+auto create_blur_mask_geometry() -> up<QSGGeometry>;
+/// Populate 54 `BasicVertex`es for a blurred rrect.
+/// `rect_size` is the original rect size; mesh is expanded by `3 * sigma` per side
+/// so the gaussian tail is covered. Vertex positions are in item-local coords where
+/// the rect sits at [0, rect_size] (halo region extends negative and beyond).
+void update_blur_mask_geometry(BasicVertex* v, QVector2D rect_size, float sigma, QRgb color,
+                               QVector4D radius);
+
 struct ShadowVertex : BasicVertex {
     // shadow
     float offset_x;
