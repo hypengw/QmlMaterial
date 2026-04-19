@@ -41,9 +41,9 @@ include(CheckIPOSupported)
 check_ipo_supported(RESULT is_ipo_supported OUTPUT lto_error)
 if(is_ipo_supported
    AND NOT EMSCRIPTEN
-   AND NOT WIN32)
+   AND NOT WIN32
+   AND NOT CMAKE_BUILD_TYPE MATCHES Debug)
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
-  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
 endif()
 
 if(UNIX AND NOT APPLE)
