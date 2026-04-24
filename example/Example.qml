@@ -216,7 +216,6 @@ MD.Page {
             sourceComponent: MD.Pane {
                 padding: 0
                 backgroundColor: MD.MProp.color.surface_container
-                elevation: MD.Token.elevation.level2
 
                 contentItem: RowLayout {
                     Repeater {
