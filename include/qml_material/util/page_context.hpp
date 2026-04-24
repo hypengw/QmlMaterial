@@ -19,6 +19,13 @@ class PageContext : public QObject {
     Q_PROPERTY(bool showHeader READ showHeader WRITE setShowHeader NOTIFY showHeaderChanged FINAL)
     Q_PROPERTY(bool showBackground READ showBackground WRITE setShowBackground NOTIFY
                    showBackgroundChanged FINAL)
+    Q_PROPERTY(
+        qint32 leftMargin READ leftMargin WRITE setLeftMargin NOTIFY leftMarginChanged FINAL)
+    Q_PROPERTY(
+        qint32 rightMargin READ rightMargin WRITE setRightMargin NOTIFY rightMarginChanged FINAL)
+    Q_PROPERTY(qint32 topMargin READ topMargin WRITE setTopMargin NOTIFY topMarginChanged FINAL)
+    Q_PROPERTY(qint32 bottomMargin READ bottomMargin WRITE setBottomMargin NOTIFY
+                   bottomMarginChanged FINAL)
 public:
     PageContext(QObject* parent = nullptr);
     ~PageContext();
@@ -31,6 +38,10 @@ public:
     auto headerType() const -> qint32;
     auto showHeader() const -> bool;
     auto showBackground() const -> bool;
+    auto leftMargin() const -> qint32;
+    auto rightMargin() const -> qint32;
+    auto topMargin() const -> qint32;
+    auto bottomMargin() const -> qint32;
 
     Q_SLOT void setInherit(PageContext*);
     Q_SLOT void setLeadingAction(QObject*);
@@ -40,6 +51,10 @@ public:
     Q_SLOT void setHeaderType(qint32);
     Q_SLOT void setShowHeader(bool);
     Q_SLOT void setShowBackground(bool);
+    Q_SLOT void setLeftMargin(qint32);
+    Q_SLOT void setRightMargin(qint32);
+    Q_SLOT void setTopMargin(qint32);
+    Q_SLOT void setBottomMargin(qint32);
 
     Q_SIGNAL void inheritChanged();
     Q_SIGNAL void leadingActionChanged();
@@ -49,6 +64,10 @@ public:
     Q_SIGNAL void headerTypeChanged();
     Q_SIGNAL void showHeaderChanged();
     Q_SIGNAL void showBackgroundChanged();
+    Q_SIGNAL void leftMarginChanged();
+    Q_SIGNAL void rightMarginChanged();
+    Q_SIGNAL void topMarginChanged();
+    Q_SIGNAL void bottomMarginChanged();
 
     Q_SIGNAL void pushItem(const QJSValue& url_or_comp, const QVariantMap& props = {});
     Q_SIGNAL void pop();
@@ -63,5 +82,9 @@ private:
     std::optional<qint32>   m_radius;
     std::optional<bool>     m_show_header;
     std::optional<bool>     m_show_background;
+    std::optional<qint32>   m_left_margin;
+    std::optional<qint32>   m_right_margin;
+    std::optional<qint32>   m_top_margin;
+    std::optional<qint32>   m_bottom_margin;
 };
 } // namespace qml_material

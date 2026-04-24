@@ -85,6 +85,38 @@ void PageContext::setShowBackground(bool v) {
         showBackgroundChanged();
     }
 }
+
+auto PageContext::leftMargin() const -> qint32 { return X(leftMargin, m_left_margin, 0); }
+void PageContext::setLeftMargin(qint32 v) {
+    if (v != m_left_margin) {
+        m_left_margin = v;
+        leftMarginChanged();
+    }
+}
+
+auto PageContext::rightMargin() const -> qint32 { return X(rightMargin, m_right_margin, 0); }
+void PageContext::setRightMargin(qint32 v) {
+    if (v != m_right_margin) {
+        m_right_margin = v;
+        rightMarginChanged();
+    }
+}
+
+auto PageContext::topMargin() const -> qint32 { return X(topMargin, m_top_margin, 0); }
+void PageContext::setTopMargin(qint32 v) {
+    if (v != m_top_margin) {
+        m_top_margin = v;
+        topMarginChanged();
+    }
+}
+
+auto PageContext::bottomMargin() const -> qint32 { return X(bottomMargin, m_bottom_margin, 0); }
+void PageContext::setBottomMargin(qint32 v) {
+    if (v != m_bottom_margin) {
+        m_bottom_margin = v;
+        bottomMarginChanged();
+    }
+}
 #undef X
 } // namespace qml_material
 
