@@ -634,6 +634,15 @@ MD.Page {
                             Layout.alignment: Qt.AlignHCenter
                             enabled: false
                         }
+                        MD.Switch {
+                            Layout.alignment: Qt.AlignHCenter
+                            checked: true
+                            icon.name: checked ? MD.Token.icon.check : ''
+                        }
+                        MD.Switch {
+                            Layout.alignment: Qt.AlignHCenter
+                            icon.name: checked ? MD.Token.icon.check : MD.Token.icon.close
+                        }
                     }
                 }
             }

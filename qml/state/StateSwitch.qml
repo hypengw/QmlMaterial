@@ -12,7 +12,8 @@ MD.MState {
     backgroundColor: root.item.checked ? root.ctx.color.primary : root.ctx.color.surface_container_highest
     stateLayerColor: "transparent"
     property color handleColor: root.item.checked ? root.ctx.color.on_primary : root.ctx.color.outline
-    property int handleSize: root.item.checked ? 24 : 16
+    readonly property bool hasIcon: root.item.icon.name.length > 0
+    property int handleSize: (root.item.checked || root.hasIcon) ? 24 : 16
 
     state: MD.Util.stateText(item.enabled, item.down, item.hovered, false)
 

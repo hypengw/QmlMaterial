@@ -62,7 +62,7 @@ T.Switch {
             readonly property real normalSize: control.mdState.handleSize
             readonly property real largestSize: 28
             readonly property real largestScale: largestSize / normalSize
-            readonly property bool hasIcon: control.icon.name.length > 0 || control.icon.source.toString().length > 0
+            readonly property bool hasIcon: control.icon.name.length > 0
 
             Behavior on x {
                 enabled: !control.pressed
@@ -83,18 +83,14 @@ T.Switch {
                 }
             }
 
-            /*
-            IconImage {
-                x: (parent.width - width) / 2
-                y: (parent.height - height) / 2
-                name: control.icon.name
-                source: control.icon.source
-                sourceSize: Qt.size(control.icon.width, control.icon.height)
+            MD.Icon {
+                anchors.centerIn: parent
+                size: control.icon.width
+                scale: handle.scale === 0 ? 0 : 1 / handle.scale
                 color: control.icon.color
+                name: control.icon.name
                 visible: handle.hasIcon
             }
-            */
-
         }
         MD.Ripple2 {
             x: handle.x + handle.width / 2 - width / 2
