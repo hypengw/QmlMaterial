@@ -51,6 +51,7 @@ auto Util::pressColor(QColor in) noexcept -> QColor {
 }
 
 void Util::closePopup(QObject* obj) {
+    if (! obj) return;
     do {
         auto meta = obj->metaObject();
         do {
