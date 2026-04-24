@@ -136,11 +136,12 @@ MD.Page {
         property alias corners: m_elev.corners
         spacing: 8
 
-        Item {
+        MD.Rectangle {
             id: m_rect
             implicitWidth: 120
             implicitHeight: 60
-            // color: MD.MProp.color.surface_container_high
+            color: MD.MProp.color.surface_container_high
+            corners: m_elev.corners
             
             MD.Elevation {
                 id: m_elev
