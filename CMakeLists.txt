@@ -12,6 +12,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOMOC_PATH_PREFIX ON)
 
 option(QM_BUILD_EXAMPLE "" ${PROJECT_IS_TOP_LEVEL})
+option(QM_BUILD_TESTS "" ${PROJECT_IS_TOP_LEVEL})
 
 set(QM_ICON_FONT_URL
     ""
@@ -435,6 +436,10 @@ target_include_directories(
 add_subdirectory(third_party)
 if(QM_BUILD_EXAMPLE)
   add_subdirectory(example)
+endif()
+if(QM_BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(tests)
 endif()
 
 target_link_libraries(
