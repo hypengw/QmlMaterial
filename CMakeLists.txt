@@ -195,7 +195,6 @@ set(QML_FILES
     qml/component/navigation/RailItem.qml
     qml/component/navigation/StandardDrawer.qml
     qml/component/navigation/DrawerItem.qml
-    qml/component/navigation/DrawerDivider.qml
     qml/component/navigation/DrawerSubheader.qml
     qml/component/progressindicator/CircleProgressBar.qml
     qml/component/progressindicator/CircularIndicator.qml
@@ -209,6 +208,7 @@ set(QML_FILES
     qml/component/extra/ActionLabel.qml
     qml/component/extra/ColorRadio.qml
     qml/component/extra/Divider.qml
+    qml/component/extra/AutoDivider.qml
     qml/component/extra/DragHandle.qml
     qml/component/extra/IconLabel.qml
     qml/component/extra/Icon.qml

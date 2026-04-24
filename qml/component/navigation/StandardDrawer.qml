@@ -24,7 +24,6 @@ T.Control {
 
     property int currentIndex: 0
     property var model: null
-    property bool showDivider: true
     property Component header: defaultHeader
     property Component footer: null
     property Component drawerContent: null
@@ -151,7 +150,7 @@ T.Control {
                 width: parent.width
                 height: Math.max(implicitHeight, m_flick.height - 12 * 2)
                 implicitWidth: Math.min(control.expandedWidth, Math.max(m_rail_view.implicitWidth, m_footer_loader.implicitWidth))
-                implicitHeight: m_header_loader.height + m_rail_container.implicitHeight + m_divider.height + m_footer_container.implicitHeight
+                implicitHeight: m_header_loader.height + m_rail_container.implicitHeight + m_footer_container.implicitHeight
 
                 // -- header --
                 Loader {
@@ -167,7 +166,7 @@ T.Control {
                     id: m_rail_container
                     y: m_header_loader.y + m_header_loader.height
                     width: parent.width
-                    height: control.useLarge ? implicitHeight : Math.max(implicitHeight, m_content.height - m_header_loader.height - m_divider.height - m_footer_container.implicitHeight)
+                    height: control.useLarge ? implicitHeight : Math.max(implicitHeight, m_content.height - m_header_loader.height - m_footer_container.implicitHeight)
                     implicitHeight: m_rail_view.implicitHeight
                     implicitWidth: m_rail_view.implicitWidth
 
@@ -222,20 +221,10 @@ T.Control {
                     }
                 }
 
-                // -- divider --
-                MD.Divider {
-                    id: m_divider
-                    visible: control.showDivider && control.useLarge && control.drawerContent
-                    y: m_rail_container.y + m_rail_container.height + (visible ? 8 : 0)
-                    width: parent.width - 32
-                    x: 16
-                    height: visible ? (implicitHeight + 16) : 0
-                }
-
                 // -- footer / drawer content --
                 Item {
                     id: m_footer_container
-                    y: m_divider.y + m_divider.height
+                    y: m_rail_container.y + m_rail_container.height
                     width: parent.width
                     height: control.useLarge ? (m_content.height - y) : implicitHeight
                     implicitHeight: m_footer_loader.sourceComponent ? m_footer_loader.implicitHeight : 0

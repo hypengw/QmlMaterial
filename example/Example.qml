@@ -88,7 +88,6 @@ MD.Page {
                     onClicked: function (model) {
                         root.pageIndex = model.index;
                     }
-                    showDivider: false
 
                     drawerContent: ColumnLayout {
                         spacing: 0
@@ -156,7 +155,7 @@ MD.Page {
                                 }
                             }
 
-                            MD.Divider {}
+                            MD.AutoDivider {}
 
                             Grid {
                                 Layout.alignment: Qt.AlignHCenter

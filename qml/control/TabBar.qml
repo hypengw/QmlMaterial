@@ -75,7 +75,7 @@ T.TabBar {
         //    fullWidth: true
         //}
 
-        MD.Divider {
+        MD.AutoDivider {
             anchors.bottom: parent.bottom
         }
     }
