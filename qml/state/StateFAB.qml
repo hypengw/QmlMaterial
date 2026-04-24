@@ -48,18 +48,18 @@ MD.MState {
     }
     stateLayerColor: textColor
 
+    state: MD.Util.stateText(item.enabled, item.pressed || item.visualFocus, item.hovered, false)
+
     states: [
         State {
-            name: "Pressed"
-            when: root.item.pressed || root.item.visualFocus
+            name: "pressed"
             PropertyChanges {
                 root.elevation: MD.Token.elevation.level3
                 root.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
             }
         },
         State {
-            name: "Hovered"
-            when: root.item.hovered
+            name: "hovered"
             PropertyChanges {
                 root.elevation: MD.Token.elevation.level4
                 root.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity

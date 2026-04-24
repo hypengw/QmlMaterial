@@ -22,10 +22,11 @@ MD.MState {
 
     property real trackOverlayOpacity: 0.12
 
+    state: MD.Util.stateText(item.enabled, item.pressed || item.visualFocus, item.hovered, false)
+
     states: [
         State {
-            name: "Disabled"
-            when: !root.item.enabled
+            name: "disabled"
             PropertyChanges {
                 root.textColor: root.ctx.color.on_surface
                 root.backgroundColor: root.ctx.color.on_surface
@@ -34,8 +35,7 @@ MD.MState {
             }
         },
         State {
-            name: "Pressed"
-            when: root.item.pressed || root.item.visualFocus
+            name: "pressed"
             PropertyChanges {
                 root.stateLayerColor: {
                     const c = root.ctx.color.primary;
@@ -44,8 +44,7 @@ MD.MState {
             }
         },
         State {
-            name: "Hovered"
-            when: root.item.hovered
+            name: "hovered"
             PropertyChanges {
                 root.stateLayerColor: {
                     const c = root.ctx.color.primary;

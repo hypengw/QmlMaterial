@@ -34,10 +34,11 @@ MD.MState {
     }
     stateLayerColor: "transparent"
 
+    state: MD.Util.stateText(item.enabled, item.down || item.visualFocus, item.hovered, false)
+
     states: [
         State {
-            name: "Disabled"
-            when: !root.item.enabled
+            name: "disabled"
             PropertyChanges {
                 root.elevation: {
                     switch (root.type) {
@@ -55,8 +56,7 @@ MD.MState {
             }
         },
         State {
-            name: "Pressed"
-            when: root.item.down || root.item.visualFocus
+            name: "pressed"
             PropertyChanges {
                 root.elevation: {
                     switch (root.type) {
@@ -73,8 +73,7 @@ MD.MState {
             }
         },
         State {
-            name: "Hovered"
-            when: root.item.hovered
+            name: "hovered"
             PropertyChanges {
                 root.elevation: {
                     switch (root.type) {

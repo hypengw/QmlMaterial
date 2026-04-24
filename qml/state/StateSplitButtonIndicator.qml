@@ -104,10 +104,11 @@ MD.MState {
         return 0;
     }
 
+    state: MD.Util.stateText(item.enabled, false, false, false)
+
     states: [
         State {
-            name: "Disabled"
-            when: !root.item.enabled
+            name: "disabled"
             PropertyChanges {
                 root.elevation: MD.Token.elevation.level0
                 root.textColor: root.ctx.color.on_surface

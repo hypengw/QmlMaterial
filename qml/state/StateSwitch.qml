@@ -14,10 +14,11 @@ MD.MState {
     property color handleColor: root.item.checked ? root.ctx.color.on_primary : root.ctx.color.outline
     property int handleSize: root.item.checked ? 24 : 16
 
+    state: MD.Util.stateText(item.enabled, item.down, item.hovered, false)
+
     states: [
         State {
-            name: "Disabled"
-            when: !root.item.enabled
+            name: "disabled"
             PropertyChanges {
                 root.elevation: MD.Token.elevation.level0
                 root.textColor: root.ctx.color.on_surface
@@ -27,8 +28,7 @@ MD.MState {
             }
         },
         State {
-            name: "Pressed"
-            when: root.item.down
+            name: "pressed"
             PropertyChanges {
                 root.textColor: root.item.checked ? root.ctx.color.on_primary_container : root.ctx.color.surface_container_highest
                 root.backgroundColor: root.item.checked ? root.ctx.color.primary : root.ctx.color.surface_container_highest
@@ -39,8 +39,7 @@ MD.MState {
             }
         },
         State {
-            name: "Hovered"
-            when: root.item.hovered
+            name: "hovered"
             PropertyChanges {
                 root.textColor: root.item.checked ? root.ctx.color.on_primary_container : root.ctx.color.surface_container_highest
                 root.backgroundColor: root.item.checked ? root.ctx.color.primary : root.ctx.color.surface_container_highest

@@ -112,10 +112,11 @@ MD.MState {
                 return root.ctx.color.surface_container_highest;
         }
     }
+    state: MD.Util.stateText(item.enabled, item.down || item.visualFocus, item.hovered, false)
+
     states: [
         State {
-            name: "Disabled"
-            when: !root.item.enabled
+            name: "disabled"
             PropertyChanges {
                 root.elevation: MD.Token.elevation.level0
                 root.textColor: root.ctx.color.on_surface
@@ -133,8 +134,7 @@ MD.MState {
             }
         },
         State {
-            name: "Pressed"
-            when: root.item.down || root.item.visualFocus
+            name: "pressed"
             PropertyChanges {
                 root.elevation: MD.Token.elevation.level1
                 root.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
@@ -171,8 +171,7 @@ MD.MState {
             }
         },
         State {
-            name: "Hovered"
-            when: root.item.hovered
+            name: "hovered"
             PropertyChanges {
                 root.elevation: MD.Token.elevation.level2
                 root.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
@@ -213,8 +212,8 @@ MD.MState {
 
     transitions: [
         Transition {
-            from: "Pressed"
-            to: "Hovered"
+            from: "pressed"
+            to: "hovered"
             NumberAnimation {
                 properties: "elevation,corner"
                 duration: MD.Token.duration.short2
@@ -230,7 +229,7 @@ MD.MState {
         },
         Transition {
             from: "*"
-            to: "Pressed"
+            to: "pressed"
             NumberAnimation {
                 properties: "elevation,corner"
                 duration: MD.Token.duration.short1

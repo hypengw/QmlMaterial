@@ -256,6 +256,14 @@ double Util::teleportCurve(double t, double left, double right) {
     }
 }
 
+auto Util::stateText(bool enabled, bool pressed, bool hovered, bool focused) noexcept -> QString {
+    if (! enabled) return QStringLiteral("disabled");
+    if (pressed) return QStringLiteral("pressed");
+    if (hovered) return QStringLiteral("hovered");
+    if (focused) return QStringLiteral("focus");
+    return {};
+}
+
 void Util::forceSetImplicitHeight(QQuickItem* item, qreal height) {
     if (item) {
         item->setImplicitHeight(height);

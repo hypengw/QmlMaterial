@@ -17,10 +17,11 @@ MD.MState {
 
     property real placeholderOpacity: 1.0
 
+    state: MD.Util.stateText(item.enabled, item.pressed || item.visualFocus, item.hovered, false)
+
     states: [
         State {
-            name: "Disabled"
-            when: !root.item.enabled
+            name: "disabled"
             PropertyChanges {
                 root.supportTextColor: root.ctx.color.on_surface
                 root.placeholderOpacity: 0.38
@@ -28,16 +29,14 @@ MD.MState {
             }
         },
         State {
-            name: "Pressed"
-            when: root.item.pressed || root.item.visualFocus
+            name: "pressed"
             PropertyChanges {
                 root.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
                 root.stateLayerColor: root.ctx.color.on_surface
             }
         },
         State {
-            name: "Hovered"
-            when: root.item.hovered
+            name: "hovered"
             PropertyChanges {
                 root.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
                 root.stateLayerColor: root.ctx.color.on_surface

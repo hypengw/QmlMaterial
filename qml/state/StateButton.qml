@@ -79,10 +79,11 @@ MD.MState {
     }
     stateLayerColor: "transparent"
 
+    state: MD.Util.stateText(item.enabled, item.down, item.hovered, item.visualFocus)
+
     states: [
         State {
-            name: "Disabled"
-            when: !root.item.enabled
+            name: "disabled"
             PropertyChanges {
                 root.elevation: MD.Token.elevation.level0
                 root.textColor: root.ctx.color.on_surface
@@ -112,8 +113,7 @@ MD.MState {
             }
         },
         State {
-            name: "Pressed"
-            when: root.item.down
+            name: "pressed"
             PropertyChanges {
                 root.elevation: root.type == MD.Enum.BtElevated ? MD.Token.elevation.level1 : MD.Token.elevation.level0
                 // Corner logic already handles 'down' via sizeToken
@@ -136,8 +136,7 @@ MD.MState {
             }
         },
         State {
-            name: "Hovered"
-            when: root.item.hovered
+            name: "hovered"
             PropertyChanges {
                 root.elevation: root.type == MD.Enum.BtElevated ? MD.Token.elevation.level2 : MD.Token.elevation.level1
                 root.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
@@ -159,8 +158,7 @@ MD.MState {
             }
         },
         State {
-            name: "Focus"
-            when: root.item.visualFocus
+            name: "focus"
             PropertyChanges {
                 root.elevation: root.type == MD.Enum.BtElevated ? MD.Token.elevation.level1 : MD.Token.elevation.level0
                 root.stateLayerOpacity: MD.Token.state.focus.state_layer_opacity
@@ -185,8 +183,8 @@ MD.MState {
 
     transitions: [
         Transition {
-            from: "Pressed"
-            to: "Hovered"
+            from: "pressed"
+            to: "hovered"
             NumberAnimation {
                 properties: "elevation,corner"
                 duration: MD.Token.duration.short2
@@ -202,7 +200,7 @@ MD.MState {
         },
         Transition {
             from: "*"
-            to: "Pressed"
+            to: "pressed"
             NumberAnimation {
                 properties: "elevation,corner"
                 duration: MD.Token.duration.short1

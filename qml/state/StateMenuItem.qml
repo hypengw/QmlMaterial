@@ -16,18 +16,18 @@ MD.MState {
     property color leadingIconColor: root.ctx.color.on_surface
     property color trailingIconColor: root.ctx.color.on_surface
 
+    state: MD.Util.stateText(item.enabled, item.down, item.hovered, item.visualFocus)
+
     states: [
         State {
-            name: "Disabled"
-            when: !root.item.enabled
+            name: "disabled"
             PropertyChanges {
                 root.elevation: MD.Token.elevation.level0
                 root.item.contentItem.opacity: 0.38
             }
         },
         State {
-            name: "Pressed"
-            when: root.item.down
+            name: "pressed"
             PropertyChanges {
                 root.leadingIconColor: root.ctx.color.on_surface_variant
                 root.trailingIconColor: root.ctx.color.on_surface_variant
@@ -36,8 +36,7 @@ MD.MState {
             }
         },
         State {
-            name: "Hovered"
-            when: root.item.hovered
+            name: "hovered"
             PropertyChanges {
                 root.leadingIconColor: root.ctx.color.on_surface_variant
                 root.trailingIconColor: root.ctx.color.on_surface_variant
@@ -46,8 +45,7 @@ MD.MState {
             }
         },
         State {
-            name: "Focused"
-            when: root.item.visualFocus
+            name: "focus"
             PropertyChanges {
                 root.leadingIconColor: root.ctx.color.on_surface_variant
                 root.trailingIconColor: root.ctx.color.on_surface_variant

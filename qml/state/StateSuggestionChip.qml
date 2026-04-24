@@ -15,10 +15,11 @@ MD.MState {
     outlineColor: ctx.color.outline_variant
     backgroundColor: elevated ? ctx.color.surface_container_low : 'transparent'
 
+    state: MD.Util.stateText(item.enabled, item.down, item.hovered, item.visualFocus)
+
     states: [
         State {
-            name: "Disabled"
-            when: !root.item.enabled
+            name: "disabled"
             PropertyChanges {
                 root.iconColor: root.ctx.color.on_surface
                 root.textColor: root.ctx.color.on_surface
@@ -28,8 +29,7 @@ MD.MState {
             }
         },
         State {
-            name: "Pressed"
-            when: root.item.down
+            name: "pressed"
             PropertyChanges {
                 root.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
                 root.stateLayerColor: root.ctx.color.on_surface_variant
@@ -37,8 +37,7 @@ MD.MState {
             }
         },
         State {
-            name: "Hovered"
-            when: root.item.hovered
+            name: "hovered"
             PropertyChanges {
                 root.elevation: root.elevated ? MD.Token.elevation.level2 : MD.Token.elevation.level0
                 root.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
@@ -47,8 +46,7 @@ MD.MState {
             }
         },
         State {
-            name: "Focus"
-            when: root.item.visualFocus
+            name: "focus"
             PropertyChanges {
                 root.stateLayerOpacity: MD.Token.state.focus.state_layer_opacity
                 root.stateLayerColor: root.ctx.color.on_surface_variant

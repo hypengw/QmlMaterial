@@ -16,10 +16,19 @@ MD.MState {
     property color iconStateLayerColor: "transparent"
     property real iconStateLayerOpacity: 0.0
 
+    state: {
+        if (item.actionControl.hovered) return "hovered:action";
+        if (item.actionControl.visualFocus) return "focus:action";
+        if (item.actionControl.down) return "pressed:action";
+        if (item.iconControl.hovered) return "hovered:icon";
+        if (item.iconControl.visualFocus) return "focus:icon";
+        if (item.iconControl.down) return "pressed:icon";
+        return "";
+    }
+
     states: [
         State {
-            name: "Hovered:Action"
-            when: root.item.actionControl.hovered
+            name: "hovered:action"
             PropertyChanges {
                 root.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity
                 root.stateLayerColor: root.ctx.color.inverse_primary
@@ -27,8 +36,7 @@ MD.MState {
             }
         },
         State {
-            name: "Focus:Action"
-            when: root.item.actionControl.visualFocus
+            name: "focus:action"
             PropertyChanges {
                 root.stateLayerOpacity: MD.Token.state.focus.state_layer_opacity
                 root.stateLayerColor: root.ctx.color.inverse_primary
@@ -36,8 +44,7 @@ MD.MState {
             }
         },
         State {
-            name: "Pressed:Action"
-            when: root.item.actionControl.down
+            name: "pressed:action"
             PropertyChanges {
                 root.stateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
                 root.stateLayerColor: root.ctx.color.inverse_primary
@@ -45,8 +52,7 @@ MD.MState {
             }
         },
         State {
-            name: "Hovered:Icon"
-            when: root.item.iconControl.hovered
+            name: "hovered:icon"
             PropertyChanges {
                 root.iconStateLayerOpacity: MD.Token.state.hover.state_layer_opacity
                 root.iconStateLayerColor: root.ctx.color.inverse_on_surface
@@ -54,8 +60,7 @@ MD.MState {
             }
         },
         State {
-            name: "Focus:Icon"
-            when: root.item.iconControl.visualFocus
+            name: "focus:icon"
             PropertyChanges {
                 root.iconStateLayerOpacity: MD.Token.state.focus.state_layer_opacity
                 root.iconStateLayerColor: root.ctx.color.inverse_on_surface
@@ -63,8 +68,7 @@ MD.MState {
             }
         },
         State {
-            name: "Pressed:Icon"
-            when: root.item.iconControl.down
+            name: "pressed:icon"
             PropertyChanges {
                 root.iconStateLayerOpacity: MD.Token.state.pressed.state_layer_opacity
                 root.iconStateLayerColor: root.ctx.color.inverse_on_surface

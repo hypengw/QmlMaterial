@@ -14,10 +14,11 @@ MD.MState {
     supportTextColor: root.item.checked ? root.ctx.color.on_secondary_container : root.ctx.color.on_surface_variant
     stateLayerColor: "transparent"
 
+    state: MD.Util.stateText(item.enabled, item.down || item.visualFocus, item.hovered, false)
+
     states: [
         State {
-            name: "Pressed"
-            when: root.item.down || root.item.visualFocus
+            name: "pressed"
             PropertyChanges {
                 root.textColor: root.ctx.color.on_surface
                 root.supportTextColor: root.item.checked ? root.ctx.color.on_secondary_container : root.ctx.color.on_surface
@@ -26,8 +27,7 @@ MD.MState {
             }
         },
         State {
-            name: "Hovered"
-            when: root.item.hovered
+            name: "hovered"
             PropertyChanges {
                 root.textColor: root.ctx.color.on_surface
                 root.supportTextColor: root.item.checked ? root.ctx.color.on_secondary_container : root.ctx.color.on_surface

@@ -73,6 +73,9 @@ public:
     Q_INVOKABLE static double clamp(double t, double low, double high);
     Q_INVOKABLE static double teleportCurve(double t, double left, double right);
 
+    Q_INVOKABLE static QString stateText(bool enabled, bool pressed, bool hovered,
+                                         bool focused) noexcept;
+
     Q_INVOKABLE static void forceSetImplicitHeight(QQuickItem* item, qreal height);
     Q_INVOKABLE static void forceSetImplicitWidth(QQuickItem* item, qreal width);
 

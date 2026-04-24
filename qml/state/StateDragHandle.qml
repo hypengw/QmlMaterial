@@ -17,8 +17,7 @@ MD.MState {
 
     states: [
         State {
-            name: "Pressed"
-            when: root.item.pressed
+            name: "pressed"
             PropertyChanges {
                 root.textColor: root.ctx.color.on_surface
                 root.handleWidth: root.handlePressedWidth
@@ -27,16 +26,14 @@ MD.MState {
             }
         },
         State {
-            name: "Focus"
-            when: root.item.focus
+            name: "focus"
             PropertyChanges {
                 root.stateLayerColor: root.ctx.color.inverse_on_surface
                 root.stateLayerOpacity: MD.Token.state.focus.state_layer_opacity
             }
         },
         State {
-            name: "Hovered"
-            when: root.item.hovered
+            name: "hovered"
             PropertyChanges {
                 root.stateLayerColor: root.ctx.color.inverse_on_surface
                 root.stateLayerOpacity: MD.Token.state.hover.state_layer_opacity

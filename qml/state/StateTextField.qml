@@ -6,7 +6,7 @@ MD.MState {
     id: root
     required property T.TextField item
     property int type
-   
+
 
     elevation: MD.Token.elevation.level0
     textColor: root.ctx.color.on_surface
@@ -35,10 +35,18 @@ MD.MState {
     property int containerHeight: root.type === MD.Enum.TextFieldFilled ? 56 : 64
     property int corner: MD.Token.shape.corner.extra_small
 
+    state: {
+        if (!item.enabled) return "disabled";
+        if (!item.acceptableInput && item.hovered) return "errorHover";
+        if (!item.acceptableInput) return "error";
+        if (item.focus) return "focus";
+        if (item.hovered) return "hovered";
+        return "";
+    }
+
     readonly property list<State> filledStates: [
         State {
-            name: "Disabled"
-            when: !root.item.enabled
+            name: "disabled"
             PropertyChanges {
                 root.placeholderColor: root.ctx.color.on_surface
                 root.supportTextColor: root.ctx.color.on_surface
@@ -47,8 +55,7 @@ MD.MState {
             }
         },
         State {
-            name: "ErrorHover"
-            when: !root.item.acceptableInput && root.item.hovered
+            name: "errorHover"
             PropertyChanges {
                 root.textColor: root.ctx.color.on_surface
                 root.supportTextColor: root.ctx.color.error
@@ -57,8 +64,7 @@ MD.MState {
             }
         },
         State {
-            name: "Error"
-            when: !root.item.acceptableInput
+            name: "error"
             PropertyChanges {
                 root.textColor: root.ctx.color.on_surface
                 root.supportTextColor: root.ctx.color.error
@@ -67,8 +73,7 @@ MD.MState {
             }
         },
         State {
-            name: "Focused"
-            when: root.item.focus
+            name: "focus"
             PropertyChanges {
                 root.placeholderColor: root.ctx.color.primary
                 root.outlineColor: root.ctx.color.primary
@@ -79,8 +84,7 @@ MD.MState {
             }
         },
         State {
-            name: "Hovered"
-            when: root.item.hovered
+            name: "hovered"
             PropertyChanges {
                 root.placeholderColor: root.ctx.color.on_surface
                 root.outlineColor: root.ctx.color.on_surface
@@ -93,8 +97,7 @@ MD.MState {
 
     readonly property list<State> outlineStates: [
         State {
-            name: "Disabled"
-            when: !root.item.enabled
+            name: "disabled"
             PropertyChanges {
                 root.placeholderColor: root.ctx.color.on_surface
                 root.supportTextColor: root.ctx.color.on_surface
@@ -103,8 +106,7 @@ MD.MState {
             }
         },
         State {
-            name: "ErrorHover"
-            when: !root.item.acceptableInput && root.item.hovered
+            name: "errorHover"
             PropertyChanges {
                 root.textColor: root.ctx.color.on_surface
                 root.supportTextColor: root.ctx.color.error
@@ -113,8 +115,7 @@ MD.MState {
             }
         },
         State {
-            name: "Error"
-            when: !root.item.acceptableInput
+            name: "error"
             PropertyChanges {
                 root.textColor: root.ctx.color.on_surface
                 root.supportTextColor: root.ctx.color.error
@@ -123,8 +124,7 @@ MD.MState {
             }
         },
         State {
-            name: "Focused"
-            when: root.item.focus
+            name: "focus"
             PropertyChanges {
                 root.placeholderColor: root.ctx.color.primary
                 root.outlineColor: root.ctx.color.primary
@@ -135,8 +135,7 @@ MD.MState {
             }
         },
         State {
-            name: "Hovered"
-            when: root.item.hovered
+            name: "hovered"
             PropertyChanges {
                 root.placeholderColor: root.ctx.color.on_surface
                 root.outlineColor: root.ctx.color.on_surface
