@@ -97,9 +97,15 @@ QSGNode* Rectangle::updatePaintNode(QSGNode* node, QQuickItem::UpdatePaintNodeDa
     if (! shadowNode) {
         shadowNode = new sg::RectangleNode {};
     }
-    shadowNode->rect   = boundingRect();
-    shadowNode->radius = m_corners.toVector4D();
-    shadowNode->color  = m_color.rgba();
+    shadowNode->rect = boundingRect();
+    {
+        auto        vec = m_corners.toVector4D();
+        const float max_r =
+            std::min<float>(shadowNode->rect.width(), shadowNode->rect.height()) * 0.5f;
+        for (int i = 0; i < 4; ++i) vec[i] = std::clamp(vec[i], 0.0f, max_r);
+        shadowNode->radius = vec;
+    }
+    shadowNode->color = m_color.rgba();
     shadowNode->updateGeometry();
     return shadowNode;
 }

@@ -112,12 +112,16 @@ void fill_rrect_corner_blur(std::span<std::uint8_t> out, scalar sigma, scalar ra
         }
     }
 
-    // Vertical pass + extract
+    // Vertical pass + extract. Output covers the window [-margin, r] on both
+    // axes to match the shader's corner_sample UV mapping (UV=0 → local=-margin,
+    // UV=1 → local=r). That means output (i, j) corresponds to mask index
+    // (i, j) itself — NOT (i + margin, j + margin) — since mask index 0 is
+    // already at grid position -margin + 0.5.
     for (int j = 0; j < N; ++j) {
-        const int  mj  = j + margin; // offset into mask frame
+        const int  mj  = j;
         std::uint8_t* row = out.data() + static_cast<std::size_t>(j) * N;
         for (int i = 0; i < N; ++i) {
-            const int mi  = i + margin;
+            const int mi  = i;
             float     acc = 0.0f;
             for (int k = -margin; k <= margin; ++k) {
                 const int jj = std::clamp(mj + k, 0, Mh - 1);

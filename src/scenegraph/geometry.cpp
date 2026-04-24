@@ -81,18 +81,17 @@ void update_blur_mask_geometry(BasicVertex* v, QVector2D rect_size, float sigma,
                                QVector4D radius) {
     const float margin = 3.0f * std::max(sigma, 0.0f);
 
-    // Nine-patch outer size covers rect + halo; corner cells hold the rrect curvature
-    // (max(radius, margin)) so both curve and blur tail fit inside.
+    // Nine-patch outer size covers rect + halo. Corner cells must be UNIFORM
+    // in size — per-corner sizes (e.g. one corner r=20, another r=0) make the
+    // stitched edge/center quads non-rectangular, so fragments outside the
+    // big corner cells never get rasterised. Use the max across all corners
+    // and the blur margin so every cell is wide enough for curve + blur tail.
     const QVector2D outer_size {
         rect_size.x() + 2.0f * margin,
         rect_size.y() + 2.0f * margin,
     };
-    const QVector4D corner_size {
-        std::max<float>(radius[0], margin),
-        std::max<float>(radius[1], margin),
-        std::max<float>(radius[2], margin),
-        std::max<float>(radius[3], margin),
-    };
+    const float     cs = std::max({ radius[0], radius[1], radius[2], radius[3], margin });
+    const QVector4D corner_size { cs, cs, cs, cs };
 
     mesh::build_nine_patch(
         v, outer_size, corner_size,

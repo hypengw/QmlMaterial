@@ -22,7 +22,13 @@ constexpr float kMinSigma  = 0.5f;
 constexpr float kMinRadius = 0.5f;
 } // namespace
 
-BlurMaskMaterial::BlurMaskMaterial() { setFlag(QSGMaterial::Blending, true); }
+BlurMaskMaterial::BlurMaskMaterial() {
+    setFlag(QSGMaterial::Blending, true);
+    // Prevent Qt's batch renderer from flattening the item transform into
+    // vertex data — we need `in_position` to stay item-local in the shader
+    // so coverage_1d uses the correct coords against rect_size.
+    setFlag(QSGMaterial::RequiresFullMatrix, true);
+}
 BlurMaskMaterial::~BlurMaskMaterial() {
     delete m_profile_texture;
     delete m_corner_texture;
@@ -93,8 +99,19 @@ bool BlurMaskShader::updateUniformData(RenderState& state, QSGMaterial* newMater
     auto*       mat     = static_cast<BlurMaskMaterial*>(newMaterial);
     bool        changed = false;
     QByteArray* buf     = state.uniformData();
-    // std140 block: mat4(64) + float(4) + float(4) + vec2(8) + int(4) + float(4) = 88 bytes
-    Q_ASSERT(buf->size() >= 88);
+    // std140 block:
+    //   mat4  qt_Matrix  @ 0   (64)
+    //   float qt_Opacity @ 64  (4)
+    //   float sigma      @ 68  (4)
+    //   vec2  rect_size  @ 72  (8)
+    //   int   style      @ 80  (4)
+    //   float radius     @ 84  (4)   max of the four
+    //   float radius_tl  @ 88  (4)
+    //   float radius_tr  @ 92  (4)
+    //   float radius_bl  @ 96  (4)
+    //   float radius_br  @ 100 (4)
+    // total 104, padded to 112
+    Q_ASSERT(buf->size() >= 104);
 
     if (state.isMatrixDirty()) {
         const QMatrix4x4 m = state.combinedMatrix();
@@ -107,7 +124,6 @@ bool BlurMaskShader::updateUniformData(RenderState& state, QSGMaterial* newMater
         changed = true;
     }
 
-    // Always write the non-engine uniforms; cost is negligible.
     memcpy(buf->data() + 68, &mat->sigma, 4);
     const float rect_w = mat->rect_size.x();
     const float rect_h = mat->rect_size.y();
@@ -117,8 +133,19 @@ bool BlurMaskShader::updateUniformData(RenderState& state, QSGMaterial* newMater
     memcpy(buf->data() + 80, &style_i, 4);
     const float r = mat->effective_radius();
     memcpy(buf->data() + 84, &r, 4);
-    changed = true;
 
+    // Per-corner radii (TL, TR, BL, BR) — used by the fragment SDF so the
+    // inside mask matches non-uniform corners.
+    const float r_tl = mat->radius.x();
+    const float r_tr = mat->radius.y();
+    const float r_bl = mat->radius.z();
+    const float r_br = mat->radius.w();
+    memcpy(buf->data() + 88,  &r_tl, 4);
+    memcpy(buf->data() + 92,  &r_tr, 4);
+    memcpy(buf->data() + 96,  &r_bl, 4);
+    memcpy(buf->data() + 100, &r_br, 4);
+
+    changed = true;
     return changed;
 }
 

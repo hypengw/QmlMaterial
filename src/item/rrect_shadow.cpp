@@ -137,8 +137,11 @@ QSGNode* RRectShadow::updatePaintNode(QSGNode* node, QQuickItem::UpdatePaintNode
     shadowNode->elevation = m_elevation;
     shadowNode->color     = m_color.rgb();
     {
-        auto vec = m_corners.toVector4D();
-        vec[0]   = std::exchange(vec[3], vec[0]);
+        auto        vec = m_corners.toVector4D();
+        vec[0]          = std::exchange(vec[3], vec[0]);
+        const float max_r =
+            std::min<float>(shadowNode->rect.width(), shadowNode->rect.height()) * 0.5f;
+        for (int i = 0; i < 4; ++i) vec[i] = std::clamp(vec[i], 0.0f, max_r);
         shadowNode->radius = vec;
     }
 

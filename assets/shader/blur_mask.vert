@@ -15,6 +15,11 @@ layout(std140, binding = 0) uniform buf {
     float sigma;
     vec2  rect_size;
     int   style;
+    float radius;
+    float radius_tl;
+    float radius_tr;
+    float radius_bl;
+    float radius_br;
 };
 
 void main() {

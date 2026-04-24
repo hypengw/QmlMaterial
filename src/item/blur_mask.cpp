@@ -111,8 +111,10 @@ QSGNode* BlurMask::updatePaintNode(QSGNode* node, QQuickItem::UpdatePaintNodeDat
     n->sigma  = m_sigma;
     n->style  = static_cast<sg::BlurStyle>(m_style);
     {
-        auto vec = m_corners.toVector4D();
-        vec[0]   = std::exchange(vec[3], vec[0]);
+        auto        vec   = m_corners.toVector4D();
+        vec[0]            = std::exchange(vec[3], vec[0]);
+        const float max_r = std::min<float>(n->rect.width(), n->rect.height()) * 0.5f;
+        for (int i = 0; i < 4; ++i) vec[i] = std::clamp(vec[i], 0.0f, max_r);
         n->radius = vec;
     }
     n->update(this);

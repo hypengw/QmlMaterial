@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 
@@ -97,7 +98,7 @@ MD.Page {
                         ShapeBox {
                             title: "Mixed"
                             elevation: 3
-                            corners: MD.Util.corners(m_slider_radius.value, 0, 0, m_slider_radius.value / 2)
+                            corners: MD.Util.corners(m_slider_radius.value, 0, 0, m_slider_radius.value)
                         }
                     }
                 }
@@ -144,7 +145,6 @@ MD.Page {
             MD.Elevation {
                 id: m_elev
                 anchors.fill: parent
-                corners: m_rect.corners
                 z: -1
             }
         }

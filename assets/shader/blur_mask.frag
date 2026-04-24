@@ -16,7 +16,11 @@ layout(std140, binding = 0) uniform buf {
     float sigma;
     vec2  rect_size;
     int   style;
-    float radius;
+    float radius;           // max of the four, used for blurred corner_sample
+    float radius_tl;
+    float radius_tr;
+    float radius_bl;
+    float radius_br;
 };
 
 // Unit-sigma cumulative normal: sample Φ(u) with u ∈ [-3, 3] mapped to [0, 1].
@@ -61,11 +65,21 @@ void main() {
         // Rect-only path (iter 4).
         blurred = separable_alpha(p, s);
     } else {
-        // Corner-zone dispatch with 4-way mirror into the shared TL corner texture.
-        bool in_tl = p.x < r && p.y < r;
-        bool in_tr = p.x > rect_size.x - r && p.y < r;
-        bool in_bl = p.x < r && p.y > rect_size.y - r;
-        bool in_br = p.x > rect_size.x - r && p.y > rect_size.y - r;
+        // Corner-zone dispatch. Only rounded corners (>= 0.5 px) sample the
+        // pre-convolved corner texture; square corners fall through to the
+        // separable gaussian so they render a straight rect-edge blur rather
+        // than a rounded one. The corner texture is shared and sized for the
+        // MAX radius, so rounded corners smaller than `r` pick up an
+        // approximation — acceptable for typical asymmetric shapes.
+        bool in_tl = radius_tl >= 0.5
+                     && p.x < radius_tl && p.y < radius_tl;
+        bool in_tr = radius_tr >= 0.5
+                     && p.x > rect_size.x - radius_tr && p.y < radius_tr;
+        bool in_bl = radius_bl >= 0.5
+                     && p.x < radius_bl && p.y > rect_size.y - radius_bl;
+        bool in_br = radius_br >= 0.5
+                     && p.x > rect_size.x - radius_br
+                     && p.y > rect_size.y - radius_br;
         if (in_tl) {
             blurred = corner_sample(p, r, s);
         } else if (in_tr) {
@@ -79,17 +93,22 @@ void main() {
         }
     }
 
-    // Inside mask: rect for iter 4, rrect for iter 5 (radius > 0).
+    // Inside mask: per-quadrant SDF rounded rectangle (handles non-uniform corners).
     float inside;
     if (r < 0.5) {
         inside = step(0.0, p.x) * step(p.x, rect_size.x)
                * step(0.0, p.y) * step(p.y, rect_size.y);
     } else {
-        // SDF rounded rectangle: signed distance negative inside.
-        vec2  hs = rect_size * 0.5;
-        vec2  q  = abs(p - hs) - (hs - vec2(r));
-        float sdf  = min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r;
-        inside     = 1.0 - clamp(sdf, 0.0, 1.0);
+        vec2  hs  = rect_size * 0.5;
+        vec2  ctr = p - hs;
+        float sx  = step(0.0, ctr.x);
+        float sy  = step(0.0, ctr.y);
+        float r_q = mix(mix(radius_tl, radius_tr, sx),
+                        mix(radius_bl, radius_br, sx),
+                        sy);
+        vec2  q   = abs(ctr) - (hs - vec2(r_q));
+        float sdf = min(max(q.x, q.y), 0.0) + length(max(q, vec2(0.0))) - r_q;
+        inside    = 1.0 - clamp(sdf, 0.0, 1.0);
     }
 
     float alpha;
