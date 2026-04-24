@@ -132,14 +132,14 @@ MD.Page {
         id: sb_root
         property string title: ""
         property alias elevation: m_elev.elevation
-        property alias corners: m_rect.corners
+        property alias corners: m_elev.corners
         spacing: 8
 
-        MD.Rectangle {
+        Item {
             id: m_rect
             implicitWidth: 120
             implicitHeight: 60
-            color: MD.MProp.color.surface_container_high
+            // color: MD.MProp.color.surface_container_high
             
             MD.Elevation {
                 id: m_elev
