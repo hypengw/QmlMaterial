@@ -73,7 +73,7 @@ private:
     QTimer  m_width_timer;
 };
 
-class Theme : public QQuickAttachedPropertyPropagator {
+class Theme final : public QQuickAttachedPropertyPropagator {
     Q_OBJECT
 
     QML_NAMED_ELEMENT(MProp)
