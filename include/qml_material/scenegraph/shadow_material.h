@@ -8,17 +8,19 @@ namespace qml_material::sg
 class ShadowMaterial : public QSGMaterial {
 public:
     ShadowMaterial();
-    ~ShadowMaterial();
+    ~ShadowMaterial() = default;
 
     QSGMaterialShader* createShader(QSGRendererInterface::RenderMode) const override;
     QSGMaterialType*   type() const override;
     int                compare(const QSGMaterial* other) const override;
 
+    /// Bind the per-window shared fadeoff texture. Cheap; cache hits are O(1).
     void init_fadeoff_texture(QQuickWindow* win);
     auto strength_texture() -> QSGTexture*;
 
 private:
-    QSGTexture* m_fadeoff_texture;
+    // Not owned — the per-window texture cache owns the storage.
+    QSGTexture* m_fadeoff_texture { nullptr };
 };
 
 class ShadowShader : public QSGMaterialShader {

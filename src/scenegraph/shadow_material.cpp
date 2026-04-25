@@ -2,19 +2,17 @@
 
 #include <cmath>
 
-#include <QImage>
 #include <QQuickWindow>
 #include <QSGTexture>
 
-#include "qml_material/math/scalar.hpp"
+#include "qml_material/scenegraph/texture_cache.h"
 
 namespace qml_material::sg
 {
 
-ShadowMaterial::ShadowMaterial(): m_fadeoff_texture(nullptr) {
+ShadowMaterial::ShadowMaterial() {
     setFlag(QSGMaterial::Blending, true);
 }
-ShadowMaterial::~ShadowMaterial() { delete m_fadeoff_texture; }
 
 QSGMaterialShader* ShadowMaterial::createShader(QSGRendererInterface::RenderMode) const {
     return new ShadowShader {};
@@ -26,24 +24,20 @@ QSGMaterialType* ShadowMaterial::type() const {
 }
 
 int ShadowMaterial::compare(const QSGMaterial* other) const {
-    return QSGMaterial::compare(other);
+    // type() is checked by Qt before compare() runs, so `other` is a
+    // ShadowMaterial. The only per-instance state visible to the GPU is the
+    // fadeoff sampler, which is shared via the per-window cache — every
+    // instance bound to the same window collapses to the same pointer and
+    // batches together.
+    auto* o = static_cast<const ShadowMaterial*>(other);
+    if (m_fadeoff_texture == o->m_fadeoff_texture) return 0;
+    return m_fadeoff_texture < o->m_fadeoff_texture ? -1 : 1;
 }
 
 auto ShadowMaterial::strength_texture() -> QSGTexture* { return m_fadeoff_texture; }
+
 void ShadowMaterial::init_fadeoff_texture(QQuickWindow* win) {
-    const int width  = 128;
-    const int height = 1;
-    Q_UNUSED(height);
-    QImage image(width, 1, QImage::Format_Grayscale8);
-
-    uchar* row = image.scanLine(0);
-    for (int i = 0; i < 128; i++) {
-        float d = math::k_scalar_one - i / 127.0f;
-        row[i]  = math::round_to_int(((float)std::exp(-4 * d * d) - 0.018f) * 255);
-    }
-
-    QSGTexture* texture = win->createTextureFromImage(image);
-    m_fadeoff_texture   = texture;
+    m_fadeoff_texture = shared_shadow_fadeoff_texture(win);
 }
 
 ShadowShader::ShadowShader() {

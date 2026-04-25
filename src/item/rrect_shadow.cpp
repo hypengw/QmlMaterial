@@ -34,6 +34,10 @@ public:
     }
 
     void updateGeometry() {
+        if (elevation == m_last_elevation && rect == m_last_rect && color == m_last_color &&
+            radius == m_last_radius)
+            return;
+
         sg::ShadowParams params;
         {
             params.z_plane_params = QVector3D(0, 0, elevation);
@@ -56,6 +60,10 @@ public:
         }
         update_shadow_geometry(geometry(), params, rect);
 
+        m_last_elevation = elevation;
+        m_last_rect      = rect;
+        m_last_color     = color;
+        m_last_radius    = radius;
         markDirty(QSGNode::DirtyGeometry);
     }
 
@@ -63,6 +71,12 @@ public:
     QRectF    rect;
     QColor    color;
     QVector4D radius;
+
+private:
+    double    m_last_elevation { -1 };
+    QRectF    m_last_rect;
+    QColor    m_last_color;
+    QVector4D m_last_radius;
 };
 } // namespace sg
 

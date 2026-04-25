@@ -22,19 +22,29 @@ public:
     }
 
     void updateGeometry() {
-        auto vertices = static_cast<RectangleVertex*>(geometry()->vertexData());
-
         for (int i = 0; i < 4; i++) {
             radius[i] = std::min<float>(radius[i], rect.size().height() / 2.0f);
         }
+        if (rect == m_last_rect && color == m_last_color && radius == m_last_radius) return;
+
         QVector2D size = { (float)rect.size().width(), (float)rect.size().height() };
+        auto      vertices = static_cast<RectangleVertex*>(geometry()->vertexData());
         update_rectangle_geometry(vertices, size, color, radius);
+
+        m_last_rect   = rect;
+        m_last_color  = color;
+        m_last_radius = radius;
         markDirty(QSGNode::DirtyGeometry);
     }
 
     QRectF    rect;
     QRgb      color { 0 };
     QVector4D radius;
+
+private:
+    QRectF    m_last_rect;
+    QRgb      m_last_color { 0 };
+    QVector4D m_last_radius;
 };
 } // namespace sg
 

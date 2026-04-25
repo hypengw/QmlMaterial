@@ -1,25 +1,18 @@
 #include "qml_material/scenegraph/blur_mask_material.h"
 
 #include <cstring>
-#include <vector>
 
-#include <QImage>
-#include <QQuickWindow>
 #include <QSGTexture>
 
-#include "qml_material/math/gaussian.hpp"
+#include "qml_material/scenegraph/texture_cache.h"
 
 namespace qml_material::sg
 {
 
 namespace
 {
-constexpr int  kProfileSize  = 128;
-constexpr auto kVertPath     = ":/Qcm/Material/assets/shader/blur_mask.vert.qsb";
-constexpr auto kFragPath     = ":/Qcm/Material/assets/shader/blur_mask.frag.qsb";
-
-constexpr float kMinSigma  = 0.5f;
-constexpr float kMinRadius = 0.5f;
+constexpr auto kVertPath = ":/Qcm/Material/assets/shader/blur_mask.vert.qsb";
+constexpr auto kFragPath = ":/Qcm/Material/assets/shader/blur_mask.frag.qsb";
 } // namespace
 
 BlurMaskMaterial::BlurMaskMaterial() {
@@ -28,10 +21,6 @@ BlurMaskMaterial::BlurMaskMaterial() {
     // vertex data — we need `in_position` to stay item-local in the shader
     // so coverage_1d uses the correct coords against rect_size.
     setFlag(QSGMaterial::RequiresFullMatrix, true);
-}
-BlurMaskMaterial::~BlurMaskMaterial() {
-    delete m_profile_texture;
-    delete m_corner_texture;
 }
 
 float BlurMaskMaterial::effective_radius() const {
@@ -48,45 +37,35 @@ QSGMaterialType* BlurMaskMaterial::type() const {
 }
 
 int BlurMaskMaterial::compare(const QSGMaterial* other) const {
-    return QSGMaterial::compare(other);
+    auto* o = static_cast<const BlurMaskMaterial*>(other);
+    // Cheap-first ordering: pointers, then scalar uniforms. RequiresFullMatrix
+    // already disables vertex-baked batching, but a meaningful compare still
+    // helps the renderer keep equivalent draws in the same render-state group
+    // and avoid spurious shader/uniform rebinds.
+    auto cmp_ptr = [](const void* a, const void* b) {
+        return a == b ? 0 : (a < b ? -1 : 1);
+    };
+    if (int c = cmp_ptr(m_profile_texture, o->m_profile_texture); c != 0) return c;
+    if (int c = cmp_ptr(m_corner_texture, o->m_corner_texture); c != 0) return c;
+    if (style != o->style) return int(style) < int(o->style) ? -1 : 1;
+    if (sigma != o->sigma) return sigma < o->sigma ? -1 : 1;
+    if (rect_size.x() != o->rect_size.x()) return rect_size.x() < o->rect_size.x() ? -1 : 1;
+    if (rect_size.y() != o->rect_size.y()) return rect_size.y() < o->rect_size.y() ? -1 : 1;
+    for (int i = 0; i < 4; ++i) {
+        if (radius[i] != o->radius[i]) return radius[i] < o->radius[i] ? -1 : 1;
+    }
+    return 0;
 }
 
 auto BlurMaskMaterial::profile_texture() -> QSGTexture* { return m_profile_texture; }
 auto BlurMaskMaterial::corner_texture() -> QSGTexture* { return m_corner_texture; }
 
 void BlurMaskMaterial::init_profile_texture(QQuickWindow* win) {
-    if (m_profile_texture) return;
-    QImage image(kProfileSize, 1, QImage::Format_Grayscale8);
-    math::fill_unit_cdf_profile(
-        std::span<std::uint8_t> { image.scanLine(0), static_cast<std::size_t>(kProfileSize) });
-    m_profile_texture = win->createTextureFromImage(image);
+    m_profile_texture = shared_blur_profile_texture(win);
 }
 
 void BlurMaskMaterial::init_corner_texture(QQuickWindow* win, float sigma_, float radius_) {
-    const corner_key key {
-        .sigma_q  = static_cast<int>(std::round(sigma_ * 2.0f)),
-        .radius_q = static_cast<int>(std::round(radius_ * 2.0f)),
-    };
-    if (m_corner_key && *m_corner_key == key) return;
-
-    delete m_corner_texture;
-    m_corner_texture = nullptr;
-    m_corner_key     = key;
-
-    if (sigma_ < kMinSigma || radius_ < kMinRadius) return;
-
-    const int n = math::rrect_corner_blur_size(sigma_, radius_);
-    if (n <= 0) return;
-
-    QImage image(n, n, QImage::Format_Grayscale8);
-    // Grayscale8 guarantees 1 byte per pixel; QImage may pad rows, so copy per-row.
-    std::vector<std::uint8_t> buf(static_cast<std::size_t>(n) * n);
-    math::fill_rrect_corner_blur(buf, sigma_, radius_);
-    for (int j = 0; j < n; ++j) {
-        std::memcpy(image.scanLine(j), buf.data() + static_cast<std::size_t>(j) * n,
-                    static_cast<std::size_t>(n));
-    }
-    m_corner_texture = win->createTextureFromImage(image);
+    m_corner_texture = shared_rrect_corner_blur_texture(win, sigma_, radius_);
 }
 
 BlurMaskShader::BlurMaskShader() {
@@ -95,7 +74,7 @@ BlurMaskShader::BlurMaskShader() {
 }
 
 bool BlurMaskShader::updateUniformData(RenderState& state, QSGMaterial* newMaterial,
-                                       QSGMaterial* /*oldMaterial*/) {
+                                       QSGMaterial* oldMaterial) {
     auto*       mat     = static_cast<BlurMaskMaterial*>(newMaterial);
     bool        changed = false;
     QByteArray* buf     = state.uniformData();
@@ -110,7 +89,6 @@ bool BlurMaskShader::updateUniformData(RenderState& state, QSGMaterial* newMater
     //   float radius_tr  @ 92  (4)
     //   float radius_bl  @ 96  (4)
     //   float radius_br  @ 100 (4)
-    // total 104, padded to 112
     Q_ASSERT(buf->size() >= 104);
 
     if (state.isMatrixDirty()) {
@@ -124,40 +102,43 @@ bool BlurMaskShader::updateUniformData(RenderState& state, QSGMaterial* newMater
         changed = true;
     }
 
-    memcpy(buf->data() + 68, &mat->sigma, 4);
-    const float rect_w = mat->rect_size.x();
-    const float rect_h = mat->rect_size.y();
-    memcpy(buf->data() + 72, &rect_w, 4);
-    memcpy(buf->data() + 76, &rect_h, 4);
-    const int style_i = static_cast<int>(mat->style);
-    memcpy(buf->data() + 80, &style_i, 4);
-    const float r = mat->effective_radius();
-    memcpy(buf->data() + 84, &r, 4);
+    // Per-instance uniforms only need re-uploading when Qt rebinds a different
+    // material. RequiresFullMatrix forces a draw call per node so this still
+    // runs every frame in practice, but the check is essentially free and
+    // correctly handles the rare case where Qt reuses the same material.
+    if (newMaterial != oldMaterial) {
+        memcpy(buf->data() + 68, &mat->sigma, 4);
+        const float rect_w = mat->rect_size.x();
+        const float rect_h = mat->rect_size.y();
+        memcpy(buf->data() + 72, &rect_w, 4);
+        memcpy(buf->data() + 76, &rect_h, 4);
+        const int style_i = static_cast<int>(mat->style);
+        memcpy(buf->data() + 80, &style_i, 4);
+        const float r = mat->effective_radius();
+        memcpy(buf->data() + 84, &r, 4);
 
-    // Per-corner radii (TL, TR, BL, BR) — used by the fragment SDF so the
-    // inside mask matches non-uniform corners.
-    const float r_tl = mat->radius.x();
-    const float r_tr = mat->radius.y();
-    const float r_bl = mat->radius.z();
-    const float r_br = mat->radius.w();
-    memcpy(buf->data() + 88,  &r_tl, 4);
-    memcpy(buf->data() + 92,  &r_tr, 4);
-    memcpy(buf->data() + 96,  &r_bl, 4);
-    memcpy(buf->data() + 100, &r_br, 4);
-
-    changed = true;
+        const float r_tl = mat->radius.x();
+        const float r_tr = mat->radius.y();
+        const float r_bl = mat->radius.z();
+        const float r_br = mat->radius.w();
+        memcpy(buf->data() + 88, &r_tl, 4);
+        memcpy(buf->data() + 92, &r_tr, 4);
+        memcpy(buf->data() + 96, &r_bl, 4);
+        memcpy(buf->data() + 100, &r_br, 4);
+        changed = true;
+    }
     return changed;
 }
 
 void BlurMaskShader::updateSampledImage(RenderState& state, int binding, QSGTexture** texture,
                                         QSGMaterial* newMaterial, QSGMaterial*) {
-    auto mat = static_cast<BlurMaskMaterial*>(newMaterial);
-    QSGTexture* t = nullptr;
+    auto        mat = static_cast<BlurMaskMaterial*>(newMaterial);
+    QSGTexture* t   = nullptr;
     if (binding == 1) {
         t = mat->profile_texture();
     } else if (binding == 2) {
         t = mat->corner_texture();
-        if (!t) t = mat->profile_texture(); // dummy fallback to keep the pipeline happy
+        if (! t) t = mat->profile_texture(); // dummy fallback to keep the pipeline happy
     }
     if (t) {
         *texture = t;

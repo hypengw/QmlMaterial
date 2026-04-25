@@ -26,20 +26,30 @@ public:
 
     void update(QQuickItem* item) {
         auto* mat = static_cast<BlurMaskMaterial*>(material());
-        mat->sigma     = static_cast<float>(sigma);
-        mat->rect_size = QVector2D(rect.width(), rect.height());
+
+        const float    new_sigma     = static_cast<float>(sigma);
+        const QVector2D new_rect_size { (float)rect.width(), (float)rect.height() };
+
+        const bool material_changed = mat->sigma != new_sigma ||
+                                      mat->rect_size != new_rect_size ||
+                                      mat->radius != radius || mat->style != style;
+        const bool geometry_changed = material_changed || color != m_last_color;
+
+        if (! material_changed && ! geometry_changed) return;
+
+        mat->sigma     = new_sigma;
+        mat->rect_size = new_rect_size;
         mat->radius    = radius;
         mat->style     = style;
         mat->init_corner_texture(item->window(), mat->sigma, mat->effective_radius());
 
-        auto* verts = static_cast<BasicVertex*>(geometry()->vertexData());
-        update_blur_mask_geometry(verts,
-                                  QVector2D(rect.width(), rect.height()),
-                                  mat->sigma,
-                                  color.rgba(),
-                                  radius);
-
-        markDirty(QSGNode::DirtyGeometry | QSGNode::DirtyMaterial);
+        if (geometry_changed) {
+            auto* verts = static_cast<BasicVertex*>(geometry()->vertexData());
+            update_blur_mask_geometry(verts, new_rect_size, mat->sigma, color.rgba(), radius);
+            m_last_color = color;
+            markDirty(QSGNode::DirtyGeometry);
+        }
+        if (material_changed) markDirty(QSGNode::DirtyMaterial);
     }
 
     QRectF    rect;
@@ -47,6 +57,9 @@ public:
     qreal     sigma { 0 };
     QVector4D radius { 0, 0, 0, 0 };
     BlurStyle style { BlurStyle::Normal };
+
+private:
+    QColor m_last_color;
 };
 } // namespace sg
 

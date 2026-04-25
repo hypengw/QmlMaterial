@@ -1,7 +1,5 @@
 #pragma once
 
-#include <optional>
-
 #include <QSGMaterial>
 #include <QVector2D>
 #include <QVector4D>
@@ -26,18 +24,18 @@ enum class BlurStyle : int {
 class BlurMaskMaterial : public QSGMaterial {
 public:
     BlurMaskMaterial();
-    ~BlurMaskMaterial();
+    ~BlurMaskMaterial() = default;
 
     QSGMaterialShader* createShader(QSGRendererInterface::RenderMode) const override;
     QSGMaterialType*   type() const override;
     int                compare(const QSGMaterial* other) const override;
 
+    /// Bind the per-window shared 1D unit-CDF profile texture. Cheap.
     void init_profile_texture(QQuickWindow* win);
     auto profile_texture() -> QSGTexture*;
 
-    /// (Re)generate the blurred-rrect-quarter corner texture for the current
-    /// (sigma, radius). No-op if the cached texture already matches the parameters
-    /// or if either parameter is below the analytic-path threshold.
+    /// Resolve a (sigma, radius)-keyed corner blur texture from the per-window
+    /// shared cache. No-op below the analytic-path threshold.
     void init_corner_texture(QQuickWindow* win, float sigma, float radius);
     auto corner_texture() -> QSGTexture*;
 
@@ -48,18 +46,12 @@ public:
     BlurStyle style { BlurStyle::Normal };
 
     /// Effective uniform radius used by the shader (= max of the 4 radii).
-    /// Per-corner radii is a future extension.
     [[nodiscard]] float effective_radius() const;
 
 private:
-    QSGTexture*         m_profile_texture { nullptr };
-    QSGTexture*         m_corner_texture { nullptr };
-    struct corner_key {
-        int sigma_q;
-        int radius_q;
-        bool operator==(const corner_key&) const = default;
-    };
-    std::optional<corner_key> m_corner_key;
+    // Not owned — both pointers come from the per-window texture cache.
+    QSGTexture* m_profile_texture { nullptr };
+    QSGTexture* m_corner_texture { nullptr };
 };
 
 class BlurMaskShader : public QSGMaterialShader {

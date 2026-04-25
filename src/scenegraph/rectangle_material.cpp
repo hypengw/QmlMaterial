@@ -15,8 +15,12 @@ QSGMaterialType* RectangleMaterial::type() const {
 }
 
 int RectangleMaterial::compare(const QSGMaterial* other) const {
-    auto material = static_cast<const RectangleMaterial*>(other);
-    return QSGMaterial::compare(other);
+    // All per-instance state (color, size, per-corner radii, SDF distances) is
+    // packed into vertex attributes. Two RectangleMaterial instances are
+    // therefore always equivalent for batching — return 0 so Qt's batch
+    // renderer collapses adjacent rrect/Rectangle nodes into a single draw.
+    Q_UNUSED(other);
+    return 0;
 }
 
 RectangleShader::RectangleShader() {

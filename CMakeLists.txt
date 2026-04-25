@@ -79,6 +79,7 @@ set(SOURCES
     include/qml_material/scenegraph/rectangle_material.h
     include/qml_material/scenegraph/shadow_material.h
     include/qml_material/scenegraph/blur_mask_material.h
+    include/qml_material/scenegraph/texture_cache.h
     include/qml_material/scenegraph/mesh/quad.hpp
     include/qml_material/scenegraph/mesh/nine_patch.hpp
     include/qml_material/scenegraph/mesh/corner_fan.hpp
@@ -89,6 +90,7 @@ set(SOURCES
     src/scenegraph/rectangle_material.cpp
     src/scenegraph/shadow_material.cpp
     src/scenegraph/blur_mask_material.cpp
+    src/scenegraph/texture_cache.cpp
     src/kirigami/displayhint.cpp
     src/kirigami/toolbarlayout.cpp
     src/kirigami/toolbarlayoutdelegate.cpp
