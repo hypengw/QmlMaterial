@@ -47,25 +47,29 @@ T.BusyIndicator {
         }
     }
 
-    NumberAnimation {
+    // Wall-clock driven progress — see CircularIndicator.qml for rationale.
+    FrameAnimation {
         running: control.animationState != LinearIndicator.Stopped
-        loops: Animation.Infinite
-        target: m_updator
-        property: 'progress'
-        from: 0
-        to: 1
-        duration: m_updator.duration
+        property real _startMs: 0
+        onRunningChanged: { if (running) _startMs = Date.now(); }
+        onTriggered: {
+            const d = m_updator.duration;
+            if (d > 0)
+                m_updator.progress = ((Date.now() - _startMs) % d) / d;
+        }
     }
 
-    NumberAnimation {
+    FrameAnimation {
         id: m_complete_end_anim
         running: control.animationState == LinearIndicator.Completing
-        target: m_updator
-        property: 'progress'
-        to: 1
-        duration: m_updator.completeEndDuration
-        onFinished: {
-            if (control.animationState == LinearIndicator.Completing)
+        property real _startMs: 0
+        property real _from: 0
+        onRunningChanged: { if (running) { _startMs = Date.now(); _from = m_updator.progress; } }
+        onTriggered: {
+            const d = m_updator.completeEndDuration;
+            const t = d > 0 ? Math.min(1, (Date.now() - _startMs) / d) : 1;
+            m_updator.progress = _from + (1 - _from) * t;
+            if (t >= 1 && control.animationState == LinearIndicator.Completing)
                 control.animationState = LinearIndicator.Stopped;
         }
     }

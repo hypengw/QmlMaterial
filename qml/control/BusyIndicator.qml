@@ -48,17 +48,21 @@ T.BusyIndicator {
 
         // Drive progress linearly; all easing is handled inside the C++ updator
         // via the analytic spring simulation — do NOT add extra easing here.
-        NumberAnimation {
+        // Wall-clock driven (FrameAnimation + Date.now) to stay refresh-rate
+        // independent — Qt's animation driver ticks per-frame on threaded
+        // render loops, so NumberAnimation runs ~Nx faster on Nx-Hz displays.
+        FrameAnimation {
             id: morphAnim
-            target: updator
-            property: "progress"
             running: control.running && !showDelayTimer.running
-            loops: Animation.Infinite
-            from: 0
-            // Use the constants exposed by the C++ class to avoid magic numbers.
-            to: updator.shapeCount
-            duration: updator.shapeCount * updator.msPerShape
-            easing.type: Easing.Linear
+            property real _startMs: 0
+            onRunningChanged: { if (running) _startMs = Date.now(); }
+            onTriggered: {
+                const period = updator.shapeCount * updator.msPerShape;
+                if (period > 0) {
+                    const t = ((Date.now() - _startMs) % period) / period;
+                    updator.progress = t * updator.shapeCount;
+                }
+            }
         }
 
         MD.BusyIndicatorShape {
