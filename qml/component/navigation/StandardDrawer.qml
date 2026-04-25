@@ -193,7 +193,7 @@ T.Control {
                         delegate: MD.RailItem {
                             required property var model
                             required property int index
-                            width: ListView.view.width
+                            width: ListView.view.contentWidth
                             icon.name: {
                                 if (typeof model.icon == 'number')
                                     return MD.Token.icon[model.icon];
@@ -207,15 +207,6 @@ T.Control {
                                 control.currentIndex = index;
                                 control.clicked(model);
                                 m_drawer.close();
-                            }
-
-                            Component.onCompleted: {
-                                if (index == 0) {
-                                    ListView.view.implicitWidth = implicitWidth;
-                                    implicitWidthChanged.connect(() => {
-                                        ListView.view.implicitWidth = this.implicitWidth;
-                                    });
-                                }
                             }
                         }
                     }

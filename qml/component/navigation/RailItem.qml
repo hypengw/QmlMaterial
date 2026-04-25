@@ -30,7 +30,8 @@ T.Button {
     property Item trailing: null
 
     // -- metrics --
-    readonly property real _collapsedWidth: 80
+    readonly property real _indicatorMargin: 12
+    readonly property real _collapsedWidth: _collapsedIndicatorW + _indicatorMargin * 2
     readonly property real _collapsedIndicatorW: 56
     readonly property real _collapsedIndicatorH: 32
     readonly property real _expandedIndicatorH: 56
@@ -40,6 +41,7 @@ T.Button {
 
     // expanded indicator wraps content
     readonly property real _expandedIndicatorW: _expandedLeadingPad + control.icon.width + _iconLabelSpacing + m_label.implicitWidth + _expandedTrailingPad
+    readonly property real _expandedWidth: _expandedIndicatorW + _indicatorMargin * 2
 
     contentItem: Item {
         id: m_content
@@ -87,12 +89,12 @@ T.Button {
                 when: !control.expand
                 PropertyChanges {
                     m_icon {
-                        x: (_collapsedWidth - control.icon.width) / 2
-                        y: (_collapsedIndicatorH - control.icon.height) / 2
+                        x: (control._collapsedWidth - control.icon.width) / 2
+                        y: (control._collapsedIndicatorH - control.icon.height) / 2
                     }
                     m_label {
-                        x: (_collapsedWidth - m_label.implicitWidth) / 2
-                        y: _collapsedIndicatorH + 4
+                        x: (control._collapsedWidth - m_label.implicitWidth) / 2
+                        y: control._collapsedIndicatorH + 4
                     }
                 }
             },
@@ -101,12 +103,12 @@ T.Button {
                 when: control.expand
                 PropertyChanges {
                     m_icon {
-                        x: _expandedLeadingPad
-                        y: (_expandedIndicatorH - control.icon.height) / 2
+                        x: control._expandedLeadingPad + control._indicatorMargin
+                        y: (control._expandedIndicatorH - control.icon.height) / 2
                     }
                     m_label {
-                        x: _expandedLeadingPad + control.icon.width + _iconLabelSpacing
-                        y: (_expandedIndicatorH - m_label.implicitHeight) / 2
+                        x: control._expandedLeadingPad + control._indicatorMargin + control.icon.width + control._iconLabelSpacing
+                        y: (control._expandedIndicatorH - m_label.implicitHeight) / 2
                     }
                 }
             }
@@ -155,9 +157,9 @@ T.Button {
 
         MD.ElevationRectangle {
             id: m_indicator
-            x: control.expand ? 0 : (control._collapsedWidth - control._collapsedIndicatorW) / 2
+            x: control._indicatorMargin
             y: 0
-            width: control.expand ? control.width : control._collapsedIndicatorW
+            width: control.expand ? control.width - control._indicatorMargin * 2 : control._collapsedIndicatorW
             height: control.expand ? control._expandedIndicatorH : control._collapsedIndicatorH
 
             radius: height / 2
