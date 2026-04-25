@@ -263,7 +263,8 @@ set(QML_FILES
     qml/state/StateMenuItem.qml
     qml/state/StateRadioButton.qml
     qml/state/StateCheckBox.qml
-    qml/component/basic/Ripple2.qml
+    qml/component/basic/Ripple.qml
+    qml/component/basic/RippleShape.qml
     qml/component/basic/RippleSkia.qml
     qml/delegate/CursorDelegate.qml
     qml/delegate/SliderHandle.qml

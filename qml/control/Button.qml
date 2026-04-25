@@ -59,7 +59,7 @@ T.Button {
         elevation: control.mdState.elevation
         elevationVisible: (control.mdState.type == MD.Enum.BtElevated) && !control.flat && color.a > 0
 
-        MD.Ripple2 {
+        MD.Ripple {
             anchors.fill: parent
             corners: parent.corners
             pressX: control.pressX

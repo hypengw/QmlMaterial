@@ -23,14 +23,9 @@ MD.Page {
             icon: MD.Token.icon.palette
         },
         {
-            name: 'shape',
-            source: 'qrc:/Qcm/Material/Example/Shape.qml',
+            name: 'effect',
+            source: 'qrc:/Qcm/Material/Example/Effect.qml',
             icon: MD.Token.icon.shapes
-        },
-        {
-            name: 'elevation',
-            source: 'qrc:/Qcm/Material/Example/Elevation.qml',
-            icon: MD.Token.icon.shadow
         },
         {
             name: 'typography',

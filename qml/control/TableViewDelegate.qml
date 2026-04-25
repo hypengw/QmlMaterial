@@ -43,7 +43,7 @@ T.TableViewDelegate {
         elevationVisible: elevation && color.a > 0
         elevation: control.mdState.elevation
 
-        MD.Ripple2 {
+        MD.Ripple {
             id: m_ripple
             corners: control.corners
             width: parent.width

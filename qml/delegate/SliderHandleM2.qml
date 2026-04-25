@@ -23,7 +23,7 @@ Item {
         elevation: MD.Token.elevation.level1
     }
 
-    MD.Ripple2 {
+    MD.Ripple {
         anchors.centerIn: parent
         width: 36
         height: 36

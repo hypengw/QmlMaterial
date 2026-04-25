@@ -80,7 +80,7 @@ T.Pane {
                 border.width: 0
                 color: "transparent"
 
-                MD.Ripple2 {
+                MD.Ripple {
                     anchors.fill: parent
                     radius: parent.radius
                     pressX: btn_action.pressX
@@ -125,7 +125,7 @@ T.Pane {
                 border.width: 0
                 color: "transparent"
 
-                MD.Ripple2 {
+                MD.Ripple {
                     anchors.fill: parent
                     radius: parent.radius
                     pressX: btn_icon.pressX

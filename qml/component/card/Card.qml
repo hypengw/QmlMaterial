@@ -47,7 +47,7 @@ T.Button {
         control.background.z: -2
         when: control.contentItem
     }
-    MD.Ripple2 {
+    MD.Ripple {
         anchors.fill: parent
         radius: control.mdState.radius
         pressX: control.pressX

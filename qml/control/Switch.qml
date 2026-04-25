@@ -92,7 +92,7 @@ T.Switch {
                 visible: handle.hasIcon
             }
         }
-        MD.Ripple2 {
+        MD.Ripple {
             x: handle.x + handle.width / 2 - width / 2
             y: handle.y + handle.height / 2 - height / 2
             width: 28

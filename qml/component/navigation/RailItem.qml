@@ -188,7 +188,7 @@ T.Button {
                 }
             }
 
-            MD.Ripple2 {
+            MD.Ripple {
                 anchors.fill: parent
                 readonly property point p: control.mapToItem(this, control.pressX, control.pressY)
                 radius: parent.radius

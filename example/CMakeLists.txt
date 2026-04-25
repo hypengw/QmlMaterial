@@ -7,10 +7,9 @@ qt_add_resources(
   FILES
   Components.qml
   Color.qml
-  Elevation.qml
+  Effect.qml
   Example.qml
   Typography.qml
-  Shape.qml
   About.qml)
 
 qt_add_executable(qm_example main.cpp)

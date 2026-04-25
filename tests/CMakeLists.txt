@@ -11,7 +11,7 @@ add_executable(qm_grab qm_grab.cpp)
 target_link_libraries(qm_grab PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Quick Qt6::Qml)
 set_target_properties(qm_grab PROPERTIES AUTOMOC ON)
 
-set(VISUAL_SCENES button elevation shape)
+set(VISUAL_SCENES button elevation shape ripple ripple_phases)
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/out)
 foreach(scene ${VISUAL_SCENES})
   add_test(

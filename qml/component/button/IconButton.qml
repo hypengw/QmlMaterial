@@ -53,7 +53,7 @@ T.Button {
         elevationVisible: elevation && color.a > 0 && !control.flat
         elevation: control.mdState.elevation
 
-        MD.Ripple2 {
+        MD.Ripple {
             anchors.fill: parent
             corners: parent.corners
             pressX: control.pressX

@@ -106,7 +106,7 @@ T.Button {
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
 
-        MD.Ripple2 {
+        MD.Ripple {
             anchors.fill: parent
             radius: parent.radius
             pressX: control.pressX

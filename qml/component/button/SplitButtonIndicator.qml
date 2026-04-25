@@ -58,7 +58,7 @@ T.Button {
         color: control.mdState.backgroundColor
         elevation: control.mdState.elevation
         
-        MD.Ripple2 {
+        MD.Ripple {
             anchors.fill: parent
             corners: parent.corners
             pressX: control.pressX

@@ -32,7 +32,7 @@ T.CheckBox {
             backgroundColor: control.mdState.iconBackgroundColor
             outlineColor: control.mdState.outlineColor
         }
-        MD.Ripple2 {
+        MD.Ripple {
             anchors.centerIn: parent
             width: 40
             height: 40

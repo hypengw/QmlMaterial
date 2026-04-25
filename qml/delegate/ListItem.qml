@@ -173,7 +173,7 @@ T.ItemDelegate {
         elevationVisible: elevation && color.a > 0
         elevation: control.mdState.elevation
 
-        readonly property Item ripple: MD.Ripple2 {
+        readonly property Item ripple: MD.Ripple {
             corners: control.corners
             width: parent.width
             height: parent.height

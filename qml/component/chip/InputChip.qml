@@ -81,7 +81,7 @@ T.Button {
         border.width: control.checked ? 0 : 1
         border.color: control.mdState.outlineColor
 
-        MD.Ripple2 {
+        MD.Ripple {
             anchors.fill: parent
             radius: parent.radius
             pressX: control.pressX

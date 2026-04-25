@@ -63,7 +63,7 @@ T.ItemDelegate {
         elevationVisible: control.enabled && color.a > 0
         elevation: control.mdState.elevation
 
-        MD.Ripple2 {
+        MD.Ripple {
             anchors.fill: parent
             radius: parent.radius
             pressX: control.pressX

@@ -52,7 +52,7 @@ T.TabButton {
         label.lineHeight: control.typescale.line_height
     }
 
-    background: MD.Ripple2 {
+    background: MD.Ripple {
         implicitHeight: 48
 
         pressX: control.pressX

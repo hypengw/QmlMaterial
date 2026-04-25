@@ -34,7 +34,7 @@ T.RadioButton {
                 }
             }
         }
-        MD.Ripple2 {
+        MD.Ripple {
             anchors.centerIn: parent
             width: 40
             height: 40

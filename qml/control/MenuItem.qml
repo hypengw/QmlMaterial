@@ -89,7 +89,7 @@ T.MenuItem {
         implicitHeight: 48
         color: control.mdState.backgroundColor
 
-        MD.Ripple2 {
+        MD.Ripple {
             anchors.fill: parent
             radius: parent.radius
             pressX: control.pressX

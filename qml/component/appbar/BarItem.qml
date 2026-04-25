@@ -82,7 +82,7 @@ T.Button {
             color: control.mdState.backgroundColor
             elevation: control.mdState.elevation
         }
-        MD.Ripple2 {
+        MD.Ripple {
             readonly property point p: control.mapToItem(this, control.pressX, control.pressY)
             x: (parent.width - width) / 2
             y: 0

@@ -31,7 +31,9 @@ layout(std140, binding = 0) uniform buf {
     vec4 in_corners;
 };
 
-layout(binding = 1) uniform sampler2D in_shader;
+// Note: Skia's reference RippleShader.rts uses a `shader in_shader` for the
+// mask. We mask via SDF (in_corners + sdf_rounded_rectangle) instead, so no
+// external sampler is needed.
 
 float triangleNoise(vec2 n) {
   n  = fract(n * vec2(5.3987, 5.4421));

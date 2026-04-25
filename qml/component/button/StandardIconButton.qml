@@ -54,7 +54,7 @@ T.Button {
         border.width: control.type == MD.Enum.IBtOutlined ? 1 : 0
         border.color: control.mdState.ctx.color.outline
 
-        MD.Ripple2 {
+        MD.Ripple {
             anchors.fill: parent
             radius: control.backgroundRadius
             pressX: control.pressX

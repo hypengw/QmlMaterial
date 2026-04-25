@@ -65,7 +65,7 @@ T.Button {
         border.width: 1
         border.color: control.mdState.outlineColor
         
-        MD.Ripple2 {
+        MD.Ripple {
             anchors.fill: parent
             corners: parent.corners
             pressX: control.pressX
