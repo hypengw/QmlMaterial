@@ -31,7 +31,7 @@ inline double springValue(double t) noexcept {
     return 1.0 - decay * (std::cos(omegaD * rt) + ratio * std::sin(omegaD * rt));
 }
 
-// ── Path sampling ─────────────────────────────────────────────────────────────
+// ── Path sampling / normalisation ─────────────────────────────────────────────
 QPolygonF samplePath(const QPainterPath& path, int n) {
     QPolygonF poly;
     poly.reserve(n);
@@ -39,60 +39,174 @@ QPolygonF samplePath(const QPainterPath& path, int n) {
     return poly;
 }
 
+// Translate so the polygon centre maps to origin, then scale uniformly so the
+// farthest sample lies on the unit circle. Mirrors MDC's
+// MaterialShapes.normalize(shape, radial=true, RectF(-1,-1,1,1)).
+QPolygonF radialNormalize(const QPolygonF& poly, qreal cx = 0, qreal cy = 0) {
+    qreal maxDist = 0;
+    for (const auto& p : poly) {
+        maxDist = std::max(maxDist, std::hypot(p.x() - cx, p.y() - cy));
+    }
+    const qreal scale = (maxDist > 0) ? (1.0 / maxDist) : 1.0;
+    QPolygonF out;
+    out.reserve(poly.size());
+    for (const auto& p : poly) {
+        out.append({ (p.x() - cx) * scale, (p.y() - cy) * scale });
+    }
+    return out;
+}
+
+// ── Rounded-polygon path (MDC CornerRounding, smoothing = 0) ──────────────────
+// Each vertex's `radius` is the circular-arc radius (MDC convention). The cut
+// distance d_i = r_i / tan(β_i / 2), where β_i is the unsigned angle between
+// the incoming and outgoing edge unit vectors. If the two cuts on the same
+// edge would overlap, both are scaled down proportionally so their sum equals
+// the edge length — this matches MDC's clamping intent and lets a vertex with
+// large radius borrow space from a neighbour with small/zero radius.
+// Each rounded corner is a cubic-Bézier approximation of the circular arc.
+struct CornerVertex {
+    QPointF v;       // cartesian on input; transient (angle, dist) inside repeatAround
+    qreal   radius;
+};
+
+QPainterPath buildRoundedPath(const QList<CornerVertex>& verts) {
+    QPainterPath path;
+    const int M = verts.size();
+    if (M < 3) return path;
+
+    QList<QPointF> dir(M);
+    QList<qreal>   len(M);
+    for (int i = 0; i < M; ++i) {
+        QPointF     d = verts[(i + 1) % M].v - verts[i].v;
+        const qreal L = std::hypot(d.x(), d.y());
+        if (L > 0) d /= L;
+        dir[i] = d;
+        len[i] = L;
+    }
+
+    QList<qreal> beta(M, 0.0);
+    QList<qreal> desired(M, 0.0);
+    for (int i = 0; i < M; ++i) {
+        const QPointF& vin  = dir[(i + M - 1) % M];
+        const QPointF& vout = dir[i];
+        const qreal cosb = std::clamp(-(vin.x() * vout.x() + vin.y() * vout.y()), -1.0, 1.0);
+        const qreal b    = std::acos(cosb);
+        beta[i]          = b;
+        if (b > 1e-9 && verts[i].radius > 0) {
+            desired[i] = verts[i].radius / std::tan(b * 0.5);
+        }
+    }
+
+    QList<qreal> edgeScale(M, 1.0);
+    for (int i = 0; i < M; ++i) {
+        const qreal sum = desired[i] + desired[(i + 1) % M];
+        if (sum > len[i] && sum > 0) edgeScale[i] = len[i] / sum;
+    }
+
+    QList<qreal> cut(M, 0.0);
+    for (int i = 0; i < M; ++i) {
+        cut[i] = desired[i] * std::min(edgeScale[(i + M - 1) % M], edgeScale[i]);
+    }
+
+    for (int i = 0; i < M; ++i) {
+        const QPointF& vin  = dir[(i + M - 1) % M];
+        const QPointF& vout = dir[i];
+        const QPointF& p1   = verts[i].v;
+        const qreal    d    = cut[i];
+        const QPointF  s    = p1 - vin * d;
+        const QPointF  e    = p1 + vout * d;
+        if (i == 0) path.moveTo(s);
+        else path.lineTo(s);
+        if (d > 0 && beta[i] < M_PI - 1e-6) {
+            // Arc spans α = π − β. Cubic-Bézier control distance from each
+            // tangent point along its tangent: c = (2/3)·(1 − tan²(α/4))·d.
+            // Equivalent to the (4/3)·tan(α/4)·r form, recast in d to avoid
+            // a sin(β/2) division as β → π.
+            const qreal alpha = M_PI - beta[i];
+            const qreal t     = std::tan(alpha * 0.25);
+            const qreal c     = (2.0 / 3.0) * (1.0 - t * t) * d;
+            path.cubicTo(s + vin * c, e - vout * c, e);
+        }
+    }
+    path.closeSubpath();
+    return path;
+}
+
 // ── Shape constructors ────────────────────────────────────────────────────────
 QPolygonF buildRegularPolygon(int vertices, qreal radius, qreal cornerRadius, qreal rotationRad,
                               int n) {
-    if (vertices < 2) return {};
-    QPainterPath   path;
-    QList<QPointF> pts;
-    pts.reserve(vertices);
+    if (vertices < 3) return {};
+    QList<CornerVertex> verts;
+    verts.reserve(vertices);
     for (int i = 0; i < vertices; ++i) {
-        qreal a = rotationRad + (2.0 * M_PI * i / vertices);
-        pts.append({ radius * std::cos(a), radius * std::sin(a) });
+        const qreal a = rotationRad + (2.0 * M_PI * i / vertices);
+        verts.append({ { radius * std::cos(a), radius * std::sin(a) }, cornerRadius });
     }
-    for (int i = 0; i < vertices; ++i) {
-        const QPointF p0 = pts[(i + vertices - 1) % vertices];
-        const QPointF p1 = pts[i];
-        const QPointF p2 = pts[(i + 1) % vertices];
-        QPointF       v1 = p1 - p0, v2 = p2 - p1;
-        qreal         l1 = std::hypot(v1.x(), v1.y()), l2 = std::hypot(v2.x(), v2.y());
-        v1 /= l1;
-        v2 /= l2;
-        qreal   d = std::min({ cornerRadius, l1 * 0.5, l2 * 0.5 });
-        QPointF s = p1 - v1 * d, e = p1 + v2 * d;
-        i == 0 ? path.moveTo(s) : path.lineTo(s);
-        path.quadTo(p1, e);
-    }
-    path.closeSubpath();
-    return samplePath(path, n);
+    return radialNormalize(samplePath(buildRoundedPath(verts), n));
 }
 
 QPolygonF buildStarPolygon(int spokes, qreal outerR, qreal innerR, qreal cornerRadius,
                            qreal rotationRad, int n) {
-    QPainterPath   path;
-    const int      total = spokes * 2;
-    QList<QPointF> pts;
-    pts.reserve(total);
+    if (spokes < 2) return {};
+    const int           total = spokes * 2;
+    QList<CornerVertex> verts;
+    verts.reserve(total);
     for (int i = 0; i < total; ++i) {
-        qreal r = (i % 2 == 0) ? outerR : innerR;
-        qreal a = rotationRad + (M_PI * i / spokes);
-        pts.append({ r * std::cos(a), r * std::sin(a) });
+        const qreal r = (i % 2 == 0) ? outerR : innerR;
+        const qreal a = rotationRad + (M_PI * i / spokes);
+        verts.append({ { r * std::cos(a), r * std::sin(a) }, cornerRadius });
     }
-    for (int i = 0; i < total; ++i) {
-        const QPointF p0 = pts[(i + total - 1) % total];
-        const QPointF p1 = pts[i];
-        const QPointF p2 = pts[(i + 1) % total];
-        QPointF       v1 = p1 - p0, v2 = p2 - p1;
-        qreal         l1 = std::hypot(v1.x(), v1.y()), l2 = std::hypot(v2.x(), v2.y());
-        v1 /= l1;
-        v2 /= l2;
-        qreal   d = std::min({ cornerRadius, l1 * 0.5, l2 * 0.5 });
-        QPointF s = p1 - v1 * d, e = p1 + v2 * d;
-        i == 0 ? path.moveTo(s) : path.lineTo(s);
-        path.quadTo(p1, e);
+    return radialNormalize(samplePath(buildRoundedPath(verts), n));
+}
+
+QList<CornerVertex> repeatAround(QList<CornerVertex> tmpl, int repeat, qreal cx, qreal cy,
+                                 bool mirror) {
+    // template -> polar (relative to center)
+    for (auto& vr : tmpl) {
+        const qreal dx = vr.v.x() - cx;
+        const qreal dy = vr.v.y() - cy;
+        vr.v           = { std::atan2(dy, dx), std::hypot(dx, dy) };
     }
-    path.closeSubpath();
-    return samplePath(path, n);
+
+    QList<CornerVertex> out;
+    qreal               spanPerRepeat = 2.0 * M_PI / repeat;
+    if (mirror) {
+        const int mirroredRepeatCount = repeat * 2;
+        spanPerRepeat /= 2.0;
+        for (int i = 0; i < mirroredRepeatCount; ++i) {
+            const bool reverse = (i & 1) != 0;
+            for (int j = 0; j < tmpl.size(); ++j) {
+                const int idx = reverse ? tmpl.size() - 1 - j : j;
+                if (idx == 0 && reverse) continue; // matches MDC's `idx > 0 || !reverse`
+                const auto& tp    = tmpl[idx];
+                const qreal angle = spanPerRepeat * i +
+                                    (reverse ? spanPerRepeat - tp.v.x() + 2.0 * tmpl[0].v.x()
+                                             : tp.v.x());
+                out.append({ QPointF(angle, tp.v.y()), tp.radius });
+            }
+        }
+    } else {
+        for (int i = 0; i < repeat; ++i) {
+            for (const auto& tp : tmpl) {
+                const qreal angle = spanPerRepeat * i + tp.v.x();
+                out.append({ QPointF(angle, tp.v.y()), tp.radius });
+            }
+        }
+    }
+
+    // polar -> cartesian
+    for (auto& vr : out) {
+        const qreal angle = vr.v.x();
+        const qreal dist  = vr.v.y();
+        vr.v              = { dist * std::cos(angle) + cx, dist * std::sin(angle) + cy };
+    }
+    return out;
+}
+
+QPolygonF buildCustomPolygon(QList<CornerVertex> tmpl, int repeat, qreal cx, qreal cy, bool mirror,
+                             int n) {
+    QList<CornerVertex> verts = repeatAround(std::move(tmpl), repeat, cx, cy, mirror);
+    return radialNormalize(samplePath(buildRoundedPath(verts), n), cx, cy);
 }
 
 // ── Winding alignment ─────────────────────────────────────────────────────────
@@ -137,22 +251,53 @@ LoadingIndicatorUpdator::LoadingIndicatorUpdator(QObject* parent)
     m_predefined_shapes.reserve(SHAPE_COUNT);
     const int N = SAMPLE_COUNT;
 
-    // Shapes approximate the MDC-Android INDETERMINATE_SHAPES sequence,
-    // all normalised to a unit radius [-1, 1].
-    m_predefined_shapes.append(buildStarPolygon(10, 1.0, 0.72, 0.18, 0.0, N));     // SOFT_BURST
-    m_predefined_shapes.append(buildStarPolygon(9, 1.0, 0.82, 0.28, 0.0, N));      // COOKIE_9
-    m_predefined_shapes.append(buildRegularPolygon(5, 1.0, 0.25, -M_PI / 2.0, N)); // PENTAGON
-    { // PILL — rounded rectangle
+    // Shapes approximate the MDC-Android INDETERMINATE_SHAPES sequence
+    // (com.google.android.material.shape.MaterialShapes), all normalised to
+    // [-1, 1]. Star/regular-polygon shapes are exact ports; shapes built from
+    // RoundedPolygon's `customPolygon(...)` (per-vertex CornerRounding with
+    // a repeated template) are approximated with simpler primitives — see
+    // tests/scenes/loading_indicator_shapes.qml for visual comparison.
+
+    // SOFT_BURST: MDC customPolygon — 2 anchors × 10 spokes, no mirror.
+    m_predefined_shapes.append(buildCustomPolygon(
+        { { QPointF(0.193, 0.277), 0.053 }, { QPointF(0.176, 0.055), 0.053 } },
+        /* repeat */ 10, /* cx */ 0.5, /* cy */ 0.5, /* mirror */ false, N));
+
+    // COOKIE_9: MDC = star(9, 1, 0.8, rounding=0.5), rotated -90°.
+    m_predefined_shapes.append(buildStarPolygon(9, 1.0, 0.8, 0.5, -M_PI / 2.0, N));
+
+    // PENTAGON: MDC = customPolygon with 1 anchor (~apex up) and rounding 0.172.
+    // A regular pentagon rotated to point up is geometrically equivalent.
+    m_predefined_shapes.append(buildRegularPolygon(5, 1.0, 0.172, -M_PI / 2.0, N));
+
+    // PILL: MDC customPolygon — 3 anchors × 2, mirrored.
+    m_predefined_shapes.append(buildCustomPolygon(
+        { { QPointF(0.961, 0.039), 0.426 },
+          { QPointF(1.001, 0.428), 0.0 },
+          { QPointF(1.000, 0.609), 1.0 } },
+        /* repeat */ 2, /* cx */ 0.5, /* cy */ 0.5, /* mirror */ true, N));
+
+    // SUNNY: MDC = star(8, 1, 0.8, rounding=0.15).
+    m_predefined_shapes.append(buildStarPolygon(8, 1.0, 0.8, 0.15, 0.0, N));
+
+    // COOKIE_4: MDC customPolygon — 2 anchors × 4 spokes, no mirror.
+    m_predefined_shapes.append(buildCustomPolygon(
+        { { QPointF(1.237, 1.236), 0.258 }, { QPointF(0.500, 0.918), 0.233 } },
+        /* repeat */ 4, /* cx */ 0.5, /* cy */ 0.5, /* mirror */ false, N));
+
+    { // OVAL: MDC = circle scaled to scaleY = 0.64, then rotated -45°
+      // (an ellipse tilted toward the upper-right).
         QPainterPath p;
-        p.addRoundedRect(-1.0, -0.38, 2.0, 0.76, 0.38, 0.38);
-        m_predefined_shapes.append(samplePath(p, N));
-    }
-    m_predefined_shapes.append(buildStarPolygon(8, 1.0, 0.85, 0.12, 0.0, N)); // SUNNY
-    m_predefined_shapes.append(buildStarPolygon(4, 1.0, 0.68, 0.38, 0.0, N)); // COOKIE_4
-    {                                                                         // OVAL (circle)
-        QPainterPath p;
-        p.addEllipse(QPointF(0, 0), 1.0, 1.0);
-        m_predefined_shapes.append(samplePath(p, N));
+        p.addEllipse(QPointF(0, 0), 1.0, 0.64);
+        QPolygonF       poly = samplePath(p, N);
+        constexpr qreal kCos = 0.7071067811865476;  // cos(-45°)
+        constexpr qreal kSin = -0.7071067811865475; // sin(-45°)
+        for (auto& pt : poly) {
+            const qreal x = pt.x();
+            const qreal y = pt.y();
+            pt           = { x * kCos - y * kSin, x * kSin + y * kCos };
+        }
+        m_predefined_shapes.append(radialNormalize(poly));
     }
 
     Q_ASSERT(m_predefined_shapes.size() == SHAPE_COUNT);

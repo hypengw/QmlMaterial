@@ -73,7 +73,7 @@ private:
 
     // Constants
     static constexpr int SHAPE_COUNT       = 7;
-    static constexpr int SAMPLE_COUNT      = 64; // points per shape (power-of-2)
+    static constexpr int SAMPLE_COUNT      = 192; // points per shape
     static constexpr int MS_PER_SHAPE      = 650;
 };
 
