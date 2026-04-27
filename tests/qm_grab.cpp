@@ -11,7 +11,7 @@
 #include <QQuickWindow>
 #include <QTimer>
 #include <QUrl>
-#include <QtGui/6.11.0/QtGui/rhi/qrhi.h>
+#include <QtGui/rhi/qrhi.h>
 #include <cstdlib>
 #include <iostream>
 
