@@ -6,13 +6,16 @@ import Qcm.Material as MD
 T.Button {
     id: control
 
+    // T.Button::text is FINAL; the field value is `searchText`.
+    property alias searchText: item_input.text
+
     property bool leading_input: false
     property MD.Action leading_action: MD.Action {
         icon.name: MD.Token.icon.search
     }
-    property bool trailing_input: control.text
+    property bool trailing_input: control.searchText.length > 0
     property MD.Action trailing_action: MD.Action {
-        icon.name: control.text ? MD.Token.icon.close : ''
+        icon.name: control.searchText ? MD.Token.icon.close : ''
         onTriggered: {
             item_input.text = '';
         }
@@ -22,8 +25,6 @@ T.Button {
     }
 
     signal accepted
-
-    text: item_input.text
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
