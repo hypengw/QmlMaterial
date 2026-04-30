@@ -214,6 +214,7 @@ MD.Page {
                         RowLayout {
                             Layout.alignment: Qt.AlignHCenter
                             spacing: 36
+
                             MD.IconButton {
                                 mdState.type: MD.Enum.IBtStandard
                                 icon.name: MD.Token.icon.settings
@@ -308,6 +309,36 @@ MD.Page {
                                 mdState.size: MD.Enum.S
                                 mdState.widthMode: MD.Enum.WideWidth
                                 icon.name: MD.Token.icon.settings
+                            }
+                        }
+
+                        MD.Label {
+                            text: "With Badges"
+                            Layout.alignment: Qt.AlignHCenter
+                            typescale: MD.Token.typescale.title_medium
+                        }
+                        RowLayout {
+                            Layout.alignment: Qt.AlignHCenter
+                            spacing: 24
+                            MD.IconButton {
+                                mdState.type: MD.Enum.IBtStandard
+                                icon.name: MD.Token.icon.notifications
+                                MD.Badge { dot: true }
+                            }
+                            MD.IconButton {
+                                mdState.type: MD.Enum.IBtFilled
+                                icon.name: MD.Token.icon.notifications
+                                MD.Badge { count: 9 }
+                            }
+                            MD.IconButton {
+                                mdState.type: MD.Enum.IBtOutlined
+                                icon.name: MD.Token.icon.notifications
+                                MD.Badge { count: 128; maxCount: 99 }
+                            }
+                            MD.IconButton {
+                                mdState.type: MD.Enum.IBtStandard
+                                icon.name: MD.Token.icon.notifications
+                                MD.Badge { text: "alarm"}
                             }
                         }
                     }

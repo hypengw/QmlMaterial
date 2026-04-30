@@ -21,6 +21,9 @@ qt_add_resources(
 set_target_properties(qm_example PROPERTIES AUTOMOC ON)
 target_link_libraries(qm_example PRIVATE Qt6::Core Qt6::Quick)
 
+# Allow running example from the build tree without installing the QML module.
+target_compile_definitions(qm_example PRIVATE QT_QML_OUTPUT_DIRECTORY="${QT_QML_OUTPUT_DIRECTORY}")
+
 if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
   qt_import_qml_plugins(qm_example)
   target_link_libraries(qm_example PRIVATE qml_materialplugin)
