@@ -1,4 +1,3 @@
-// #include <QtGui/6.11.0/QtGui/rhi/qrhi.h>
 #include <QtGui/rhi/qrhi.h>
 
 #include <QCoreApplication>

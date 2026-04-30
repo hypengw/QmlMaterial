@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-set(QM_VERSION 0.1.3)
+set(QM_VERSION 0.1.6)
 project(
   QmlMaterial
   VERSION ${QM_VERSION}
@@ -312,7 +312,7 @@ if(EMSCRIPTEN)
 
   set(QML_MATERIAL_BUILD_TYPE STATIC)
   add_compile_options(-flto -oz)
-  add_link_options("-sEXPORT_NAME=qml_material" -s FULL_ES3=1 -flto)
+  add_link_options("-sEXPORT_NAME=qml_material" "-sFULL_ES3=1" -flto -lembind)
 else()
 
   set(QM_ICON_FILL_0_FONT_FILE
