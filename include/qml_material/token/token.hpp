@@ -10,6 +10,7 @@
 #include "qml_material/token/type_scale.hpp"
 #include "qml_material/token/split_button.hpp"
 #include "qml_material/token/button.hpp"
+#include "qml_material/token/badge.hpp"
 #include "qml_material/anim/interpolator.hpp"
 #include "qml_material/enum.hpp"
 Q_MOC_INCLUDE("qml_material/token/icon.hpp")
@@ -438,6 +439,8 @@ class Token : public QObject {
     Q_PROPERTY(qml_material::token::ButtonSize button READ button CONSTANT FINAL)
     /// Icon button size settings
     Q_PROPERTY(qml_material::token::IconButtonSize icon_button READ icon_button CONSTANT FINAL)
+    /// Badge size settings
+    Q_PROPERTY(qml_material::token::BadgeSize badge READ badge CONSTANT FINAL)
     public:
     Token(QObject* = nullptr);
     ~Token();
@@ -460,6 +463,7 @@ class Token : public QObject {
     auto split_button() const -> const SplitButtonSize&;
     auto button() const -> const ButtonSize&;
     auto icon_button() const -> const IconButtonSize&;
+    auto badge() const -> const BadgeSize&;
 
     auto datas() -> QQmlListProperty<QObject>;
 
@@ -479,6 +483,7 @@ class Token : public QObject {
     SplitButtonSize m_split_button;
     ButtonSize      m_button;
     IconButtonSize  m_icon_button;
+    BadgeSize       m_badge;
 
     QList<QObject*> m_datas;
     };

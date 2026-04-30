@@ -70,6 +70,7 @@ set(LIBNAME qml_material)
 
 set(SOURCES
     include/qml_material/helper.hpp
+    include/qml_material/token/badge.hpp
     include/qml_material/util/loggingcategory.hpp
     include/qml_material/math/scalar.hpp
     include/qml_material/math/gaussian.hpp
@@ -208,6 +209,7 @@ set(QML_FILES
     qml/component/textfield/FilledTextFieldShape.qml
     qml/component/textfield/OutlineTextFieldShape.qml
     qml/component/extra/ActionLabel.qml
+    qml/component/extra/Badge.qml
     qml/component/extra/ColorRadio.qml
     qml/component/extra/Divider.qml
     qml/component/extra/AutoDivider.qml

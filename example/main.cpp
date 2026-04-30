@@ -3,6 +3,7 @@
 #include <QCommandLineParser>
 #include <QSurfaceFormat>
 #include <QLoggingCategory>
+#include <QString>
 
 #include <QtQml/QQmlExtensionPlugin>
 
@@ -26,6 +27,9 @@ int main(int argc, char* argv[]) {
     QQmlApplicationEngine engine;
 
     engine.addImportPath("qrc:/");
+#ifdef QT_QML_OUTPUT_DIRECTORY
+    engine.addImportPath(QStringLiteral(QT_QML_OUTPUT_DIRECTORY));
+#endif
     engine.load(u"qrc:/main.qml"_s);
 
     return gui_app.exec();

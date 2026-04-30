@@ -27,6 +27,7 @@ auto Token::spacing() const -> const Spacing& { return m_spacing; }
 auto Token::split_button() const -> const SplitButtonSize& { return m_split_button; }
 auto Token::button() const -> const ButtonSize& { return m_button; }
 auto Token::icon_button() const -> const IconButtonSize& { return m_icon_button; }
+auto Token::badge() const -> const BadgeSize& { return m_badge; }
 auto Token::cal_curve_scale(double dpr) const -> double { return dpr >= 2.0 ? 1.0 : 4.0; }
 
 auto Token::datas() -> QQmlListProperty<QObject> { return { this, &m_datas }; }
