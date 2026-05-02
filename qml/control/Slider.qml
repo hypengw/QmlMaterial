@@ -37,6 +37,18 @@ T.Slider {
 
     readonly property real __steps: Math.abs(to - from) / stepSize
     readonly property bool __isDiscrete: stepSize >= Number.EPSILON && snapMode === Slider.SnapAlways && Math.abs(Math.round(__steps) - __steps) < Number.EPSILON
+
+    // Cap visible tick dots so wide ranges (e.g. 1..240 step 1) don't
+    // collapse into a solid line. Snap behavior stays driven by
+    // `stepSize`; this only affects how many decorative dots are drawn.
+    property int maxVisibleStops: 20
+    readonly property int __dotCount: {
+        if (!__isDiscrete)
+            return 0;
+        const total = Math.floor(__steps);
+        return Math.min(total, maxVisibleStops) + 1;
+    }
+    readonly property real __dotStep: __dotCount > 1 ? 1.0 / (__dotCount - 1) : 0
     readonly property real handleCenter: {
         const trackLength = control.horizontal ? control.availableWidth : control.availableHeight;
         const handleSize = control.mdState.handleWidth;
@@ -181,7 +193,7 @@ T.Slider {
 
         // Discrete dots
         Repeater {
-            model: control.__isDiscrete ? Math.floor(control.__steps) + 1 : 0
+            model: control.__dotCount
             delegate: MD.Rectangle {
                 width: 4
                 height: 4
@@ -212,7 +224,7 @@ T.Slider {
                 visible: dotPos < gapStart || dotPos > (gapEnd - 4)
 
                 required property int index
-                readonly property real currentPosition: index / (control.__steps)
+                readonly property real currentPosition: index * control.__dotStep
                 readonly property bool active: {
                     if (control.horizontal) {
                         return control.visualPosition > currentPosition;
