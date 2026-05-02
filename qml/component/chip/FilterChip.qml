@@ -22,9 +22,13 @@ T.Button {
     topInset: 0
     bottomInset: 0
     verticalPadding: 0
-    leftPadding: 8
+    leftPadding: control.checked ? 8 : 16
     rightPadding: MD.Util.hasIcon(icon) ? 8 : 16
     spacing: 8
+
+    Behavior on leftPadding {
+        NumberAnimation { duration: 50 }
+    }
 
     icon.width: 18
     icon.height: 18
@@ -35,66 +39,32 @@ T.Button {
         Item {
             id: m_leading
             anchors.verticalCenter: parent.verticalCenter
-            implicitWidth: children[0].implicitWidth
-            implicitHeight: children[0].implicitHeight
+            // Direct bindings (not State.PropertyChanges) so the leading-icon
+            // width tracks the inner Row even for chips that are unchecked at
+            // construction. PropertyChanges captures the binding's *value* at
+            // state-entry time, which for chips first entering "hidden" before
+            // their children exist froze implicitWidth at 0 forever — every
+            // chip past index 0 in a Repeater never showed its check icon.
+            //
+            // `visible` is driven by `implicitWidth` (animated on the GUI
+            // thread) rather than `opacity` — OpacityAnimator runs on the
+            // render thread and never ticks the QML-side opacity value, so
+            // an opacity-derived visible would only flip at the animation
+            // edges and the icon would pop instead of fade.
+            implicitWidth: control.checked ? m_leading_inner.implicitWidth : 0
+            implicitHeight: m_leading_inner.implicitHeight
+            opacity: control.checked ? 1 : 0
+            visible: implicitWidth > 0
 
-            states: State {
-                when: !control.checked
-                name: "hidden"
-                PropertyChanges {
-                    control.leftPadding: 16
-                    m_leading.implicitWidth: 0
-                    m_leading.opacity: 0
-                    m_leading.visible: false
-                }
+            Behavior on implicitWidth {
+                NumberAnimation { duration: 100 }
+            }
+            Behavior on opacity {
+                OpacityAnimator { duration: 100 }
             }
 
-            transitions: [
-                Transition {
-                    to: ""
-                    SequentialAnimation {
-                        PropertyAction {
-                            property: "visible"
-                        }
-                        ParallelAnimation {
-                            OpacityAnimator {
-                                duration: 100
-                            }
-                            NumberAnimation {
-                                property: "implicitWidth"
-                                duration: 100
-                            }
-                            NumberAnimation {
-                                property: "leftPadding"
-                                duration: 50
-                            }
-                        }
-                    }
-                },
-                Transition {
-                    to: "hidden"
-                    SequentialAnimation {
-                        ParallelAnimation {
-                            OpacityAnimator {
-                                duration: 100
-                            }
-                            NumberAnimation {
-                                property: "implicitWidth"
-                                duration: 100
-                            }
-                            NumberAnimation {
-                                property: "leftPadding"
-                                duration: 50
-                            }
-                        }
-                        PropertyAction {
-                            property: "visible"
-                        }
-                    }
-                }
-            ]
-
             Row {
+                id: m_leading_inner
                 spacing: 0
                 MD.Icon {
                     anchors.verticalCenter: parent.verticalCenter
