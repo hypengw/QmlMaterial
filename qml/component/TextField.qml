@@ -25,14 +25,14 @@ MD.TextFieldEmbed {
 
     leftPadding: leading.visible ? 16 + 12 + leading.implicitWidth : 16
     rightPadding: trailing.visible ? 16 + 12 + trailing.implicitWidth : 16
-    bottomPadding: 8
+    bottomPadding: control.mdState.bottomPadding
     topPadding: {
         if (control.type === MD.Enum.TextFieldFilled) {
             const ch = cursorRectangle.height;
             const ph = m_placeholder.implicitHeight;
             return ph + 8;
         } else {
-            return 8;
+            return control.mdState.topPadding;
         }
     }
 
@@ -80,7 +80,7 @@ MD.TextFieldEmbed {
 
     background: Item {
         implicitWidth: 64
-        implicitHeight: 56
+        implicitHeight: control.mdState.containerHeight
 
         MD.Loader {
             anchors.fill: parent

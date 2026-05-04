@@ -6,6 +6,7 @@ MD.MState {
     id: root
     required property T.TextField item
     property int type
+    property bool dense: false
 
 
     elevation: MD.Token.elevation.level0
@@ -32,7 +33,17 @@ MD.MState {
             return MD.Token.typescale.title_large;
         }
     }
-    property int containerHeight: root.type === MD.Enum.TextFieldFilled ? 56 : 64
+    property int containerHeight: {
+        if (root.type === MD.Enum.TextFieldFilled) {
+            return root.dense ? 54 : 56;
+        }
+        return root.dense ? 56 : 64;
+    }
+    property int topPadding: root.dense && root.type !== MD.Enum.TextFieldFilled ? 4 : 8
+    property int bottomPadding: {
+        if (!root.dense) return 8;
+        return root.type === MD.Enum.TextFieldFilled ? 6 : 4;
+    }
     property int corner: MD.Token.shape.corner.extra_small
 
     state: {
