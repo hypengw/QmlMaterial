@@ -6,38 +6,30 @@ T.Button {
     id: control
 
     property int position: MD.Enum.PosSingle
+    property int size: MD.Enum.S
     property alias mdState: m_state
 
     MD.StateSegmentedButton {
         id: m_state
         item: control
         position: control.position
+        size: control.size
     }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
-    padding: 12
-    leftPadding: {
-        if (position == MD.Enum.PosFirst || position == MD.Enum.PosSingle) {
-            return 16;
-        }
-        return 12;
-    }
-    rightPadding: {
-        if (position == MD.Enum.PosLast || position == MD.Enum.PosSingle) {
-            return 16;
-        }
-        return 12;
-    }
-    spacing: 8
-    
+    verticalPadding: 0
+    leftPadding: mdState.leadingSpace
+    rightPadding: mdState.trailingSpace
+    spacing: mdState.spacing
+
     checkable: true
 
-    icon.width: 18
-    icon.height: 18
+    icon.width: mdState.iconSize
+    icon.height: mdState.iconSize
 
-    property MD.typescale typescale: MD.Token.typescale.label_large
+    property MD.typescale typescale: mdState.typescale
     font.pixelSize: typescale.size
     font.weight: typescale.weight
     font.letterSpacing: typescale.tracking
@@ -55,14 +47,14 @@ T.Button {
     }
 
     background: MD.Rectangle {
-        implicitWidth: 40
-        implicitHeight: 40
+        implicitWidth: control.mdState.containerHeight
+        implicitHeight: control.mdState.containerHeight
 
         corners: control.mdState.corners
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
 
-        border.width: 1
+        border.width: control.mdState.outlineWidth
         border.color: control.mdState.outlineColor
         
         MD.Ripple {

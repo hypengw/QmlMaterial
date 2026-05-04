@@ -5,6 +5,8 @@ import Qcm.Material as MD
 T.Container {
     id: control
 
+    property int size: MD.Enum.S
+
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)
 
@@ -39,6 +41,9 @@ T.Container {
                 } else {
                     item.position = MD.Enum.PosMiddle;
                 }
+            }
+            if (item.hasOwnProperty("size")) {
+                item.size = Qt.binding(() => control.size);
             }
             if (item instanceof T.Button || item instanceof T.AbstractButton) {
                 item.ButtonGroup.group = m_group;

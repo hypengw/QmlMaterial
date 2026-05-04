@@ -10,6 +10,7 @@
 #include "qml_material/token/type_scale.hpp"
 #include "qml_material/token/split_button.hpp"
 #include "qml_material/token/button.hpp"
+#include "qml_material/token/segmented_button.hpp"
 #include "qml_material/token/badge.hpp"
 #include "qml_material/anim/interpolator.hpp"
 #include "qml_material/enum.hpp"
@@ -437,6 +438,8 @@ class Token : public QObject {
     Q_PROPERTY(qml_material::token::SplitButtonSize split_button READ split_button CONSTANT FINAL)
     /// Button size settings
     Q_PROPERTY(qml_material::token::ButtonSize button READ button CONSTANT FINAL)
+    /// Segmented button size settings
+    Q_PROPERTY(qml_material::token::SegmentedButtonSize segmented_button READ segmented_button CONSTANT FINAL)
     /// Icon button size settings
     Q_PROPERTY(qml_material::token::IconButtonSize icon_button READ icon_button CONSTANT FINAL)
     /// Badge size settings
@@ -462,6 +465,7 @@ class Token : public QObject {
     auto spacing() const -> const Spacing&;
     auto split_button() const -> const SplitButtonSize&;
     auto button() const -> const ButtonSize&;
+    auto segmented_button() const -> const SegmentedButtonSize&;
     auto icon_button() const -> const IconButtonSize&;
     auto badge() const -> const BadgeSize&;
 
@@ -480,9 +484,10 @@ class Token : public QObject {
     Shape       m_shape;
     WindowClass m_win_class;
     Spacing     m_spacing;
-    SplitButtonSize m_split_button;
-    ButtonSize      m_button;
-    IconButtonSize  m_icon_button;
+    SplitButtonSize     m_split_button;
+    ButtonSize          m_button;
+    SegmentedButtonSize m_segmented_button;
+    IconButtonSize      m_icon_button;
     BadgeSize       m_badge;
 
     QList<QObject*> m_datas;

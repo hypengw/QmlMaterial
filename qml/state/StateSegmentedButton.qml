@@ -6,7 +6,37 @@ MD.MState {
     id: root
     required property T.Button item
     property int position: MD.Enum.PosSingle
-    property real cornerRadius: 20
+    property int size: MD.Enum.S
+
+    readonly property MD.SegmentedButtonSizeItem sizeToken: {
+        switch (root.size) {
+        case MD.Enum.XS: return MD.Token.segmented_button.xsmall;
+        case MD.Enum.M:  return MD.Token.segmented_button.medium;
+        case MD.Enum.L:  return MD.Token.segmented_button.large;
+        case MD.Enum.XL: return MD.Token.segmented_button.xlarge;
+        case MD.Enum.S:
+        default:         return MD.Token.segmented_button.small;
+        }
+    }
+
+    readonly property real containerHeight: sizeToken.container_height
+    readonly property real iconSize: sizeToken.icon_size
+    readonly property real leadingSpace: sizeToken.leading_space
+    readonly property real trailingSpace: sizeToken.trailing_space
+    readonly property real spacing: sizeToken.icon_label_space
+    readonly property real outlineWidth: sizeToken.outline_width
+    readonly property MD.typescale typescale: {
+        switch (root.size) {
+        case MD.Enum.M:  return MD.Token.typescale.title_medium;
+        case MD.Enum.L:  return MD.Token.typescale.headline_small;
+        case MD.Enum.XL: return MD.Token.typescale.headline_large;
+        case MD.Enum.XS:
+        case MD.Enum.S:
+        default:         return MD.Token.typescale.label_large;
+        }
+    }
+
+    property real cornerRadius: containerHeight / 2
 
     property MD.corners corners: {
         switch (root.position) {
