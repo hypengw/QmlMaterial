@@ -114,6 +114,32 @@ MD.Page {
                                 text: 'Text'
                             }
                         }
+
+                        MD.Label {
+                            text: "Sizes"
+                            Layout.alignment: Qt.AlignHCenter
+                            typescale: MD.Token.typescale.title_medium
+                        }
+
+                        RowLayout {
+                            Layout.alignment: Qt.AlignHCenter
+                            spacing: 12
+                            MD.Button {
+                                mdState.type: MD.Enum.BtFilled
+                                mdState.size: MD.Enum.XS
+                                text: 'XS'
+                            }
+                            MD.Button {
+                                mdState.type: MD.Enum.BtFilled
+                                mdState.size: MD.Enum.S
+                                text: 'S'
+                            }
+                            MD.Button {
+                                mdState.type: MD.Enum.BtFilled
+                                mdState.size: MD.Enum.M
+                                text: 'M'
+                            }
+                        }
                     }
 
                     ComponentCard {
@@ -149,6 +175,34 @@ MD.Page {
                             MD.SegmentedButton {
                                 text: 'Option 3'
                             }
+                        }
+
+                        MD.Label {
+                            text: "Sizes"
+                            Layout.alignment: Qt.AlignHCenter
+                            typescale: MD.Token.typescale.title_medium
+                        }
+
+                        MD.SegmentedButtonGroup {
+                            Layout.alignment: Qt.AlignHCenter
+                            size: MD.Enum.XS
+                            MD.SegmentedButton { text: 'XS' }
+                            MD.SegmentedButton { text: 'XS'; checked: true }
+                            MD.SegmentedButton { text: 'XS' }
+                        }
+                        MD.SegmentedButtonGroup {
+                            Layout.alignment: Qt.AlignHCenter
+                            size: MD.Enum.S
+                            MD.SegmentedButton { text: 'S' }
+                            MD.SegmentedButton { text: 'S'; checked: true }
+                            MD.SegmentedButton { text: 'S' }
+                        }
+                        MD.SegmentedButtonGroup {
+                            Layout.alignment: Qt.AlignHCenter
+                            size: MD.Enum.M
+                            MD.SegmentedButton { text: 'M' }
+                            MD.SegmentedButton { text: 'M'; checked: true }
+                            MD.SegmentedButton { text: 'M' }
                         }
                     }
 
@@ -609,6 +663,24 @@ MD.Page {
                             Layout.fillWidth: true
                             type: MD.Enum.TextFieldOutlined
                             placeholderText: 'Outlined'
+                        }
+
+                        MD.Label {
+                            text: "Dense"
+                            Layout.alignment: Qt.AlignHCenter
+                            typescale: MD.Token.typescale.title_medium
+                        }
+                        MD.TextField {
+                            Layout.fillWidth: true
+                            type: MD.Enum.TextFieldFilled
+                            placeholderText: 'Filled · dense'
+                            mdState.dense: true
+                        }
+                        MD.TextField {
+                            Layout.fillWidth: true
+                            type: MD.Enum.TextFieldOutlined
+                            placeholderText: 'Outlined · dense'
+                            mdState.dense: true
                         }
                     }
                     ComponentCard {
