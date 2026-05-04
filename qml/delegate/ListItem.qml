@@ -1,6 +1,5 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Layouts
 import QtQuick.Templates as T
 import Qcm.Material as MD
 
@@ -41,18 +40,18 @@ T.ItemDelegate {
     }
 
     property string supportText
+    property int elide: Text.ElideNone
+    property int wrapMode: Text.NoWrap
     property int maximumLineCount: 1
 
-    property Item leader: MD.Loader {
-        active: control.leader == this
-        sourceComponent: MD.Icon {
-            name: control.action ? control.action.icon.name : control.icon.name
-            size: control.action ? control.action.icon.width : control.icon.width
-        }
+    property Component leader: MD.Icon {
+        name: control.action ? control.action.icon.name : control.icon.name
+        size: control.action ? control.action.icon.width : control.icon.width
     }
-    property Item trailing: null
-    property Item below: null
-    property Item divider: null
+
+    property Component trailing: null
+    property Component below: null
+    property Component divider: null
 
     property int radius: 0
     property MD.corners corners: MD.Util.corners(radius)
@@ -70,20 +69,19 @@ T.ItemDelegate {
         implicitHeight: m_content.implicitHeight
         implicitWidth: m_content.implicitWidth
         opacity: control.mdState.contentOpacity
+
         Column {
             id: m_content
             anchors.verticalCenter: parent.verticalCenter
             width: parent.width
 
-            RowLayout {
-                anchors.left: parent.left
-                anchors.right: parent.right
+            Row {
                 spacing: 16
-
-                LayoutItemProxy {
-                    id: m_proxy_leader
+                width: parent.width
+                Loader {
+                    id: m_leader
+                    anchors.verticalCenter: parent.verticalCenter
                     visible: {
-                        const item = control.leader;
                         let ok = false;
                         if (item instanceof MD.Icon) {
                             ok = (item as MD.Icon).name;
@@ -94,24 +92,27 @@ T.ItemDelegate {
                         }
                         return ok;
                     }
-                    target: control.leader
+
+                    sourceComponent: control.leader
                 }
 
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignVCenter
+                Column {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width - m_leader.width * m_leader.visible - m_trailing_row.width * m_trailing_row.visible - (parent.spacing * Math.max(parent.visibleChildren.length - 1, 0))
                     spacing: 0
                     MD.Text {
-                        Layout.fillWidth: true
+                        width: parent.width
                         text: control.text
                         font: control.font
+                        elide: control.elide
+                        wrapMode: control.wrapMode
                         typescale: MD.Token.typescale.body_large
                         maximumLineCount: control.maximumLineCount
                         verticalAlignment: Qt.AlignVCenter
                     }
 
                     MD.Text {
-                        Layout.fillWidth: true
+                        width: parent.width
                         visible: text.length > 0
                         text: control.supportText
                         color: control.mdState.supportTextColor
@@ -119,35 +120,37 @@ T.ItemDelegate {
                         verticalAlignment: Qt.AlignVCenter
                     }
                 }
-                MD.Text {
-                    id: item_text_trailing_support
-                    Layout.alignment: Qt.AlignVCenter
-                    visible: text.length > 0
-                    typescale: MD.Token.typescale.label_small
-                    verticalAlignment: Qt.AlignVCenter
-                }
 
-                LayoutItemProxy {
-                    id: m_proxy_trailing
-                    Layout.alignment: Qt.AlignVCenter
-                    visible: control.trailing
-                    target: control.trailing
-                }
+                Row {
+                    id: m_trailing_row
+                    spacing: parent.spacing
 
-                MD.Icon {
-                    id: item_text_trailing_icon
-                    Layout.alignment: Qt.AlignVCenter
-                    visible: name.length
-                    size: 24
+                    anchors.verticalCenter: parent.verticalCenter
+                    MD.Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: text.length > 0
+                        typescale: MD.Token.typescale.label_small
+                    }
+
+                    Loader {
+                        id: m_trailing
+                        anchors.verticalCenter: parent.verticalCenter
+                        sourceComponent: control.trailing
+                    }
+
+                    MD.Icon {
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: name.length
+                        size: 24
+                    }
                 }
             }
 
-            LayoutItemProxy {
+            Loader {
                 id: m_proxy_below
-                visible: control.below
-                target: control.below
+                sourceComponent: control.below
                 width: parent.width - x
-                x: m_proxy_leader.visible ? m_proxy_leader.width : 0
+                x: m_leader.visible ? m_trailing.width : 0
             }
         }
     }
@@ -173,23 +176,23 @@ T.ItemDelegate {
         elevationVisible: elevation && color.a > 0
         elevation: control.mdState.elevation
 
-        readonly property Item ripple: MD.Ripple {
-            corners: control.corners
-            width: parent.width
-            height: parent.height
-            pressX: control.pressX
-            pressY: control.pressY
-            pressed: control.pressed
-            stateOpacity: control.mdState.stateLayerOpacity
-            color: control.mdState.stateLayerColor
+        MD.Loader {
+            active: parent.parent
+            sourceComponent: MD.Ripple {
+                corners: control.corners
+                width: control.background.width
+                height: control.background.height
+                pressX: control.pressX
+                pressY: control.pressY
+                pressed: control.pressed
+                stateOpacity: control.mdState.stateLayerOpacity
+                color: control.mdState.stateLayerColor
+            }
         }
 
-        data: [ripple, control.divider]
-    }
-
-    Binding {
-        target: control.divider
-        property: "visible"
-        value: control.showDivider
+        MD.Loader {
+            active: control.showDivider
+            sourceComponent: control.divider
+        }
     }
 }
