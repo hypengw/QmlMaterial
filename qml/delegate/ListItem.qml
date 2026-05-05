@@ -40,7 +40,7 @@ T.ItemDelegate {
     }
 
     property string supportText
-    property int elide: Text.ElideNone
+    property int elide: Text.ElideRight
     property int wrapMode: Text.NoWrap
     property int maximumLineCount: 1
 
