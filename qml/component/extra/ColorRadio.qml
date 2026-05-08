@@ -23,12 +23,13 @@ Item {
         Rectangle {
             anchors.centerIn: parent
             border.color: root.MD.MProp.color.surface
-            border.width: 0.25 * 0.5 * root.size
+            border.width: Math.max(1.2, width * 0.2)
             color: parent.color
+            width: parent.width
             height: width
             radius: width / 2
+            scale: root.checked ? 0.8 : 0.0
             visible: root.checked
-            width: root.size - 2 * border.width
         }
         MouseArea {
             anchors.fill: parent
