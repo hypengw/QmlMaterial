@@ -22,6 +22,7 @@ T.Button {
     icon.name: checked ? MD.Token.icon.expand_less : MD.Token.icon.expand_more
 
     onClicked: {
+        if (!control.enabled) return;
         if (control.menu) {
             if (control.menu.visible) {
                 control.menu.close();
@@ -50,14 +51,14 @@ T.Button {
         size: control.icon.width
         color: control.mdState.textColor
         anchors.centerIn: parent
-        opacity: control.mdState.contentOpacity
+         opacity: control.mdState.contentOpacity
     }
 
     background: MD.ElevationRectangle {
         corners: control.mdState.corners
         color: control.mdState.backgroundColor
         elevation: control.mdState.elevation
-        
+        opacity: control.mdState.backgroundOpacity
         MD.Ripple {
             anchors.fill: parent
             corners: parent.corners
