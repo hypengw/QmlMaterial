@@ -28,6 +28,7 @@ T.Control {
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
+    hoverEnabled: control.enabled
 
     spacing: 2
 
@@ -49,6 +50,7 @@ T.Control {
             mdState: control.indicatorMdState
             anchors.verticalCenter: parent.verticalCenter
             anchors.right: parent.right
+            enabled: control.enabled
         }
     }
 }

@@ -238,6 +238,20 @@ MD.Page {
                                     }
                                 }
                             }
+                            MD.SplitButton {
+                                text: 'Disabled'
+                                mdState.type: MD.Enum.BtFilled
+                                enabled:false
+                                menu: MD.Menu {
+                                    MD.MenuItem {
+                                        text: 'Action 1'
+                                    }
+                                    MD.MenuItem {
+                                        text: 'Action 2'
+                                    }
+                                }
+                            }
+
                         }
                     }
 
