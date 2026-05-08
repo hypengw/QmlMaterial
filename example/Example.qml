@@ -140,7 +140,7 @@ MD.Page {
                                         T.ActionGroup.group: m_palette_group
                                         icon.name: ''
                                         checkable: true
-                                        checked: m_palette_view.currentIndex == index
+                                        checked: m_palette_view.currentIndex === index
                                         onTriggered: function (c) {
                                             m_palette_view.currentIndex = index;
                                             MD.Token.color.paletteType = index;
@@ -172,7 +172,7 @@ MD.Page {
                                     MD.ColorRadio {
                                         size: 28
                                         color: modelData.color
-                                        checked: MD.Token.color.accentColor == color
+                                        checked: MD.Token.color.accentColor === color
                                         onClicked: {
                                             MD.Token.color.accentColor = color;
                                         }
