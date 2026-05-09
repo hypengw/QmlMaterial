@@ -153,6 +153,7 @@ set(QML_FILES
     qml/control/ApplicationWindow.qml
     qml/control/Popup.qml
     qml/control/Switch.qml
+    qml/control/ToolTip.qml
     qml/control/TabBar.qml
     qml/control/TabButton.qml
     qml/control/TableViewDelegate.qml
@@ -221,6 +222,7 @@ set(QML_FILES
     qml/component/extra/SdfRectangle.qml
     qml/component/extra/SnakeView.qml
     qml/component/extra/DialogHeader.qml
+    qml/component/extra/RichToolTip.qml
     qml/delegate/ListItem.qml
     qml/delegate/ListGridBaseDelegate.qml
     qml/flickable/Flickable.qml

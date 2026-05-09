@@ -535,6 +535,43 @@ MD.Page {
                             }
                         }
                     }
+
+                    ComponentCard {
+                        title: 'Tooltips'
+                        spacing: 16
+
+                        RowLayout {
+                            Layout.alignment: Qt.AlignHCenter
+                            spacing: 24
+
+                            MD.Button {
+                                mdState.type: MD.Enum.BtFilledTonal
+                                text: 'Plain'
+                                MD.ToolTip {
+                                    visible: parent.hovered || parent.down
+                                    text: 'Add to favorites'
+                                }
+                            }
+
+                            MD.Button {
+                                id: m_rich_anchor
+                                mdState.type: MD.Enum.BtFilledTonal
+                                text: 'Rich'
+                                onClicked: m_rich.visible ? m_rich.close() : m_rich.open()
+
+                                MD.RichToolTip {
+                                    id: m_rich
+                                    subhead: 'Rich tooltip'
+                                    text: 'Rich tooltips bring attention to a particular UI element with optional title, supporting text and action.'
+                                    actionItem: MD.Button {
+                                        mdState.type: MD.Enum.BtText
+                                        text: 'Got it'
+                                        onClicked: m_rich.close()
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
