@@ -35,6 +35,8 @@ T.ProgressBar {
     property color trackColor: control.MD.MProp.color.secondary_container
     property color stopIndicatorColor: control.color
 
+    indeterminate: true
+
     // Toggles the indeterminate animation visibility with a hide-fade. Has no
     // effect in determinate mode (`indeterminate: false`), where the bar is
     // always shown. Defaults to `indeterminate` so a bare

@@ -491,16 +491,17 @@ MD.Page {
                             MD.IconButton {
                                 id: m_det_play
                                 checkable: true
-                                checked: true
                                 icon.name: checked ? MD.Token.icon.pause : MD.Token.icon.play_arrow
                             }
                         }
                         MD.LinearIndicator {
                             Layout.fillWidth: true
+                            indeterminate: false
                             value: m_det_play.checked ? 0.65 : 1.0
                         }
                         MD.LinearIndicator {
                             Layout.fillWidth: true
+                            indeterminate: false
                             value: m_det_play.checked ? 0.65 : 1.0
                             wavy: true
                         }
@@ -508,10 +509,12 @@ MD.Page {
                             Layout.alignment: Qt.AlignHCenter
                             spacing: 24
                             MD.CircularIndicator {
+                                indeterminate: false
                                 value: m_det_play.checked ? 0.65 : 1.0
                                 inactiveColor: MD.MProp.color.secondary_container
                             }
                             MD.CircularIndicator {
+                                indeterminate: false
                                 value: m_det_play.checked ? 0.65 : 1.0
                                 wavy: true
                                 inactiveColor: MD.MProp.color.secondary_container
@@ -525,7 +528,6 @@ MD.Page {
                             MD.IconButton {
                                 id: m_indet_play
                                 checkable: true
-                                checked: true
                                 icon.name: checked ? MD.Token.icon.pause : MD.Token.icon.play_arrow
                             }
                         }

@@ -38,6 +38,8 @@ T.ProgressBar {
     property alias type: m_updator.indeterminateAnimationType
     readonly property alias progress: m_updator.progress
 
+    indeterminate: true
+
     property bool running: control.indeterminate
 
     property bool wavy: false
