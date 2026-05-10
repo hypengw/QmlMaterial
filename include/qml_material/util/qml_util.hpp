@@ -73,6 +73,16 @@ public:
     Q_INVOKABLE static double clamp(double t, double low, double high);
     Q_INVOKABLE static double teleportCurve(double t, double left, double right);
 
+    // Cubic Bezier ease — given a normalized fraction `t` in [0,1] and a curve
+    // (0,0) → (p1x,p1y) → (p2x,p2y) → (1,1), returns the eased y. Matches
+    // Android's pathInterpolator.
+    Q_INVOKABLE static double bezierY(double t, double p1x, double p1y, double p2x,
+                                      double p2y) noexcept;
+    // Convenience for the M3 indeterminate animation drivers: clamp
+    // `(playtime - delay) / duration` to [0,1] then ease via bezierY.
+    Q_INVOKABLE static double segFrac(double playtime, double delay, double duration, double p1x,
+                                      double p1y, double p2x, double p2y) noexcept;
+
     Q_INVOKABLE static QString stateText(bool enabled, bool pressed, bool hovered,
                                          bool focused) noexcept;
 

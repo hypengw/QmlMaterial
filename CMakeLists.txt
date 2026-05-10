@@ -110,6 +110,10 @@ set(SOURCES
     src/util/page_context.cpp
     src/util/width_provider.cpp
     src/util/color_picker.cpp
+    src/util/path_wave.cpp
+    include/qml_material/util/path_wave.hpp
+    src/util/path_arc_wave.cpp
+    include/qml_material/util/path_arc_wave.hpp
     src/model/palette_model.cpp
     src/model/snake_model.cpp
     src/token/color.cpp
@@ -200,12 +204,12 @@ set(QML_FILES
     qml/component/navigation/StandardDrawer.qml
     qml/component/navigation/DrawerItem.qml
     qml/component/navigation/DrawerSubheader.qml
-    qml/component/progressindicator/CircleProgressBar.qml
     qml/component/progressindicator/CircularIndicator.qml
-    qml/component/progressindicator/CircleProgressShape.qml
     qml/component/progressindicator/CircleIndicatorShape.qml
+    qml/component/progressindicator/CircleIndicatorWaveShape.qml
     qml/component/progressindicator/LinearIndicator.qml
     qml/component/progressindicator/LinearIndicatorShape.qml
+    qml/component/progressindicator/LinearIndicatorWaveShape.qml
     qml/component/textfield/FloatingPlaceholderText.qml
     qml/component/textfield/FilledTextFieldShape.qml
     qml/component/textfield/OutlineTextFieldShape.qml

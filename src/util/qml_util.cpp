@@ -243,6 +243,29 @@ void Util::setCursor(QQuickItem* item, Qt::CursorShape shape) {
 }
 
 double Util::clamp(double t, double low, double heigh) { return std::clamp(t, low, heigh); }
+
+double Util::bezierY(double t, double p1x, double p1y, double p2x, double p2y) noexcept {
+    // Newton's method to find s such that x(s) = t, then return y(s).
+    double s = std::clamp(t, 0.0, 1.0);
+    for (int i = 0; i < 6; ++i) {
+        const double omt = 1.0 - s;
+        const double x   = 3.0 * omt * omt * s * p1x + 3.0 * omt * s * s * p2x + s * s * s;
+        const double dx  = 3.0 * omt * omt * p1x + 6.0 * omt * s * (p2x - p1x) +
+                          3.0 * s * s * (1.0 - p2x);
+        if (std::abs(dx) < 1e-6) break;
+        s -= (x - t) / dx;
+        s = std::clamp(s, 0.0, 1.0);
+    }
+    const double omt = 1.0 - s;
+    return 3.0 * omt * omt * s * p1y + 3.0 * omt * s * s * p2y + s * s * s;
+}
+
+double Util::segFrac(double playtime, double delay, double duration, double p1x, double p1y,
+                     double p2x, double p2y) noexcept {
+    if (duration <= 0.0) return 0.0;
+    const double f = std::clamp((playtime - delay) / duration, 0.0, 1.0);
+    return std::clamp(bezierY(f, p1x, p1y, p2x, p2y), 0.0, 1.0);
+}
 double Util::teleportCurve(double t, double left, double right) {
     if (t < left) {
         double x = t / left;

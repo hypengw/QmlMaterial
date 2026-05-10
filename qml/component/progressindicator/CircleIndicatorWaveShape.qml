@@ -2,11 +2,17 @@ import QtQuick
 import QtQuick.Shapes
 import Qcm.Material as MD
 
+// Wavy variant of CircleIndicatorShape. Active arc renders as a wavy stroked
+// path via MD.PathArcWave; inactive arc stays flat per M3 spec.
 MD.Shape {
     id: root
     property color strokeColor: MD.MProp.color.primary
     property color inactiveColor: "transparent"
     property real strokeWidth: 4
+
+    // Match CircleIndicatorShape's radius so the wavy variant draws on the
+    // same circle as the flat variant — wave peaks may extend slightly past
+    // the bounds, but the parent control sets `clip: false` to allow that.
     readonly property int radius: height / 2
     readonly property vector2d center: Qt.vector2d(radius, radius)
 
@@ -15,6 +21,11 @@ MD.Shape {
 
     property real inactiveStartAngle: 0
     property real inactiveSweepAngle: 0
+
+    // M3 spec circular-wavy defaults: amplitude 1.6dp, wavelength 15dp.
+    property real waveLength: 15
+    property real waveAmplitude: 1.6
+    property real phase: 0
 
     asynchronous: false
 
@@ -37,19 +48,20 @@ MD.Shape {
 
     ShapePath {
         capStyle: ShapePath.RoundCap
+        joinStyle: ShapePath.RoundJoin
         fillColor: "transparent"
-        startX: root.radius
-        startY: 0
         strokeColor: root.strokeColor
         strokeWidth: root.strokeWidth
 
-        PathAngleArc {
+        MD.PathArcWave {
             centerX: root.center.x
             centerY: root.center.y
-            radiusX: root.radius
-            radiusY: root.radius
+            radius: root.radius
             startAngle: root.startAngle
             sweepAngle: root.endAngle - root.startAngle
+            amplitude: root.waveAmplitude
+            waveLength: root.waveLength
+            phase: root.phase
         }
     }
 }

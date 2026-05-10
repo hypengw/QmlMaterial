@@ -448,62 +448,6 @@ MD.Page {
                         }
                     }
                     ComponentCard {
-                        title: 'Progress indicators'
-
-                        ColumnLayout {
-                            RowLayout {
-                                spacing: 0
-                                Item {
-                                    MD.IconButton {
-                                        id: m_indicator_play
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        checkable: true
-                                        icon.name: checked ? MD.Token.icon.pause : MD.Token.icon.play_arrow
-                                    }
-                                }
-
-                                Item {
-                                    Layout.fillWidth: true
-                                    implicitHeight: children[0].implicitHeight
-                                    Row {
-                                        anchors.centerIn: parent
-                                        spacing: 12
-                                        MD.CircularIndicator {
-                                            running: m_indicator_play.checked
-                                        }
-                                        MD.CircularIndicator {
-                                            running: m_indicator_play.checked
-                                            type: MD.CircularIndicator.Reteat
-                                        }
-                                    }
-                                }
-                            }
-                            RowLayout {
-                                spacing: 0
-                                MD.IconButton {
-                                    id: m_linear_indicator_play
-                                    checkable: true
-                                    icon.name: checked ? MD.Token.icon.pause : MD.Token.icon.play_arrow
-                                }
-
-                                Column {
-                                    Layout.fillWidth: true
-                                    Layout.alignment: Qt.AlignVCenter
-                                    spacing: 12
-                                    MD.LinearIndicator {
-                                        width: parent.width
-                                        running: m_linear_indicator_play.checked
-                                    }
-                                    MD.LinearIndicator {
-                                        width: parent.width
-                                        running: m_linear_indicator_play.checked
-                                        type: MD.LinearIndicator.Contiguous
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    ComponentCard {
                         title: 'Button indicators'
 
                         Row {
@@ -532,6 +476,92 @@ MD.Page {
                             text: 'Show snakeBar'
                             onClicked: {
                                 m_snake.show("test");
+                            }
+                        }
+                    }
+
+                    ComponentCard {
+                        title: 'Progress indicators'
+                        spacing: 16
+
+                        // determinate
+                        RowLayout {
+                            Layout.alignment: Qt.AlignHCenter
+                            spacing: 8
+                            MD.IconButton {
+                                id: m_det_play
+                                checkable: true
+                                checked: true
+                                icon.name: checked ? MD.Token.icon.pause : MD.Token.icon.play_arrow
+                            }
+                        }
+                        MD.LinearIndicator {
+                            Layout.fillWidth: true
+                            value: m_det_play.checked ? 0.65 : 1.0
+                        }
+                        MD.LinearIndicator {
+                            Layout.fillWidth: true
+                            value: m_det_play.checked ? 0.65 : 1.0
+                            wavy: true
+                        }
+                        RowLayout {
+                            Layout.alignment: Qt.AlignHCenter
+                            spacing: 24
+                            MD.CircularIndicator {
+                                value: m_det_play.checked ? 0.65 : 1.0
+                                inactiveColor: MD.MProp.color.secondary_container
+                            }
+                            MD.CircularIndicator {
+                                value: m_det_play.checked ? 0.65 : 1.0
+                                wavy: true
+                                inactiveColor: MD.MProp.color.secondary_container
+                            }
+                        }
+
+                        // indeterminate
+                        RowLayout {
+                            Layout.alignment: Qt.AlignHCenter
+                            spacing: 8
+                            MD.IconButton {
+                                id: m_indet_play
+                                checkable: true
+                                checked: true
+                                icon.name: checked ? MD.Token.icon.pause : MD.Token.icon.play_arrow
+                            }
+                        }
+                        MD.LinearIndicator {
+                            Layout.fillWidth: true
+                            indeterminate: true
+                            running: m_indet_play.checked
+                        }
+                        MD.LinearIndicator {
+                            Layout.fillWidth: true
+                            indeterminate: true
+                            running: m_indet_play.checked
+                            wavy: true
+                        }
+                        MD.LinearIndicator {
+                            Layout.fillWidth: true
+                            indeterminate: true
+                            running: m_indet_play.checked
+                            type: MD.LinearIndicator.Contiguous
+                        }
+                        RowLayout {
+                            Layout.alignment: Qt.AlignHCenter
+                            spacing: 24
+                            MD.CircularIndicator {
+                                indeterminate: true
+                                running: m_indet_play.checked
+                            }
+                            MD.CircularIndicator {
+                                indeterminate: true
+                                running: m_indet_play.checked
+                                wavy: true
+                            }
+                            MD.CircularIndicator {
+                                indeterminate: true
+                                running: m_indet_play.checked
+                                type: MD.CircularIndicator.Reteat
                             }
                         }
                     }

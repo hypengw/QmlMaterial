@@ -4,25 +4,23 @@ import QtQuick.Shapes
 import QtQml.Models
 import Qcm.Material as MD
 
+// Wavy variant of LinearIndicatorShape. Active indicators render as wavy
+// paths (MD.PathWave); inactive/track segments stay flat per M3 spec.
 MD.Shape {
     id: root
     property int strokeWidth: 4
 
-    property real x1: 0
-    property real x2: 0
-
     property color trackColor: root.MD.MProp.color.secondary_container
 
-    property int count
-    // var so callers may pass either list<MD.LinearActiveIndicatorData>
-    // (indeterminate, from LinearIndicatorUpdator) or a JS array of
-    // {startFraction, endFraction, color, gapSize} (determinate).
+    property real waveLength: 30
+    property real waveAmplitude: 3
+    property real phase: 0
+
     property var indicators: []
 
     function drawLine(startFraction: real, endFraction: real, gapSize: real): point {
         startFraction = MD.Util.clamp(startFraction, 0, 1);
         endFraction = MD.Util.clamp(endFraction, 0, 1);
-        // gap ramp down
         const GAP_RAMP_DOWN_THRESHOLD = 0.01;
         gapSize += strokeWidth / 2;
         const startGapSize = (gapSize * MD.Util.clamp(startFraction, 0, GAP_RAMP_DOWN_THRESHOLD) / GAP_RAMP_DOWN_THRESHOLD);
@@ -35,7 +33,7 @@ MD.Shape {
         return Qt.point(start, end);
     }
 
-    component LinePath: ShapePath {
+    component FlatPath: ShapePath {
         id: m_p
         property point line
         capStyle: ShapePath.RoundCap
@@ -49,39 +47,51 @@ MD.Shape {
         }
     }
 
-    LinePath {
+    component WavePath: ShapePath {
+        id: m_p
+        property point line
+        capStyle: ShapePath.RoundCap
+        joinStyle: ShapePath.RoundJoin
+        fillColor: "transparent"
+        // Hide cleanly when the segment is empty.
+        strokeWidth: (line.y - line.x) > 0 ? root.strokeWidth : 0
+        startX: line.x
+        startY: root.height / 2
+        MD.PathWave {
+            x: m_p.line.y
+            y: root.height / 2
+            amplitude: root.waveAmplitude
+            waveLength: root.waveLength
+            phase: root.phase
+        }
+    }
+
+    FlatPath {
         line: {
             if (root.indicators.length < 1)
                 return Qt.point(0, 0);
             const a = root.indicators[0];
-            const start = 0;
-            const end = a.startFraction;
-            const gap = a.gapSize / 2;
-            return root.drawLine(start, end, gap);
+            return root.drawLine(0, a.startFraction, a.gapSize / 2);
         }
         strokeColor: root.trackColor
     }
 
-    LinePath {
+    FlatPath {
         line: {
             if (root.indicators.length < 1)
                 return Qt.point(0, 0);
             const a = root.indicators[root.indicators.length - 1];
-            const start = a.endFraction;
-            const end = 1;
-            const gap = a.gapSize / 2;
-            return root.drawLine(start, end, gap);
+            return root.drawLine(a.endFraction, 1, a.gapSize / 2);
         }
         strokeColor: root.trackColor
     }
 
     Instantiator {
         model: Math.max(root.indicators.length, 1) - 1
-        delegate: LinePath {
+        delegate: FlatPath {
             required property int index
             property var cur: root.indicators[index]
             property var next: root.indicators[(index + 1) % Math.max(root.indicators.length, 1)]
-            // Guard transient binding evaluation when `indicators` length shrinks.
             line: cur && next
                   ? root.drawLine(cur.endFraction, next.startFraction, cur.gapSize / 2)
                   : Qt.point(0, 0)
@@ -93,7 +103,7 @@ MD.Shape {
 
     Instantiator {
         model: root.indicators
-        delegate: LinePath {
+        delegate: WavePath {
             required property var modelData
             line: modelData
                   ? root.drawLine(modelData.startFraction, modelData.endFraction, modelData.gapSize / 2)
