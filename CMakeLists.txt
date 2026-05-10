@@ -288,7 +288,8 @@ set(QML_FILES
     qml/component/path/RoundPath.qml
     qml/component/path/RectPath.qml
     qml/component/ListBusyFooter.qml
-    qml/component/helper/ItemHolder.qml)
+    qml/component/helper/ItemHolder.qml
+    qml/container/PageContainer.qml)
 
 set(RESOURCES assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2)
 
