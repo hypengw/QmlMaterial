@@ -106,6 +106,9 @@ T.Button {
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
 
+        border.width: control.mdState.borderWidth
+        border.color: control.mdState.outlineColor
+
         MD.Ripple {
             anchors.fill: parent
             radius: parent.radius

@@ -9,6 +9,7 @@ MD.MState {
     required property T.Button item
    
     property bool elevated: false
+    property int borderWidth: 0
     property color leadingIconColor: item.checked ? ctx.color.on_secondary_container : ctx.color.primary
     property color trailingIconColor: item.checked ? ctx.color.on_secondary_container : ctx.color.on_surface_variant
 
