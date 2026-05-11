@@ -1,4 +1,4 @@
-#include "qml_material/util/color_picker.hpp"
+#include "qml_material/control/color_picker.hpp"
 
 #include <QtCore/QRunnable>
 #include <QtCore/QThreadPool>
@@ -202,4 +202,4 @@ void ColorPicker::setImage(QImage img) {
 
 } // namespace qml_material
 
-#include "qml_material/util/moc_color_picker.cpp"
+#include "qml_material/control/moc_color_picker.cpp"

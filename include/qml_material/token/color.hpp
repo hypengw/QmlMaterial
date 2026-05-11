@@ -6,8 +6,8 @@
 #include <QtGui/QColor>
 
 #include "qml_material/core.hpp"
-#include "qml_material/enum.hpp"
-#include "qml_material/helper.hpp"
+#include "qml_material/core/enum.hpp"
+#include "qml_material/core/helper.hpp"
 
 namespace qml_material
 {

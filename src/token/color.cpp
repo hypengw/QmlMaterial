@@ -3,7 +3,7 @@
 #include <QtGui/QGuiApplication>
 #include <QStyleHints>
 
-#include "qml_material/helper.hpp"
+#include "qml_material/core/helper.hpp"
 #include "qml_material/util/qml_util.hpp"
 
 using namespace qcm;

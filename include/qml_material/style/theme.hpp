@@ -9,7 +9,7 @@
 #include <QtQuickControls2/QQuickAttachedPropertyPropagator>
 
 #include "qml_material/token/color.hpp"
-#include "qml_material/util/page_context.hpp"
+#include "qml_material/control/page_context.hpp"
 
 #define ATTACH_PROPERTY(Type, Name)                                                                \
 private:                                                                                           \

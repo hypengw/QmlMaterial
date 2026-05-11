@@ -3,7 +3,7 @@
 #include <QtCore/QObject>
 #include <QtGui/QColor>
 
-#include "qml_material/enum.hpp"
+#include "qml_material/core/enum.hpp"
 
 #include "cpp/palettes/tones.h"
 

@@ -69,7 +69,7 @@ endif()
 set(LIBNAME qml_material)
 
 set(SOURCES
-    include/qml_material/helper.hpp
+    include/qml_material/core/helper.hpp
     include/qml_material/token/badge.hpp
     include/qml_material/util/loggingcategory.hpp
     include/qml_material/math/scalar.hpp
@@ -92,28 +92,29 @@ set(SOURCES
     src/scenegraph/shadow_material.cpp
     src/scenegraph/blur_mask_material.cpp
     src/scenegraph/texture_cache.cpp
-    src/kirigami/displayhint.cpp
-    src/kirigami/toolbarlayout.cpp
-    src/kirigami/toolbarlayoutdelegate.cpp
-    src/kirigami/wheelhandler.cpp
-    src/enum.cpp
-    src/theme.cpp
-    src/helper.cpp
+    src/core/enum.cpp
+    src/core/helper.cpp
+    src/style/theme.cpp
     src/anim/circular_indicator_updator.cpp
     src/anim/linear_indicator_updator.cpp
     src/anim/loading_indicator_updator.cpp
     src/util/corner.cpp
     src/util/pool.cpp
-    src/util/input_block.cpp
     src/util/image.cpp
     src/util/qml_util.cpp
-    src/util/page_context.cpp
-    src/util/width_provider.cpp
-    src/util/color_picker.cpp
-    src/util/path_wave.cpp
-    include/qml_material/util/path_wave.hpp
-    src/util/path_arc_wave.cpp
-    include/qml_material/util/path_arc_wave.hpp
+    src/control/page_context.cpp
+    src/control/color_picker.cpp
+    src/layout/width_provider.cpp
+    src/layout/toolbar_layout.cpp
+    src/layout/toolbar_layout_delegate.cpp
+    src/layout/toolbar_layout_delegate.hpp
+    include/qml_material/layout/toolbar_layout.hpp
+    src/path/path_wave.cpp
+    src/path/path_arc_wave.cpp
+    include/qml_material/path/path_wave.hpp
+    include/qml_material/path/path_arc_wave.hpp
+    src/input/wheel_handler.cpp
+    include/qml_material/input/wheel_handler.hpp
     src/model/palette_model.cpp
     src/model/snake_model.cpp
     src/token/color.cpp
@@ -125,7 +126,8 @@ set(SOURCES
     src/item/state.cpp
     src/item/rectangle.cpp
     src/item/rrect_shadow.cpp
-    src/item/blur_mask.cpp)
+    src/item/blur_mask.cpp
+    src/item/input_block.cpp)
 
 set(QML_FILES
     qml/Token.qml
@@ -296,6 +298,12 @@ set(RESOURCES assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2)
 
 set(QML_REG_INCLUDE_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/anim"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/core"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/style"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/control"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/layout"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/path"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/input"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/item"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/token"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/model"
@@ -444,7 +452,7 @@ endforeach()
 target_include_directories(
   ${LIBNAME}
   PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}include>"
-  PRIVATE "include/${LIBNAME}" "include/${LIBNAME}/kirigami" src)
+  PRIVATE "include/${LIBNAME}" src)
 
 add_subdirectory(third_party)
 if(QM_BUILD_EXAMPLE)

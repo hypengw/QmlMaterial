@@ -4,20 +4,21 @@
  *  SPDX-License-Identifier: LGPL-2.0-or-later
  */
 
-#include "kirigami/wheelhandler.h"
-// #include "settings.h"
-// #include <libkirigami/units.h>
+#include "qml_material/input/wheel_handler.hpp"
 
 #include <QQmlEngine>
 #include <QQuickItem>
 #include <QQuickWindow>
 #include <QWheelEvent>
 
+namespace qml_material
+{
+
 namespace
 {
 bool fuzzyLessThanOrEqualTo(qreal a, qreal b) {
     if (a == 0.0 || b == 0.0) {
-        // qFuzzyCompare is broken
+        // qFuzzyCompare is broken for zero
         a += 1.0;
         b += 1.0;
     }
@@ -106,9 +107,6 @@ void WheelHandler::setTarget(QQuickItem* target) {
     }
 
     if (m_target) {
-        // disconnect(m_flickable, nullptr, m_filterItem, nullptr);
-        // disconnect( m_flickable, &QQuickItem::parentChanged, this,
-        // &WheelHandler::_k_rebindScrollBars);
         detach();
     }
 
@@ -141,24 +139,6 @@ void WheelHandler::setTarget(QQuickItem* target) {
     m_scrollBarH.scrollBar.connectNotifySignal(this, SLOT(rebindScrollBarH()));
 
     refreshAttach();
-    /*
-    m_filterItem->setParentItem(target);
-    if (target) {
-        target->installEventFilter(this);
-
-        // Stack WheelFilterItem over the Flickable's scrollable content
-        m_filterItem->stackAfter(target->property("contentItem").value<QQuickItem*>());
-        // Make it fill the Flickable
-        m_filterItem->setWidth(target->width());
-        m_filterItem->setHeight(target->height());
-        connect(target, &QQuickItem::widthChanged, m_filterItem, [this, target]() {
-            m_filterItem->setWidth(target->width());
-        });
-        connect(target, &QQuickItem::heightChanged, m_filterItem, [this, target]() {
-            m_filterItem->setHeight(target->height());
-        });
-    }
-    */
     rebindScrollBarH();
     rebindScrollBarV();
     Q_EMIT targetChanged();
@@ -210,7 +190,6 @@ void WheelHandler::setVerticalStepSize(qreal stepSize) {
     if (qFuzzyCompare(m_verticalStepSize, stepSize)) {
         return;
     }
-    // Mimic the behavior of QQuickScrollBar when stepSize is 0
     if (qFuzzyIsNull(stepSize)) {
         resetVerticalStepSize();
         return;
@@ -235,7 +214,6 @@ void WheelHandler::setHorizontalStepSize(qreal stepSize) {
     if (qFuzzyCompare(m_horizontalStepSize, stepSize)) {
         return;
     }
-    // Mimic the behavior of QQuickScrollBar when stepSize is 0
     if (qFuzzyIsNull(stepSize)) {
         resetHorizontalStepSize();
         return;
@@ -288,7 +266,6 @@ void WheelHandler::setKeyNavigationEnabled(bool enabled) {
 }
 
 void WheelHandler::classBegin() {
-    // Initializes smooth scrolling
     m_engine = qmlEngine(this);
 }
 
@@ -338,8 +315,7 @@ bool WheelHandler::scrollFlickable(QPointF pixelDelta, QPointF angleDelta,
         const bool atBeginning = fuzzyLessThanOrEqualTo(contentPos, minExtent);
         const bool atEnd       = fuzzyLessThanOrEqualTo(maxExtent, contentPos);
 
-        // HACK: Only transpose deltas when not using xcb in order to not conflict with xcb's own
-        // delta transposing
+        // HACK: only transpose deltas when not on xcb, to avoid double-transposing
         if (modifiers & m_defaultHorizontalScrollModifiers &&
             qGuiApp->platformName() != QLatin1String("xcb")) {
             angleDelta = angleDelta.transposed();
@@ -354,8 +330,6 @@ bool WheelHandler::scrollFlickable(QPointF pixelDelta, QPointF angleDelta,
         auto& contentPosProp = hr ? m_flickable.contentX : m_flickable.contentY;
 
         if (contentSize > pageSize) {
-            // Use page size with pageScrollModifiers. Matches QScrollBar, which uses
-            // QAbstractSlider behavior.
             if (modifiers & m_pageScrollModifiers) {
                 change = qBound(-pageSize, ticks * pageSize, pageSize);
             } else if (pixelDelta.x() != 0) {
@@ -376,16 +350,9 @@ bool WheelHandler::scrollFlickable(QPointF pixelDelta, QPointF angleDelta,
                     scrolled = true;
                 }
             } else {
-                // contentX and contentY use reversed signs from what x and y would normally use, so
-                // flip the signs
-
                 qreal newContentPos = std::clamp(contentPos - change, minExtent, maxExtent);
 
-                // Flickable::pixelAligned rounds the position, so round to mimic that behavior.
-                // Rounding prevents fractional positioning from causing text to be
-                // clipped off on the top and bottom.
-                // Multiply by devicePixelRatio before rounding and divide by devicePixelRatio
-                // after to make position match pixels on the screen more closely.
+                // Flickable::pixelAligned rounds, mirror that to keep text crisp.
                 newContentPos = std::round(newContentPos * devicePixelRatio) / devicePixelRatio;
                 if (contentPos != newContentPos) {
                     scrolled = true;
@@ -407,7 +374,6 @@ bool WheelHandler::scrollUp(qreal stepSize) {
     } else if (stepSize < 0) {
         stepSize = m_verticalStepSize;
     }
-    // contentY uses reversed sign
     return scrollFlickable(QPointF(0, stepSize));
 }
 
@@ -417,7 +383,6 @@ bool WheelHandler::scrollDown(qreal stepSize) {
     } else if (stepSize < 0) {
         stepSize = m_verticalStepSize;
     }
-    // contentY uses reversed sign
     return scrollFlickable(QPointF(0, -stepSize));
 }
 
@@ -427,7 +392,6 @@ bool WheelHandler::scrollLeft(qreal stepSize) {
     } else if (stepSize < 0) {
         stepSize = m_horizontalStepSize;
     }
-    // contentX uses reversed sign
     return scrollFlickable(QPoint(stepSize, 0));
 }
 
@@ -437,7 +401,6 @@ bool WheelHandler::scrollRight(qreal stepSize) {
     } else if (stepSize < 0) {
         stepSize = m_horizontalStepSize;
     }
-    // contentX uses reversed sign
     return scrollFlickable(QPoint(-stepSize, 0));
 }
 
@@ -460,28 +423,17 @@ bool WheelHandler::eventFilter(QObject* watched, QEvent* event) {
                      m_flickable.bottomMargin.read().toReal();
     }
 
-    // The code handling touch, mouse and hover events is mostly copied/adapted from
-    // QQuickScrollView::childMouseEventFilter()
     switch (event->type()) {
     case QEvent::Wheel: {
         QWheelEvent* wheelEvent = static_cast<QWheelEvent*>(event);
 
-        // Can't use wheelEvent->deviceType() to determine device type since on Wayland mouse is
-        // always regarded as touchpad
-        // https://invent.kde.org/qt/qt/qtwayland/-/blob/e695a39519a7629c1549275a148cfb9ab99a07a9/src/client/qwaylandinputdevice.cpp#L445
-        // and we can only expect a touchpad never generates the same angle delta as a mouse
-        // m_wasTouched = std::abs(wheelEvent->angleDelta().y()) != 120 &&
-        // std::abs(wheelEvent->angleDelta().x()) != 120;
         m_wasTouched = false;
 
-        // NOTE: On X11 with libinput, pixelDelta is identical to angleDelta when using a mouse
-        // that shouldn't use pixelDelta. If faulty pixelDelta, reset pixelDelta to (0,0).
+        // On X11 with libinput, faulty pixelDelta equals angleDelta — strip it.
         if (wheelEvent->pixelDelta() == wheelEvent->angleDelta()) {
-            // In order to change any of the data, we have to create a whole new QWheelEvent
-            // from its constructor.
             QWheelEvent newWheelEvent(wheelEvent->position(),
                                       wheelEvent->globalPosition(),
-                                      QPoint(0, 0), // pixelDelta
+                                      QPoint(0, 0),
                                       wheelEvent->angleDelta(),
                                       wheelEvent->buttons(),
                                       wheelEvent->modifiers(),
@@ -501,8 +453,6 @@ bool WheelHandler::eventFilter(QObject* watched, QEvent* event) {
 
         bool scrolled = false;
         if (m_scrollFlickableTarget || (contentHeight <= pageHeight && contentWidth <= pageWidth)) {
-            // Don't use pixelDelta from the event unless angleDelta is not available
-            // because scrolling by pixelDelta is too slow on Wayland with libinput.
             QPointF pixelDelta = m_kirigamiWheelEvent.angleDelta().isNull()
                                      ? m_kirigamiWheelEvent.pixelDelta()
                                      : QPoint(0, 0);
@@ -512,9 +462,8 @@ bool WheelHandler::eventFilter(QObject* watched, QEvent* event) {
         }
         setScrolling(scrolled);
 
-        // NOTE: Wheel events created by touchpad gestures with pixel deltas will cause
-        // scrolling to jump back to where scrolling started unless the event is always accepted
-        // before it reaches the Flickable.
+        // Touchpad pixel-delta wheel events must be accepted before reaching the Flickable,
+        // otherwise scroll jumps back to start.
         bool flickableWillUseGestureScrolling =
             ! (wheelEvent->source() == Qt::MouseEventNotSynthesized ||
                wheelEvent->pixelDelta().isNull());
@@ -582,4 +531,4 @@ void WheelHandler::setUseAnimation(bool v) {
 void WheelHandler::rebindScrollBarV() { rebindScrollBar(m_scrollBarV); }
 void WheelHandler::rebindScrollBarH() { rebindScrollBar(m_scrollBarH); }
 
-#include "moc_wheelhandler.cpp"
+} // namespace qml_material

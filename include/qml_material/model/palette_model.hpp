@@ -4,7 +4,7 @@
 #include <QtCore/QTimer>
 #include <QtQml/QQmlEngine>
 
-#include "qml_material/enum.hpp"
+#include "qml_material/core/enum.hpp"
 
 namespace qml_material
 {

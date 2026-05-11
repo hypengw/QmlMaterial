@@ -1,4 +1,4 @@
-#include "qml_material/util/input_block.hpp"
+#include "qml_material/item/input_block.hpp"
 
 using namespace qml_material;
 
@@ -102,4 +102,4 @@ bool InputBlock::eventFilter(QObject* obj, QEvent* event) {
     return QObject::eventFilter(obj, event);
 }
 
-#include <qml_material/util/moc_input_block.cpp>
+#include <qml_material/item/moc_input_block.cpp>

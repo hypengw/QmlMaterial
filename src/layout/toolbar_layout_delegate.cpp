@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL
  */
 
-#include "toolbarlayoutdelegate.h"
+#include "toolbar_layout_delegate.hpp"
 
-#include "util/loggingcategory.hpp"
-#include "toolbarlayout.h"
+#include "qml_material/util/loggingcategory.hpp"
+
+namespace qml_material
+{
 
 ToolBarDelegateIncubator::ToolBarDelegateIncubator(QQmlComponent *component, QQmlContext *context)
     : QQmlIncubator(QQmlIncubator::Asynchronous)
@@ -62,7 +64,7 @@ void ToolBarDelegateIncubator::statusChanged(QQmlIncubator::Status status)
 }
 
 ToolBarLayoutDelegate::ToolBarLayoutDelegate(ToolBarLayout *parent)
-    : QObject() // Note: delegates are managed by unique_ptr, so don't parent
+    : QObject() // delegates are managed by unique_ptr, so don't parent
     , m_parent(parent)
 {
 }
@@ -112,7 +114,7 @@ void ToolBarLayoutDelegate::setAction(QObject *action)
 
         if (m_action->property("displayHint").isValid()) {
             QObject::connect(m_action, SIGNAL(displayHintChanged()), this, SLOT(displayHintChanged()));
-            m_displayHint = DisplayHint::DisplayHints{m_action->property("displayHint").toInt()};
+            m_displayHint = ToolBarLayout::DisplayHints{m_action->property("displayHint").toInt()};
         }
     }
 }
@@ -188,17 +190,17 @@ bool ToolBarLayoutDelegate::isActionVisible() const
 
 bool ToolBarLayoutDelegate::isHidden() const
 {
-    return DisplayHint::isDisplayHintSet(m_displayHint, DisplayHint::AlwaysHide);
+    return ToolBarLayout::isDisplayHintSet(m_displayHint, ToolBarLayout::AlwaysHide);
 }
 
 bool ToolBarLayoutDelegate::isIconOnly() const
 {
-    return DisplayHint::isDisplayHintSet(m_displayHint, DisplayHint::IconOnly);
+    return ToolBarLayout::isDisplayHintSet(m_displayHint, ToolBarLayout::IconOnly);
 }
 
 bool ToolBarLayoutDelegate::isKeepVisible() const
 {
-    return DisplayHint::isDisplayHintSet(m_displayHint, DisplayHint::KeepVisible);
+    return ToolBarLayout::isDisplayHintSet(m_displayHint, ToolBarLayout::KeepVisible);
 }
 
 bool ToolBarLayoutDelegate::isVisible() const
@@ -305,7 +307,7 @@ void ToolBarLayoutDelegate::actionVisibleChanged()
 
 void ToolBarLayoutDelegate::displayHintChanged()
 {
-    m_displayHint = DisplayHint::DisplayHints{m_action->property("displayHint").toInt()};
+    m_displayHint = ToolBarLayout::DisplayHints{m_action->property("displayHint").toInt()};
     m_parent->relayout();
 }
 
@@ -327,4 +329,4 @@ void ToolBarLayoutDelegate::triggerRelayout()
     m_parent->relayout();
 }
 
-#include "moc_toolbarlayoutdelegate.cpp"
+} // namespace qml_material

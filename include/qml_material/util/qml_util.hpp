@@ -7,7 +7,7 @@
 #include <QQuickWindow>
 
 #include "qml_material/util/corner.hpp"
-#include "qml_material/enum.hpp"
+#include "qml_material/core/enum.hpp"
 #include "qml_material/token/token.hpp"
 #include "qml_material/core.hpp"
 

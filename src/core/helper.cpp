@@ -1,4 +1,4 @@
-#include "qml_material/helper.hpp"
+#include "qml_material/core/helper.hpp"
 
 #include "cpp/scheme/scheme_content.h"
 #include "cpp/scheme/scheme_expressive.h"

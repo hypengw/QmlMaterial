@@ -1,4 +1,4 @@
-#include "qml_material/util/width_provider.hpp"
+#include "qml_material/layout/width_provider.hpp"
 #include "qml_material/core.hpp"
 
 namespace qml_material
@@ -89,4 +89,4 @@ void WidthProvider::refresh() {
 
 } // namespace qml_material
 
-#include "qml_material/util/moc_width_provider.cpp"
+#include "qml_material/layout/moc_width_provider.cpp"

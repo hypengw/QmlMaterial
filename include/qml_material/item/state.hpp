@@ -2,7 +2,7 @@
 
 #include <QtQml/QQmlEngine>
 #include <QtQuick/QQuickItem>
-#include "qml_material/theme.hpp"
+#include "qml_material/style/theme.hpp"
 
 QT_BEGIN_NAMESPACE
 class QQuickStateGroup;

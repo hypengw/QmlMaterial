@@ -1,5 +1,5 @@
-#include "qml_material/util/page_context.hpp"
-#include "qml_material/enum.hpp"
+#include "qml_material/control/page_context.hpp"
+#include "qml_material/core/enum.hpp"
 
 namespace qml_material
 {
@@ -120,4 +120,4 @@ void PageContext::setBottomMargin(qint32 v) {
 #undef X
 } // namespace qml_material
 
-#include <qml_material/util/moc_page_context.cpp>
+#include <qml_material/control/moc_page_context.cpp>

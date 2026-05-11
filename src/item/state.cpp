@@ -3,7 +3,7 @@
 #include <QQmlProperty>
 #include <QVariant>
 #include <QtQuick/private/qquickstategroup_p.h>
-#include "qml_material/theme.hpp"
+#include "qml_material/style/theme.hpp"
 
 namespace qml_material
 {

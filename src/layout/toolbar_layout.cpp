@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL
  */
 
-#include "toolbarlayout.h"
+#include "qml_material/layout/toolbar_layout.hpp"
 
 #include <cmath>
 #include <unordered_map>
@@ -14,8 +14,18 @@
 #include <QQmlComponent>
 #include <QTimer>
 
-#include "util/loggingcategory.hpp"
-#include "toolbarlayoutdelegate.h"
+#include "qml_material/util/loggingcategory.hpp"
+#include "toolbar_layout_delegate.hpp"
+
+namespace qml_material
+{
+
+bool ToolBarLayout::isDisplayHintSet(DisplayHints values, DisplayHint hint) {
+    if (hint == AlwaysHide && (values & KeepVisible)) {
+        return false;
+    }
+    return values & hint;
+}
 
 ToolBarLayoutAttached::ToolBarLayoutAttached(QObject* parent): QObject(parent) {}
 
@@ -88,9 +98,6 @@ ToolBarLayout::ToolBarLayout(QQuickItem* parent)
                                          ToolBarLayoutPrivate::action,
                                          ToolBarLayoutPrivate::clearActions);
 
-    // To prevent multiple assignments to actions from constantly recreating
-    // delegates, we cache the delegates and only remove them once they are no
-    // longer being used. This timer is responsible for triggering that removal.
     d->removalTimer = new QTimer { this };
     d->removalTimer->setInterval(1000);
     d->removalTimer->setSingleShot(true);
@@ -311,20 +318,6 @@ void ToolBarLayout::itemChange(QQuickItem::ItemChange            change,
 
 void ToolBarLayout::updatePolish() { d->performLayout(); }
 
-/**
- * Calculate the implicit size for this layout.
- *
- * This is a separate step from performing the actual layout, because of a nasty
- * little issue with Control, where it will unconditionally set the height of
- * its contentItem, which means QQuickItem::heightValid() becomes useless. So
- * instead, we first calculate our implicit size, ignoring any explicitly set
- * item size. Then we follow that by performing the actual layouting, using the
- * width and height retrieved from the item, as those will return the explicitly
- * set width/height if set and the implicit size otherwise. Since control
- * watches for implicit size changes, we end up with correct behaviour both when
- * we get an explicit size set and when we're relying on implicit size
- * calculation.
- */
 void ToolBarLayoutPrivate::calculateImplicitSize() {
     if (! completed) {
         return;
@@ -359,9 +352,6 @@ void ToolBarLayoutPrivate::calculateImplicitSize() {
     qreal maxHeight = 0.0;
     qreal maxWidth  = 0.0;
 
-    // First, calculate the total width and maximum height of all delegates.
-    // This will be used to determine which actions to show, which ones to
-    // collapse to icon-only etc.
     for (auto entry : std::as_const(sortedDelegates)) {
         if (! entry->isActionVisible()) {
             entry->hide();
@@ -384,20 +374,15 @@ void ToolBarLayoutPrivate::calculateImplicitSize() {
         maxHeight = std::max(maxHeight, entry->maxHeight());
     }
 
-    // The last entry also gets spacing but shouldn't, so remove that.
     maxWidth -= spacing;
 
     visibleActionsWidth = 0.0;
 
     if (maxWidth >
         q->width() - (hiddenActions.isEmpty() ? 0.0 : moreButtonInstance->width() + spacing)) {
-        // We have more items than fit into the view, so start hiding some.
 
         qreal layoutWidth = q->width() - (moreButtonInstance->width() + spacing);
         if (alignment & Qt::AlignHCenter) {
-            // When centering, we need to reserve space on both sides to make sure
-            // things are properly centered, otherwise we will be to the right of
-            // the center.
             layoutWidth -= (moreButtonInstance->width() + spacing);
         }
 
@@ -411,7 +396,6 @@ void ToolBarLayoutPrivate::calculateImplicitSize() {
             }
         }
         if (! qFuzzyIsNull(visibleActionsWidth)) {
-            // Like above, remove spacing on the last element that incorrectly gets spacing added.
             visibleActionsWidth -= spacing;
         }
     } else {
@@ -419,7 +403,6 @@ void ToolBarLayoutPrivate::calculateImplicitSize() {
     }
 
     if (sortedDelegates.size() > q->maxShowActionNum() + hiddenActions.size()) {
-        // hide if raise on limit
         for (auto i = q->maxShowActionNum(); i < sortedDelegates.size(); i++) {
             auto* delegate = sortedDelegates[i];
             delegate->hide();
@@ -533,9 +516,6 @@ void ToolBarLayoutPrivate::performLayout() {
     }
 
     if (actionsChanged) {
-        // Due to the way QQmlListProperty works, if we emit changed every time
-        // an action is added/removed, we end up emitting way too often. So
-        // instead only do it after everything else is done.
         Q_EMIT q->actionsChanged();
         actionsChanged = false;
     }
@@ -636,25 +616,16 @@ void ToolBarLayoutPrivate::maybeHideDelegate(int index, qreal& currentWidth, qre
     auto delegate = sortedDelegates.at(index);
 
     if (! delegate->isVisible()) {
-        // If the delegate isn't visible anyway, do nothing.
         return;
     }
 
     if (currentWidth + delegate->width() < totalWidth &&
         (firstHiddenIndex < 0 || index < firstHiddenIndex)) {
-        // If the delegate is fully visible and we have not already hidden
-        // actions, do nothing.
         return;
     }
 
     if (delegate->isKeepVisible()) {
-        // If the action is marked as KeepVisible, we need to try our best to
-        // keep it in view. If the full size delegate does not fit, we try the
-        // icon-only delegate. If that also does not fit, try and find other
-        // actions to hide. Finally, if that also fails, we will hide the
-        // delegate.
         if (currentWidth + delegate->iconWidth() > totalWidth) {
-            // First, hide any earlier actions that are not marked as KeepVisible.
             for (auto currentIndex = index - 1; currentIndex >= 0; --currentIndex) {
                 auto previousDelegate = sortedDelegates.at(currentIndex);
                 if (! previousDelegate->isVisible() || previousDelegate->isKeepVisible()) {
@@ -679,8 +650,6 @@ void ToolBarLayoutPrivate::maybeHideDelegate(int index, qreal& currentWidth, qre
                 return;
             }
 
-            // Hiding normal actions did not help enough, so go through actions
-            // with KeepVisible set and try and collapse them to IconOnly.
             for (auto currentIndex = index - 1; currentIndex >= 0; --currentIndex) {
                 auto previousDelegate = sortedDelegates.at(currentIndex);
                 if (! previousDelegate->isVisible() || ! previousDelegate->isKeepVisible()) {
@@ -700,7 +669,6 @@ void ToolBarLayoutPrivate::maybeHideDelegate(int index, qreal& currentWidth, qre
                 }
             }
 
-            // If that also did not work, then hide this action after all.
             if (currentWidth + delegate->width() > totalWidth) {
                 delegate->hide();
                 hiddenActions.append(delegate->action());
@@ -709,13 +677,9 @@ void ToolBarLayoutPrivate::maybeHideDelegate(int index, qreal& currentWidth, qre
             delegate->showIcon();
         }
     } else {
-        // The action is not marked as KeepVisible and it does not fit within
-        // the current layout, so hide it.
         delegate->hide();
         hiddenActions.append(delegate->action());
 
-        // If this is the first item to be hidden, mark it so we know we should
-        // also hide the following items.
         if (firstHiddenIndex < 0) {
             firstHiddenIndex = index;
         }
@@ -739,4 +703,4 @@ void ToolBarLayoutPrivate::clearActions(ToolBarLayout::ActionsProperty* list) {
     reinterpret_cast<ToolBarLayout*>(list->data)->clearActions();
 }
 
-#include "moc_toolbarlayout.cpp"
+} // namespace qml_material

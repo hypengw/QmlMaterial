@@ -1,4 +1,4 @@
-#include "qml_material/util/path_wave.hpp"
+#include "qml_material/path/path_wave.hpp"
 
 #include <QLineF>
 #include <QPainterPath>

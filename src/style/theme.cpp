@@ -1,5 +1,5 @@
-#include "qml_material/theme.hpp"
-#include "qml_material/enum.hpp"
+#include "qml_material/style/theme.hpp"
+#include "qml_material/core/enum.hpp"
 #include "qml_material/token/token.hpp"
 
 using namespace qml_material;
@@ -194,4 +194,4 @@ auto ThemeSize::verticalPadding() const -> qint32 {
     }
 }
 
-#include <qml_material/moc_theme.cpp>
+#include <qml_material/style/moc_theme.cpp>

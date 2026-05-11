@@ -13,7 +13,7 @@
 #include "qml_material/token/segmented_button.hpp"
 #include "qml_material/token/badge.hpp"
 #include "qml_material/anim/interpolator.hpp"
-#include "qml_material/enum.hpp"
+#include "qml_material/core/enum.hpp"
 Q_MOC_INCLUDE("qml_material/token/icon.hpp")
 
 namespace qml_material::token

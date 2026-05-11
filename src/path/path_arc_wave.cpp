@@ -1,4 +1,4 @@
-#include "qml_material/util/path_arc_wave.hpp"
+#include "qml_material/path/path_arc_wave.hpp"
 
 #include <QPainterPath>
 #include <QPointF>

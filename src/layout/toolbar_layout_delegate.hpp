@@ -2,21 +2,20 @@
  * SPDX-FileCopyrightText: 2020 Arjen Hiemstra <ahiemstra@heimr.nl>
  *
  * SPDX-License-Identifier: LGPL-2.1-only OR LGPL-3.0-only OR LicenseRef-KDE-Accepted-LGPL
+ *
+ * Private header — internal helper for ToolBarLayout. Not installed, not part of public API.
  */
 
-#ifndef TOOLBARLAYOUTDELEGATE_H
-#define TOOLBARLAYOUTDELEGATE_H
+#pragma once
 
-#include "displayhint.h"
 #include <QQmlIncubator>
 #include <QQuickItem>
 
-class ToolBarLayout;
+#include "qml_material/layout/toolbar_layout.hpp"
 
-/*
- * A helper subclass of QQmlIncubator that allows us to do some things more
- * easily.
- */
+namespace qml_material
+{
+
 class ToolBarDelegateIncubator : public QQmlIncubator
 {
 public:
@@ -40,11 +39,6 @@ private:
     bool m_finished = false;
 };
 
-/*
- * A helper class to encapsulate some of the delegate functionality used by
- * ToolBarLayout. Primarily, this hides some of the difference that delegates
- * are two items instead of one.
- */
 class ToolBarLayoutDelegate : public QObject
 {
     Q_OBJECT
@@ -103,11 +97,11 @@ private:
     ToolBarDelegateIncubator *m_fullIncubator = nullptr;
     ToolBarDelegateIncubator *m_iconIncubator = nullptr;
 
-    DisplayHint::DisplayHints m_displayHint = DisplayHint::NoPreference;
+    ToolBarLayout::DisplayHints m_displayHint = ToolBarLayout::NoPreference;
     bool m_ready = false;
     bool m_actionVisible = true;
     bool m_fullVisible = false;
     bool m_iconVisible = false;
 };
 
-#endif // TOOLBARLAYOUTDELEGATE_H
+} // namespace qml_material
