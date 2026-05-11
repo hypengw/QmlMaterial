@@ -53,6 +53,10 @@ endif()
 
 find_package(Qt6 REQUIRED COMPONENTS Core Quick QuickControls2 Gui ShaderTools)
 
+if(UNIX AND NOT ANDROID AND NOT EMSCRIPTEN)
+  find_package(Qt6 REQUIRED COMPONENTS DBus)
+endif()
+
 if(Qt6Quick_VERSION VERSION_GREATER_EQUAL 6.10)
   find_package(Qt6 REQUIRED COMPONENTS QuickPrivate)
 endif()
@@ -127,7 +131,10 @@ set(SOURCES
     src/item/rectangle.cpp
     src/item/rrect_shadow.cpp
     src/item/blur_mask.cpp
-    src/item/input_block.cpp)
+    src/item/input_block.cpp
+    src/dialog/file_dialog.cpp
+    src/dialog/file_dialog_p.hpp
+    include/qml_material/dialog/file_dialog.hpp)
 
 set(QML_FILES
     qml/Token.qml
@@ -307,7 +314,8 @@ set(QML_REG_INCLUDE_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/item"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/token"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/model"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/util")
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/util"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/dialog")
 
 set(SHADER_DEFINES)
 
@@ -340,8 +348,11 @@ else()
     if(ANDROID)
       list(APPEND SOURCES src/platform/android/android.cpp)
       list(APPEND SHADER_DEFINES "GLES=1")
+      list(APPEND SOURCES src/dialog/file_dialog_stub.cpp)
     else()
-      list(APPEND SOURCES src/platform/linux/xdp.cpp)
+      list(APPEND SOURCES src/platform/linux/xdp.cpp
+           src/platform/linux/file_dialog_xdp.cpp
+           src/platform/linux/file_dialog_xdp.hpp)
     endif()
   elseif(WIN32)
     set(QM_ICON_FILL_0_FONT_FILE
@@ -351,7 +362,12 @@ else()
 
     set(QML_MATERIAL_BUILD_TYPE STATIC)
     list(APPEND SOURCES src/platform/win/win.cpp)
+    list(APPEND SOURCES src/dialog/file_dialog_stub.cpp)
   endif()
+endif()
+
+if(EMSCRIPTEN)
+  list(APPEND SOURCES src/dialog/file_dialog_stub.cpp)
 endif()
 
 list(APPEND RESOURCES "${QM_ICON_FILL_0_FONT_FILE}"
@@ -469,6 +485,10 @@ target_link_libraries(
          Qt6::QuickControls2 # QQuickAttachedPropertyPropagator
          Qt6::QuickPrivate # QQuickStateGroup
   PRIVATE material_color)
+
+if(UNIX AND NOT ANDROID AND NOT EMSCRIPTEN)
+  target_link_libraries(${LIBNAME} PRIVATE Qt6::DBus)
+endif()
 
 if(NOT QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
   include(CMakePackageConfigHelpers)

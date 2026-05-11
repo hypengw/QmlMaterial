@@ -838,6 +838,102 @@ MD.Page {
                     spacing: 16
                     MD.Text {
                         Layout.alignment: Qt.AlignHCenter
+                        text: 'Dialogs'
+                        typescale: MD.Token.typescale.title_large
+                    }
+
+                    ComponentCard {
+                        id: m_fd_card
+                        title: 'File pickers'
+                        spacing: 12
+
+                        property string lastResult: ''
+
+                        MD.FileDialog {
+                            id: m_fd_open_one
+                            title: 'Open file'
+                            fileMode: MD.FileDialog.OpenFile
+                            nameFilters: ['Images (*.png *.jpg *.jpeg)', 'Text (*.txt *.md)', 'All files (*)']
+                            onAccepted: m_fd_card.lastResult = 'OpenFile: ' + selectedFile
+                            onRejected: m_fd_card.lastResult = 'OpenFile: cancelled'
+                        }
+                        MD.FileDialog {
+                            id: m_fd_open_many
+                            title: 'Open files'
+                            fileMode: MD.FileDialog.OpenFiles
+                            nameFilters: ['All files (*)']
+                            onAccepted: m_fd_card.lastResult = 'OpenFiles: ' + JSON.stringify(selectedFiles.map(u => u.toString()))
+                            onRejected: m_fd_card.lastResult = 'OpenFiles: cancelled'
+                        }
+                        MD.FileDialog {
+                            id: m_fd_save
+                            title: 'Save file'
+                            fileMode: MD.FileDialog.SaveFile
+                            nameFilters: ['Text (*.txt)', 'All files (*)']
+                            defaultSuffix: 'txt'
+                            onAccepted: m_fd_card.lastResult = 'SaveFile: ' + selectedFile
+                            onRejected: m_fd_card.lastResult = 'SaveFile: cancelled'
+                        }
+                        MD.FolderDialog {
+                            id: m_fd_folder
+                            title: 'Pick folder'
+                            onAccepted: m_fd_card.lastResult = 'FolderDialog: ' + selectedFolder
+                            onRejected: m_fd_card.lastResult = 'FolderDialog: cancelled'
+                        }
+
+                        GridLayout {
+                            Layout.fillWidth: true
+                            columns: 2
+                            rowSpacing: 8
+                            columnSpacing: 8
+
+                            MD.Button {
+                                Layout.fillWidth: true
+                                mdState.type: MD.Enum.BtFilled
+                                text: 'Open file'
+                                icon.name: MD.Token.icon.file_open
+                                onClicked: m_fd_open_one.open()
+                            }
+                            MD.Button {
+                                Layout.fillWidth: true
+                                mdState.type: MD.Enum.BtFilledTonal
+                                text: 'Open multiple'
+                                icon.name: MD.Token.icon.file_open
+                                onClicked: m_fd_open_many.open()
+                            }
+                            MD.Button {
+                                Layout.fillWidth: true
+                                mdState.type: MD.Enum.BtFilledTonal
+                                text: 'Save file'
+                                icon.name: MD.Token.icon.file_save
+                                onClicked: m_fd_save.open()
+                            }
+                            MD.Button {
+                                Layout.fillWidth: true
+                                mdState.type: MD.Enum.BtFilledTonal
+                                text: 'Pick folder'
+                                icon.name: MD.Token.icon.folder
+                                onClicked: m_fd_folder.open()
+                            }
+                        }
+
+                        MD.Label {
+                            Layout.fillWidth: true
+                            visible: m_fd_card.lastResult.length > 0
+                            text: m_fd_card.lastResult
+                            typescale: MD.Token.typescale.body_small
+                            opacity: 0.8
+                            wrapMode: Text.Wrap
+                        }
+                    }
+                }
+            }
+            MD.Pane {
+                Layout.alignment: Qt.AlignHCenter
+                ColumnLayout {
+                    spacing: 16
+                    MD.Text {
+                        Layout.alignment: Qt.AlignHCenter
                         text: 'Navigation'
                         typescale: MD.Token.typescale.title_large
                     }
