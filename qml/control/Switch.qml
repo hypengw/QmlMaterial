@@ -93,6 +93,7 @@ T.Switch {
             }
         }
         MD.Ripple {
+            id: m_ripple
             x: handle.x + handle.width / 2 - width / 2
             y: handle.y + handle.height / 2 - height / 2
             width: 28
@@ -103,6 +104,12 @@ T.Switch {
             pressY: control.pressY
             color: control.mdState.stateLayerColor
             stateOpacity: control.mdState.stateLayerOpacity
+        }
+
+        MD.FocusIndicator {
+            parent: m_ripple
+            corners: MD.Util.corners(m_ripple.width / 2)
+            active: control.visualFocus
         }
     }
 

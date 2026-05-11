@@ -35,6 +35,7 @@ T.RadioButton {
             }
         }
         MD.Ripple {
+            id: m_ripple
             anchors.centerIn: parent
             width: 40
             height: 40
@@ -44,6 +45,12 @@ T.RadioButton {
             pressed: control.pressed
             stateOpacity: control.mdState.stateLayerOpacity
             color: control.mdState.stateLayerColor
+        }
+
+        MD.FocusIndicator {
+            parent: m_ripple
+            corners: MD.Util.corners(20)
+            active: control.visualFocus
         }
     }
 
