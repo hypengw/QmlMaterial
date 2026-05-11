@@ -295,6 +295,28 @@ public:
 };
 
 /**
+ * @brief Geometry tokens for the M3 keyboard focus ring
+ *
+ * Dual-stroke ring drawn outside the component edge. Values follow the
+ * Android Material `FocusRingDrawable` reference: outer 2dp, inner 3dp,
+ * inner overlaps the outer by 1dp to avoid a seam, with an outer gap
+ * separating the ring from the component.
+ */
+struct FocusRing {
+    Q_GADGET
+    QML_ANONYMOUS
+    Q_PROPERTY(qreal outer_stroke_width MEMBER outer_stroke_width CONSTANT FINAL)
+    Q_PROPERTY(qreal inner_stroke_width MEMBER inner_stroke_width CONSTANT FINAL)
+    Q_PROPERTY(qreal inner_stroke_inset MEMBER inner_stroke_inset CONSTANT FINAL)
+    Q_PROPERTY(qreal outer_offset       MEMBER outer_offset       CONSTANT FINAL)
+public:
+    qreal outer_stroke_width { 2 };
+    qreal inner_stroke_width { 3 };
+    qreal inner_stroke_inset { 1 };
+    qreal outer_offset       { 2 };
+};
+
+/**
  * @brief Manages UI element state appearances
  *
  * Defines visual feedback for different interaction states
@@ -312,6 +334,9 @@ struct State {
     /// State appearance when element is dragged
     Q_PROPERTY(qml_material::token::StateItem dragged MEMBER dragged CONSTANT FINAL)
 
+    /// Geometry of the keyboard focus ring
+    Q_PROPERTY(qml_material::token::FocusRing focus_ring MEMBER focus_ring CONSTANT FINAL)
+
     /// Opacity for disabled content (text/icons)
     Q_PROPERTY(double disabled_content MEMBER disabled_content CONSTANT FINAL)
     /// Opacity for disabled containers (backgrounds)
@@ -322,6 +347,8 @@ public:
     StateItem pressed { 0.1 };
     StateItem focus { 0.1 };
     StateItem dragged { 0.16 };
+
+    FocusRing focus_ring;
 
     double disabled_content { 0.38 };
     double disabled_container { 0.12 };

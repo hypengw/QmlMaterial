@@ -227,6 +227,7 @@ set(QML_FILES
     qml/component/extra/SnakeView.qml
     qml/component/extra/DialogHeader.qml
     qml/component/extra/RichToolTip.qml
+    qml/component/extra/FocusIndicator.qml
     qml/delegate/ListItem.qml
     qml/delegate/ListGridBaseDelegate.qml
     qml/flickable/Flickable.qml

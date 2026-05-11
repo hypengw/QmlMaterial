@@ -62,5 +62,10 @@ T.Button {
             stateOpacity: control.mdState.stateLayerOpacity
             color: control.mdState.stateLayerColor
         }
+
+        MD.FocusIndicator {
+            corners: parent.corners
+            active: control.visualFocus
+        }
     }
 }
