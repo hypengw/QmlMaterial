@@ -32,9 +32,10 @@ T.Dialog {
     y: (parent.height - height) / 2
 
     spacing: 0
-    topPadding: 16
-    bottomPadding: 24
+    topPadding: 12
+    bottomPadding: 12
     horizontalPadding: 24
+    property real buttonBoxPadding: 24
 
     modal: true
 
@@ -87,7 +88,8 @@ T.Dialog {
     }
 
     footer: MD.DialogButtonBox {
-        bottomPadding: 24
+        bottomPadding: control.buttonBoxPadding
+        horizontalPadding: control.buttonBoxPadding
         visible: count > 0
     }
 

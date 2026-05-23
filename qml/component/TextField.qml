@@ -17,7 +17,7 @@ MD.TextFieldEmbed {
 
     font.capitalization: Font.MixedCase
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, Math.max(contentWidth, m_placeholder.implicitWidth) + leftPadding + rightPadding)
-    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + bottomPadding + (control.type === MD.Enum.TextFieldFilled ? 0 : topPadding))
+    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)
 
     // If we're clipped, set topInset to half the height of the placeholder text to avoid it being clipped.
     topInset: clip ? m_placeholder.largestHeight / 2 : 0
@@ -25,14 +25,20 @@ MD.TextFieldEmbed {
 
     leftPadding: leading.visible ? 16 + 12 + leading.implicitWidth : 16
     rightPadding: trailing.visible ? 16 + 12 + trailing.implicitWidth : 16
-    bottomPadding: control.mdState.bottomPadding
+
+    bottomPadding: {
+        if (mdState.type === MD.Enum.TextFieldFilled)
+            return mdState.bottomPadding / 2;
+        else
+            return mdState.bottomPadding;
+    }
     topPadding: {
-        if (control.type === MD.Enum.TextFieldFilled) {
+        if (mdState.type === MD.Enum.TextFieldFilled) {
             const ch = cursorRectangle.height;
             const ph = m_placeholder.implicitHeight;
-            return ph + 8;
+            return ph + mdState.topPadding / 2;
         } else {
-            return control.mdState.topPadding;
+            return mdState.topPadding;
         }
     }
 
@@ -80,7 +86,6 @@ MD.TextFieldEmbed {
 
     background: Item {
         implicitWidth: 64
-        implicitHeight: control.mdState.containerHeight
 
         MD.Loader {
             anchors.fill: parent
@@ -108,5 +113,4 @@ MD.TextFieldEmbed {
     }
     color: control.mdState.textColor
     placeholderTextColor: control.mdState.placeholderColor
-
 }

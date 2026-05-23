@@ -39,11 +39,8 @@ MD.MState {
         }
         return root.dense ? 56 : 64;
     }
-    property int topPadding: root.dense && root.type !== MD.Enum.TextFieldFilled ? 4 : 8
-    property int bottomPadding: {
-        if (!root.dense) return 8;
-        return root.type === MD.Enum.TextFieldFilled ? 6 : 4;
-    }
+    property int topPadding: root.dense ? 12 : 16
+    property int bottomPadding: root.dense ? 12 : 16
     property int corner: MD.Token.shape.corner.extra_small
 
     state: {

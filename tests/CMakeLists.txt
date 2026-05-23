@@ -13,7 +13,8 @@ set_target_properties(qm_grab PROPERTIES AUTOMOC ON)
 
 set(VISUAL_SCENES button elevation shape ripple ripple_phases loading_indicator_shapes tooltip wave_progress
     focus_button focus_iconbutton focus_fab focus_chip
-    focus_switch focus_checkbox focus_radio)
+    focus_switch focus_checkbox focus_radio
+    datepicker colorpicker colorpicker_button)
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/out)
 foreach(scene ${VISUAL_SCENES})
   add_test(

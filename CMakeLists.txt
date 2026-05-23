@@ -106,6 +106,7 @@ set(SOURCES
     src/util/pool.cpp
     src/util/image.cpp
     src/util/qml_util.cpp
+    src/util/hct.cpp
     src/control/page_context.cpp
     src/control/color_picker.cpp
     src/layout/width_provider.cpp
@@ -235,6 +236,19 @@ set(QML_FILES
     qml/component/extra/SdfRectangle.qml
     qml/component/extra/SnakeView.qml
     qml/component/extra/DialogHeader.qml
+    qml/component/datepicker/DatePicker.qml
+    qml/component/datepicker/DatePickerDialog.qml
+    qml/component/datepicker/DateTextField.qml
+    qml/component/colorpicker/ColorWheel.qml
+    qml/component/colorpicker/ColorTriangle.qml
+    qml/component/colorpicker/HueChannelSlider.qml
+    qml/component/colorpicker/ChannelSlider.qml
+    qml/component/colorpicker/ColorChannelRow.qml
+    qml/component/colorpicker/ColorPicker.qml
+    qml/component/colorpicker/ColorPickerDialog.qml
+    qml/component/colorpicker/ColorPickerButton.qml
+    qml/component/extra/NumberStepper.qml
+    qml/component/extra/StepperInput.qml
     qml/component/extra/RichToolTip.qml
     qml/component/extra/FocusIndicator.qml
     qml/delegate/ListItem.qml

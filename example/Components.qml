@@ -1054,6 +1054,60 @@ MD.Page {
                     }
                 }
             }
+
+            MD.Pane {
+                Layout.alignment: Qt.AlignHCenter
+                ColumnLayout {
+                    spacing: 16
+                    MD.Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: 'Pickers'
+                        typescale: MD.Token.typescale.title_large
+                    }
+
+                    ComponentCard {
+                        title: 'Date picker'
+
+                        MD.DateTextField {
+                            Layout.alignment: Qt.AlignHCenter
+                            Layout.preferredWidth: 200
+                            value: m_date_picker.selectedDate
+                            onModified: function (d) { m_date_picker.selectedDate = d; }
+                        }
+                        MD.Divider {
+                            Layout.fillWidth: true
+                        }
+                        MD.DatePicker {
+                            id: m_date_picker
+                            Layout.alignment: Qt.AlignHCenter
+                            showHeader: false
+                            selectionMode: MD.DatePicker.SelectionMode.Single
+                            selectedDate: new Date()
+                        }
+                    }
+
+                    ComponentCard {
+                        title: 'Color picker'
+
+                        MD.ColorPickerButton {
+                            Layout.alignment: Qt.AlignHCenter
+                            Layout.preferredWidth: 120
+                            color: m_color_picker.color
+                            onAccepted: function (c) { m_color_picker.color = c; }
+                        }
+                        MD.Divider {
+                            Layout.fillWidth: true
+                        }
+                        MD.ColorPicker {
+                            id: m_color_picker
+                            Layout.fillWidth: true
+                            Layout.preferredWidth: 400
+                            showHeader: false
+                            color: '#6750A4'
+                        }
+                    }
+                }
+            }
         }
     }
 

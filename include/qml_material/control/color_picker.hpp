@@ -19,7 +19,7 @@ public:
 
 class ColorPicker : public QObject {
     Q_OBJECT
-    QML_ELEMENT
+    QML_NAMED_ELEMENT(ImageColorPicker)
 
     Q_PROPERTY(QImage image READ image WRITE setImage NOTIFY imageChanged FINAL)
     Q_PROPERTY(QColor color READ color NOTIFY colorChanged FINAL)
