@@ -30,6 +30,12 @@ public:
 
     Q_INVOKABLE void track(QVariant, Track);
 
+    /// Hand off `url` to the system URL handler. Implementation is
+    /// per-platform; today only Linux is wired (via xdg-desktop-portal
+    /// `org.freedesktop.portal.OpenURI`). Logs a warning on platforms
+    /// that don't have a backend yet.
+    Q_INVOKABLE void openUrlExternally(const QString& url);
+
     Q_INVOKABLE bool hasIcon(const QJSValue& v) const;
 
     Q_INVOKABLE static void closePopup(QObject* obj);
@@ -105,6 +111,11 @@ private:
 
 auto tryCreateComponent(const QVariant& val, QQmlComponent::CompilationMode useAsync,
                         const std::function<QQmlComponent*()>& createComponent) -> QQmlComponent*;
+
+/// Platform-split entry point. Each `src/platform/<os>/` provides its
+/// own implementation. Linux uses xdg-desktop-portal `OpenURI`; other
+/// platforms get a no-op stub today.
+void sysOpenUrl(const QString& url);
 } // namespace qml_material
 
 namespace qcm

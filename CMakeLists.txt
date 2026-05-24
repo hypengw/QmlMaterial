@@ -366,7 +366,8 @@ else()
     else()
       list(APPEND SOURCES src/platform/linux/xdp.cpp
            src/platform/linux/file_dialog_xdp.cpp
-           src/platform/linux/file_dialog_xdp.hpp)
+           src/platform/linux/file_dialog_xdp.hpp
+           src/platform/linux/open_uri_xdp.cpp)
     endif()
   elseif(WIN32)
     set(QM_ICON_FILL_0_FONT_FILE
