@@ -77,6 +77,14 @@ public:
     X(primary_container)
     /** @brief Color for content on primary container */
     X(on_primary_container)
+    /** @brief Primary container that stays the same between light and dark themes */
+    X(primary_fixed)
+    /** @brief Stronger tone of primary fixed */
+    X(primary_fixed_dim)
+    /** @brief Color for content on primary fixed */
+    X(on_primary_fixed)
+    /** @brief Lower-emphasis color for content on primary fixed */
+    X(on_primary_fixed_variant)
     /** @brief The secondary color used for less prominent components */
     X(secondary)
     /** @brief Color for content on secondary color */
@@ -85,6 +93,14 @@ public:
     X(secondary_container)
     /** @brief Color for content on secondary container */
     X(on_secondary_container)
+    /** @brief Secondary container that stays the same between light and dark themes */
+    X(secondary_fixed)
+    /** @brief Stronger tone of secondary fixed */
+    X(secondary_fixed_dim)
+    /** @brief Color for content on secondary fixed */
+    X(on_secondary_fixed)
+    /** @brief Lower-emphasis color for content on secondary fixed */
+    X(on_secondary_fixed_variant)
     /** @brief The tertiary color for specific emphasis */
     X(tertiary)
     /** @brief Color for content on tertiary color */
@@ -93,6 +109,14 @@ public:
     X(tertiary_container)
     /** @brief Color for content on tertiary container */
     X(on_tertiary_container)
+    /** @brief Tertiary container that stays the same between light and dark themes */
+    X(tertiary_fixed)
+    /** @brief Stronger tone of tertiary fixed */
+    X(tertiary_fixed_dim)
+    /** @brief Color for content on tertiary fixed */
+    X(on_tertiary_fixed)
+    /** @brief Lower-emphasis color for content on tertiary fixed */
+    X(on_tertiary_fixed_variant)
     /** @brief Color used for error states */
     X(error)
     /** @brief Color for content on error color */
