@@ -1,7 +1,5 @@
 #pragma once
 
-#include <unordered_map>
-
 #include <QtQml/QQmlEngine>
 #include <QtGui/QColor>
 
@@ -11,11 +9,6 @@
 
 namespace qml_material
 {
-
-struct QColorCompare {
-    using is_transparent = void;
-    bool operator()(const QColor& a, const QColor& b) const noexcept { return a.rgba() < b.rgba(); }
-};
 
 /**
  * @brief Material Design [Color](https://m3.material.io/styles/color/roles) Manager class
@@ -230,14 +223,13 @@ public:
 private:
     void genSchemeImpl(Enum::ThemeMode);
 
-    QColor                                  m_accent_color;
-    Enum::ThemeMode                         m_mode;
-    Enum::ThemeMode                         m_last_mode;
-    Enum::PaletteType                       m_scheme_type;
-    MdScheme                                m_scheme;
-    std::map<QColor, QColor, QColorCompare> m_on_map;
-    bool                                    m_use_sys_color_scheme;
-    bool                                    m_use_sys_accent_color;
+    QColor            m_accent_color;
+    Enum::ThemeMode   m_mode;
+    Enum::ThemeMode   m_last_mode;
+    Enum::PaletteType m_scheme_type;
+    MdScheme          m_scheme;
+    bool              m_use_sys_color_scheme;
+    bool              m_use_sys_accent_color;
 };
 
 void sysNotifyInit(MdColorMgr&);

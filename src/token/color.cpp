@@ -12,47 +12,6 @@ using namespace qml_material;
 namespace
 {
 constexpr QRgb BASE_COLOR { qRgb(190, 231, 253) };
-
-auto gen_on_map(const MdScheme& sh) -> std::map<QColor, QColor, QColorCompare> {
-    std::map<QColor, QColor, QColorCompare> map {
-        { sh.primary, sh.on_primary },
-        { sh.primary_container, sh.on_primary_container },
-        { sh.secondary, sh.on_secondary },
-        { sh.secondary_container, sh.on_secondary_container },
-        { sh.tertiary, sh.on_tertiary },
-        { sh.tertiary_container, sh.on_tertiary_container },
-        { sh.error, sh.on_error },
-        { sh.error_container, sh.on_error_container },
-
-        { sh.inverse_surface, sh.inverse_on_surface },
-        { sh.inverse_primary, sh.inverse_on_surface },
-
-        { sh.background, sh.on_background },
-        { sh.surface, sh.on_surface },
-        { sh.surface_variant, sh.on_surface_variant },
-        { sh.surface_dim, sh.on_surface },
-        { sh.surface_bright, sh.on_surface },
-        { sh.surface_container, sh.on_surface },
-        { sh.surface_container_high, sh.on_surface },
-        { sh.surface_container_highest, sh.on_surface },
-        { sh.surface_container_low, sh.on_surface },
-        { sh.surface_container_lowest, sh.on_surface },
-
-        { sh.outline, sh.background },
-        { sh.shadow, sh.background },
-
-        { sh.surface_1, sh.on_surface },
-        { sh.surface_2, sh.on_surface },
-        { sh.surface_3, sh.on_surface },
-        { sh.surface_4, sh.on_surface },
-        { sh.surface_5, sh.on_surface },
-    };
-    auto map2 = map;
-    for (auto& el : map2) {
-        map.insert({ el.second, el.first });
-    }
-    return map;
-}
 } // namespace
 
 MdColorMgr::MdColorMgr(QObject* parent)
@@ -114,10 +73,26 @@ void MdColorMgr::setUseSysAccentColor(bool v) {
 }
 
 QColor MdColorMgr::getOn(QColor in) const {
-    if (m_on_map.contains(in)) {
-        return m_on_map.at(in);
-    }
-    return m_scheme.on_background;
+    const auto& s = m_scheme;
+    const QRgb  v = in.rgb();
+
+    if (v == s.primary) return s.on_primary;
+    if (v == s.primary_container) return s.on_primary_container;
+    if (v == s.primary_fixed || v == s.primary_fixed_dim) return s.on_primary_fixed;
+    if (v == s.secondary) return s.on_secondary;
+    if (v == s.secondary_container) return s.on_secondary_container;
+    if (v == s.secondary_fixed || v == s.secondary_fixed_dim) return s.on_secondary_fixed;
+    if (v == s.tertiary) return s.on_tertiary;
+    if (v == s.tertiary_container) return s.on_tertiary_container;
+    if (v == s.tertiary_fixed || v == s.tertiary_fixed_dim) return s.on_tertiary_fixed;
+    if (v == s.error) return s.on_error;
+    if (v == s.error_container) return s.on_error_container;
+    if (v == s.inverse_surface || v == s.inverse_primary) return s.inverse_on_surface;
+    if (v == s.surface_variant) return s.on_surface_variant;
+    if (v == s.background) return s.on_background;
+
+    // surface / surface_container_* / surface_1..5 all share on_surface
+    return s.on_surface;
 }
 
 void MdColorMgr::genSchemeImpl(Enum::ThemeMode mode) {
@@ -128,7 +103,6 @@ void MdColorMgr::genSchemeImpl(Enum::ThemeMode mode) {
 
     m_last_mode = mode;
 
-    m_on_map = gen_on_map(m_scheme);
     Q_EMIT schemeChanged();
 }
 
