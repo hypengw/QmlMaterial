@@ -149,8 +149,8 @@ T.ItemDelegate {
             Loader {
                 id: m_proxy_below
                 sourceComponent: control.below
+                x: m_leader.visible ? m_leader.width + 16 : 0
                 width: parent.width - x
-                x: m_leader.visible ? m_trailing.width : 0
             }
         }
     }
