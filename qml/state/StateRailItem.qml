@@ -14,6 +14,11 @@ MD.MState {
     supportTextColor: root.item.checked ? root.ctx.color.on_secondary_container : root.ctx.color.on_surface_variant
     stateLayerColor: "transparent"
 
+    // M3 expressive: vertical (collapsed) active label uses secondary,
+    // horizontal (expanded) active label uses on_secondary_container.
+    readonly property color collapsedLabelColor: root.item.checked ? root.ctx.color.secondary : root.ctx.color.on_surface_variant
+    readonly property color expandedLabelColor: root.item.checked ? root.ctx.color.on_secondary_container : root.ctx.color.on_surface_variant
+
     state: MD.Util.stateText(item.enabled, item.down || item.visualFocus, item.hovered, false)
 
     states: [

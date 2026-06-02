@@ -163,6 +163,14 @@ public:
         PosSingle     ///< Single item (not in a group or alone)
     };
     Q_ENUM(ItemPosition)
+
+    enum class RailArrangement
+    {
+        RailTop = 0, ///< Items aligned to top
+        RailCenter,  ///< Items centered vertically
+        RailBottom   ///< Items aligned to bottom
+    };
+    Q_ENUM(RailArrangement)
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(Enum::ToastFlags);
 } // namespace qml_material

@@ -30,11 +30,14 @@ T.Button {
     property Item trailing: null
 
     // -- metrics --
-    readonly property real _indicatorMargin: 12
-    readonly property real _collapsedWidth: _collapsedIndicatorW + _indicatorMargin * 2
+    // expanded indicator inset from rail edge
+    readonly property real _indicatorMargin: 16
+    // M3 expressive wide rail collapsed container = 96dp
+    readonly property real _collapsedWidth: 96
     readonly property real _collapsedIndicatorW: 56
     readonly property real _collapsedIndicatorH: 32
     readonly property real _expandedIndicatorH: 56
+    // leading space between the active indicator edge and the icon
     readonly property real _expandedLeadingPad: 16
     readonly property real _expandedTrailingPad: 24
     readonly property real _iconLabelSpacing: 12
@@ -79,7 +82,7 @@ T.Button {
             font.capitalization: Font.Capitalize
             typescale: control.expand ? MD.Token.typescale.label_large : MD.Token.typescale.label_medium
             prominent: control.checked
-            color: control.mdState.textColor
+            color: control.expand ? control.mdState.expandedLabelColor : control.mdState.collapsedLabelColor
             // positioned by states
         }
 
@@ -89,6 +92,8 @@ T.Button {
                 when: !control.expand
                 PropertyChanges {
                     m_icon {
+                        // center within the fixed collapsed width so it never jumps to the
+                        // expanded center while the rail width is still animating
                         x: (control._collapsedWidth - control.icon.width) / 2
                         y: (control._collapsedIndicatorH - control.icon.height) / 2
                     }
@@ -157,7 +162,7 @@ T.Button {
 
         MD.ElevationRectangle {
             id: m_indicator
-            x: control._indicatorMargin
+            x: control.expand ? control._indicatorMargin : (control._collapsedWidth - control._collapsedIndicatorW) / 2
             y: 0
             width: control.expand ? control.width - control._indicatorMargin * 2 : control._collapsedIndicatorW
             height: control.expand ? control._expandedIndicatorH : control._collapsedIndicatorH

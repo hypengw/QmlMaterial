@@ -211,6 +211,7 @@ set(QML_FILES
     qml/component/chip/InputChip.qml
     qml/component/chip/SuggestionChip.qml
     qml/component/navigation/RailItem.qml
+    qml/component/navigation/NavigationRail.qml
     qml/component/navigation/StandardDrawer.qml
     qml/component/navigation/DrawerItem.qml
     qml/component/navigation/DrawerSubheader.qml

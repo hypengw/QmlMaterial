@@ -70,36 +70,30 @@ MD.Page {
                 active: !root.isCompact
                 visible: active
 
-                sourceComponent: MD.StandardDrawer {
+                sourceComponent: MD.NavigationRail {
+                    id: m_rail
                     model: root.pageModel
                     currentIndex: root.pageIndex
 
-                    Behavior on implicitWidth {
-                        NumberAnimation {
-                            duration: MD.Token.duration.short4
-                        }
+                    fabAction: MD.Action {
+                        icon.name: MD.Token.icon.add
+                        text: 'Create'
                     }
 
                     onClicked: function (model) {
                         root.pageIndex = model.index;
                     }
 
-                    drawerContent: ColumnLayout {
-                        spacing: 0
-
-                        MD.Space {
-                            spacing: 16
-                        }
-
-                        Item {
-                            Layout.fillHeight: true
-                            Layout.minimumHeight: 0
-                        }
+                    // theme panel only fits the expanded rail
+                    footer: Item {
+                        implicitHeight: m_panel.visible ? m_panel.implicitHeight + 16 : 0
 
                         ColumnLayout {
+                            id: m_panel
+                            visible: m_rail.useLarge
+                            x: 16
+                            width: parent.width - 32
                             spacing: 8
-                            Layout.leftMargin: 16
-                            Layout.rightMargin: 16
                             RowLayout {
                                 MD.Label {
                                     text: 'Brightness'
