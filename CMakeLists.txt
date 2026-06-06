@@ -37,16 +37,6 @@ set(QML_INSTALL_DIR
     CACHE STRING "")
 message("QML_INSTALL_DIR: ${QML_INSTALL_DIR}")
 
-# check lto
-include(CheckIPOSupported)
-check_ipo_supported(RESULT is_ipo_supported OUTPUT lto_error)
-if(is_ipo_supported
-   AND NOT EMSCRIPTEN
-   AND NOT WIN32
-   AND NOT CMAKE_BUILD_TYPE MATCHES Debug)
-  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
-endif()
-
 if(UNIX AND NOT APPLE)
   set(LINUX CACHE INTERNAL TRUE "")
 endif()
