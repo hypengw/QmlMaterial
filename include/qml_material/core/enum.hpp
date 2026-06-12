@@ -171,6 +171,13 @@ public:
         RailBottom   ///< Items aligned to bottom
     };
     Q_ENUM(RailArrangement)
+
+    enum class BottomSheetType
+    {
+        BottomSheetModal = 0, ///< Modal bottom sheet
+        BottomSheetStandard   ///< Standard bottom sheet
+    };
+    Q_ENUM(BottomSheetType)
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(Enum::ToastFlags);
 } // namespace qml_material

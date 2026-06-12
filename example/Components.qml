@@ -926,6 +926,36 @@ MD.Page {
                             wrapMode: Text.Wrap
                         }
                     }
+
+                    ComponentCard {
+                        id: m_bottom_sheet_card
+                        title: 'Bottom sheets'
+                        spacing: 12
+
+                        RowLayout {
+                            Layout.alignment: Qt.AlignHCenter
+                            spacing: 12
+
+                            MD.Button {
+                                mdState.type: MD.Enum.BtFilled
+                                text: 'Modal'
+                                onClicked: {
+                                    m_standard_sheet.close();
+                                    m_modal_sheet.open();
+                                }
+                            }
+
+                            MD.Button {
+                                mdState.type: MD.Enum.BtFilledTonal
+                                text: 'Standard'
+                                onClicked: {
+                                    m_modal_sheet.close();
+                                    m_standard_sheet.open();
+                                }
+                            }
+                        }
+                    }
+
                 }
             }
             MD.Pane {
@@ -1106,6 +1136,119 @@ MD.Page {
                             color: '#6750A4'
                         }
                     }
+                }
+            }
+        }
+    }
+
+    MD.BottomSheet {
+        id: m_modal_sheet
+        anchors.fill: parent
+        sheetType: MD.Enum.BottomSheetModal
+
+        ColumnLayout {
+            width: m_modal_sheet.sheetWidth
+            spacing: 0
+
+            MD.SheetActionBar {
+                Layout.fillWidth: true
+                actions: [
+                    MD.Action {
+                        text: 'Share'
+                        icon.name: MD.Token.icon.share
+                    },
+                    MD.Action {
+                        text: 'Add to'
+                        icon.name: MD.Token.icon.add
+                    },
+                    MD.Action {
+                        text: 'Trash'
+                        icon.name: MD.Token.icon.delete_forever
+                    },
+                    MD.Action {
+                        text: 'Archive'
+                        icon.name: MD.Token.icon.archive
+                    }
+                ]
+            }
+
+            MD.Divider {
+                Layout.fillWidth: true
+                Layout.leftMargin: 24
+                Layout.rightMargin: 24
+            }
+
+            RowLayout {
+                Layout.alignment: Qt.AlignRight
+                Layout.rightMargin: 24
+                Layout.bottomMargin: 24
+
+                MD.Button {
+                    mdState.type: MD.Enum.BtText
+                    text: 'Close'
+                    onClicked: m_modal_sheet.close()
+                }
+            }
+        }
+    }
+
+    MD.BottomSheet {
+        id: m_standard_sheet
+        anchors.fill: parent
+        sheetType: MD.Enum.BottomSheetStandard
+        dim: false
+        lowHeight: 176
+
+        ColumnLayout {
+            width: m_standard_sheet.sheetWidth
+            spacing: 0
+
+            MD.Label {
+                Layout.fillWidth: true
+                Layout.margins: 24
+                text: 'Standard bottom sheet'
+                typescale: MD.Token.typescale.title_medium
+            }
+
+            Repeater {
+                model: [
+                    [MD.Token.icon.folder, 'Project files'],
+                    [MD.Token.icon.schedule, 'Recent activity'],
+                    [MD.Token.icon.notifications, 'Notifications'],
+                    [MD.Token.icon.settings, 'Sheet settings']
+                ]
+
+                RowLayout {
+                    required property var modelData
+                    Layout.fillWidth: true
+                    Layout.leftMargin: 24
+                    Layout.rightMargin: 24
+                    Layout.preferredHeight: 56
+                    spacing: 16
+
+                    MD.Icon {
+                        name: modelData[0]
+                        size: 24
+                        color: MD.MProp.color.on_surface_variant
+                    }
+
+                    MD.Label {
+                        Layout.fillWidth: true
+                        text: modelData[1]
+                        typescale: MD.Token.typescale.body_large
+                    }
+                }
+            }
+
+            RowLayout {
+                Layout.alignment: Qt.AlignRight
+                Layout.rightMargin: 24
+                Layout.bottomMargin: 24
+
+                MD.Button {
+                    mdState.type: MD.Enum.BtText
+                    text: 'Close'
+                    onClicked: m_standard_sheet.close()
                 }
             }
         }
