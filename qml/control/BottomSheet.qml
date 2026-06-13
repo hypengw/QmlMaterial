@@ -137,7 +137,6 @@ MD.Popup2 {
             corners: control.mdState.corners
             color: control.mdState.backgroundColor
             elevation: control.mdState.elevation
-            clip: true
 
             Item {
                 id: m_handle_target

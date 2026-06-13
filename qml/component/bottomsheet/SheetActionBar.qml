@@ -9,6 +9,7 @@ T.Control {
     property list<MD.Action> actions
     property real delegateWidth: 72
     property real delegateHeight: 80
+    property real delegateHorizontalPadding: 8
     property real actionSpacing: 8
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
@@ -38,7 +39,7 @@ T.Control {
             required property int index
             readonly property MD.Action actionItem: control.actions[index]
 
-            width: control.delegateWidth
+            width: Math.max(control.delegateWidth, m_column.implicitWidth + control.delegateHorizontalPadding * 2)
             height: control.delegateHeight
             enabled: actionItem ? actionItem.enabled : false
             text: actionItem ? actionItem.text : ""
@@ -53,6 +54,8 @@ T.Control {
 
             contentItem: Item {
                 Column {
+                    id: m_column
+
                     anchors.centerIn: parent
                     spacing: 8
 
@@ -64,12 +67,13 @@ T.Control {
                     }
 
                     MD.Label {
-                        width: m_button.width - 8
                         anchors.horizontalCenter: parent.horizontalCenter
                         text: m_button.text
                         typescale: MD.Token.typescale.label_medium
                         horizontalAlignment: Text.AlignHCenter
-                        elide: Text.ElideRight
+                        wrapMode: Text.NoWrap
+                        maximumLineCount: 1
+                        elide: Text.ElideNone
                         color: m_button.enabled ? MD.MProp.color.on_surface : MD.Util.transparent(MD.MProp.color.on_surface, 0.38)
                     }
                 }
