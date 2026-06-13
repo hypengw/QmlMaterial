@@ -34,21 +34,7 @@ Item {
         }
     }
 
-    // Outer 2dp: stroke centerline sits at host_edge + gap + outer/2.
-    MD.Rectangle {
-        anchors.fill: parent
-        color: "transparent"
-        antialiasing: true
-        border.width: root._outer
-        border.color: root.outerColor
-        corners: MD.Util.corners(
-            root.corners.topLeft     + root._outerR,
-            root.corners.topRight    + root._outerR,
-            root.corners.bottomLeft  + root._outerR,
-            root.corners.bottomRight + root._outerR)
-    }
-
-    // Inner 3dp: overlaps outer by `inset` to avoid a seam.
+    // Draw inner first so the outer stroke keeps its full width over the overlap.
     MD.Rectangle {
         anchors.fill: parent
         anchors.margins: root._outer - root._inset
@@ -61,5 +47,18 @@ Item {
             root.corners.topRight    + root._innerR,
             root.corners.bottomLeft  + root._innerR,
             root.corners.bottomRight + root._innerR)
+    }
+
+    MD.Rectangle {
+        anchors.fill: parent
+        color: "transparent"
+        antialiasing: true
+        border.width: root._outer
+        border.color: root.outerColor
+        corners: MD.Util.corners(
+            root.corners.topLeft     + root._outerR,
+            root.corners.topRight    + root._outerR,
+            root.corners.bottomLeft  + root._outerR,
+            root.corners.bottomRight + root._outerR)
     }
 }
