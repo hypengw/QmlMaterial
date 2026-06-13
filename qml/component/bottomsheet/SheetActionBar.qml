@@ -42,10 +42,17 @@ T.Control {
             width: Math.max(control.delegateWidth, m_column.implicitWidth + control.delegateHorizontalPadding * 2)
             height: control.delegateHeight
             enabled: actionItem ? actionItem.enabled : false
+            checkable: actionItem ? actionItem.checkable : false
+            checked: actionItem ? actionItem.checked : false
             text: actionItem ? actionItem.text : ""
             icon.name: actionItem ? actionItem.icon.name : ""
             icon.width: actionItem ? actionItem.icon.width : 24
             icon.height: actionItem ? actionItem.icon.height : 24
+            readonly property color contentColor: {
+                if (!m_button.enabled)
+                    return MD.Util.transparent(MD.MProp.color.on_surface, 0.38);
+                return m_button.checked ? MD.MProp.color.on_primary_container : MD.MProp.color.on_surface_variant;
+            }
 
             onClicked: {
                 if (actionItem)
@@ -63,7 +70,8 @@ T.Control {
                         anchors.horizontalCenter: parent.horizontalCenter
                         name: m_button.icon.name
                         size: Math.min(m_button.icon.width, m_button.icon.height)
-                        color: m_button.enabled ? MD.MProp.color.on_surface_variant : MD.Util.transparent(MD.MProp.color.on_surface, 0.38)
+                        color: m_button.contentColor
+                        fill: m_button.checked
                     }
 
                     MD.Label {
@@ -74,12 +82,21 @@ T.Control {
                         wrapMode: Text.NoWrap
                         maximumLineCount: 1
                         elide: Text.ElideNone
-                        color: m_button.enabled ? MD.MProp.color.on_surface : MD.Util.transparent(MD.MProp.color.on_surface, 0.38)
+                        color: m_button.enabled
+                            ? (m_button.checked ? MD.MProp.color.on_primary_container : MD.MProp.color.on_surface)
+                            : m_button.contentColor
                     }
                 }
             }
 
             background: Item {
+                Rectangle {
+                    anchors.fill: parent
+                    radius: MD.Token.shape.corner.extra_large
+                    visible: m_button.checked
+                    color: MD.MProp.color.primary_container
+                }
+
                 MD.Ripple {
                     anchors.fill: parent
                     radius: MD.Token.shape.corner.extra_large
@@ -87,7 +104,7 @@ T.Control {
                     pressX: m_button.pressX
                     pressY: m_button.pressY
                     stateOpacity: m_button.hovered ? 0.08 : 0
-                    color: MD.MProp.color.on_surface
+                    color: m_button.checked ? MD.MProp.color.on_primary_container : MD.MProp.color.on_surface
                 }
 
                 MD.FocusIndicator {

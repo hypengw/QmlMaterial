@@ -11,6 +11,7 @@ MD.Popup2 {
     property bool showDragHandle: true
     property bool dismissOnDragDown: sheetType === MD.Enum.BottomSheetModal
     property real lowHeight: -1
+    property real collapsedHeight: -1
     property real maxSheetWidth: 640
     property real wideSideMargin: 56
     property real topMargin: 72
@@ -37,6 +38,12 @@ MD.Popup2 {
     readonly property real _automaticLowHeight: Math.min(_sheetHeight, _availableHeight)
     readonly property real _requestedLowHeight: lowHeight > 0 ? lowHeight : _automaticLowHeight
     readonly property real _visibleHeight: Math.min(_sheetHeight, _availableHeight, Math.max(_handleTouchHeight, _requestedLowHeight))
+    readonly property real _collapsedHeight: collapsedHeight > 0
+        ? Math.min(_visibleHeight, collapsedHeight)
+        : _visibleHeight
+    readonly property real _collapseDistance: Math.max(0, _visibleHeight - _collapsedHeight)
+    readonly property real _dismissDistance: dismissOnDragDown ? Math.max(1, _collapsedHeight) : 0
+    readonly property real _dragDownRange: _collapseDistance + _dismissDistance
     readonly property real _scrollRange: Math.max(0, _sheetHeight - _visibleHeight)
 
     x: 0
@@ -91,7 +98,10 @@ MD.Popup2 {
     }
 
     function _finishDrag() {
-        if (!dismissOnDragDown || !control.opened || control.closing || m_sheet_flickable.contentY >= -0.5)
+        if (!dismissOnDragDown
+                || !control.opened
+                || control.closing
+                || m_sheet_flickable.contentY >= -control._collapseDistance - 0.5)
             return;
         _dragDismissPending = true;
         Qt.callLater(control._closeAfterDrag);
@@ -118,7 +128,7 @@ MD.Popup2 {
         clip: true
         contentWidth: width
         contentHeight: height + control._scrollRange
-        topMargin: control.dismissOnDragDown ? control._visibleHeight : 0
+        topMargin: control._dragDownRange
         flickableDirection: MD.Flickable2.VerticalFlick
         synchronousDrag: true
         inputMaskMode: MD.Flickable2.CustomItem
