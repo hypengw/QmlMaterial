@@ -15,6 +15,7 @@ MD.Button {
     MD.Loader {
         id: m_loader
         anchors.centerIn: parent
+        opacity: control.mdState.contentOpacity
         active: control.busy
         sourceComponent: comp_busy
         Component {
@@ -29,17 +30,7 @@ MD.Button {
                     return w - 6;
                 }
                 implicitHeight: implicitWidth
-                color: {
-                    const ctx = control.mdState.ctx;
-                    switch (control.type) {
-                    case MD.Enum.BtFilled:
-                        return ctx.color.on_primary;
-                    case MD.Enum.BtFilledTonal:
-                        return ctx.color.on_secondary_container;
-                    default:
-                        return ctx.color.primary;
-                    }
-                }
+                color: control.mdState.textColor
             }
         }
     }
