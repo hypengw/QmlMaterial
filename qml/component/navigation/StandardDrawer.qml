@@ -19,7 +19,7 @@ T.Control {
     onUseEmbedChanged: expanded = useEmbed
 
     // configurable sizes for collapsed/expanded states
-    property real collapsedWidth: 80
+    property real collapsedWidth: 96
     property real expandedWidth: 360
 
     property int currentIndex: 0

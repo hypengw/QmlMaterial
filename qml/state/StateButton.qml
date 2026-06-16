@@ -52,29 +52,36 @@ MD.MState {
 
     textColor: {
         switch (root.type) {
-        case MD.Enum.BtFilled:
-            return ctx.color.on_primary;
-        case MD.Enum.BtFilledTonal:
-            return ctx.color.on_secondary_container;
-        case MD.Enum.BtOutlined:
         case MD.Enum.BtText:
+            return ctx.color.primary;
+        case MD.Enum.BtFilled:
+            if (root.item.checked)
+                return ctx.color.on_primary;
+            return root.item.checkable ? ctx.color.on_surface_variant : ctx.color.on_primary;
+        case MD.Enum.BtFilledTonal:
+            return root.item.checked ? ctx.color.on_secondary : ctx.color.on_secondary_container;
+        case MD.Enum.BtOutlined:
+            return root.item.checked ? ctx.color.inverse_on_surface : ctx.color.on_surface_variant;
         case MD.Enum.BtElevated:
         default:
-            return ctx.color.primary;
+            return root.item.checked ? ctx.color.on_primary : ctx.color.primary;
         }
     }
     backgroundColor: {
         switch (root.type) {
-        case MD.Enum.BtFilled:
-            return ctx.color.primary;
-        case MD.Enum.BtFilledTonal:
-            return ctx.color.secondary_container;
-        case MD.Enum.BtOutlined:
         case MD.Enum.BtText:
             return "transparent";
+        case MD.Enum.BtFilled:
+            if (root.item.checked)
+                return ctx.color.primary;
+            return root.item.checkable ? ctx.color.surface_container : ctx.color.primary;
+        case MD.Enum.BtFilledTonal:
+            return root.item.checked ? ctx.color.secondary : ctx.color.secondary_container;
+        case MD.Enum.BtOutlined:
+            return root.item.checked ? ctx.color.inverse_surface : "transparent";
         case MD.Enum.BtElevated:
         default:
-            return ctx.color.surface_container_low;
+            return root.item.checked ? ctx.color.primary : ctx.color.surface_container_low;
         }
     }
     stateLayerColor: "transparent"

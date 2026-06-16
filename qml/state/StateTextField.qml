@@ -24,6 +24,7 @@ MD.MState {
     property int indicatorHeight: 1
     property color indicatorColor: root.ctx.color.on_surface_variant
     property color placeholderColor: root.ctx.color.on_surface_variant
+    property real placeholderOpacity: 1.0
 
     property MD.typescale typescale: {
         switch (root.type) {
@@ -58,7 +59,7 @@ MD.MState {
             PropertyChanges {
                 root.placeholderColor: root.ctx.color.on_surface
                 root.supportTextColor: root.ctx.color.on_surface
-                placeholder.opacity: MD.Token.state.disabled_content
+                root.placeholderOpacity: MD.Token.state.disabled_content
                 //          root.item.background.opacity: MD.Token.state.disabled_container
             }
         },
@@ -109,7 +110,7 @@ MD.MState {
             PropertyChanges {
                 root.placeholderColor: root.ctx.color.on_surface
                 root.supportTextColor: root.ctx.color.on_surface
-                placeholder.opacity: MD.Token.state.disabled_content
+                root.placeholderOpacity: MD.Token.state.disabled_content
                 //          root.item.background.opacity: MD.Token.state.disabled_container
             }
         },

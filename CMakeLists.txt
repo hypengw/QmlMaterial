@@ -37,16 +37,6 @@ set(QML_INSTALL_DIR
     CACHE STRING "")
 message("QML_INSTALL_DIR: ${QML_INSTALL_DIR}")
 
-# check lto
-include(CheckIPOSupported)
-check_ipo_supported(RESULT is_ipo_supported OUTPUT lto_error)
-if(is_ipo_supported
-   AND NOT EMSCRIPTEN
-   AND NOT WIN32
-   AND NOT CMAKE_BUILD_TYPE MATCHES Debug)
-  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
-endif()
-
 if(UNIX AND NOT APPLE)
   set(LINUX CACHE INTERNAL TRUE "")
 endif()
@@ -109,6 +99,7 @@ set(SOURCES
     src/util/hct.cpp
     src/control/page_context.cpp
     src/control/color_picker.cpp
+    src/control/popup.cpp
     src/layout/width_provider.cpp
     src/layout/toolbar_layout.cpp
     src/layout/toolbar_layout_delegate.cpp
@@ -118,6 +109,8 @@ set(SOURCES
     src/path/path_arc_wave.cpp
     include/qml_material/path/path_wave.hpp
     include/qml_material/path/path_arc_wave.hpp
+    src/flickable/flickable.cpp
+    include/qml_material/flickable/flickable.hpp
     src/input/wheel_handler.cpp
     include/qml_material/input/wheel_handler.hpp
     src/carousel/carousel_attached.cpp
@@ -177,6 +170,7 @@ set(QML_FILES
     qml/control/ToolSeparator.qml
     qml/control/ApplicationWindow.qml
     qml/control/Popup.qml
+    qml/control/BottomSheet.qml
     qml/control/Switch.qml
     qml/control/ToolTip.qml
     qml/control/TabBar.qml
@@ -214,6 +208,7 @@ set(QML_FILES
     qml/component/button/RadioIndicatorShape.qml
     qml/component/button/SplitButton.qml
     qml/component/button/SplitButtonIndicator.qml
+    qml/component/bottomsheet/SheetActionBar.qml
     qml/component/checkbox/CheckShape.qml
     qml/component/card/Card.qml
     qml/component/carousel/CarouselItem.qml
@@ -281,6 +276,7 @@ set(QML_FILES
     qml/motion/FadeInThroughMotion.qml
     qml/motion/FadeOutThroughMotion.qml
     qml/state/StateAppBar.qml
+    qml/state/StateBottomSheet.qml
     qml/state/StateSnakeBar.qml
     qml/state/StateButton.qml
     qml/state/StateSplitButton.qml
@@ -340,6 +336,7 @@ set(QML_REG_INCLUDE_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/control"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/layout"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/path"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/flickable"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/input"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/item"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/token"

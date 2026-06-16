@@ -172,7 +172,13 @@ public:
     };
     Q_ENUM(RailArrangement)
 
-    enum class CarouselLayout
+    enum class BottomSheetType
+    {
+        BottomSheetModal = 0, ///< Modal bottom sheet
+        BottomSheetStandard   ///< Standard bottom sheet
+    };
+    Q_ENUM(BottomSheetType)
+        enum class CarouselLayout
     {
         CarouselUncontained = 0, ///< Items scroll to container edge
         CarouselMultiBrowse,     ///< Large, medium, and small items

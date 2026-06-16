@@ -4,8 +4,8 @@ build
 /build*
 /doc/html
 /doc/doxygen-awesome-css
-/.llm
 /compile_commands.json
 /.vscode
 /qml-explore
+/record
 CMakeLists.txt.user*

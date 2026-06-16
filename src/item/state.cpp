@@ -26,13 +26,15 @@ State::State(QQuickItem* parent)
       m_state_group(nullptr) {
     connect(this, &State::targetChanged, this, &State::updateCtx, Qt::DirectConnection);
 }
-State::~State() {}
+State::~State() {
+    delete m_state_group;
+}
 
 auto State::datas() -> QQmlListProperty<QObject> { return { this, &m_datas }; }
 
 QQuickStateGroup* State::_states() {
     if (! m_state_group) {
-        m_state_group = new QQuickStateGroup;
+        m_state_group = new QQuickStateGroup(this);
         if (! m_component_complete) m_state_group->classBegin();
 
         qmlobject_connect(m_state_group,

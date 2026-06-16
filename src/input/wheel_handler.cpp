@@ -101,8 +101,14 @@ void WheelHandler::setTarget(QQuickItem* target) {
         return;
     }
 
-    if (target && ! target->inherits("QQuickFlickable")) {
-        qmlWarning(this) << "target must be a QQuickFlickable";
+    auto hasProperty = [](QQuickItem* item, const char* name) {
+        return item && item->metaObject()->indexOfProperty(name) >= 0;
+    };
+    if (target && (!hasProperty(target, "originX") || !hasProperty(target, "originY") ||
+                   !hasProperty(target, "contentX") || !hasProperty(target, "contentY") ||
+                   !hasProperty(target, "contentWidth") || !hasProperty(target, "contentHeight") ||
+                   !hasProperty(target, "interactive"))) {
+        qmlWarning(this) << "target must expose Flickable-compatible properties";
         return;
     }
 
