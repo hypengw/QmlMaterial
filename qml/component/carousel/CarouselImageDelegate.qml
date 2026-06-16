@@ -10,6 +10,20 @@ MD.CarouselItem {
     property string source: ''
     property string title: ''
 
+    signal aspectRatioChanged()
+
+    readonly property real itemAspectRatio: {
+        if (m_image.status === Image.Ready && m_image.sourceSize.height > 0) {
+            return m_image.sourceSize.width / m_image.sourceSize.height;
+        }
+        if (model !== undefined && model !== null && typeof model !== 'string' && model.aspectRatio !== undefined) {
+            return model.aspectRatio;
+        }
+        return 1.0;
+    }
+
+    onItemAspectRatioChanged: root.aspectRatioChanged()
+
     showBackground: false
 
     readonly property string imageSource: {

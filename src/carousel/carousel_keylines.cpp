@@ -17,6 +17,7 @@ constexpr int kLayoutMultiBrowse = 1;
 constexpr int kLayoutHero        = 2;
 constexpr int kLayoutHeroCenter  = 3;
 constexpr int kLayoutFullScreen  = 4;
+constexpr int kLayoutUncontainedMultiAspect = 5;
 
 constexpr int kSizeSmall  = 0;
 constexpr int kSizeMedium = 1;
@@ -304,6 +305,90 @@ auto layoutFixedStride(const CarouselLayoutInput& in, const KeylineList& kl) -> 
     return out;
 }
 
+auto itemWidthForAspect(const CarouselLayoutInput& in, int index, qreal cross) -> qreal
+{
+    qreal aspect = 1.0;
+    if (index >= 0 && index < in.item_aspects.size()) {
+        aspect = in.item_aspects[index];
+    } else if (in.item_extent > 0 && cross > 0) {
+        aspect = in.item_extent / cross;
+    }
+    aspect = clamp(aspect, in.min_item_aspect, in.max_item_aspect);
+    return cross * aspect;
+}
+
+auto layoutVariableStride(const CarouselLayoutInput& in, const KeylineList& kl) -> CarouselLayoutOutput
+{
+    Q_UNUSED(kl);
+    CarouselLayoutOutput out;
+    const qreal cross = in.cross_size > 0
+        ? in.cross_size - 2.0 * in.content_padding_cross
+        : in.item_extent;
+    const qreal view_start = in.scroll_offset;
+    const qreal view_end   = in.scroll_offset + in.viewport_size;
+
+    QVector<qreal> widths;
+    QVector<qreal> positions;
+    widths.resize(in.count);
+    positions.resize(in.count);
+
+    qreal cursor     = in.content_padding_start;
+    qreal last_width = 0;
+    for (int i = 0; i < in.count; ++i) {
+        const qreal w = itemWidthForAspect(in, i, cross);
+        widths[i]     = w;
+        positions[i]  = cursor;
+        cursor += w + in.spacing;
+        last_width = w;
+    }
+
+    for (int i = 0; i < in.count; ++i) {
+        const qreal pos = positions[i];
+        const qreal size = widths[i];
+        const qreal end  = pos + size;
+        if (end <= view_start || pos >= view_end) {
+            continue;
+        }
+
+        CarouselItemGeometry g;
+        g.index      = i;
+        g.position   = pos;
+        g.size       = size;
+        g.size_class = kSizeLarge;
+        applyMaskAndParallax(g, view_start, view_end, in.parallax_ratio, in.min_peek_px, true);
+        if (g.mask_start + g.mask_end < 1.0) {
+            out.items.append(g);
+        }
+    }
+
+    out.content_size = in.count > 0 ? positions[in.count - 1] + last_width + in.content_padding_end : 0;
+
+    const qreal max_scroll = qMax(0.0, out.content_size - in.viewport_size);
+    out.max_scroll_offset  = max_scroll;
+    out.end_snap_offset    = max_scroll;
+    out.scroll_step        = last_width + in.spacing;
+
+    out.snap_offsets.resize(in.count);
+    for (int i = 0; i < in.count; ++i) {
+        const qreal snap = positions[i] - in.content_padding_start;
+        out.snap_offsets[i] = qMin(snap, max_scroll);
+    }
+
+    if (in.count > 0 && in.scroll_offset >= max_scroll - out.scroll_step * 0.25) {
+        out.leading_index = in.count - 1;
+    } else {
+        int focal = 0;
+        for (int i = 0; i < in.count; ++i) {
+            if (out.snap_offsets[i] <= in.scroll_offset + out.scroll_step * 0.5) {
+                focal = i;
+            }
+        }
+        out.leading_index = qBound(0, focal, in.count - 1);
+    }
+
+    return out;
+}
+
 auto layoutKeylineItems(const CarouselLayoutInput& in, const KeylineList& kl) -> CarouselLayoutOutput
 {
     CarouselLayoutOutput out;
@@ -374,6 +459,8 @@ auto CarouselKeylines::buildList(const CarouselLayoutInput& input) -> KeylineLis
         return buildHero(input, true);
     case kLayoutUncontained:
         return buildUncontained(input);
+    case kLayoutUncontainedMultiAspect:
+        return buildUncontained(input);
     case kLayoutFullScreen:
         return buildFullScreen(input);
     default:
@@ -384,6 +471,9 @@ auto CarouselKeylines::buildList(const CarouselLayoutInput& input) -> KeylineLis
 auto CarouselKeylines::layoutItems(const CarouselLayoutInput& in, const KeylineList& kl)
     -> CarouselLayoutOutput
 {
+    if (in.layout == kLayoutUncontainedMultiAspect) {
+        return layoutVariableStride(in, kl);
+    }
     if (in.layout == kLayoutUncontained || in.layout == kLayoutFullScreen) {
         return layoutFixedStride(in, kl);
     }

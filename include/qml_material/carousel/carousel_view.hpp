@@ -150,6 +150,7 @@ protected:
 
 private Q_SLOTS:
     void onDelegateClicked();
+    void onDelegateAspectRatioChanged();
     void onSnapTick();
 
 private:
@@ -210,6 +211,7 @@ private:
     QVector<QQuickItem*>             m_items;
     QVector<CarouselItemGeometry>    m_geometries;
     QVector<qreal>                   m_snap_offsets;
+    QVector<qreal>                   m_item_aspects;
     qreal                            m_max_scroll_offset = 0;
     qreal                            m_end_snap_offset   = 0;
     qreal                            m_scroll_step       = 0;

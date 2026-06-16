@@ -26,9 +26,12 @@ T.Control {
     property real minSmallItemWidth: MD.Token.carousel.small_item_min
     property real maxSmallItemWidth: MD.Token.carousel.small_item_max
     property bool reduceMotion: false
-    property bool clipContainer: layout === MD.Enum.CarouselUncontained ? false : true
+    property bool clipContainer: layout === MD.Enum.CarouselUncontained
+                                 || layout === MD.Enum.CarouselUncontainedMultiAspect ? false : true
     readonly property real contentPaddingEndValue: {
-        if (layout === MD.Enum.CarouselUncontained || layout === MD.Enum.CarouselFullScreen) {
+        if (layout === MD.Enum.CarouselUncontained
+                || layout === MD.Enum.CarouselUncontainedMultiAspect
+                || layout === MD.Enum.CarouselFullScreen) {
             return 0;
         }
         return control.contentPadding;
@@ -41,6 +44,7 @@ T.Control {
     }
 
     signal clicked(int index)
+    signal indexChanged(int index)
 
     function incrementCurrentIndex() {
         m_view.incrementCurrentIndex();
@@ -137,6 +141,7 @@ T.Control {
             interactive: control.enabled
 
             onClicked: index => control.clicked(index)
+            onCurrentIndexChanged: control.indexChanged(m_view.currentIndex)
         }
 
         RowLayout {

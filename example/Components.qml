@@ -1129,80 +1129,112 @@ MD.Page {
                 }
             }
 
-            ColumnLayout {
+            MD.Pane {
                 Layout.alignment: Qt.AlignHCenter
-                spacing: 16
-                MD.Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    text: 'Carousel'
-                    typescale: MD.Token.typescale.title_large
-                }
-
-                ComponentCarouselCard {
-                    title: 'Uncontained'
-
-                    MD.Carousel {
-                        Layout.preferredWidth: 480
-                        Layout.preferredHeight: MD.Token.carousel.container_height_horizontal
-                        layout: MD.Enum.CarouselUncontained
-                        itemExtent: 180
-                        model: root.carouselDemoModel
-                        delegate: MD.CarouselImageDelegate {}
+                ColumnLayout {
+                    spacing: 16
+                    MD.Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: 'Carousel'
+                        typescale: MD.Token.typescale.title_large
                     }
-                }
 
-                ComponentCarouselCard {
-                    title: 'Multi-browse'
+                    ComponentCard {
+                        title: 'Uncontained'
+                        spacing: 12
 
-                    MD.Carousel {
-                        Layout.preferredWidth: 480
-                        Layout.preferredHeight: MD.Token.carousel.container_height_horizontal
-                        layout: MD.Enum.CarouselMultiBrowse
-                        model: root.carouselDemoModel
-                        delegate: MD.CarouselImageDelegate {}
-                        showPageIndicator: true
-                        showNavigationButtons: true
+                        MD.Text {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: 'Fixed width'
+                            typescale: MD.Token.typescale.label_medium
+                            opacity: 0.8
+                        }
+                        MD.Carousel {
+                            Layout.preferredWidth: 480
+                            Layout.preferredHeight: MD.Token.carousel.container_height_horizontal
+                            layout: MD.Enum.CarouselUncontained
+                            itemExtent: 180
+                            model: root.carouselDemoModel
+                            delegate: MD.CarouselImageDelegate {}
+                        }
+
+                        MD.Text {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: 'Multi-aspect'
+                            typescale: MD.Token.typescale.label_medium
+                            opacity: 0.8
+                        }
+                        MD.Carousel {
+                            Layout.preferredWidth: 480
+                            Layout.preferredHeight: MD.Token.carousel.container_height_horizontal
+                            layout: MD.Enum.CarouselUncontainedMultiAspect
+                            model: root.carouselDemoModel
+                            delegate: MD.CarouselImageDelegate {}
+                        }
                     }
-                }
 
-                ComponentCarouselCard {
-                    title: 'Hero (start)'
+                    ComponentCard {
+                        title: 'Multi-browse'
 
-                    MD.Carousel {
-                        Layout.preferredWidth: 480
-                        Layout.preferredHeight: 240
-                        layout: MD.Enum.CarouselHero
-                        model: root.carouselDemoModel
-                        delegate: MD.CarouselImageDelegate {}
-                        showNavigationButtons: true
+                        MD.Carousel {
+                            Layout.preferredWidth: 480
+                            Layout.preferredHeight: MD.Token.carousel.container_height_horizontal
+                            layout: MD.Enum.CarouselMultiBrowse
+                            model: root.carouselDemoModel
+                            delegate: MD.CarouselImageDelegate {}
+                            showPageIndicator: true
+                            showNavigationButtons: true
+                        }
                     }
-                }
 
-                ComponentCarouselCard {
-                    title: 'Hero (center)'
+                    ComponentCard {
+                        title: 'Hero'
+                        spacing: 12
 
-                    MD.Carousel {
-                        Layout.preferredWidth: 480
-                        Layout.preferredHeight: 240
-                        layout: MD.Enum.CarouselHeroCenter
-                        model: root.carouselDemoModel
-                        delegate: MD.CarouselImageDelegate {}
-                        showNavigationButtons: true
+                        MD.Text {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: 'Start-aligned'
+                            typescale: MD.Token.typescale.label_medium
+                            opacity: 0.8
+                        }
+                        MD.Carousel {
+                            Layout.preferredWidth: 480
+                            Layout.preferredHeight: 240
+                            layout: MD.Enum.CarouselHero
+                            model: root.carouselDemoModel
+                            delegate: MD.CarouselImageDelegate {}
+                            showNavigationButtons: true
+                        }
+
+                        MD.Text {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: 'Center-aligned'
+                            typescale: MD.Token.typescale.label_medium
+                            opacity: 0.8
+                        }
+                        MD.Carousel {
+                            Layout.preferredWidth: 480
+                            Layout.preferredHeight: 240
+                            layout: MD.Enum.CarouselHeroCenter
+                            model: root.carouselDemoModel
+                            delegate: MD.CarouselImageDelegate {}
+                            showNavigationButtons: true
+                        }
                     }
-                }
 
-                ComponentCarouselCard {
-                    title: 'Full-screen (vertical)'
+                    ComponentCard {
+                        title: 'Full-screen (vertical)'
 
-                    MD.Carousel {
-                        Layout.preferredWidth: 320
-                        Layout.preferredHeight: 360
-                        layout: MD.Enum.CarouselFullScreen
-                        orientation: Qt.Vertical
-                        model: root.carouselDemoModel
-                        delegate: MD.CarouselImageDelegate {}
-                        showPageIndicator: true
-                        showNavigationButtons: true
+                        MD.Carousel {
+                            Layout.preferredWidth: 320
+                            Layout.preferredHeight: 360
+                            layout: MD.Enum.CarouselFullScreen
+                            orientation: Qt.Vertical
+                            model: root.carouselDemoModel
+                            delegate: MD.CarouselImageDelegate {}
+                            showPageIndicator: true
+                            showNavigationButtons: true
+                        }
                     }
                 }
             }
@@ -1376,21 +1408,6 @@ MD.Page {
         }
     }
 
-    component ComponentCarouselCard: ColumnLayout {
-        id: m_carousel_card
-        Layout.alignment: Qt.AlignHCenter
-        Layout.minimumWidth: 400
-        spacing: 8
-
-        property string title
-
-        MD.Text {
-            Layout.alignment: Qt.AlignHCenter
-            text: m_carousel_card.title
-            typescale: MD.Token.typescale.title_medium
-        }
-    }
-    
     component ComponentCard: ColumnLayout {
         id: m_comp_card
         Layout.alignment: Qt.AlignHCenter

@@ -185,6 +185,7 @@ public:
         CarouselHero,            ///< Start-aligned hero
         CarouselHeroCenter,      ///< Center-aligned hero
         CarouselFullScreen,      ///< One edge-to-edge item
+        CarouselUncontainedMultiAspect, ///< Uncontained with per-item aspect widths
     };
     Q_ENUM(CarouselLayout)
 

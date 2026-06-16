@@ -89,6 +89,24 @@ Item {
         }
 
         CarouselScene {
+            title: 'Uncontained multi-aspect (rest)'
+            layout: MD.Enum.CarouselUncontainedMultiAspect
+            scrollOffset: 0
+        }
+
+        CarouselScene {
+            title: 'Uncontained multi-aspect (mid-scroll)'
+            layout: MD.Enum.CarouselUncontainedMultiAspect
+            scrollOffset: 120
+        }
+
+        CarouselScene {
+            title: 'Uncontained multi-aspect (end of list)'
+            layout: MD.Enum.CarouselUncontainedMultiAspect
+            initialItem: 5
+        }
+
+        CarouselScene {
             title: 'Hero (rest)'
             layout: MD.Enum.CarouselHero
             scrollOffset: 0

@@ -403,6 +403,8 @@ struct Carousel {
     Q_PROPERTY(qreal small_item_min_ratio MEMBER small_item_min_ratio CONSTANT FINAL)
     Q_PROPERTY(qreal small_item_max_ratio MEMBER small_item_max_ratio CONSTANT FINAL)
     Q_PROPERTY(qreal large_item_max_aspect MEMBER large_item_max_aspect CONSTANT FINAL)
+    Q_PROPERTY(qreal min_item_aspect MEMBER min_item_aspect CONSTANT FINAL)
+    Q_PROPERTY(qreal max_item_aspect MEMBER max_item_aspect CONSTANT FINAL)
     Q_PROPERTY(qint32 item_corner MEMBER item_corner CONSTANT FINAL)
     Q_PROPERTY(qint32 snap_duration MEMBER snap_duration CONSTANT FINAL)
 public:
@@ -415,6 +417,8 @@ public:
     qreal small_item_min_ratio { 0.45 };
     qreal small_item_max_ratio { 0.55 };
     qreal large_item_max_aspect { 2.0 };
+    qreal min_item_aspect { 9.0 / 16.0 };
+    qreal max_item_aspect { 16.0 / 9.0 };
     i32   item_corner { 28 };
     i32   snap_duration { 400 };
 };
