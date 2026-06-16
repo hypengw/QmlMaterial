@@ -68,6 +68,13 @@ Item {
         }
 
         CarouselScene {
+            title: 'Multi-browse (end of list)'
+            layout: MD.Enum.CarouselMultiBrowse
+            initialItem: 9
+            showPageIndicator: true
+        }
+
+        CarouselScene {
             title: 'Uncontained (rest)'
             layout: MD.Enum.CarouselUncontained
             itemExtent: 140
@@ -134,6 +141,7 @@ Item {
         property real itemExtent: MD.Token.carousel.default_item_extent
         property int initialItem: 0
         property real scrollOffset: 0
+        property bool showPageIndicator: false
 
         spacing: 4
 
@@ -146,14 +154,12 @@ Item {
         MD.Carousel {
             id: carousel
             Layout.fillWidth: true
-            Layout.preferredHeight: scene.layout === MD.Enum.CarouselFullScreen
-                ? MD.Token.carousel.default_item_extent
-                : MD.Token.carousel.container_height_horizontal
             layout: scene.layout
             itemExtent: scene.itemExtent
             model: root.demoModel
             delegate: MD.CarouselImageDelegate {}
             initialItem: scene.initialItem
+            showPageIndicator: scene.showPageIndicator
 
             Component.onCompleted: {
                 if (scene.scrollOffset >= 0) {

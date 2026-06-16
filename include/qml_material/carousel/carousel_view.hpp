@@ -115,7 +115,13 @@ public:
 
     Q_INVOKABLE void incrementCurrentIndex();
     Q_INVOKABLE void decrementCurrentIndex();
+    Q_INVOKABLE void incrementCurrentIndexFromKeyboard();
+    Q_INVOKABLE void decrementCurrentIndexFromKeyboard();
     Q_INVOKABLE void setCurrentIndexAnimated(int index);
+    Q_INVOKABLE void focusCurrentItem();
+    Q_INVOKABLE void claimInteractionFocus();
+    Q_INVOKABLE void engageTabFocus();
+    Q_INVOKABLE void suppressFocusRing();
 
     Q_SIGNAL void modelChanged();
     Q_SIGNAL void delegateChanged();
@@ -172,6 +178,8 @@ private:
     void     destroyDelegate(int index);
     void     positionItem(QQuickItem* item, const CarouselItemGeometry& geom, bool isActive);
     int      activeIndexForLayout(const CarouselLayoutOutput& out) const;
+    void     broadcastFocusRingState();
+    void     completeKeyboardNavigation();
 
     QVariant                         m_model;
     QQmlComponent*                   m_delegate = nullptr;
@@ -216,6 +224,10 @@ private:
     qreal                            m_end_snap_offset   = 0;
     qreal                            m_scroll_step       = 0;
     bool                             m_updating    = false;
+    bool                             m_focus_ring_suppressed = true;
+    bool                             m_tab_focus_engaged     = false;
+    bool                             m_keyboard_nav_pending  = false;
+    bool                             m_suppress_tab_engage   = false;
 };
 
 } // namespace qml_material

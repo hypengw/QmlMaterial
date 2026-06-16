@@ -11,6 +11,11 @@ Item {
     property real parallaxShift: CarouselView.parallaxShift
     property int sizeClass: CarouselView.sizeClass
     property bool isActive: CarouselView.isActive
+    readonly property int carouselCount: CarouselView.carouselCount
+    readonly property int carouselOrientation: CarouselView.carouselOrientation
+    readonly property int carouselCurrentIndex: CarouselView.carouselCurrentIndex
+    property string accessibilityTitle: ''
+
     readonly property bool down: m_area.pressed
     readonly property bool hovered: m_area.containsMouse
     property MD.StateCarouselItem mdState: MD.StateCarouselItem {
@@ -27,8 +32,52 @@ Item {
     implicitWidth: CarouselView.itemWidth
     implicitHeight: CarouselView.itemHeight
 
-    clip: true
+    property QtObject _carouselView: null
+
+    focus: visible && index === carouselCurrentIndex
+    activeFocusOnTab: focus
+
+    Accessible.role: Accessible.Button
+    Accessible.name: {
+        const pos = root.index + 1;
+        const total = root.carouselCount > 0 ? root.carouselCount : 1;
+        const prefix = root.accessibilityTitle.length > 0 ? root.accessibilityTitle + ', ' : '';
+        return prefix + pos + ' of ' + total;
+    }
+
     visible: (1 - maskStart - maskEnd) > 0.001
+
+    Keys.onPressed: event => {
+        const horizontal = root.carouselOrientation === Qt.Horizontal;
+        const prevKey = horizontal ? Qt.Key_Left : Qt.Key_Up;
+        const nextKey = horizontal ? Qt.Key_Right : Qt.Key_Down;
+
+        if (event.key === prevKey) {
+            if (root._carouselView) {
+                root._carouselView.decrementCurrentIndexFromKeyboard();
+            }
+            event.accepted = true;
+        } else if (event.key === nextKey) {
+            if (root._carouselView) {
+                root._carouselView.incrementCurrentIndexFromKeyboard();
+            }
+            event.accepted = true;
+        } else if (event.key === Qt.Key_Space || event.key === Qt.Key_Return) {
+            root.clicked();
+            event.accepted = true;
+        }
+    }
+
+    onActiveFocusChanged: {
+        if (!root._carouselView) {
+            return;
+        }
+        if (activeFocus && !m_area.pressed) {
+            root._carouselView.engageTabFocus();
+        } else if (!activeFocus && root.index === root.carouselCurrentIndex) {
+            root._carouselView.suppressFocusRing();
+        }
+    }
 
     Item {
         id: m_visible
@@ -63,17 +112,27 @@ Item {
             color: root.mdState.stateLayerColor
         }
 
-        MD.FocusIndicator {
-            corners: m_bg.corners
-            active: root.activeFocus
-        }
-
         MouseArea {
             id: m_area
             anchors.fill: parent
             hoverEnabled: true
+            onPressed: {
+                if (root._carouselView) {
+                    root._carouselView.claimInteractionFocus();
+                }
+            }
             onClicked: root.clicked()
         }
+    }
+
+    MD.FocusIndicator {
+        x: root.width * root.maskStart
+        width: root.visibleWidth
+        height: root.height
+        z: 20
+        inset: CarouselView.focusRingInset
+        active: CarouselView.focusRingVisible
+        corners: MD.Util.corners(MD.Token.shape.corner.extra_large)
     }
 
     signal clicked()

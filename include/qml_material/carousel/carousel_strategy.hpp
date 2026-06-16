@@ -45,6 +45,7 @@ struct CarouselLayoutInput
     qreal   min_item_aspect   = 9.0 / 16.0;
     qreal   max_item_aspect   = 16.0 / 9.0;
     int     count             = 0;
+    bool    reduce_motion     = false;
     QVector<qreal> item_aspects;
     QVector<int> flex_weights;
 };

@@ -1151,7 +1151,6 @@ MD.Page {
                         }
                         MD.Carousel {
                             Layout.preferredWidth: 480
-                            Layout.preferredHeight: MD.Token.carousel.container_height_horizontal
                             layout: MD.Enum.CarouselUncontained
                             itemExtent: 180
                             model: root.carouselDemoModel
@@ -1166,7 +1165,6 @@ MD.Page {
                         }
                         MD.Carousel {
                             Layout.preferredWidth: 480
-                            Layout.preferredHeight: MD.Token.carousel.container_height_horizontal
                             layout: MD.Enum.CarouselUncontainedMultiAspect
                             model: root.carouselDemoModel
                             delegate: MD.CarouselImageDelegate {}
@@ -1178,7 +1176,6 @@ MD.Page {
 
                         MD.Carousel {
                             Layout.preferredWidth: 480
-                            Layout.preferredHeight: MD.Token.carousel.container_height_horizontal
                             layout: MD.Enum.CarouselMultiBrowse
                             model: root.carouselDemoModel
                             delegate: MD.CarouselImageDelegate {}

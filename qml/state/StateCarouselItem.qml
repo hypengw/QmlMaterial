@@ -10,5 +10,5 @@ MD.MState {
     backgroundColor: root.ctx.color.surface_container_low
     stateLayerColor: root.ctx.color.on_surface
 
-    state: MD.Util.stateText(item.enabled, item.down, item.hovered, item.activeFocus)
+    state: MD.Util.stateText(item.enabled, item.down, item.hovered, false)
 }

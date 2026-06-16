@@ -26,6 +26,7 @@ constexpr qreal kSnapStiffness  = 280.0;
 constexpr qreal kSnapDamping    = 28.0;
 constexpr qreal kSnapDt         = 1.0 / 60.0;
 constexpr int kLayoutUncontained = 0;
+constexpr int kLayoutMultiBrowse = 1;
 constexpr int kLayoutFullScreen  = 4;
 constexpr int kLayoutUncontainedMultiAspect = 5;
 constexpr int kSizeLarge           = 2;
@@ -118,6 +119,7 @@ CarouselView::CarouselView(QQuickItem* parent): QQuickItem(parent)
             snapAfterGesture();
         }
     });
+    connect(flick, &QQuickFlickable::movementStarted, this, [this]() { claimInteractionFocus(); });
 
     m_snap_timer = new QTimer(this);
     m_snap_timer->setInterval(16);
@@ -463,6 +465,81 @@ void CarouselView::decrementCurrentIndex()
     setCurrentIndexAnimated(qMax(0, m_current_index - 1));
 }
 
+void CarouselView::incrementCurrentIndexFromKeyboard()
+{
+    suppressFocusRing();
+    m_keyboard_nav_pending = true;
+    incrementCurrentIndex();
+    completeKeyboardNavigation();
+}
+
+void CarouselView::decrementCurrentIndexFromKeyboard()
+{
+    suppressFocusRing();
+    m_keyboard_nav_pending = true;
+    decrementCurrentIndex();
+    completeKeyboardNavigation();
+}
+
+void CarouselView::focusCurrentItem()
+{
+    if (m_current_index < 0 || m_current_index >= m_items.size()) {
+        return;
+    }
+    if (auto* item = m_items.at(m_current_index)) {
+        m_suppress_tab_engage = true;
+        item->forceActiveFocus(Qt::OtherFocusReason);
+    }
+}
+
+void CarouselView::claimInteractionFocus()
+{
+    suppressFocusRing();
+    focusCurrentItem();
+}
+
+void CarouselView::engageTabFocus()
+{
+    if (m_suppress_tab_engage) {
+        m_suppress_tab_engage = false;
+        return;
+    }
+    m_focus_ring_suppressed = false;
+    m_tab_focus_engaged     = true;
+    broadcastFocusRingState();
+}
+
+void CarouselView::suppressFocusRing()
+{
+    if (!m_focus_ring_suppressed) {
+        m_focus_ring_suppressed = true;
+        broadcastFocusRingState();
+    }
+}
+
+void CarouselView::broadcastFocusRingState()
+{
+    for (auto* item : m_items) {
+        if (!item) {
+            continue;
+        }
+        auto* attached =
+            qobject_cast<CarouselAttached*>(qmlAttachedPropertiesObject<CarouselView>(item, true));
+        if (attached) {
+            attached->setFocusRingState(m_focus_ring_suppressed, m_tab_focus_engaged, m_clip_container);
+        }
+    }
+}
+
+void CarouselView::completeKeyboardNavigation()
+{
+    if (!m_keyboard_nav_pending || m_snapping) {
+        return;
+    }
+    m_keyboard_nav_pending = false;
+    focusCurrentItem();
+}
+
 void CarouselView::setCurrentIndexAnimated(int index)
 {
     const int clamped = m_count > 0 ? qBound(0, index, m_count - 1) : 0;
@@ -608,6 +685,7 @@ void CarouselView::createDelegate(int index)
     item->setParentItem(m_content);
 
     item->setProperty("_carouselIndex", index);
+    item->setProperty("_carouselView", QVariant::fromValue<QObject*>(this));
     connect(item, SIGNAL(clicked()), this, SLOT(onDelegateClicked()));
     connect(item, SIGNAL(aspectRatioChanged()), this, SLOT(onDelegateAspectRatioChanged()));
 
@@ -701,34 +779,15 @@ void CarouselView::positionItem(QQuickItem* item, const CarouselItemGeometry& ge
 
 int CarouselView::activeIndexForLayout(const CarouselLayoutOutput& out) const
 {
-    if (m_layout == kLayoutUncontained || m_layout == kLayoutFullScreen
-        || m_layout == kLayoutUncontainedMultiAspect) {
-        // Leading snap item; at end-of-list prefer the leftmost fully unmasked visible item.
-        int   best_index = out.leading_index;
-        qreal best_frac  = -1.0;
-        for (const auto& g : out.items) {
-            if (g.mask_start > 0.001) {
-                continue;
-            }
-            const qreal frac = qMax(0.0, 1.0 - g.mask_start - g.mask_end);
-            if (frac > best_frac + 0.001
-                || (qFuzzyCompare(frac, best_frac) && g.index < best_index)) {
-                best_frac  = frac;
-                best_index = g.index;
-            }
-        }
-        return best_index;
-    }
-
     int   best_index = out.leading_index;
     qreal best_frac  = -1.0;
     for (const auto& g : out.items) {
-        if (g.size_class != kSizeLarge) {
+        if (g.mask_start > 0.001) {
             continue;
         }
         const qreal frac = qMax(0.0, 1.0 - g.mask_start - g.mask_end);
         if (frac > best_frac + 0.001
-            || (qFuzzyCompare(frac, best_frac) && g.index == out.leading_index)) {
+            || (qFuzzyCompare(frac, best_frac) && g.index < best_index)) {
             best_frac  = frac;
             best_index = g.index;
         }
@@ -748,7 +807,6 @@ void CarouselView::updateLayout()
     input.orientation   = m_orientation;
     input.viewport_size = m_orientation == Qt::Horizontal ? width() : height();
     input.cross_size    = m_orientation == Qt::Horizontal ? height() : width();
-    input.cross_size    = m_orientation == Qt::Horizontal ? height() : width();
     auto* flick = asFlickable(m_flickable);
     input.scroll_offset = flick
         ? (m_orientation == Qt::Horizontal ? flick->contentX() : flick->contentY())
@@ -766,6 +824,7 @@ void CarouselView::updateLayout()
     input.parallax_ratio  = m_reduce_motion ? 0
         : (m_layout == kLayoutUncontained || m_layout == kLayoutUncontainedMultiAspect ? 0.5 : 0.35);
     input.count         = m_count;
+    input.reduce_motion = m_reduce_motion;
     input.item_aspects  = m_item_aspects;
     while (input.item_aspects.size() < m_count) {
         input.item_aspects.append(1.0);
@@ -821,6 +880,14 @@ void CarouselView::updateLayout()
     }
 
     for (int i = 0; i < m_items.size(); ++i) {
+        if (m_items[i]) {
+            auto* attached =
+                qobject_cast<CarouselAttached*>(qmlAttachedPropertiesObject<CarouselView>(m_items[i], true));
+            if (attached) {
+                attached->setContext(m_count, static_cast<int>(m_orientation), active_index);
+                attached->setFocusRingState(m_focus_ring_suppressed, m_tab_focus_engaged, m_clip_container);
+            }
+        }
         if (!visible.contains(i) && m_items[i]) {
             m_items[i]->setVisible(false);
         } else if (m_items[i]) {
@@ -831,12 +898,15 @@ void CarouselView::updateLayout()
     if (usesFreeScrollSnap() && active_index != m_current_index) {
         m_current_index = active_index;
         Q_EMIT currentIndexChanged();
+    } else if (active_index != m_current_index && flick && (flick->isMoving() || m_snapping)) {
+        m_current_index = active_index;
+        Q_EMIT currentIndexChanged();
     }
 }
 
 bool CarouselView::usesSingleAdvanceFling() const
 {
-    return m_layout == 2 || m_layout == 3 || m_layout == 4; // Hero, HeroCenter, FullScreen
+    return m_layout == kLayoutMultiBrowse || m_layout == 2 || m_layout == 3 || m_layout == 4;
 }
 
 bool CarouselView::usesFreeScrollSnap() const
@@ -1045,6 +1115,10 @@ void CarouselView::finishSnap(qreal targetOffset)
         setCurrentIndex(snapIndexForOffset(targetOffset));
     }
     updateLayout();
+    if (m_keyboard_nav_pending) {
+        m_keyboard_nav_pending = false;
+        focusCurrentItem();
+    }
 }
 
 } // namespace qml_material

@@ -24,6 +24,7 @@ MD.CarouselItem {
 
     onItemAspectRatioChanged: root.aspectRatioChanged()
 
+    accessibilityTitle: root.itemTitle
     showBackground: false
 
     readonly property string imageSource: {

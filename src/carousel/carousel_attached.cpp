@@ -16,7 +16,43 @@ qreal CarouselAttached::visibleFraction() const
 }
 int CarouselAttached::sizeClass() const { return m_size_class; }
 int CarouselAttached::index() const { return m_index; }
+int CarouselAttached::carouselCount() const { return m_carousel_count; }
+int CarouselAttached::carouselOrientation() const { return m_orientation; }
+int CarouselAttached::carouselCurrentIndex() const { return m_current_index; }
 bool CarouselAttached::isActive() const { return m_is_active; }
+
+bool CarouselAttached::focusRingVisible() const
+{
+    return m_tab_focus_engaged && !m_focus_ring_suppressed && m_index >= 0
+        && m_index == m_current_index;
+}
+
+bool CarouselAttached::focusRingInset() const { return m_focus_ring_inset; }
+
+void CarouselAttached::setContext(int count, int orientation, int currentIndex)
+{
+    const bool count_changed =
+        m_carousel_count != count || m_orientation != orientation || m_current_index != currentIndex;
+    m_carousel_count = count;
+    m_orientation    = orientation;
+    m_current_index  = currentIndex;
+    if (count_changed) {
+        Q_EMIT contextChanged();
+        Q_EMIT focusRingChanged();
+    }
+}
+
+void CarouselAttached::setFocusRingState(bool suppressed, bool tabEngaged, bool inset)
+{
+    const bool changed = m_focus_ring_suppressed != suppressed || m_tab_focus_engaged != tabEngaged
+        || m_focus_ring_inset != inset;
+    m_focus_ring_suppressed = suppressed;
+    m_tab_focus_engaged     = tabEngaged;
+    m_focus_ring_inset      = inset;
+    if (changed) {
+        Q_EMIT focusRingChanged();
+    }
+}
 
 void CarouselAttached::setGeometry(qreal width, qreal height, qreal maskStart, qreal maskEnd,
                                    qreal parallaxShift, int sizeClass, int index, bool isActive)
@@ -35,6 +71,7 @@ void CarouselAttached::setGeometry(qreal width, qreal height, qreal maskStart, q
     m_is_active      = isActive;
     if (changed) {
         Q_EMIT geometryChanged();
+        Q_EMIT focusRingChanged();
     }
 }
 

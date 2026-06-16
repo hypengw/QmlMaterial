@@ -39,9 +39,18 @@ T.Control {
     property alias debugScrollOffset: m_view.debugScrollOffset
     property bool showPageIndicator: false
     property bool showNavigationButtons: false
+    property string header: ''
     property MD.StateCarousel mdState: MD.StateCarousel {
         item: control
     }
+
+    readonly property bool hasChromeRow: control.showPageIndicator || control.showNavigationButtons
+    readonly property real chromeRowHeight: 40
+    readonly property real viewportHeight: control.orientation === Qt.Vertical
+        ? control.height - (control.hasChromeRow ? control.chromeRowHeight + 8 : 0)
+        : (control.layout === MD.Enum.CarouselFullScreen
+           ? MD.Token.carousel.default_item_extent
+           : MD.Token.carousel.container_height_horizontal)
 
     signal clicked(int index)
     signal indexChanged(int index)
@@ -65,44 +74,18 @@ T.Control {
     implicitWidth: orientation === Qt.Horizontal ? 480 : 320
     implicitHeight: orientation === Qt.Vertical
         ? 320
-        : (layout === MD.Enum.CarouselFullScreen
-           ? MD.Token.carousel.default_item_extent
-           : MD.Token.carousel.container_height_horizontal)
+        : (viewportHeight
+           + (hasChromeRow ? chromeRowHeight + 8 : 0))
 
-    focusPolicy: Qt.StrongFocus
+    focusPolicy: Qt.NoFocus
 
-    Keys.onLeftPressed: event => {
-        if (orientation === Qt.Horizontal) {
-            decrementCurrentIndex();
-            event.accepted = true;
-        }
-    }
-    Keys.onRightPressed: event => {
-        if (orientation === Qt.Horizontal) {
-            incrementCurrentIndex();
-            event.accepted = true;
-        }
-    }
-    Keys.onUpPressed: event => {
-        if (orientation === Qt.Vertical) {
-            decrementCurrentIndex();
-            event.accepted = true;
-        }
-    }
-    Keys.onDownPressed: event => {
-        if (orientation === Qt.Vertical) {
-            incrementCurrentIndex();
-            event.accepted = true;
-        }
-    }
-    Keys.onPressed: event => {
-        if (event.key === Qt.Key_Home) {
-            setCurrentIndex(0, true);
-            event.accepted = true;
-        } else if (event.key === Qt.Key_End && m_view.count > 0) {
-            setCurrentIndex(m_view.count - 1, true);
-            event.accepted = true;
-        }
+    Accessible.role: Accessible.Grouping
+    Accessible.name: control.header.length > 0 ? control.header : 'Carousel'
+
+    Binding on reduceMotion {
+        when: typeof Qt.styleHints !== 'undefined'
+              && typeof Qt.styleHints.prefersReducedMotion === 'boolean'
+        value: Qt.styleHints.prefersReducedMotion
     }
 
     contentItem: ColumnLayout {
@@ -111,12 +94,8 @@ T.Control {
         CarouselView {
             id: m_view
             Layout.fillWidth: true
-            Layout.fillHeight: !control.showPageIndicator && !control.showNavigationButtons
-            Layout.preferredHeight: control.orientation === Qt.Vertical
-                ? control.height - (control.showPageIndicator ? 32 : 0)
-                : (control.layout === MD.Enum.CarouselFullScreen
-                   ? MD.Token.carousel.default_item_extent
-                   : MD.Token.carousel.container_height_horizontal)
+            Layout.fillHeight: control.orientation === Qt.Vertical
+            Layout.preferredHeight: control.viewportHeight
 
             model: control.model
             delegate: control.delegate
@@ -142,10 +121,11 @@ T.Control {
 
             onClicked: index => control.clicked(index)
             onCurrentIndexChanged: control.indexChanged(m_view.currentIndex)
+
         }
 
         RowLayout {
-            visible: control.showPageIndicator || control.showNavigationButtons
+            visible: control.hasChromeRow
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignHCenter
             spacing: 8
@@ -156,7 +136,10 @@ T.Control {
                     ? MD.Token.icon.chevron_left
                     : MD.Token.icon.expand_less
                 enabled: m_view.currentIndex > 0
-                onClicked: control.decrementCurrentIndex()
+                onClicked: {
+                    m_view.claimInteractionFocus();
+                    control.decrementCurrentIndex();
+                }
             }
 
             MD.PageIndicator {
@@ -172,7 +155,10 @@ T.Control {
                     ? MD.Token.icon.chevron_right
                     : MD.Token.icon.expand_more
                 enabled: m_view.currentIndex < m_view.count - 1
-                onClicked: control.incrementCurrentIndex()
+                onClicked: {
+                    m_view.claimInteractionFocus();
+                    control.incrementCurrentIndex();
+                }
             }
         }
     }
@@ -180,5 +166,6 @@ T.Control {
     MD.WheelHandler {
         target: m_view.flickable
         scrollFlickableTarget: true
+        onWheelMoved: m_view.claimInteractionFocus()
     }
 }

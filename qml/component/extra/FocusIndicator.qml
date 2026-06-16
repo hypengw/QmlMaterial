@@ -13,6 +13,8 @@ Item {
     property color outerColor: MD.MProp.color.secondary
     property color innerColor: MD.MProp.color.on_secondary
     property bool  active: false
+    // When true, draw inside the parent (for clipped carousel viewports).
+    property bool  inset: false
 
     readonly property real _outer: MD.Token.state.focus_ring.outer_stroke_width
     readonly property real _inner: MD.Token.state.focus_ring.inner_stroke_width
@@ -21,9 +23,10 @@ Item {
 
     readonly property real _outerR: root._gap + root._outer / 2
     readonly property real _innerR: root._gap + root._inset + root._inner / 2
+    readonly property real _cornerAdjust: root.inset ? -root._innerR : root._outerR
 
     anchors.fill: parent
-    anchors.margins: -(_gap + _outer)
+    anchors.margins: root.inset ? (root._gap + root._outer) : -(root._gap + root._outer)
 
     opacity: active ? 1 : 0
     visible: opacity > 0
@@ -43,10 +46,10 @@ Item {
         border.width: root._inner
         border.color: root.innerColor
         corners: MD.Util.corners(
-            root.corners.topLeft     + root._innerR,
-            root.corners.topRight    + root._innerR,
-            root.corners.bottomLeft  + root._innerR,
-            root.corners.bottomRight + root._innerR)
+            Math.max(0, root.corners.topLeft     + root._cornerAdjust),
+            Math.max(0, root.corners.topRight    + root._cornerAdjust),
+            Math.max(0, root.corners.bottomLeft  + root._cornerAdjust),
+            Math.max(0, root.corners.bottomRight + root._cornerAdjust))
     }
 
     MD.Rectangle {
@@ -56,9 +59,9 @@ Item {
         border.width: root._outer
         border.color: root.outerColor
         corners: MD.Util.corners(
-            root.corners.topLeft     + root._outerR,
-            root.corners.topRight    + root._outerR,
-            root.corners.bottomLeft  + root._outerR,
-            root.corners.bottomRight + root._outerR)
+            Math.max(0, root.corners.topLeft     + root._cornerAdjust),
+            Math.max(0, root.corners.topRight    + root._cornerAdjust),
+            Math.max(0, root.corners.bottomLeft  + root._cornerAdjust),
+            Math.max(0, root.corners.bottomRight + root._cornerAdjust))
     }
 }
