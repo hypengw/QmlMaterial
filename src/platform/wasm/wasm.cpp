@@ -22,5 +22,6 @@ auto sysColorScheme() -> Enum::ThemeMode {
 }
 auto sysAccentColor() -> QColor { return {}; }
 void sysOpenUrl(const QString&) {}
+void sysOpenFolder(const QString&) {}
 
 } // namespace qml_material

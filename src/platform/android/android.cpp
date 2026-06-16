@@ -7,5 +7,6 @@ void sysNotifyInit(MdColorMgr&) {}
 auto sysColorScheme() -> Enum::ThemeMode { return {}; }
 auto sysAccentColor() -> QColor { return {}; }
 void sysOpenUrl(const QString&) {}
+void sysOpenFolder(const QString&) {}
 
 } // namespace qml_material

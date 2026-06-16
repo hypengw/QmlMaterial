@@ -27,6 +27,7 @@ Util::Util(QObject* parent): QObject(parent) {}
 Util::~Util() {}
 
 void Util::openUrlExternally(const QString& url) { sysOpenUrl(url); }
+void Util::openFolderExternally(const QString& url) { sysOpenFolder(url); }
 
 bool Util::hasIcon(const QJSValue& v) const {
     auto name   = v.property("name");

@@ -35,6 +35,7 @@ public:
     /// `org.freedesktop.portal.OpenURI`). Logs a warning on platforms
     /// that don't have a backend yet.
     Q_INVOKABLE void openUrlExternally(const QString& url);
+    Q_INVOKABLE void openFolderExternally(const QString& url);
 
     Q_INVOKABLE bool hasIcon(const QJSValue& v) const;
 
@@ -116,6 +117,7 @@ auto tryCreateComponent(const QVariant& val, QQmlComponent::CompilationMode useA
 /// own implementation. Linux uses xdg-desktop-portal `OpenURI`; other
 /// platforms get a no-op stub today.
 void sysOpenUrl(const QString& url);
+void sysOpenFolder(const QString& url);
 } // namespace qml_material
 
 namespace qcm
