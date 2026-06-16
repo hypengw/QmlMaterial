@@ -15,7 +15,7 @@ set(VISUAL_SCENES button elevation shape ripple ripple_phases loading_indicator_
     focus_button focus_iconbutton focus_fab focus_chip
     focus_switch focus_checkbox focus_radio
     datepicker colorpicker colorpicker_button
-    navigation_rail)
+    navigation_rail carousel)
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/out)
 foreach(scene ${VISUAL_SCENES})
   add_test(

@@ -4,8 +4,52 @@ import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.Page {
+    id: root
     title: 'Components'
     padding: 0
+
+    readonly property var carouselDemoModel: [
+        {
+            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-coral-landscape.jpg',
+            title: 'Coral'
+        },
+        {
+            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-mint-square.jpg',
+            title: 'Mint'
+        },
+        {
+            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-violet-portrait.jpg',
+            title: 'Violet'
+        },
+        {
+            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-sun-ultrawide.jpg',
+            title: 'Sun'
+        },
+        {
+            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-teal-tall.jpg',
+            title: 'Teal'
+        },
+        {
+            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-amber-wide.jpg',
+            title: 'Amber'
+        },
+        {
+            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-rose-medium.jpg',
+            title: 'Rose'
+        },
+        {
+            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-sky-small.jpg',
+            title: 'Sky'
+        },
+        {
+            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-lime-diagonal.jpg',
+            title: 'Lime'
+        },
+        {
+            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-indigo-portrait.jpg',
+            title: 'Indigo'
+        }
+    ]
 
     MD.VerticalFlickable {
         anchors.fill: parent
@@ -1055,6 +1099,84 @@ MD.Page {
                 }
             }
 
+            ColumnLayout {
+                Layout.alignment: Qt.AlignHCenter
+                spacing: 16
+                MD.Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: 'Carousel'
+                    typescale: MD.Token.typescale.title_large
+                }
+
+                ComponentCarouselCard {
+                    title: 'Uncontained'
+
+                    MD.Carousel {
+                        Layout.preferredWidth: 480
+                        Layout.preferredHeight: MD.Token.carousel.container_height_horizontal
+                        layout: MD.Enum.CarouselUncontained
+                        itemExtent: 180
+                        model: root.carouselDemoModel
+                        delegate: MD.CarouselImageDelegate {}
+                    }
+                }
+
+                ComponentCarouselCard {
+                    title: 'Multi-browse'
+
+                    MD.Carousel {
+                        Layout.preferredWidth: 480
+                        Layout.preferredHeight: MD.Token.carousel.container_height_horizontal
+                        layout: MD.Enum.CarouselMultiBrowse
+                        model: root.carouselDemoModel
+                        delegate: MD.CarouselImageDelegate {}
+                        showPageIndicator: true
+                        showNavigationButtons: true
+                    }
+                }
+
+                ComponentCarouselCard {
+                    title: 'Hero (start)'
+
+                    MD.Carousel {
+                        Layout.preferredWidth: 480
+                        Layout.preferredHeight: 240
+                        layout: MD.Enum.CarouselHero
+                        model: root.carouselDemoModel
+                        delegate: MD.CarouselImageDelegate {}
+                        showNavigationButtons: true
+                    }
+                }
+
+                ComponentCarouselCard {
+                    title: 'Hero (center)'
+
+                    MD.Carousel {
+                        Layout.preferredWidth: 480
+                        Layout.preferredHeight: 240
+                        layout: MD.Enum.CarouselHeroCenter
+                        model: root.carouselDemoModel
+                        delegate: MD.CarouselImageDelegate {}
+                        showNavigationButtons: true
+                    }
+                }
+
+                ComponentCarouselCard {
+                    title: 'Full-screen (vertical)'
+
+                    MD.Carousel {
+                        Layout.preferredWidth: 320
+                        Layout.preferredHeight: 360
+                        layout: MD.Enum.CarouselFullScreen
+                        orientation: Qt.Vertical
+                        model: root.carouselDemoModel
+                        delegate: MD.CarouselImageDelegate {}
+                        showPageIndicator: true
+                        showNavigationButtons: true
+                    }
+                }
+            }
+
             MD.Pane {
                 Layout.alignment: Qt.AlignHCenter
                 ColumnLayout {
@@ -1108,6 +1230,21 @@ MD.Page {
                     }
                 }
             }
+        }
+    }
+
+    component ComponentCarouselCard: ColumnLayout {
+        id: m_carousel_card
+        Layout.alignment: Qt.AlignHCenter
+        Layout.minimumWidth: 400
+        spacing: 8
+
+        property string title
+
+        MD.Text {
+            Layout.alignment: Qt.AlignHCenter
+            text: m_carousel_card.title
+            typescale: MD.Token.typescale.title_medium
         }
     }
 

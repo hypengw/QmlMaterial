@@ -5,10 +5,8 @@ import Qcm.Material as MD
 MD.Flickable {
     id: root
 
-    // flickable not set contentHeight
-    contentHeight: contentItem.childrenRect.height
+    contentHeight: contentItem ? contentItem.childrenRect.height : 0
     contentWidth: width - rightMargin - leftMargin
-    implicitHeight: contentHeight + topMargin + bottomMargin
 
     T.ScrollBar.vertical: MD.ScrollBar {}
 }

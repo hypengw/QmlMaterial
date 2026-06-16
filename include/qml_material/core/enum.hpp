@@ -171,6 +171,31 @@ public:
         RailBottom   ///< Items aligned to bottom
     };
     Q_ENUM(RailArrangement)
+
+    enum class CarouselLayout
+    {
+        CarouselUncontained = 0, ///< Items scroll to container edge
+        CarouselMultiBrowse,     ///< Large, medium, and small items
+        CarouselHero,            ///< Start-aligned hero
+        CarouselHeroCenter,      ///< Center-aligned hero
+        CarouselFullScreen,      ///< One edge-to-edge item
+    };
+    Q_ENUM(CarouselLayout)
+
+    enum class CarouselAlignment
+    {
+        CarouselAlignStart = 0, ///< Focal items aligned to start
+        CarouselAlignCenter,    ///< Focal items aligned to center
+    };
+    Q_ENUM(CarouselAlignment)
+
+    enum class CarouselSizeClass
+    {
+        CarouselSizeSmall = 0,
+        CarouselSizeMedium,
+        CarouselSizeLarge,
+    };
+    Q_ENUM(CarouselSizeClass)
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(Enum::ToastFlags);
 } // namespace qml_material

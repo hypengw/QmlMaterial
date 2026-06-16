@@ -295,7 +295,7 @@ T.Control {
             Item {
                 id: m_content
                 width: parent.width
-                height: Math.max(implicitHeight, m_flick.height - 12 * 2)
+                height: implicitHeight
                 implicitWidth: control.useLarge ? control.expandedWidth : control.collapsedWidth
                 implicitHeight: m_header_loader.height + m_rail_container.implicitHeight + m_footer_container.implicitHeight
 
