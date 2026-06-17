@@ -24,6 +24,15 @@ Item {
 
     readonly property real visibleWidth: Math.max(0, width * (1 - maskStart - maskEnd))
     readonly property real visibleHeight: Math.max(0, height * (1 - maskStart - maskEnd))
+    // M3 carousel peek: pill when width = 2 * corner radius (cap radius to half visible size).
+    readonly property real effectiveCornerRadius: {
+        const maxRadius = MD.Token.carousel.item_corner;
+        if (root.visibleWidth <= 0 || root.visibleHeight <= 0) {
+            return maxRadius;
+        }
+        return Math.min(maxRadius, root.visibleWidth / 2, root.visibleHeight / 2);
+    }
+    readonly property MD.corners effectiveCorners: MD.Util.corners(root.effectiveCornerRadius)
 
     property bool showBackground: true
 
@@ -90,7 +99,7 @@ Item {
             id: m_bg
             anchors.fill: parent
             visible: root.showBackground
-            corners: MD.Util.corners(MD.Token.shape.corner.extra_large)
+            corners: root.effectiveCorners
             color: root.mdState.backgroundColor
             elevation: root.mdState.elevation
             elevationVisible: root.showBackground
@@ -132,7 +141,7 @@ Item {
         z: 20
         inset: CarouselView.focusRingInset
         active: CarouselView.focusRingVisible
-        corners: MD.Util.corners(MD.Token.shape.corner.extra_large)
+        corners: root.effectiveCorners
     }
 
     signal clicked()

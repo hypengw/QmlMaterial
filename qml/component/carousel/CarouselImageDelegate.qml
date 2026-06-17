@@ -86,7 +86,7 @@ MD.CarouselItem {
             anchors.fill: parent
             source: root.imageSource
             fillMode: Image.PreserveAspectCrop
-            radius: MD.Token.shape.corner.extra_large
+            radius: root.effectiveCornerRadius
             elevation: MD.Token.elevation.level0
             asynchronous: true
         }
