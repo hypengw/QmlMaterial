@@ -43,6 +43,11 @@ auto isHeroCenterLayout(int layout) -> bool
     return layout == kLayoutHeroCenter;
 }
 
+auto isFullScreenLayout(int layout) -> bool
+{
+    return layout == kLayoutFullScreen;
+}
+
 QQuickFlickable* asFlickable(QQuickItem* item)
 {
     return qobject_cast<QQuickFlickable*>(item);
@@ -791,6 +796,10 @@ void CarouselView::positionItem(QQuickItem* item, const CarouselItemGeometry& ge
 
 int CarouselView::activeIndexForLayout(const CarouselLayoutOutput& out) const
 {
+    if (m_layout == kLayoutFullScreen) {
+        return out.leading_index;
+    }
+
     int   best_index = out.leading_index;
     qreal best_frac  = -1.0;
     for (const auto& g : out.items) {
@@ -833,8 +842,9 @@ void CarouselView::updateLayout()
     input.small_item_max  = m_max_small_item_width;
     input.min_peek_px     = 16;
     input.item_corner_radius = m_item_corner_radius;
-    input.parallax_ratio  = m_reduce_motion ? 0
-        : (m_layout == kLayoutUncontained || m_layout == kLayoutUncontainedMultiAspect ? 0.5 : 0.35);
+    input.parallax_ratio  = m_layout == kLayoutFullScreen ? 0
+        : (m_reduce_motion ? 0
+           : (m_layout == kLayoutUncontained || m_layout == kLayoutUncontainedMultiAspect ? 0.5 : 0.35));
     input.count         = m_count;
     input.reduce_motion = m_reduce_motion;
     input.item_aspects  = m_item_aspects;
@@ -978,6 +988,14 @@ int CarouselView::snapIndexForFling(qreal offset, qreal velocity) const
 
 qreal CarouselView::snapTargetForGesture(qreal offset, qreal velocity) const
 {
+    if (isFullScreenLayout(m_layout) && m_count > 0 && !m_snap_offsets.isEmpty()) {
+        const int target_index = qAbs(velocity) > 50
+            ? snapIndexForFling(offset, velocity)
+            : snapIndexForOffset(offset);
+        const int clamped = qBound(0, target_index, m_snap_offsets.size() - 1);
+        return m_snap_offsets.at(clamped);
+    }
+
     if (isHeroCenterLayout(m_layout) && m_count >= 3 && m_snap_offsets.size() >= m_count) {
         const int target_index = qAbs(velocity) > 50
             ? snapIndexForFling(offset, velocity)
@@ -1037,6 +1055,17 @@ void CarouselView::snapAfterGesture()
 
 int CarouselView::snapIndexForOffset(qreal offset) const
 {
+    if (isFullScreenLayout(m_layout) && m_count >= 2 && m_snap_offsets.size() >= m_count) {
+        for (int i = 0; i < m_count - 1; ++i) {
+            const qreal threshold =
+                (m_snap_offsets.at(i) + m_snap_offsets.at(i + 1)) * 0.5;
+            if (offset < threshold) {
+                return i;
+            }
+        }
+        return m_count - 1;
+    }
+
     if (isHeroCenterLayout(m_layout) && m_count >= 3 && m_snap_offsets.size() >= m_count) {
         const qreal end_mid =
             (m_snap_offsets.at(m_count - 2) + m_snap_offsets.at(m_count - 1)) * 0.5;

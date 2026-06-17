@@ -428,6 +428,43 @@ auto layoutFixedStride(const CarouselLayoutInput& in, const KeylineList& kl) -> 
     return out;
 }
 
+auto layoutFullScreenItems(const CarouselLayoutInput& in) -> CarouselLayoutOutput
+{
+    CarouselLayoutOutput out;
+    if (in.count <= 0 || in.viewport_size <= 0) {
+        return out;
+    }
+
+    const qreal page_size  = in.viewport_size;
+    const qreal stride     = page_size + in.spacing;
+    const qreal view_start = in.scroll_offset;
+    const qreal view_end   = in.scroll_offset + in.viewport_size;
+
+    for (int i = 0; i < in.count; ++i) {
+        const qreal pos = in.content_padding_start + qreal(i) * stride;
+        const qreal end = pos + page_size;
+        if (end <= view_start || pos >= view_end) {
+            continue;
+        }
+
+        CarouselItemGeometry g;
+        g.index      = i;
+        g.position   = pos;
+        g.size       = page_size;
+        g.size_class = kSizeLarge;
+        g.mask_start = 0;
+        g.mask_end   = 0;
+        out.items.append(g);
+    }
+
+    out.content_size = in.count > 0
+        ? in.content_padding_start + stride * (in.count - 1) + page_size + in.content_padding_end
+        : 0;
+
+    finalizeSnapAndScrollBounds(out, in, stride);
+    return out;
+}
+
 auto itemWidthForAspect(const CarouselLayoutInput& in, int index, qreal cross) -> qreal
 {
     qreal aspect = 1.0;
@@ -1001,7 +1038,10 @@ auto CarouselKeylines::layoutItems(const CarouselLayoutInput& in, const KeylineL
     if (in.layout == kLayoutUncontainedMultiAspect) {
         return layoutVariableStride(in, kl);
     }
-    if (in.layout == kLayoutUncontained || in.layout == kLayoutFullScreen) {
+    if (in.layout == kLayoutFullScreen) {
+        return layoutFullScreenItems(in);
+    }
+    if (in.layout == kLayoutUncontained) {
         return layoutFixedStride(in, kl);
     }
     if (in.layout == kLayoutHero || in.layout == kLayoutHeroCenter) {

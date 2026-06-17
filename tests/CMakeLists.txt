@@ -15,6 +15,14 @@ target_include_directories(hero_center_end PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(hero_center_end PRIVATE Qt6::Core)
 add_test(NAME hero_center_end COMMAND hero_center_end)
 
+add_executable(fullscreen_layout fullscreen_layout.cpp
+  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_strategies.cpp
+  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_keylines.cpp
+  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_scroll_strategy.cpp)
+target_include_directories(fullscreen_layout PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(fullscreen_layout PRIVATE Qt6::Core)
+add_test(NAME fullscreen_layout COMMAND fullscreen_layout)
+
 add_executable(qm_grab qm_grab.cpp)
 target_link_libraries(qm_grab PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Quick Qt6::Qml)
 set_target_properties(qm_grab PROPERTIES AUTOMOC ON)

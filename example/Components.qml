@@ -1223,13 +1223,12 @@ MD.Page {
                         title: 'Full-screen (vertical)'
 
                         MD.Carousel {
-                            Layout.preferredWidth: 320
-                            Layout.preferredHeight: 360
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 420
                             layout: MD.Enum.CarouselFullScreen
                             orientation: Qt.Vertical
                             model: root.carouselDemoModel
                             delegate: MD.CarouselImageDelegate {}
-                            showPageIndicator: true
                             showNavigationButtons: true
                         }
                     }

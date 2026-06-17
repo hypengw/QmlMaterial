@@ -149,6 +149,14 @@ Item {
             initialItem: 3
             scrollOffset: -1
         }
+
+        CarouselScene {
+            title: 'Full-screen (vertical)'
+            layout: MD.Enum.CarouselFullScreen
+            orientation: Qt.Vertical
+            preferredHeight: 360
+            showPageIndicator: true
+        }
     }
 
     component CarouselScene: ColumnLayout {
@@ -160,6 +168,8 @@ Item {
         property int initialItem: 0
         property real scrollOffset: 0
         property bool showPageIndicator: false
+        property int orientation: Qt.Horizontal
+        property real preferredHeight: -1
 
         spacing: 4
 
@@ -172,7 +182,9 @@ Item {
         MD.Carousel {
             id: carousel
             Layout.fillWidth: true
+            Layout.preferredHeight: scene.preferredHeight > 0 ? scene.preferredHeight : implicitHeight
             layout: scene.layout
+            orientation: scene.orientation
             itemExtent: scene.itemExtent
             model: root.demoModel
             delegate: MD.CarouselImageDelegate {}
