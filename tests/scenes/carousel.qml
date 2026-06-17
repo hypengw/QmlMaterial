@@ -120,9 +120,27 @@ Item {
         }
 
         CarouselScene {
+            title: 'Hero (mid-scroll)'
+            layout: MD.Enum.CarouselHero
+            initialItem: 4
+        }
+
+        CarouselScene {
             title: 'Hero center (rest)'
             layout: MD.Enum.CarouselHeroCenter
             scrollOffset: 0
+        }
+
+        CarouselScene {
+            title: 'Hero center (mid-scroll)'
+            layout: MD.Enum.CarouselHeroCenter
+            initialItem: 4
+        }
+
+        CarouselScene {
+            title: 'Hero center (end of list)'
+            layout: MD.Enum.CarouselHeroCenter
+            initialItem: 9
         }
 
         CarouselScene {

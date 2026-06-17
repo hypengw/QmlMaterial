@@ -27,9 +27,21 @@ constexpr qreal kSnapDamping    = 28.0;
 constexpr qreal kSnapDt         = 1.0 / 60.0;
 constexpr int kLayoutUncontained = 0;
 constexpr int kLayoutMultiBrowse = 1;
+constexpr int kLayoutHero        = 2;
+constexpr int kLayoutHeroCenter  = 3;
 constexpr int kLayoutFullScreen  = 4;
 constexpr int kLayoutUncontainedMultiAspect = 5;
 constexpr int kSizeLarge           = 2;
+
+auto isHeroLayout(int layout) -> bool
+{
+    return layout == kLayoutHero || layout == kLayoutHeroCenter;
+}
+
+auto isHeroCenterLayout(int layout) -> bool
+{
+    return layout == kLayoutHeroCenter;
+}
 
 QQuickFlickable* asFlickable(QQuickItem* item)
 {
@@ -906,7 +918,7 @@ void CarouselView::updateLayout()
 
 bool CarouselView::usesSingleAdvanceFling() const
 {
-    return m_layout == kLayoutMultiBrowse || m_layout == 2 || m_layout == 3 || m_layout == 4;
+    return m_layout == kLayoutMultiBrowse || isHeroLayout(m_layout) || m_layout == kLayoutFullScreen;
 }
 
 bool CarouselView::usesFreeScrollSnap() const
@@ -917,11 +929,25 @@ bool CarouselView::usesFreeScrollSnap() const
 int CarouselView::snapIndexForFling(qreal offset, qreal velocity) const
 {
     if (usesSingleAdvanceFling() && qAbs(velocity) > 50) {
+        if (isHeroCenterLayout(m_layout) && m_count >= 3 && m_snap_offsets.size() >= m_count
+            && velocity > 0) {
+            const qreal end_mid =
+                (m_snap_offsets.at(m_count - 2) + m_snap_offsets.at(m_count - 1)) * 0.5;
+            if (m_current_index >= m_count - 2 && offset >= end_mid - 0.5) {
+                return m_count - 1;
+            }
+        }
         return velocity > 0 ? qMin(m_count - 1, m_current_index + 1) : qMax(0, m_current_index - 1);
     }
 
     const qreal stride   = m_scroll_step > 0 ? m_scroll_step : 1.0;
-    const qreal end_zone = m_max_scroll_offset - stride * 0.25;
+    const qreal end_zone = isHeroCenterLayout(m_layout) && m_count >= 3 && m_snap_offsets.size() >= m_count
+        ? (m_snap_offsets.at(m_count - 2) + m_snap_offsets.at(m_count - 1)) * 0.5
+        : m_max_scroll_offset - stride * 0.25;
+
+    if (isHeroCenterLayout(m_layout)) {
+        return snapIndexForOffset(offset);
+    }
 
     if (offset >= end_zone) {
         return m_count > 0 ? m_count - 1 : 0;
@@ -952,6 +978,20 @@ int CarouselView::snapIndexForFling(qreal offset, qreal velocity) const
 
 qreal CarouselView::snapTargetForGesture(qreal offset, qreal velocity) const
 {
+    if (isHeroCenterLayout(m_layout) && m_count >= 3 && m_snap_offsets.size() >= m_count) {
+        const int target_index = qAbs(velocity) > 50
+            ? snapIndexForFling(offset, velocity)
+            : snapIndexForOffset(offset);
+
+        if (target_index == m_count - 1) {
+            return m_end_snap_offset;
+        }
+        if (target_index >= 0 && target_index < m_snap_offsets.size()) {
+            return m_snap_offsets.at(target_index);
+        }
+        return offset;
+    }
+
     const qreal stride      = m_scroll_step > 0 ? m_scroll_step : 1.0;
     const qreal end_zone    = m_max_scroll_offset - stride * 0.25;
     const qreal start_zone  = stride * 0.25;
@@ -997,6 +1037,23 @@ void CarouselView::snapAfterGesture()
 
 int CarouselView::snapIndexForOffset(qreal offset) const
 {
+    if (isHeroCenterLayout(m_layout) && m_count >= 3 && m_snap_offsets.size() >= m_count) {
+        const qreal end_mid =
+            (m_snap_offsets.at(m_count - 2) + m_snap_offsets.at(m_count - 1)) * 0.5;
+        if (offset >= end_mid - 0.5) {
+            return m_count - 1;
+        }
+
+        for (int i = 0; i < m_count - 1; ++i) {
+            const qreal threshold =
+                (m_snap_offsets.at(i) + m_snap_offsets.at(i + 1)) * 0.5;
+            if (offset < threshold) {
+                return i;
+            }
+        }
+        return m_count - 1;
+    }
+
     int   best   = m_current_index;
     qreal best_d = std::numeric_limits<qreal>::max();
     for (int i = 0; i < m_snap_offsets.size(); ++i) {
