@@ -1,15 +1,18 @@
 #pragma once
 
+#include <QPointer>
 #include <QQuickItem>
 #include <QQmlComponent>
 #include <QQmlEngine>
 #include <QVariant>
 #include <QVector>
-#include <memory>
+
+#include <QModelIndex>
 
 #include "qml_material/carousel/carousel_attached.hpp"
 #include "qml_material/carousel/carousel_strategy.hpp"
 
+class QAbstractItemModel;
 
 namespace qml_material
 {
@@ -24,17 +27,13 @@ class CarouselView : public QQuickItem
     Q_PROPERTY(QQmlComponent* delegate READ delegate WRITE setDelegate NOTIFY delegateChanged FINAL)
     Q_PROPERTY(int count READ count NOTIFY countChanged FINAL)
     Q_PROPERTY(int layout READ layout WRITE setLayout NOTIFY layoutChanged FINAL)
-    Q_PROPERTY(int alignment READ alignment WRITE setAlignment NOTIFY alignmentChanged FINAL)
     Q_PROPERTY(int orientation READ orientation WRITE setOrientation NOTIFY orientationChanged FINAL)
     Q_PROPERTY(qreal itemExtent READ itemExtent WRITE setItemExtent NOTIFY itemExtentChanged FINAL)
     Q_PROPERTY(qreal minSmallItemWidth READ minSmallItemWidth WRITE setMinSmallItemWidth NOTIFY
                    minSmallItemWidthChanged FINAL)
     Q_PROPERTY(qreal maxSmallItemWidth READ maxSmallItemWidth WRITE setMaxSmallItemWidth NOTIFY
                    maxSmallItemWidthChanged FINAL)
-    Q_PROPERTY(QVariantList flexWeights READ flexWeights WRITE setFlexWeights NOTIFY flexWeightsChanged FINAL)
     Q_PROPERTY(bool itemSnapping READ itemSnapping WRITE setItemSnapping NOTIFY itemSnappingChanged FINAL)
-    Q_PROPERTY(qreal shrinkExtent READ shrinkExtent WRITE setShrinkExtent NOTIFY shrinkExtentChanged FINAL)
-    Q_PROPERTY(bool infinite READ infinite WRITE setInfinite NOTIFY infiniteChanged FINAL)
     Q_PROPERTY(int currentIndex READ currentIndex WRITE setCurrentIndex NOTIFY currentIndexChanged FINAL)
     Q_PROPERTY(int initialItem READ initialItem WRITE setInitialItem NOTIFY initialItemChanged FINAL)
     Q_PROPERTY(qreal spacing READ spacing WRITE setSpacing NOTIFY spacingChanged FINAL)
@@ -49,7 +48,6 @@ class CarouselView : public QQuickItem
     Q_PROPERTY(bool interactive READ interactive WRITE setInteractive NOTIFY interactiveChanged FINAL)
     Q_PROPERTY(qreal itemCornerRadius READ itemCornerRadius WRITE setItemCornerRadius NOTIFY
                    itemCornerRadiusChanged FINAL)
-    Q_PROPERTY(qreal debugScrollOffset READ debugScrollOffset WRITE setDebugScrollOffset FINAL)
     Q_PROPERTY(qreal contentWidth READ contentWidth NOTIFY contentWidthChanged FINAL)
     Q_PROPERTY(qreal contentHeight READ contentHeight NOTIFY contentHeightChanged FINAL)
     Q_PROPERTY(QQuickItem* flickable READ flickable CONSTANT FINAL)
@@ -68,8 +66,6 @@ public:
 
     int  layout() const;
     void setLayout(int layout);
-    int  alignment() const;
-    void setAlignment(int alignment);
     int  orientation() const;
     void setOrientation(int orientation);
 
@@ -79,14 +75,8 @@ public:
     void  setMinSmallItemWidth(qreal width);
     qreal maxSmallItemWidth() const;
     void  setMaxSmallItemWidth(qreal width);
-    QVariantList flexWeights() const;
-    void         setFlexWeights(const QVariantList& weights);
     bool itemSnapping() const;
     void setItemSnapping(bool snapping);
-    qreal shrinkExtent() const;
-    void  setShrinkExtent(qreal extent);
-    bool infinite() const;
-    void setInfinite(bool infinite);
     int  currentIndex() const;
     void setCurrentIndex(int index);
     int  initialItem() const;
@@ -105,8 +95,6 @@ public:
     void  setReduceMotion(bool reduce);
     qreal itemCornerRadius() const;
     void  setItemCornerRadius(qreal radius);
-    qreal debugScrollOffset() const;
-    void  setDebugScrollOffset(qreal offset);
     bool interactive() const;
     void setInteractive(bool interactive);
     qreal contentWidth() const;
@@ -127,15 +115,11 @@ public:
     Q_SIGNAL void delegateChanged();
     Q_SIGNAL void countChanged();
     Q_SIGNAL void layoutChanged();
-    Q_SIGNAL void alignmentChanged();
     Q_SIGNAL void orientationChanged();
     Q_SIGNAL void itemExtentChanged();
     Q_SIGNAL void minSmallItemWidthChanged();
     Q_SIGNAL void maxSmallItemWidthChanged();
-    Q_SIGNAL void flexWeightsChanged();
     Q_SIGNAL void itemSnappingChanged();
-    Q_SIGNAL void shrinkExtentChanged();
-    Q_SIGNAL void infiniteChanged();
     Q_SIGNAL void currentIndexChanged();
     Q_SIGNAL void initialItemChanged();
     Q_SIGNAL void spacingChanged();
@@ -158,14 +142,24 @@ private Q_SLOTS:
     void onDelegateClicked();
     void onDelegateAspectRatioChanged();
     void onSnapTick();
+    void onModelRowsChanged();
+    void onModelDataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight,
+                            const QList<int>& roles);
 
 private:
+    void syncCurrentIndexAfterCountChange();
     void rebuildItems();
     void updateLayout();
     void updateCount();
+    void clearLayout();
+    void bindItemModel(QAbstractItemModel* model);
+    void unbindItemModel();
     void snapAfterGesture();
+    void cancelSnapAnimation();
     void applySnapAnimation(qreal targetOffset);
     void finishSnap(qreal targetOffset);
+    qreal snapOffsetForIndex(int index) const;
+    void  syncScrollToIndex(int index);
     qreal snapTargetForGesture(qreal offset, qreal velocity) const;
     int  snapIndexForOffset(qreal offset) const;
     int  snapIndexForFling(qreal offset, qreal velocity) const;
@@ -183,18 +177,15 @@ private:
 
     QVariant                         m_model;
     QQmlComponent*                   m_delegate = nullptr;
+    QPointer<QAbstractItemModel>     m_item_model;
     int                              m_count    = 0;
     int                              m_layout   = 0;
-    int                              m_alignment = 0;
     Qt::Orientation                  m_orientation = Qt::Horizontal;
     qreal                            m_item_extent = 180;
     qreal                            m_min_small_item_width = 40;
     qreal                            m_max_small_item_width = 56;
     qreal                            m_item_corner_radius = 28;
-    QVariantList                     m_flex_weights;
     bool                             m_item_snapping = true;
-    qreal                            m_shrink_extent = 0;
-    bool                             m_infinite      = false;
     int                              m_current_index = 0;
     int                              m_initial_item  = 0;
     qreal                            m_spacing       = 8;
@@ -213,6 +204,7 @@ private:
     qreal                            m_snap_velocity  = 0;
     qreal                            m_snap_target    = 0;
     class QTimer*                    m_snap_timer     = nullptr;
+    QObject*                         m_snap_anim      = nullptr;
 
     QQuickItem*                      m_flickable = nullptr;
     QQuickItem*                      m_content    = nullptr;

@@ -1,54 +1,16 @@
 import QtQuick
 import QtQuick.Layouts
 import Qcm.Material as MD
+import "../../example/carousel" as CarouselDemo
 
 Item {
     id: root
     width: 720
     height: 1600
 
-    readonly property var demoModel: [
-        {
-            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-coral-landscape.jpg',
-            title: 'Coral'
-        },
-        {
-            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-mint-square.jpg',
-            title: 'Mint'
-        },
-        {
-            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-violet-portrait.jpg',
-            title: 'Violet'
-        },
-        {
-            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-sun-ultrawide.jpg',
-            title: 'Sun'
-        },
-        {
-            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-teal-tall.jpg',
-            title: 'Teal'
-        },
-        {
-            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-amber-wide.jpg',
-            title: 'Amber'
-        },
-        {
-            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-rose-medium.jpg',
-            title: 'Rose'
-        },
-        {
-            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-sky-small.jpg',
-            title: 'Sky'
-        },
-        {
-            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-lime-diagonal.jpg',
-            title: 'Lime'
-        },
-        {
-            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-indigo-portrait.jpg',
-            title: 'Indigo'
-        }
-    ]
+    CarouselDemo.CarouselDemoData {
+        id: m_carousel_demo
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -58,13 +20,12 @@ Item {
         CarouselScene {
             title: 'Multi-browse (rest)'
             layout: MD.Enum.CarouselMultiBrowse
-            scrollOffset: 0
         }
 
         CarouselScene {
             title: 'Multi-browse (mid-scroll)'
             layout: MD.Enum.CarouselMultiBrowse
-            scrollOffset: 120
+            initialItem: 2
         }
 
         CarouselScene {
@@ -75,17 +36,22 @@ Item {
         }
 
         CarouselScene {
-            title: 'Uncontained (rest)'
+            title: 'Multi-browse (nav buttons)'
+            layout: MD.Enum.CarouselMultiBrowse
+            initialItem: 2
+            showNavigationButtons: true
+        }
+
+        CarouselScene {
             layout: MD.Enum.CarouselUncontained
             itemExtent: 140
-            scrollOffset: 0
         }
 
         CarouselScene {
             title: 'Uncontained (mid-scroll)'
             layout: MD.Enum.CarouselUncontained
             itemExtent: 140
-            scrollOffset: 100
+            initialItem: 2
         }
 
         CarouselScene {
@@ -98,13 +64,12 @@ Item {
         CarouselScene {
             title: 'Uncontained multi-aspect (rest)'
             layout: MD.Enum.CarouselUncontainedMultiAspect
-            scrollOffset: 0
         }
 
         CarouselScene {
             title: 'Uncontained multi-aspect (mid-scroll)'
             layout: MD.Enum.CarouselUncontainedMultiAspect
-            scrollOffset: 120
+            initialItem: 2
         }
 
         CarouselScene {
@@ -116,7 +81,6 @@ Item {
         CarouselScene {
             title: 'Hero (rest)'
             layout: MD.Enum.CarouselHero
-            scrollOffset: 0
         }
 
         CarouselScene {
@@ -128,7 +92,6 @@ Item {
         CarouselScene {
             title: 'Hero center (rest)'
             layout: MD.Enum.CarouselHeroCenter
-            scrollOffset: 0
         }
 
         CarouselScene {
@@ -147,7 +110,6 @@ Item {
             title: 'Full-screen (last item)'
             layout: MD.Enum.CarouselFullScreen
             initialItem: 3
-            scrollOffset: -1
         }
 
         CarouselScene {
@@ -166,8 +128,8 @@ Item {
         property int layout
         property real itemExtent: MD.Token.carousel.default_item_extent
         property int initialItem: 0
-        property real scrollOffset: 0
         property bool showPageIndicator: false
+        property bool showNavigationButtons: false
         property int orientation: Qt.Horizontal
         property real preferredHeight: -1
 
@@ -186,16 +148,11 @@ Item {
             layout: scene.layout
             orientation: scene.orientation
             itemExtent: scene.itemExtent
-            model: root.demoModel
+            model: m_carousel_demo.model
             delegate: MD.CarouselImageDelegate {}
             initialItem: scene.initialItem
             showPageIndicator: scene.showPageIndicator
-
-            Component.onCompleted: {
-                if (scene.scrollOffset >= 0) {
-                    carousel.debugScrollOffset = scene.scrollOffset;
-                }
-            }
+            showNavigationButtons: scene.showNavigationButtons
         }
     }
 }

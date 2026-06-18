@@ -21,7 +21,6 @@ namespace qml_material
 namespace
 {
 
-constexpr int kSnapDurationMs = 400; // MD.Token.carousel.snap_duration
 constexpr qreal kSnapStiffness  = 280.0;
 constexpr qreal kSnapDamping    = 28.0;
 constexpr qreal kSnapDt         = 1.0 / 60.0;
@@ -164,9 +163,14 @@ void CarouselView::setModel(const QVariant& model)
     if (m_model == model) {
         return;
     }
+    unbindItemModel();
     m_model = model;
+    if (auto* item_model = qobject_cast<QAbstractItemModel*>(m_model.value<QObject*>())) {
+        bindItemModel(item_model);
+    }
     updateCount();
     rebuildItems();
+    syncCurrentIndexAfterCountChange();
     Q_EMIT modelChanged();
 }
 
@@ -194,18 +198,6 @@ void CarouselView::setLayout(int layout)
     m_layout = layout;
     updateLayout();
     Q_EMIT layoutChanged();
-}
-
-int CarouselView::alignment() const { return m_alignment; }
-
-void CarouselView::setAlignment(int alignment)
-{
-    if (m_alignment == alignment) {
-        return;
-    }
-    m_alignment = alignment;
-    updateLayout();
-    Q_EMIT alignmentChanged();
 }
 
 int CarouselView::orientation() const { return static_cast<int>(m_orientation); }
@@ -261,18 +253,6 @@ void CarouselView::setMaxSmallItemWidth(qreal width)
     Q_EMIT maxSmallItemWidthChanged();
 }
 
-QVariantList CarouselView::flexWeights() const { return m_flex_weights; }
-
-void CarouselView::setFlexWeights(const QVariantList& weights)
-{
-    if (m_flex_weights == weights) {
-        return;
-    }
-    m_flex_weights = weights;
-    updateLayout();
-    Q_EMIT flexWeightsChanged();
-}
-
 bool CarouselView::itemSnapping() const { return m_item_snapping; }
 
 void CarouselView::setItemSnapping(bool snapping)
@@ -284,39 +264,19 @@ void CarouselView::setItemSnapping(bool snapping)
     Q_EMIT itemSnappingChanged();
 }
 
-qreal CarouselView::shrinkExtent() const { return m_shrink_extent; }
-
-void CarouselView::setShrinkExtent(qreal extent)
-{
-    if (qFuzzyCompare(m_shrink_extent, extent)) {
-        return;
-    }
-    m_shrink_extent = extent;
-    updateLayout();
-    Q_EMIT shrinkExtentChanged();
-}
-
-bool CarouselView::infinite() const { return m_infinite; }
-
-void CarouselView::setInfinite(bool infinite)
-{
-    if (m_infinite == infinite) {
-        return;
-    }
-    m_infinite = infinite;
-    Q_EMIT infiniteChanged();
-}
-
 int CarouselView::currentIndex() const { return m_current_index; }
 
 void CarouselView::setCurrentIndex(int index)
 {
     const int clamped = m_count > 0 ? qBound(0, index, m_count - 1) : 0;
-    if (m_current_index == clamped) {
-        return;
+    const bool changed = m_current_index != clamped;
+    m_current_index    = clamped;
+    if (changed) {
+        Q_EMIT currentIndexChanged();
     }
-    m_current_index = clamped;
-    Q_EMIT currentIndexChanged();
+    if (m_completed && m_flickable) {
+        syncScrollToIndex(clamped);
+    }
 }
 
 int CarouselView::initialItem() const { return m_initial_item; }
@@ -417,34 +377,6 @@ void CarouselView::setItemCornerRadius(qreal radius)
     m_item_corner_radius = radius;
     updateLayout();
     Q_EMIT itemCornerRadiusChanged();
-}
-
-qreal CarouselView::debugScrollOffset() const
-{
-    if (!m_flickable) {
-        return 0;
-    }
-    auto* flick = asFlickable(m_flickable);
-    return flick ? (m_orientation == Qt::Horizontal ? flick->contentX() : flick->contentY()) : 0;
-}
-
-void CarouselView::setDebugScrollOffset(qreal offset)
-{
-    if (!m_flickable) {
-        return;
-    }
-    auto* flick = asFlickable(m_flickable);
-    if (!flick) {
-        return;
-    }
-    m_updating = true;
-    if (m_orientation == Qt::Horizontal) {
-        flick->setContentX(offset);
-    } else {
-        flick->setContentY(offset);
-    }
-    m_updating = false;
-    updateLayout();
 }
 
 bool CarouselView::interactive() const { return m_interactive; }
@@ -588,7 +520,7 @@ void CarouselView::componentComplete()
     updateCount();
     rebuildItems();
     if (m_count > 0 && m_initial_item > 0) {
-        setCurrentIndexAnimated(qBound(0, m_initial_item, m_count - 1));
+        setCurrentIndex(qBound(0, m_initial_item, m_count - 1));
     }
 }
 
@@ -625,6 +557,156 @@ void CarouselView::updateCount()
         m_count = new_count;
         Q_EMIT countChanged();
     }
+}
+
+void CarouselView::unbindItemModel()
+{
+    if (!m_item_model) {
+        return;
+    }
+    disconnect(m_item_model, nullptr, this, nullptr);
+    m_item_model = nullptr;
+}
+
+void CarouselView::bindItemModel(QAbstractItemModel* model)
+{
+    if (!model) {
+        return;
+    }
+    m_item_model = model;
+    connect(model, &QAbstractItemModel::rowsInserted, this, &CarouselView::onModelRowsChanged);
+    connect(model, &QAbstractItemModel::rowsRemoved, this, &CarouselView::onModelRowsChanged);
+    connect(model, &QAbstractItemModel::modelReset, this, &CarouselView::onModelRowsChanged);
+    connect(model, &QAbstractItemModel::layoutChanged, this, &CarouselView::onModelRowsChanged);
+    connect(model, &QAbstractItemModel::dataChanged, this, &CarouselView::onModelDataChanged);
+}
+
+void CarouselView::onModelRowsChanged()
+{
+    updateCount();
+    rebuildItems();
+    syncCurrentIndexAfterCountChange();
+}
+
+void CarouselView::onModelDataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight,
+                                      const QList<int>& roles)
+{
+    Q_UNUSED(roles);
+    if (!m_completed || !m_delegate) {
+        return;
+    }
+    const int first = topLeft.row();
+    const int last  = bottomRight.row();
+    for (int i = first; i <= last && i < m_items.size(); ++i) {
+        if (m_items[i]) {
+            applyDelegateProperties(m_items[i], i);
+        }
+    }
+}
+
+void CarouselView::syncCurrentIndexAfterCountChange()
+{
+    if (m_count <= 0) {
+        if (m_current_index != 0) {
+            m_current_index = 0;
+            Q_EMIT currentIndexChanged();
+        }
+        return;
+    }
+    setCurrentIndex(qBound(0, m_current_index, m_count - 1));
+}
+
+void CarouselView::clearLayout()
+{
+    m_geometries.clear();
+    m_snap_offsets.clear();
+    m_max_scroll_offset = 0;
+    m_end_snap_offset   = 0;
+    m_scroll_step       = 0;
+
+    const qreal new_w = m_orientation == Qt::Horizontal ? width() : 0;
+    const qreal new_h = m_orientation == Qt::Vertical ? height() : 0;
+    if (!qFuzzyCompare(m_content_width, new_w)) {
+        m_content_width = new_w;
+        Q_EMIT contentWidthChanged();
+    }
+    if (!qFuzzyCompare(m_content_height, new_h)) {
+        m_content_height = new_h;
+        Q_EMIT contentHeightChanged();
+    }
+
+    if (auto* flick = asFlickable(m_flickable)) {
+        m_updating = true;
+        flick->setContentWidth(m_orientation == Qt::Horizontal ? m_content_width : width());
+        flick->setContentHeight(m_orientation == Qt::Vertical ? m_content_height : height());
+        if (m_orientation == Qt::Horizontal) {
+            flick->setContentX(0);
+        } else {
+            flick->setContentY(0);
+        }
+        m_updating = false;
+    }
+
+    for (auto* item : m_items) {
+        if (item) {
+            item->setVisible(false);
+        }
+    }
+
+    if (m_current_index != 0) {
+        m_current_index = 0;
+        Q_EMIT currentIndexChanged();
+    }
+}
+
+qreal CarouselView::snapOffsetForIndex(int index) const
+{
+    if (m_count <= 0) {
+        return 0;
+    }
+    if (index <= 0) {
+        return 0;
+    }
+    if (index == m_count - 1) {
+        return m_end_snap_offset;
+    }
+    if (index >= 0 && index < m_snap_offsets.size()) {
+        return m_snap_offsets.at(index);
+    }
+    return 0;
+}
+
+void CarouselView::syncScrollToIndex(int index)
+{
+    auto* flick = asFlickable(m_flickable);
+    if (!flick) {
+        return;
+    }
+    cancelSnapAnimation();
+    const qreal target = qBound(0.0, snapOffsetForIndex(index), m_max_scroll_offset);
+    m_updating         = true;
+    if (m_orientation == Qt::Horizontal) {
+        flick->setContentX(target);
+    } else {
+        flick->setContentY(target);
+    }
+    m_updating = false;
+    updateLayout();
+}
+
+void CarouselView::cancelSnapAnimation()
+{
+    if (m_snap_timer) {
+        m_snap_timer->stop();
+    }
+    if (m_snap_anim) {
+        if (auto* anim = qobject_cast<QPropertyAnimation*>(m_snap_anim)) {
+            anim->stop();
+        }
+        m_snap_anim->deleteLater();
+        m_snap_anim = nullptr;
+    }
+    m_snapping = false;
 }
 
 QVariant CarouselView::modelDataAt(int index) const
@@ -818,13 +900,16 @@ int CarouselView::activeIndexForLayout(const CarouselLayoutOutput& out) const
 
 void CarouselView::updateLayout()
 {
-    if (!m_completed || !m_flickable || m_count <= 0) {
+    if (!m_completed || !m_flickable) {
+        return;
+    }
+    if (m_count <= 0) {
+        clearLayout();
         return;
     }
 
     CarouselLayoutInput input;
     input.layout        = m_layout;
-    input.alignment     = m_alignment;
     input.orientation   = m_orientation;
     input.viewport_size = m_orientation == Qt::Horizontal ? width() : height();
     input.cross_size    = m_orientation == Qt::Horizontal ? height() : width();
@@ -834,25 +919,25 @@ void CarouselView::updateLayout()
         : 0;
     input.item_extent   = m_item_extent;
     input.spacing       = m_spacing;
-    input.shrink_extent = m_shrink_extent;
     input.content_padding_start = m_content_padding_start;
     input.content_padding_end   = m_content_padding_end;
     input.content_padding_cross = m_content_padding_cross;
     input.small_item_min  = m_min_small_item_width;
     input.small_item_max  = m_max_small_item_width;
-    input.min_peek_px     = 16;
+    input.min_peek_px        = CarouselEngineDefaults::min_peek_px;
+    input.min_item_aspect    = CarouselEngineDefaults::min_item_aspect;
+    input.max_item_aspect    = CarouselEngineDefaults::max_item_aspect;
     input.item_corner_radius = m_item_corner_radius;
-    input.parallax_ratio  = m_layout == kLayoutFullScreen ? 0
+    input.parallax_ratio     = m_layout == kLayoutFullScreen ? 0
         : (m_reduce_motion ? 0
-           : (m_layout == kLayoutUncontained || m_layout == kLayoutUncontainedMultiAspect ? 0.5 : 0.35));
+           : (m_layout == kLayoutUncontained || m_layout == kLayoutUncontainedMultiAspect
+                  ? CarouselEngineDefaults::parallax_ratio_uncontained
+                  : CarouselEngineDefaults::parallax_ratio));
     input.count         = m_count;
     input.reduce_motion = m_reduce_motion;
     input.item_aspects  = m_item_aspects;
     while (input.item_aspects.size() < m_count) {
         input.item_aspects.append(1.0);
-    }
-    for (const auto& w : m_flex_weights) {
-        input.flex_weights.append(w.toInt());
     }
 
     const auto out  = CarouselStrategy::compute(input);
@@ -917,7 +1002,8 @@ void CarouselView::updateLayout()
         }
     }
 
-    if (usesFreeScrollSnap() && active_index != m_current_index) {
+    if (usesFreeScrollSnap() && active_index != m_current_index && flick
+        && (flick->isMoving() || m_snapping)) {
         m_current_index = active_index;
         Q_EMIT currentIndexChanged();
     } else if (active_index != m_current_index && flick && (flick->isMoving() || m_snapping)) {
@@ -1105,6 +1191,8 @@ void CarouselView::applySnapAnimation(qreal targetOffset)
         return;
     }
 
+    cancelSnapAnimation();
+
     const qreal clamped_target = qBound(0.0, targetOffset, m_max_scroll_offset);
 
     const qreal current = m_orientation == Qt::Horizontal ? flick->contentX() : flick->contentY();
@@ -1128,15 +1216,16 @@ void CarouselView::applySnapAnimation(qreal targetOffset)
     if (usesFreeScrollSnap()) {
         const QByteArray prop = m_orientation == Qt::Horizontal ? QByteArrayLiteral("contentX")
                                                                 : QByteArrayLiteral("contentY");
-        auto* anim = new QPropertyAnimation(flick, prop, this);
-        anim->setDuration(kSnapDurationMs);
+        auto* anim            = new QPropertyAnimation(flick, prop, this);
+        anim->setDuration(CarouselEngineDefaults::snap_duration);
         anim->setEasingCurve(QEasingCurve::OutCubic);
         anim->setStartValue(current);
         anim->setEndValue(clamped_target);
+        m_snap_anim           = anim;
         m_snapping = true;
-        connect(anim, &QPropertyAnimation::finished, this, [this, anim, clamped_target]() {
+        connect(anim, &QPropertyAnimation::finished, this, [this, clamped_target]() {
             m_snapping = false;
-            anim->deleteLater();
+            m_snap_anim = nullptr;
             finishSnap(clamped_target);
         });
         anim->start(QAbstractAnimation::DeleteWhenStopped);

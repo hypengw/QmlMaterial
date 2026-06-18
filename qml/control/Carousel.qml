@@ -8,26 +8,24 @@ T.Control {
     id: control
 
     property int layout: MD.Enum.CarouselUncontained
-    property int alignment: MD.Enum.CarouselAlignStart
     property int orientation: Qt.Horizontal
+    // int count, QVariantList, QAbstractItemModel, or JS array (static; use QAbstractItemModel for live updates)
     property var model
     property Component delegate: MD.CarouselImageDelegate {}
     property real itemExtent: MD.Token.carousel.default_item_extent
-    property var flexWeights: null
     property bool itemSnapping: true
-    property real shrinkExtent: 0
-    property bool infinite: false
     property alias currentIndex: m_view.currentIndex
     property int initialItem: 0
     property real itemSpacing: MD.Token.carousel.item_spacing
     property real contentPadding: MD.Token.spacing.medium
     property real contentPaddingVertical: MD.Token.carousel.container_padding_vertical
-    property real preferredItemWidth: itemExtent
     property real minSmallItemWidth: MD.Token.carousel.small_item_min
     property real maxSmallItemWidth: MD.Token.carousel.small_item_max
     property bool reduceMotion: false
     property bool clipContainer: layout === MD.Enum.CarouselUncontained
-                                 || layout === MD.Enum.CarouselUncontainedMultiAspect ? false : true
+                                 || layout === MD.Enum.CarouselUncontainedMultiAspect
+                                 || layout === MD.Enum.CarouselHero
+                                 || layout === MD.Enum.CarouselHeroCenter ? false : true
     readonly property real contentPaddingEndValue: {
         if (layout === MD.Enum.CarouselUncontained
                 || layout === MD.Enum.CarouselUncontainedMultiAspect
@@ -36,21 +34,23 @@ T.Control {
         }
         return control.contentPadding;
     }
-    property alias debugScrollOffset: m_view.debugScrollOffset
     property bool showPageIndicator: false
     property bool showNavigationButtons: false
     property string header: ''
-    property MD.StateCarousel mdState: MD.StateCarousel {
-        item: control
-    }
 
     readonly property bool hasChromeRow: control.showPageIndicator || control.showNavigationButtons
-    readonly property real chromeRowHeight: 40
+    readonly property real chromeOverhead: control.hasChromeRow
+        ? control.chromeRowHeight + control.chromeRowSpacing
+        : 0
+    readonly property real chromeRowHeight: MD.Token.carousel.chrome_row_height
+    readonly property real chromeRowSpacing: MD.Token.carousel.chrome_row_spacing
+    readonly property real tokenViewportHeight: control.layout === MD.Enum.CarouselFullScreen
+        ? MD.Token.carousel.default_item_extent
+        : MD.Token.carousel.container_height_horizontal
     readonly property real viewportHeight: control.orientation === Qt.Vertical
-        ? control.height - (control.hasChromeRow ? control.chromeRowHeight + 8 : 0)
-        : (control.layout === MD.Enum.CarouselFullScreen
-           ? MD.Token.carousel.default_item_extent
-           : MD.Token.carousel.container_height_horizontal)
+        ? Math.max(0, control.height - control.chromeOverhead)
+        : Math.max(control.tokenViewportHeight,
+                   Math.max(0, control.height - control.chromeOverhead))
 
     signal clicked(int index)
     signal indexChanged(int index)
@@ -71,11 +71,12 @@ T.Control {
         }
     }
 
-    implicitWidth: orientation === Qt.Horizontal ? 480 : 320
+    implicitWidth: orientation === Qt.Horizontal
+        ? MD.Token.carousel.default_width
+        : MD.Token.carousel.default_height_vertical
     implicitHeight: orientation === Qt.Vertical
-        ? 320
-        : (viewportHeight
-           + (hasChromeRow ? chromeRowHeight + 8 : 0))
+        ? MD.Token.carousel.default_height_vertical
+        : (viewportHeight + chromeOverhead)
 
     focusPolicy: Qt.NoFocus
 
@@ -89,7 +90,7 @@ T.Control {
     }
 
     contentItem: ColumnLayout {
-        spacing: 8
+        spacing: control.chromeRowSpacing
 
         CarouselView {
             id: m_view
@@ -100,15 +101,11 @@ T.Control {
             model: control.model
             delegate: control.delegate
             layout: control.layout
-            alignment: control.alignment
             orientation: control.orientation
-            itemExtent: control.preferredItemWidth
+            itemExtent: control.itemExtent
             minSmallItemWidth: control.minSmallItemWidth
             maxSmallItemWidth: control.maxSmallItemWidth
-            flexWeights: control.flexWeights
             itemSnapping: control.itemSnapping
-            shrinkExtent: control.shrinkExtent
-            infinite: control.infinite
             initialItem: control.initialItem
             spacing: control.itemSpacing
             contentPaddingStart: control.layout === MD.Enum.CarouselFullScreen ? 0 : control.contentPadding
@@ -128,7 +125,7 @@ T.Control {
             visible: control.hasChromeRow
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignHCenter
-            spacing: 8
+            spacing: control.chromeRowSpacing
 
             MD.StandardIconButton {
                 visible: control.showNavigationButtons && m_view.count > 1
@@ -166,6 +163,7 @@ T.Control {
     MD.WheelHandler {
         target: m_view.flickable
         scrollFlickableTarget: true
+        pageScrollModifiers: Qt.ShiftModifier
         onWheelMoved: m_view.claimInteractionFocus()
     }
 }

@@ -966,6 +966,35 @@ void computeHeroSnapOffsets(CarouselLayoutOutput& out, const CarouselLayoutInput
         return;
     }
 
+    struct SnapCache
+    {
+        CarouselLayoutInput key;
+        QVector<qreal>      snap_offsets;
+        qreal               end_snap_offset   = 0;
+        qreal               max_scroll_offset = 0;
+        bool                valid             = false;
+    };
+    static SnapCache cache;
+
+    auto cacheKey = in;
+    cacheKey.scroll_offset = 0;
+
+    if (cache.valid && cache.key.layout == cacheKey.layout && cache.key.count == cacheKey.count
+        && qFuzzyCompare(cache.key.viewport_size, cacheKey.viewport_size)
+        && qFuzzyCompare(cache.key.cross_size, cacheKey.cross_size)
+        && qFuzzyCompare(cache.key.item_extent, cacheKey.item_extent)
+        && qFuzzyCompare(cache.key.spacing, cacheKey.spacing)
+        && qFuzzyCompare(cache.key.content_padding_start, cacheKey.content_padding_start)
+        && qFuzzyCompare(cache.key.content_padding_end, cacheKey.content_padding_end)
+        && qFuzzyCompare(cache.key.small_item_min, cacheKey.small_item_min)
+        && qFuzzyCompare(cache.key.small_item_max, cacheKey.small_item_max)
+        && cache.key.item_aspects == cacheKey.item_aspects) {
+        out.snap_offsets      = cache.snap_offsets;
+        out.end_snap_offset   = cache.end_snap_offset;
+        out.max_scroll_offset = cache.max_scroll_offset;
+        return;
+    }
+
     const KeylineList middle_kl = phaseKeylines(in, HeroPhase::Middle, true);
     qreal             max_scroll = qMax(
         0.0, in.content_padding_start + in.count * middle_kl.scroll_step - in.spacing
@@ -1007,6 +1036,12 @@ void computeHeroSnapOffsets(CarouselLayoutOutput& out, const CarouselLayoutInput
 
     out.end_snap_offset   = out.snap_offsets.last();
     out.max_scroll_offset = max_scroll;
+
+    cache.key               = cacheKey;
+    cache.snap_offsets      = out.snap_offsets;
+    cache.end_snap_offset   = out.end_snap_offset;
+    cache.max_scroll_offset = out.max_scroll_offset;
+    cache.valid             = true;
 }
 
 } // namespace CarouselHeroKeylines

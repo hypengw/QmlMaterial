@@ -407,6 +407,14 @@ struct Carousel {
     Q_PROPERTY(qreal max_item_aspect MEMBER max_item_aspect CONSTANT FINAL)
     Q_PROPERTY(qint32 item_corner MEMBER item_corner CONSTANT FINAL)
     Q_PROPERTY(qint32 snap_duration MEMBER snap_duration CONSTANT FINAL)
+    Q_PROPERTY(qreal title_fade_span MEMBER title_fade_span CONSTANT FINAL)
+    Q_PROPERTY(qreal chrome_row_height MEMBER chrome_row_height CONSTANT FINAL)
+    Q_PROPERTY(qreal chrome_row_spacing MEMBER chrome_row_spacing CONSTANT FINAL)
+    Q_PROPERTY(qreal default_width MEMBER default_width CONSTANT FINAL)
+    Q_PROPERTY(qreal default_height_vertical MEMBER default_height_vertical CONSTANT FINAL)
+    Q_PROPERTY(qreal min_peek_px MEMBER min_peek_px CONSTANT FINAL)
+    Q_PROPERTY(qreal parallax_ratio MEMBER parallax_ratio CONSTANT FINAL)
+    Q_PROPERTY(qreal parallax_ratio_uncontained MEMBER parallax_ratio_uncontained CONSTANT FINAL)
 public:
     qreal item_spacing { 8 };
     qreal container_height_horizontal { 196 };
@@ -421,6 +429,14 @@ public:
     qreal max_item_aspect { 16.0 / 9.0 };
     i32   item_corner { 28 };
     i32   snap_duration { 400 };
+    qreal title_fade_span { 80 };
+    qreal chrome_row_height { 40 };
+    qreal chrome_row_spacing { 8 };
+    qreal default_width { 480 };
+    qreal default_height_vertical { 320 };
+    qreal min_peek_px { 16 };
+    qreal parallax_ratio { 0.35 };
+    qreal parallax_ratio_uncontained { 0.5 };
 };
 
 /**

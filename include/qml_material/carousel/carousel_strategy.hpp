@@ -6,6 +6,17 @@
 namespace qml_material
 {
 
+// Keep in sync with qml_material::token::Carousel (MD.Token.carousel).
+struct CarouselEngineDefaults
+{
+    static constexpr qreal min_peek_px                = 16;
+    static constexpr qreal parallax_ratio             = 0.35;
+    static constexpr qreal parallax_ratio_uncontained = 0.5;
+    static constexpr int   snap_duration              = 400;
+    static constexpr qreal min_item_aspect            = 9.0 / 16.0;
+    static constexpr qreal max_item_aspect            = 16.0 / 9.0;
+};
+
 struct CarouselItemGeometry
 {
     int   index         = 0;
@@ -17,23 +28,15 @@ struct CarouselItemGeometry
     int   size_class    = 2; // CarouselSizeLarge
 };
 
-struct CarouselScrollState
-{
-    int   focal_index      = 0;
-    qreal offset_fraction  = 0; // [0, 1) progress from focal to focal+1
-};
-
 struct CarouselLayoutInput
 {
     int     layout            = 0;
-    int     alignment         = 0;
     Qt::Orientation orientation = Qt::Horizontal;
     qreal   viewport_size     = 0;
     qreal   cross_size        = 0;
     qreal   scroll_offset     = 0;
     qreal   item_extent       = 180;
     qreal   spacing           = 8;
-    qreal   shrink_extent     = 0;
     qreal   small_item_min    = 40;
     qreal   small_item_max    = 56;
     qreal   content_padding_start = 0;
@@ -47,7 +50,6 @@ struct CarouselLayoutInput
     int     count             = 0;
     bool    reduce_motion     = false;
     QVector<qreal> item_aspects;
-    QVector<int> flex_weights;
 };
 
 struct CarouselLayoutOutput

@@ -7,6 +7,7 @@ qt_add_resources(
   "${CMAKE_CURRENT_SOURCE_DIR}"
   FILES
   Components.qml
+  carousel/CarouselDemoData.qml
   Color.qml
   Effect.qml
   Example.qml

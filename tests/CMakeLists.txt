@@ -23,6 +23,58 @@ target_include_directories(fullscreen_layout PRIVATE ${CMAKE_SOURCE_DIR}/include
 target_link_libraries(fullscreen_layout PRIVATE Qt6::Core)
 add_test(NAME fullscreen_layout COMMAND fullscreen_layout)
 
+add_executable(multi_browse_layout multi_browse_layout.cpp
+  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_strategies.cpp
+  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_keylines.cpp
+  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_scroll_strategy.cpp)
+target_include_directories(multi_browse_layout PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(multi_browse_layout PRIVATE Qt6::Core)
+add_test(NAME multi_browse_layout COMMAND multi_browse_layout)
+
+add_executable(uncontained_layout uncontained_layout.cpp
+  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_strategies.cpp
+  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_keylines.cpp
+  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_scroll_strategy.cpp)
+target_include_directories(uncontained_layout PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(uncontained_layout PRIVATE Qt6::Core)
+add_test(NAME uncontained_layout COMMAND uncontained_layout)
+
+add_executable(hero_start_layout hero_start_layout.cpp
+  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_strategies.cpp
+  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_keylines.cpp
+  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_scroll_strategy.cpp)
+target_include_directories(hero_start_layout PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(hero_start_layout PRIVATE Qt6::Core)
+add_test(NAME hero_start_layout COMMAND hero_start_layout)
+
+set(CAROUSEL_ENGINE_SOURCES
+  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_view.cpp
+  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_attached.cpp
+  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_strategies.cpp
+  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_keylines.cpp
+  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_scroll_strategy.cpp)
+set(CAROUSEL_ENGINE_HEADERS
+  ${CMAKE_SOURCE_DIR}/include/qml_material/carousel/carousel_view.hpp
+  ${CMAKE_SOURCE_DIR}/include/qml_material/carousel/carousel_attached.hpp)
+
+add_executable(set_current_index_sync
+  set_current_index_sync.cpp
+  ${CAROUSEL_ENGINE_SOURCES}
+  ${CAROUSEL_ENGINE_HEADERS})
+target_include_directories(set_current_index_sync PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(set_current_index_sync PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Qml Qt6::Quick Qt6::QuickPrivate)
+set_target_properties(set_current_index_sync PROPERTIES AUTOMOC ON)
+add_test(NAME set_current_index_sync COMMAND set_current_index_sync)
+
+add_executable(model_shrink
+  model_shrink.cpp
+  ${CAROUSEL_ENGINE_SOURCES}
+  ${CAROUSEL_ENGINE_HEADERS})
+target_include_directories(model_shrink PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(model_shrink PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Qml Qt6::Quick Qt6::QuickPrivate)
+set_target_properties(model_shrink PROPERTIES AUTOMOC ON)
+add_test(NAME model_shrink COMMAND model_shrink)
+
 add_executable(qm_grab qm_grab.cpp)
 target_link_libraries(qm_grab PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Quick Qt6::Qml)
 set_target_properties(qm_grab PROPERTIES AUTOMOC ON)

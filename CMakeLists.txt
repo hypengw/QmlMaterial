@@ -283,7 +283,6 @@ set(QML_FILES
     qml/state/StateSplitButtonIndicator.qml
     qml/state/StateSegmentedButton.qml
     qml/state/StateCard.qml
-    qml/state/StateCarousel.qml
     qml/state/StateCarouselItem.qml
     qml/state/StateDragHandle.qml
     qml/state/StateDrawerItem.qml

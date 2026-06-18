@@ -67,7 +67,7 @@ MD.CarouselItem {
 
     // M3 Carousel.md: title alpha fades over 80dp of mask inset (onMaskChangedListener).
     readonly property real titleOpacity: {
-        const fadeSpan = 80;
+        const fadeSpan = MD.Token.carousel.title_fade_span;
         const leftMasked = root.maskStart * root.width;
         const rightMasked = root.maskEnd * root.width;
         const leftFade = leftMasked > 0 ? Math.max(0, 1 - leftMasked / fadeSpan) : 1;

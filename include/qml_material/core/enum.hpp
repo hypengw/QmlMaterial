@@ -189,13 +189,6 @@ public:
     };
     Q_ENUM(CarouselLayout)
 
-    enum class CarouselAlignment
-    {
-        CarouselAlignStart = 0, ///< Focal items aligned to start
-        CarouselAlignCenter,    ///< Focal items aligned to center
-    };
-    Q_ENUM(CarouselAlignment)
-
     enum class CarouselSizeClass
     {
         CarouselSizeSmall = 0,

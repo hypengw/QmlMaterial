@@ -2,54 +2,16 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Templates as T
 import Qcm.Material as MD
+import "carousel" as CarouselDemo
 
 MD.Page {
     id: root
     title: 'Components'
     padding: 0
 
-    readonly property var carouselDemoModel: [
-        {
-            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-coral-landscape.jpg',
-            title: 'Coral'
-        },
-        {
-            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-mint-square.jpg',
-            title: 'Mint'
-        },
-        {
-            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-violet-portrait.jpg',
-            title: 'Violet'
-        },
-        {
-            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-sun-ultrawide.jpg',
-            title: 'Sun'
-        },
-        {
-            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-teal-tall.jpg',
-            title: 'Teal'
-        },
-        {
-            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-amber-wide.jpg',
-            title: 'Amber'
-        },
-        {
-            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-rose-medium.jpg',
-            title: 'Rose'
-        },
-        {
-            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-sky-small.jpg',
-            title: 'Sky'
-        },
-        {
-            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-lime-diagonal.jpg',
-            title: 'Lime'
-        },
-        {
-            imageUrl: 'qrc:/Qcm/Material/Example/assets/carousel/abstract-indigo-portrait.jpg',
-            title: 'Indigo'
-        }
-    ]
+    CarouselDemo.CarouselDemoData {
+        id: m_carousel_demo
+    }
 
     MD.VerticalFlickable {
         anchors.fill: parent
@@ -1152,8 +1114,9 @@ MD.Page {
                         MD.Carousel {
                             Layout.preferredWidth: 480
                             layout: MD.Enum.CarouselUncontained
+                            header: 'Photo strip'
                             itemExtent: 180
-                            model: root.carouselDemoModel
+                            model: m_carousel_demo.model
                             delegate: MD.CarouselImageDelegate {}
                         }
 
@@ -1166,7 +1129,7 @@ MD.Page {
                         MD.Carousel {
                             Layout.preferredWidth: 480
                             layout: MD.Enum.CarouselUncontainedMultiAspect
-                            model: root.carouselDemoModel
+                            model: m_carousel_demo.model
                             delegate: MD.CarouselImageDelegate {}
                         }
                     }
@@ -1177,7 +1140,8 @@ MD.Page {
                         MD.Carousel {
                             Layout.preferredWidth: 480
                             layout: MD.Enum.CarouselMultiBrowse
-                            model: root.carouselDemoModel
+                            header: 'Photo gallery'
+                            model: m_carousel_demo.model
                             delegate: MD.CarouselImageDelegate {}
                             showPageIndicator: true
                             showNavigationButtons: true
@@ -1198,7 +1162,8 @@ MD.Page {
                             Layout.preferredWidth: 480
                             Layout.preferredHeight: 240
                             layout: MD.Enum.CarouselHero
-                            model: root.carouselDemoModel
+                            header: 'Featured photos'
+                            model: m_carousel_demo.model
                             delegate: MD.CarouselImageDelegate {}
                             showNavigationButtons: true
                         }
@@ -1213,7 +1178,7 @@ MD.Page {
                             Layout.preferredWidth: 480
                             Layout.preferredHeight: 240
                             layout: MD.Enum.CarouselHeroCenter
-                            model: root.carouselDemoModel
+                            model: m_carousel_demo.model
                             delegate: MD.CarouselImageDelegate {}
                             showNavigationButtons: true
                         }
@@ -1226,8 +1191,9 @@ MD.Page {
                             Layout.fillWidth: true
                             Layout.preferredHeight: 420
                             layout: MD.Enum.CarouselFullScreen
+                            header: 'Full-screen gallery'
                             orientation: Qt.Vertical
-                            model: root.carouselDemoModel
+                            model: m_carousel_demo.model
                             delegate: MD.CarouselImageDelegate {}
                             showNavigationButtons: true
                         }
