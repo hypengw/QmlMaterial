@@ -90,6 +90,9 @@ class WheelHandler : public QObject, public QQmlParserStatus {
     Q_PROPERTY(Qt::KeyboardModifiers pageScrollModifiers READ pageScrollModifiers WRITE
                    setPageScrollModifiers RESET resetPageScrollModifiers NOTIFY
                        pageScrollModifiersChanged FINAL)
+    Q_PROPERTY(Qt::KeyboardModifiers horizontalScrollModifiers READ horizontalScrollModifiers WRITE
+                   setHorizontalScrollModifiers RESET resetHorizontalScrollModifiers NOTIFY
+                       horizontalScrollModifiersChanged FINAL)
     Q_PROPERTY(bool filterMouseEvents READ filterMouseEvents WRITE setFilterMouseEvents NOTIFY
                    filterMouseEventsChanged FINAL)
     Q_PROPERTY(bool keyNavigationEnabled READ keyNavigationEnabled WRITE setKeyNavigationEnabled
@@ -121,6 +124,10 @@ public:
     void                  setPageScrollModifiers(Qt::KeyboardModifiers modifiers);
     void                  resetPageScrollModifiers();
 
+    Qt::KeyboardModifiers horizontalScrollModifiers() const;
+    void                  setHorizontalScrollModifiers(Qt::KeyboardModifiers modifiers);
+    void                  resetHorizontalScrollModifiers();
+
     bool filterMouseEvents() const;
     void setFilterMouseEvents(bool enabled);
 
@@ -142,6 +149,7 @@ Q_SIGNALS:
     void verticalStepSizeChanged();
     void horizontalStepSizeChanged();
     void pageScrollModifiersChanged();
+    void horizontalScrollModifiersChanged();
     void filterMouseEventsChanged();
     void keyNavigationEnabledChanged();
     void blockTargetWheelChanged();
@@ -191,7 +199,8 @@ private:
     constexpr static Qt::KeyboardModifiers m_defaultHorizontalScrollModifiers = Qt::AltModifier;
     constexpr static Qt::KeyboardModifiers m_defaultPageScrollModifiers =
         Qt::ControlModifier | Qt::ShiftModifier;
-    Qt::KeyboardModifiers m_pageScrollModifiers = m_defaultPageScrollModifiers;
+    Qt::KeyboardModifiers m_pageScrollModifiers        = m_defaultPageScrollModifiers;
+    Qt::KeyboardModifiers m_horizontalScrollModifiers = m_defaultHorizontalScrollModifiers;
     QTimer                m_wheelScrollingTimer;
     KirigamiWheelEvent    m_kirigamiWheelEvent;
 

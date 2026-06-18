@@ -38,6 +38,8 @@ T.Control {
     property bool showNavigationButtons: false
     property string header: ''
 
+    readonly property bool wheelRequiresShift: control.layout !== MD.Enum.CarouselFullScreen
+
     readonly property bool hasChromeRow: control.showPageIndicator || control.showNavigationButtons
     readonly property real chromeOverhead: control.hasChromeRow
         ? control.chromeRowHeight + control.chromeRowSpacing
@@ -162,8 +164,34 @@ T.Control {
 
     MD.WheelHandler {
         target: m_view.flickable
-        scrollFlickableTarget: true
-        pageScrollModifiers: Qt.ShiftModifier
-        onWheelMoved: m_view.claimInteractionFocus()
+        scrollFlickableTarget: false
+        horizontalScrollModifiers: Qt.NoModifier
+        pageScrollModifiers: Qt.NoModifier
+        onWheel: wheel => {
+            if (control.wheelRequiresShift && !(wheel.modifiers & Qt.ShiftModifier)) {
+                return;
+            }
+            if (m_view.count <= 1) {
+                return;
+            }
+
+            let delta = Math.abs(wheel.angleDelta.y) >= Math.abs(wheel.angleDelta.x)
+                    ? wheel.angleDelta.y
+                    : wheel.angleDelta.x;
+            if (wheel.inverted) {
+                delta = -delta;
+            }
+            if (delta === 0) {
+                return;
+            }
+
+            m_view.claimInteractionFocus();
+            if (delta > 0) {
+                control.incrementCurrentIndex();
+            } else {
+                control.decrementCurrentIndex();
+            }
+            wheel.accepted = true;
+        }
     }
 }
