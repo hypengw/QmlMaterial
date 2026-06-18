@@ -10,13 +10,12 @@ using namespace qml_material;
 namespace
 {
 
-constexpr int kLayoutFullScreen = 4;
 constexpr qreal kViewport       = 360;
 
 auto makeInput(qreal scroll, int count = 10) -> CarouselLayoutInput
 {
     CarouselLayoutInput in;
-    in.layout                = kLayoutFullScreen;
+    in.layout                = CarouselLayoutId::FullScreen;
     in.viewport_size         = kViewport;
     in.cross_size            = 320;
     in.scroll_offset         = scroll;

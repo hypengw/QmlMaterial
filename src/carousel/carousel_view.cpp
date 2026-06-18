@@ -24,27 +24,21 @@ namespace
 constexpr qreal kSnapStiffness  = 280.0;
 constexpr qreal kSnapDamping    = 28.0;
 constexpr qreal kSnapDt         = 1.0 / 60.0;
-constexpr int kLayoutUncontained = 0;
-constexpr int kLayoutMultiBrowse = 1;
-constexpr int kLayoutHero        = 2;
-constexpr int kLayoutHeroCenter  = 3;
-constexpr int kLayoutFullScreen  = 4;
-constexpr int kLayoutUncontainedMultiAspect = 5;
-constexpr int kSizeLarge           = 2;
+constexpr int kSizeLarge        = 2;
 
 auto isHeroLayout(int layout) -> bool
 {
-    return layout == kLayoutHero || layout == kLayoutHeroCenter;
+    return layout == CarouselLayoutId::Hero || layout == CarouselLayoutId::HeroCenter;
 }
 
 auto isHeroCenterLayout(int layout) -> bool
 {
-    return layout == kLayoutHeroCenter;
+    return layout == CarouselLayoutId::HeroCenter;
 }
 
 auto isFullScreenLayout(int layout) -> bool
 {
-    return layout == kLayoutFullScreen;
+    return layout == CarouselLayoutId::FullScreen;
 }
 
 QQuickFlickable* asFlickable(QQuickItem* item)
@@ -105,6 +99,24 @@ QVariant modelElementAt(const QVariant& model, int index)
         return row;
     }
     return index;
+}
+
+void ensureItemQmlContext(QQuickItem* owner, QQuickItem* item)
+{
+    if (!owner || !item || qmlContext(item)) {
+        return;
+    }
+    QQmlEngine* engine = qmlEngine(owner);
+    if (!engine) {
+        return;
+    }
+    QQmlContext* ctx = qmlContext(owner);
+    if (!ctx) {
+        ctx = engine->rootContext();
+    }
+    if (ctx) {
+        engine->setContextForObject(item, new QQmlContext(ctx, item));
+    }
 }
 
 } // namespace
@@ -511,6 +523,8 @@ void CarouselView::setCurrentIndexAnimated(int index)
 void CarouselView::componentComplete()
 {
     QQuickItem::componentComplete();
+    ensureItemQmlContext(this, m_flickable);
+    ensureItemQmlContext(this, m_content);
     m_completed = true;
     setClip(m_clip_container);
     if (auto* flick = asFlickable(m_flickable)) {
@@ -772,7 +786,17 @@ void CarouselView::createDelegate(int index)
     }
 
     QQmlContext* ctx = m_delegate->creationContext();
-    QQmlContext* child_ctx = ctx ? new QQmlContext(ctx) : new QQmlContext(qmlEngine(this));
+    if (!ctx) {
+        if (QQmlEngine* engine = m_delegate->engine()) {
+            ctx = engine->rootContext();
+        } else if (QQmlEngine* engine = qmlEngine(this)) {
+            ctx = engine->rootContext();
+        }
+    }
+    if (!ctx) {
+        return;
+    }
+    QQmlContext* child_ctx = new QQmlContext(ctx);
 
     QObject* obj = m_delegate->createWithInitialProperties(initialPropertiesForDelegate(index), child_ctx);
     child_ctx->setParent(obj);
@@ -878,7 +902,7 @@ void CarouselView::positionItem(QQuickItem* item, const CarouselItemGeometry& ge
 
 int CarouselView::activeIndexForLayout(const CarouselLayoutOutput& out) const
 {
-    if (m_layout == kLayoutFullScreen) {
+    if (m_layout == CarouselLayoutId::FullScreen) {
         return out.leading_index;
     }
 
@@ -928,9 +952,10 @@ void CarouselView::updateLayout()
     input.min_item_aspect    = CarouselEngineDefaults::min_item_aspect;
     input.max_item_aspect    = CarouselEngineDefaults::max_item_aspect;
     input.item_corner_radius = m_item_corner_radius;
-    input.parallax_ratio     = m_layout == kLayoutFullScreen ? 0
+    input.parallax_ratio     = m_layout == CarouselLayoutId::FullScreen ? 0
         : (m_reduce_motion ? 0
-           : (m_layout == kLayoutUncontained || m_layout == kLayoutUncontainedMultiAspect
+           : (m_layout == CarouselLayoutId::Uncontained
+                  || m_layout == CarouselLayoutId::UncontainedMultiAspect
                   ? CarouselEngineDefaults::parallax_ratio_uncontained
                   : CarouselEngineDefaults::parallax_ratio));
     input.count         = m_count;
@@ -1014,12 +1039,14 @@ void CarouselView::updateLayout()
 
 bool CarouselView::usesSingleAdvanceFling() const
 {
-    return m_layout == kLayoutMultiBrowse || isHeroLayout(m_layout) || m_layout == kLayoutFullScreen;
+    return m_layout == CarouselLayoutId::MultiBrowse || isHeroLayout(m_layout)
+        || m_layout == CarouselLayoutId::FullScreen;
 }
 
 bool CarouselView::usesFreeScrollSnap() const
 {
-    return m_layout == kLayoutUncontained || m_layout == kLayoutUncontainedMultiAspect;
+    return m_layout == CarouselLayoutId::Uncontained
+        || m_layout == CarouselLayoutId::UncontainedMultiAspect;
 }
 
 int CarouselView::snapIndexForFling(qreal offset, qreal velocity) const

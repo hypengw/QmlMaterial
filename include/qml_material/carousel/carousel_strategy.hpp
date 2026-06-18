@@ -6,6 +6,17 @@
 namespace qml_material
 {
 
+// Keep in sync with MD.Enum.CarouselLayout (include/qml_material/core/enum.hpp).
+namespace CarouselLayoutId
+{
+constexpr int Uncontained            = 0;
+constexpr int MultiBrowse            = 1;
+constexpr int Hero                   = 2;
+constexpr int HeroCenter             = 3;
+constexpr int FullScreen             = 4;
+constexpr int UncontainedMultiAspect = 5;
+} // namespace CarouselLayoutId
+
 // Keep in sync with qml_material::token::Carousel (MD.Token.carousel).
 struct CarouselEngineDefaults
 {

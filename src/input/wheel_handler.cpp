@@ -6,6 +6,7 @@
 
 #include "qml_material/input/wheel_handler.hpp"
 
+#include <QQmlContext>
 #include <QQmlEngine>
 #include <QQuickItem>
 #include <QQuickWindow>
@@ -118,8 +119,18 @@ void WheelHandler::setTarget(QQuickItem* target) {
 
     m_target = target;
 
-    const auto qCtx = qmlContext(m_target);
-    assert(qCtx);
+    QQmlContext* qCtx = qmlContext(m_target);
+    if (!qCtx) {
+        qCtx = qmlContext(this);
+    }
+    if (!qCtx && m_engine) {
+        qCtx = m_engine->rootContext();
+    }
+    if (!qCtx) {
+        qmlWarning(this) << "WheelHandler: could not resolve QQmlContext for target";
+        m_target = nullptr;
+        return;
+    }
 
     m_flickable.originX = QQmlProperty(m_target, "originX", qCtx);
     m_flickable.originY = QQmlProperty(m_target, "originY", qCtx);

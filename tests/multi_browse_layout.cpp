@@ -10,7 +10,6 @@ using namespace qml_material;
 namespace
 {
 
-constexpr int kLayoutMultiBrowse = 1;
 constexpr int kSizeLarge         = 2;
 constexpr int kSizeMedium        = 1;
 constexpr int kSizeSmall         = 0;
@@ -18,7 +17,7 @@ constexpr int kSizeSmall         = 0;
 auto makeInput(qreal scroll, int count = 10) -> CarouselLayoutInput
 {
     CarouselLayoutInput in;
-    in.layout                = kLayoutMultiBrowse;
+    in.layout                = CarouselLayoutId::MultiBrowse;
     in.viewport_size         = 480;
     in.cross_size            = 196;
     in.scroll_offset         = scroll;

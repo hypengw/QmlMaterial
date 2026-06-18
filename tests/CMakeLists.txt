@@ -47,6 +47,11 @@ target_include_directories(hero_start_layout PRIVATE ${CMAKE_SOURCE_DIR}/include
 target_link_libraries(hero_start_layout PRIVATE Qt6::Core)
 add_test(NAME hero_start_layout COMMAND hero_start_layout)
 
+add_executable(carousel_engine_defaults carousel_engine_defaults.cpp)
+target_include_directories(carousel_engine_defaults PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(carousel_engine_defaults PRIVATE Qt6::Core)
+add_test(NAME carousel_engine_defaults COMMAND carousel_engine_defaults)
+
 set(CAROUSEL_ENGINE_SOURCES
   ${CMAKE_SOURCE_DIR}/src/carousel/carousel_view.cpp
   ${CMAKE_SOURCE_DIR}/src/carousel/carousel_attached.cpp
@@ -74,6 +79,15 @@ target_include_directories(model_shrink PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(model_shrink PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Qml Qt6::Quick Qt6::QuickPrivate)
 set_target_properties(model_shrink PROPERTIES AUTOMOC ON)
 add_test(NAME model_shrink COMMAND model_shrink)
+
+add_executable(model_data_changed
+  model_data_changed.cpp
+  ${CAROUSEL_ENGINE_SOURCES}
+  ${CAROUSEL_ENGINE_HEADERS})
+target_include_directories(model_data_changed PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(model_data_changed PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Qml Qt6::Quick Qt6::QuickPrivate)
+set_target_properties(model_data_changed PROPERTIES AUTOMOC ON)
+add_test(NAME model_data_changed COMMAND model_data_changed)
 
 add_executable(qm_grab qm_grab.cpp)
 target_link_libraries(qm_grab PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Quick Qt6::Qml)

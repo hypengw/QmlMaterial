@@ -10,14 +10,12 @@ using namespace qml_material;
 namespace
 {
 
-constexpr int kLayoutHero  = 2;
-constexpr int kSizeLarge   = 2;
-constexpr int kSizeSmall   = 0;
+constexpr int kSizeLarge = 2;
 
 auto makeInput(int count, qreal scroll, qreal viewport = 480) -> CarouselLayoutInput
 {
     CarouselLayoutInput in;
-    in.layout                = kLayoutHero;
+    in.layout                = CarouselLayoutId::Hero;
     in.viewport_size         = viewport;
     in.cross_size            = 240;
     in.scroll_offset         = scroll;

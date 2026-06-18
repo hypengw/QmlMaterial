@@ -10,13 +10,10 @@ using namespace qml_material;
 namespace
 {
 
-constexpr int kLayoutUncontained            = 0;
-constexpr int kLayoutUncontainedMultiAspect = 5;
-
 auto makeUncontainedInput(qreal scroll) -> CarouselLayoutInput
 {
     CarouselLayoutInput in;
-    in.layout                = kLayoutUncontained;
+    in.layout                = CarouselLayoutId::Uncontained;
     in.viewport_size         = 480;
     in.cross_size            = 196;
     in.scroll_offset         = scroll;
@@ -30,7 +27,7 @@ auto makeUncontainedInput(qreal scroll) -> CarouselLayoutInput
 auto makeMultiAspectInput(qreal scroll) -> CarouselLayoutInput
 {
     CarouselLayoutInput in;
-    in.layout                = kLayoutUncontainedMultiAspect;
+    in.layout                = CarouselLayoutId::UncontainedMultiAspect;
     in.viewport_size         = 480;
     in.cross_size            = 196;
     in.scroll_offset         = scroll;

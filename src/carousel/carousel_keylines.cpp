@@ -12,13 +12,6 @@ namespace qml_material
 namespace
 {
 
-constexpr int kLayoutUncontained = 0;
-constexpr int kLayoutMultiBrowse = 1;
-constexpr int kLayoutHero        = 2;
-constexpr int kLayoutHeroCenter  = 3;
-constexpr int kLayoutFullScreen  = 4;
-constexpr int kLayoutUncontainedMultiAspect = 5;
-
 constexpr int kSizeSmall  = 0;
 constexpr int kSizeMedium = 1;
 constexpr int kSizeLarge  = 2;
@@ -598,7 +591,7 @@ auto layoutKeylineItems(const CarouselLayoutInput& in, const KeylineList& kl) ->
         return out;
     }
 
-    if (in.reduce_motion && in.layout == kLayoutMultiBrowse) {
+    if (in.reduce_motion && in.layout == CarouselLayoutId::MultiBrowse) {
         return layoutKeylineUniform(in, kl);
     }
 
@@ -844,8 +837,6 @@ namespace CarouselHeroKeylines
 namespace
 {
 
-constexpr int kLayoutHeroCenter = 3;
-
 constexpr int kSizeSmall = 0;
 constexpr int kSizeLarge = 2;
 
@@ -916,7 +907,7 @@ auto buildStartTrailingKeylines(const CarouselLayoutInput& in, const HeroMetrics
 
 auto keepLeadingPeek(const CarouselLayoutInput& in) -> bool
 {
-    return in.layout == kLayoutHeroCenter;
+    return in.layout == CarouselLayoutId::HeroCenter;
 }
 
 auto computeMetrics(const CarouselLayoutInput& in) -> HeroMetrics
@@ -1049,18 +1040,18 @@ void computeHeroSnapOffsets(CarouselLayoutOutput& out, const CarouselLayoutInput
 auto CarouselKeylines::buildList(const CarouselLayoutInput& input) -> KeylineList
 {
     switch (input.layout) {
-    case kLayoutMultiBrowse:
+    case CarouselLayoutId::MultiBrowse:
         return buildMultiBrowse(input);
-    case kLayoutHero:
-    case kLayoutHeroCenter:
+    case CarouselLayoutId::Hero:
+    case CarouselLayoutId::HeroCenter:
         return CarouselHeroKeylines::phaseKeylines(
             input, CarouselHeroKeylines::HeroPhase::Middle,
             CarouselHeroKeylines::keepLeadingPeek(input));
-    case kLayoutUncontained:
+    case CarouselLayoutId::Uncontained:
         return buildUncontained(input);
-    case kLayoutUncontainedMultiAspect:
+    case CarouselLayoutId::UncontainedMultiAspect:
         return buildUncontained(input);
-    case kLayoutFullScreen:
+    case CarouselLayoutId::FullScreen:
         return buildFullScreen(input);
     default:
         return buildUncontained(input);
@@ -1070,16 +1061,16 @@ auto CarouselKeylines::buildList(const CarouselLayoutInput& input) -> KeylineLis
 auto CarouselKeylines::layoutItems(const CarouselLayoutInput& in, const KeylineList& kl)
     -> CarouselLayoutOutput
 {
-    if (in.layout == kLayoutUncontainedMultiAspect) {
+    if (in.layout == CarouselLayoutId::UncontainedMultiAspect) {
         return layoutVariableStride(in, kl);
     }
-    if (in.layout == kLayoutFullScreen) {
+    if (in.layout == CarouselLayoutId::FullScreen) {
         return layoutFullScreenItems(in);
     }
-    if (in.layout == kLayoutUncontained) {
+    if (in.layout == CarouselLayoutId::Uncontained) {
         return layoutFixedStride(in, kl);
     }
-    if (in.layout == kLayoutHero || in.layout == kLayoutHeroCenter) {
+    if (in.layout == CarouselLayoutId::Hero || in.layout == CarouselLayoutId::HeroCenter) {
         return layoutHeroItems(in);
     }
     return layoutKeylineItems(in, kl);

@@ -8,9 +8,6 @@ namespace qml_material
 namespace
 {
 
-constexpr int kLayoutHero        = 2;
-constexpr int kLayoutHeroCenter  = 3;
-
 constexpr int kSizeSmall = 0;
 constexpr int kSizeLarge = 2;
 

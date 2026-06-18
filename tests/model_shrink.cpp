@@ -13,8 +13,6 @@ using namespace qml_material;
 namespace
 {
 
-constexpr int kLayoutUncontained = 0;
-
 struct TestCarouselView : CarouselView
 {
     using CarouselView::CarouselView;
@@ -44,7 +42,7 @@ auto flickContentX(QQuickItem* flickable) -> qreal
 auto expectedSnapOffset(int index, int count) -> qreal
 {
     CarouselLayoutInput in;
-    in.layout                = kLayoutUncontained;
+    in.layout                = CarouselLayoutId::Uncontained;
     in.viewport_size         = 480;
     in.cross_size            = 196;
     in.scroll_offset         = 0;
@@ -79,7 +77,7 @@ int main(int argc, char* argv[])
     view.setParentItem(window.contentItem());
     view.setWidth(480);
     view.setHeight(196);
-    view.setLayout(kLayoutUncontained);
+    view.setLayout(CarouselLayoutId::Uncontained);
     view.setModel(10);
     view.setItemExtent(140);
     view.setSpacing(8);
