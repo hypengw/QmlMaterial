@@ -389,6 +389,57 @@ private:
 };
 
 /**
+ * @brief Carousel layout and sizing tokens (M3 Carousel specs)
+ */
+struct Carousel {
+    Q_GADGET
+    QML_ANONYMOUS
+    Q_PROPERTY(qreal item_spacing MEMBER item_spacing CONSTANT FINAL)
+    Q_PROPERTY(qreal container_height_horizontal MEMBER container_height_horizontal CONSTANT FINAL)
+    Q_PROPERTY(qreal default_item_extent MEMBER default_item_extent CONSTANT FINAL)
+    Q_PROPERTY(qreal small_item_min MEMBER small_item_min CONSTANT FINAL)
+    Q_PROPERTY(qreal small_item_max MEMBER small_item_max CONSTANT FINAL)
+    Q_PROPERTY(qreal container_padding_vertical MEMBER container_padding_vertical CONSTANT FINAL)
+    Q_PROPERTY(qreal small_item_min_ratio MEMBER small_item_min_ratio CONSTANT FINAL)
+    Q_PROPERTY(qreal small_item_max_ratio MEMBER small_item_max_ratio CONSTANT FINAL)
+    Q_PROPERTY(qreal large_item_max_aspect MEMBER large_item_max_aspect CONSTANT FINAL)
+    Q_PROPERTY(qreal min_item_aspect MEMBER min_item_aspect CONSTANT FINAL)
+    Q_PROPERTY(qreal max_item_aspect MEMBER max_item_aspect CONSTANT FINAL)
+    Q_PROPERTY(qint32 item_corner MEMBER item_corner CONSTANT FINAL)
+    Q_PROPERTY(qint32 snap_duration MEMBER snap_duration CONSTANT FINAL)
+    Q_PROPERTY(qreal title_fade_span MEMBER title_fade_span CONSTANT FINAL)
+    Q_PROPERTY(qreal chrome_row_height MEMBER chrome_row_height CONSTANT FINAL)
+    Q_PROPERTY(qreal chrome_row_spacing MEMBER chrome_row_spacing CONSTANT FINAL)
+    Q_PROPERTY(qreal default_width MEMBER default_width CONSTANT FINAL)
+    Q_PROPERTY(qreal default_height_vertical MEMBER default_height_vertical CONSTANT FINAL)
+    Q_PROPERTY(qreal min_peek_px MEMBER min_peek_px CONSTANT FINAL)
+    Q_PROPERTY(qreal parallax_ratio MEMBER parallax_ratio CONSTANT FINAL)
+    Q_PROPERTY(qreal parallax_ratio_uncontained MEMBER parallax_ratio_uncontained CONSTANT FINAL)
+public:
+    qreal item_spacing { 8 };
+    qreal container_height_horizontal { 196 };
+    qreal default_item_extent { 180 };
+    qreal small_item_min { 40 };
+    qreal small_item_max { 56 };
+    qreal container_padding_vertical { 8 };
+    qreal small_item_min_ratio { 0.45 };
+    qreal small_item_max_ratio { 0.55 };
+    qreal large_item_max_aspect { 2.0 };
+    qreal min_item_aspect { 9.0 / 16.0 };
+    qreal max_item_aspect { 16.0 / 9.0 };
+    i32   item_corner { 28 };
+    i32   snap_duration { 400 };
+    qreal title_fade_span { 80 };
+    qreal chrome_row_height { 40 };
+    qreal chrome_row_spacing { 8 };
+    qreal default_width { 480 };
+    qreal default_height_vertical { 320 };
+    qreal min_peek_px { 16 };
+    qreal parallax_ratio { 0.35 };
+    qreal parallax_ratio_uncontained { 0.5 };
+};
+
+/**
  * @brief Defines standard spacing values
  *
  * Provides a set of consistent spacing values used for layout,
@@ -471,6 +522,8 @@ class Token : public QObject {
     Q_PROPERTY(qml_material::token::IconButtonSize icon_button READ icon_button CONSTANT FINAL)
     /// Badge size settings
     Q_PROPERTY(qml_material::token::BadgeSize badge READ badge CONSTANT FINAL)
+    /// Carousel layout tokens
+    Q_PROPERTY(qml_material::token::Carousel carousel READ carousel CONSTANT FINAL)
     public:
     Token(QObject* = nullptr);
     ~Token();
@@ -495,6 +548,7 @@ class Token : public QObject {
     auto segmented_button() const -> const SegmentedButtonSize&;
     auto icon_button() const -> const IconButtonSize&;
     auto badge() const -> const BadgeSize&;
+    auto carousel() const -> const Carousel&;
 
     auto datas() -> QQmlListProperty<QObject>;
 
@@ -516,6 +570,7 @@ class Token : public QObject {
     SegmentedButtonSize m_segmented_button;
     IconButtonSize      m_icon_button;
     BadgeSize       m_badge;
+    Carousel        m_carousel;
 
     QList<QObject*> m_datas;
     };

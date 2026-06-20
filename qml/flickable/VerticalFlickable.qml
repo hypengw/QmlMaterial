@@ -5,10 +5,24 @@ import Qcm.Material as MD
 MD.Flickable {
     id: root
 
-    // flickable not set contentHeight
-    contentHeight: contentItem.childrenRect.height
-    contentWidth: width - rightMargin - leftMargin
-    implicitHeight: contentHeight + topMargin + bottomMargin
+    readonly property real viewportHeight: height - topMargin - bottomMargin
 
-    T.ScrollBar.vertical: MD.ScrollBar {}
+    readonly property real implicitContentHeight: {
+        if (!contentItem) {
+            return 0;
+        }
+        let maxH = 0;
+        for (let i = 0; i < contentItem.children.length; ++i) {
+            const child = contentItem.children[i];
+            maxH = Math.max(maxH, child.y + Math.max(child.implicitHeight, child.height));
+        }
+        return maxH;
+    }
+
+    contentHeight: implicitContentHeight
+    contentWidth: width - rightMargin - leftMargin
+
+    T.ScrollBar.vertical: MD.ScrollBar {
+        policy: T.ScrollBar.AsNeeded
+    }
 }

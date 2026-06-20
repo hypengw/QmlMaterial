@@ -98,7 +98,7 @@ T.Control {
         contentItem: Item {
             id: m_popup_content
             implicitWidth: m_flick.implicitWidth
-            implicitHeight: m_flick.implicitHeight
+            implicitHeight: m_flick.contentImplicitHeight
         }
     }
 
@@ -135,7 +135,8 @@ T.Control {
             topMargin: 12
             bottomMargin: 12
             implicitWidth: m_content.implicitWidth
-            implicitHeight: m_content.implicitHeight + 12 * 2
+            readonly property real contentImplicitHeight: m_content.scrollExtent + topMargin + bottomMargin
+            contentHeight: Math.max(viewportHeight, m_content.scrollExtent)
             anchors.fill: parent
 
             opacity: {
@@ -148,9 +149,12 @@ T.Control {
             Item {
                 id: m_content
                 width: parent.width
-                height: Math.max(implicitHeight, m_flick.height - 12 * 2)
+                readonly property real naturalHeight:
+                    m_header_loader.height + m_rail_view.implicitHeight + m_footer_container.implicitHeight
+                readonly property real scrollExtent: m_footer_container.y + m_footer_container.height
                 implicitWidth: Math.min(control.expandedWidth, Math.max(m_rail_view.implicitWidth, m_footer_loader.implicitWidth))
-                implicitHeight: m_header_loader.height + m_rail_container.implicitHeight + m_footer_container.implicitHeight
+                implicitHeight: naturalHeight
+                height: Math.max(parent.viewportHeight, scrollExtent)
 
                 // -- header --
                 Loader {
@@ -166,7 +170,7 @@ T.Control {
                     id: m_rail_container
                     y: m_header_loader.y + m_header_loader.height
                     width: parent.width
-                    height: control.useLarge ? implicitHeight : Math.max(implicitHeight, m_content.height - m_header_loader.height - m_footer_container.implicitHeight)
+                    height: control.useLarge ? implicitHeight : Math.max(implicitHeight, m_flick.viewportHeight - m_header_loader.height - m_footer_container.implicitHeight)
                     implicitHeight: m_rail_view.implicitHeight
                     implicitWidth: m_rail_view.implicitWidth
 
@@ -217,8 +221,10 @@ T.Control {
                     id: m_footer_container
                     y: m_rail_container.y + m_rail_container.height
                     width: parent.width
-                    height: control.useLarge ? (m_content.height - y) : implicitHeight
-                    implicitHeight: m_footer_loader.sourceComponent ? m_footer_loader.implicitHeight : 0
+                    implicitHeight: m_footer_loader.item
+                        ? m_footer_loader.item.implicitHeight
+                        : (m_footer_loader.sourceComponent ? m_footer_loader.implicitHeight : 0)
+                    height: control.useLarge ? Math.max(implicitHeight, m_content.height - y) : implicitHeight
 
                     Loader {
                         id: m_footer_loader

@@ -113,6 +113,16 @@ set(SOURCES
     include/qml_material/flickable/flickable.hpp
     src/input/wheel_handler.cpp
     include/qml_material/input/wheel_handler.hpp
+    src/carousel/carousel_attached.cpp
+    src/carousel/carousel_view.cpp
+    src/carousel/carousel_strategies.cpp
+    src/carousel/carousel_keylines.cpp
+    src/carousel/carousel_scroll_strategy.cpp
+    include/qml_material/carousel/carousel_attached.hpp
+    include/qml_material/carousel/carousel_keylines.hpp
+    include/qml_material/carousel/carousel_scroll_strategy.hpp
+    include/qml_material/carousel/carousel_strategy.hpp
+    include/qml_material/carousel/carousel_view.hpp
     src/model/palette_model.cpp
     src/model/snake_model.cpp
     src/token/color.cpp
@@ -153,6 +163,7 @@ set(QML_FILES
     qml/control/Pane.qml
     qml/control/Page.qml
     qml/control/PageIndicator.qml
+    qml/control/Carousel.qml
     qml/control/Action.qml
     qml/control/ActionGroup.qml
     qml/control/MenuSeparator.qml
@@ -200,6 +211,8 @@ set(QML_FILES
     qml/component/bottomsheet/SheetActionBar.qml
     qml/component/checkbox/CheckShape.qml
     qml/component/card/Card.qml
+    qml/component/carousel/CarouselItem.qml
+    qml/component/carousel/CarouselImageDelegate.qml
     qml/component/chip/AssistChip.qml
     qml/component/chip/EmbedChip.qml
     qml/component/chip/FilterChip.qml
@@ -270,6 +283,7 @@ set(QML_FILES
     qml/state/StateSplitButtonIndicator.qml
     qml/state/StateSegmentedButton.qml
     qml/state/StateCard.qml
+    qml/state/StateCarouselItem.qml
     qml/state/StateDragHandle.qml
     qml/state/StateDrawerItem.qml
     qml/state/StateTabButton.qml
@@ -327,7 +341,8 @@ set(QML_REG_INCLUDE_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/token"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/model"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/util"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/dialog")
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/dialog"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/carousel")
 
 set(SHADER_DEFINES)
 

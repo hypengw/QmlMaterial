@@ -2,10 +2,16 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Templates as T
 import Qcm.Material as MD
+import "carousel" as CarouselDemo
 
 MD.Page {
+    id: root
     title: 'Components'
     padding: 0
+
+    CarouselDemo.CarouselDemoData {
+        id: m_carousel_demo
+    }
 
     MD.VerticalFlickable {
         anchors.fill: parent
@@ -1080,6 +1086,116 @@ MD.Page {
                                     icon.name: MD.Token.icon.more_vert
                                 }
                             ]
+                        }
+                    }
+                }
+            }
+
+            MD.Pane {
+                Layout.alignment: Qt.AlignHCenter
+                ColumnLayout {
+                    spacing: 16
+                    MD.Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: 'Carousel'
+                        typescale: MD.Token.typescale.title_large
+                    }
+
+                    ComponentCard {
+                        title: 'Uncontained'
+                        spacing: 12
+
+                        MD.Text {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: 'Fixed width'
+                            typescale: MD.Token.typescale.label_medium
+                            opacity: 0.8
+                        }
+                        MD.Carousel {
+                            Layout.preferredWidth: 480
+                            layout: MD.Enum.CarouselUncontained
+                            header: 'Photo strip'
+                            itemExtent: 180
+                            model: m_carousel_demo.model
+                            delegate: MD.CarouselImageDelegate {}
+                        }
+
+                        MD.Text {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: 'Multi-aspect'
+                            typescale: MD.Token.typescale.label_medium
+                            opacity: 0.8
+                        }
+                        MD.Carousel {
+                            Layout.preferredWidth: 480
+                            layout: MD.Enum.CarouselUncontainedMultiAspect
+                            model: m_carousel_demo.model
+                            delegate: MD.CarouselImageDelegate {}
+                        }
+                    }
+
+                    ComponentCard {
+                        title: 'Multi-browse'
+
+                        MD.Carousel {
+                            Layout.preferredWidth: 480
+                            layout: MD.Enum.CarouselMultiBrowse
+                            header: 'Photo gallery'
+                            model: m_carousel_demo.model
+                            delegate: MD.CarouselImageDelegate {}
+                            showPageIndicator: true
+                            showNavigationButtons: true
+                        }
+                    }
+
+                    ComponentCard {
+                        title: 'Hero'
+                        spacing: 12
+
+                        MD.Text {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: 'Start-aligned'
+                            typescale: MD.Token.typescale.label_medium
+                            opacity: 0.8
+                        }
+                        MD.Carousel {
+                            Layout.preferredWidth: 480
+                            Layout.preferredHeight: 240
+                            layout: MD.Enum.CarouselHero
+                            header: 'Featured photos'
+                            model: m_carousel_demo.model
+                            delegate: MD.CarouselImageDelegate {}
+                            showNavigationButtons: true
+                        }
+
+                        MD.Text {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: 'Center-aligned'
+                            typescale: MD.Token.typescale.label_medium
+                            opacity: 0.8
+                        }
+                        MD.Carousel {
+                            Layout.preferredWidth: 480
+                            Layout.preferredHeight: 240
+                            layout: MD.Enum.CarouselHeroCenter
+                            model: m_carousel_demo.model
+                            delegate: MD.CarouselImageDelegate {}
+                            showNavigationButtons: true
+                        }
+                    }
+
+                    ComponentCard {
+                        title: 'Full-screen (vertical)'
+
+                        MD.Carousel {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 420
+                            layout: MD.Enum.CarouselFullScreen
+                            header: 'Full-screen gallery'
+                            orientation: Qt.Vertical
+                            model: m_carousel_demo.model
+                            delegate: MD.CarouselImageDelegate {}
+                            showNavigationButtons: true
                         }
                     }
                 }

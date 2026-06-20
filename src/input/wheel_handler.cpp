@@ -6,6 +6,7 @@
 
 #include "qml_material/input/wheel_handler.hpp"
 
+#include <QQmlContext>
 #include <QQmlEngine>
 #include <QQuickItem>
 #include <QQuickWindow>
@@ -118,8 +119,18 @@ void WheelHandler::setTarget(QQuickItem* target) {
 
     m_target = target;
 
-    const auto qCtx = qmlContext(m_target);
-    assert(qCtx);
+    QQmlContext* qCtx = qmlContext(m_target);
+    if (!qCtx) {
+        qCtx = qmlContext(this);
+    }
+    if (!qCtx && m_engine) {
+        qCtx = m_engine->rootContext();
+    }
+    if (!qCtx) {
+        qmlWarning(this) << "WheelHandler: could not resolve QQmlContext for target";
+        m_target = nullptr;
+        return;
+    }
 
     m_flickable.originX = QQmlProperty(m_target, "originX", qCtx);
     m_flickable.originY = QQmlProperty(m_target, "originY", qCtx);
@@ -251,6 +262,25 @@ void WheelHandler::resetPageScrollModifiers() {
     setPageScrollModifiers(m_defaultPageScrollModifiers);
 }
 
+Qt::KeyboardModifiers WheelHandler::horizontalScrollModifiers() const
+{
+    return m_horizontalScrollModifiers;
+}
+
+void WheelHandler::setHorizontalScrollModifiers(Qt::KeyboardModifiers modifiers)
+{
+    if (m_horizontalScrollModifiers == modifiers) {
+        return;
+    }
+    m_horizontalScrollModifiers = modifiers;
+    Q_EMIT horizontalScrollModifiersChanged();
+}
+
+void WheelHandler::resetHorizontalScrollModifiers()
+{
+    setHorizontalScrollModifiers(m_defaultHorizontalScrollModifiers);
+}
+
 bool WheelHandler::filterMouseEvents() const { return m_filterMouseEvents; }
 
 void WheelHandler::setFilterMouseEvents(bool enabled) {
@@ -295,8 +325,16 @@ bool WheelHandler::scrollFlickable(QPointF pixelDelta, QPointF angleDelta,
 
     bool scrolled { false };
 
-    auto handler = [this, modifiers, &pixelDelta, &angleDelta, &scrolled](Qt::Orientation ori) {
-        bool        hr { ori == Qt::Horizontal };
+    auto handler = [this, modifiers, pixelDelta, angleDelta, &scrolled](Qt::Orientation ori) {
+        const bool hr = ori == Qt::Horizontal;
+        QPointF      ad = angleDelta;
+        QPointF      pd = pixelDelta;
+
+        if (hr && (modifiers & m_horizontalScrollModifiers) && qAbs(ad.x()) < qAbs(ad.y())) {
+            ad = ad.transposed();
+            pd = pd.transposed();
+        }
+
         const qreal size =
             hr ? m_flickable.width.read().toReal() : m_flickable.height.read().toReal();
         const qreal contentSize = hr ? m_flickable.contentWidth.read().toReal()
@@ -321,14 +359,7 @@ bool WheelHandler::scrollFlickable(QPointF pixelDelta, QPointF angleDelta,
         const bool atBeginning = fuzzyLessThanOrEqualTo(contentPos, minExtent);
         const bool atEnd       = fuzzyLessThanOrEqualTo(maxExtent, contentPos);
 
-        // HACK: only transpose deltas when not on xcb, to avoid double-transposing
-        if (modifiers & m_defaultHorizontalScrollModifiers &&
-            qGuiApp->platformName() != QLatin1String("xcb")) {
-            angleDelta = angleDelta.transposed();
-            pixelDelta = pixelDelta.transposed();
-        }
-
-        const qreal ticks = (hr ? angleDelta.x() : angleDelta.y()) / 120;
+        const qreal ticks = (hr ? ad.x() : ad.y()) / 120;
         qreal       change;
         auto        stepSize  = hr ? m_horizontalStepSize : m_verticalStepSize;
         auto&       scrollBar = hr ? m_scrollBarH : m_scrollBarV;
@@ -338,8 +369,8 @@ bool WheelHandler::scrollFlickable(QPointF pixelDelta, QPointF angleDelta,
         if (contentSize > pageSize) {
             if (modifiers & m_pageScrollModifiers) {
                 change = qBound(-pageSize, ticks * pageSize, pageSize);
-            } else if (pixelDelta.x() != 0) {
-                change = pixelDelta.x();
+            } else if ((hr ? pd.x() : pd.y()) != 0) {
+                change = hr ? pd.x() : pd.y();
             } else {
                 change = ticks * stepSize;
             }
@@ -502,7 +533,7 @@ bool WheelHandler::eventFilter(QObject* watched, QEvent* event) {
             break;
         }
         QKeyEvent* keyEvent         = static_cast<QKeyEvent*>(event);
-        bool       horizontalScroll = keyEvent->modifiers() & m_defaultHorizontalScrollModifiers;
+        bool       horizontalScroll = keyEvent->modifiers() & m_horizontalScrollModifiers;
         switch (keyEvent->key()) {
         case Qt::Key_Up: return scrollUp();
         case Qt::Key_Down: return scrollDown();
