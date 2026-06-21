@@ -9,6 +9,13 @@ T.Slider {
     property MD.StateSlider mdState: MD.StateSlider {
         item: control
     }
+    property Component tailing: null
+    property real tailingSpacing: 8
+
+    readonly property real __tailingWidth: tailingLoader.active ? tailingLoader.width : 0
+    readonly property real __tailingReserve: control.horizontal && __tailingWidth > 0 ? __tailingWidth + tailingSpacing : 0
+
+    rightPadding: __tailingReserve
 
     implicitWidth: {
         const contentWidth = implicitBackgroundWidth + leftInset + rightInset;
@@ -33,6 +40,16 @@ T.Slider {
                 return Qt.PointingHandCursor;
             return Qt.ArrowCursor;
         }
+    }
+
+    Loader {
+        id: tailingLoader
+        active: control.horizontal && control.tailing !== null
+        visible: active
+        sourceComponent: control.tailing
+        x: control.width - width
+        y: (control.height - height) / 2
+        z: 1
     }
 
     readonly property real __steps: Math.abs(to - from) / stepSize
@@ -103,7 +120,8 @@ T.Slider {
             }
             width: {
                 if (control.horizontal) {
-                    return Math.max(0, bgItem.width - x);
+                    const trackEnd = bgItem.width - control.rightPadding;
+                    return Math.max(0, trackEnd - x);
                 }
                 return 16;
             }
