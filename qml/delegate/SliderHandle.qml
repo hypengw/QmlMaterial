@@ -7,22 +7,50 @@ Item {
     implicitHeight: horizontal ? handleHeight : handleWidth
 
     property real value: 0
+    property int labelBehavior: MD.Enum.SliderLabelFloating
     property bool handleHasFocus: false
     property bool handlePressed: false
     property bool handleHovered: false
-    property int handleWidth: 12
-    property int handleHeight: 44
+    property int handleWidth: MD.Token.slider.handle_width
+    property int handleHeight: MD.Token.slider.handle_height
     property bool horizontal: false
     property int handleLineWidth: 4
 
     readonly property var control: parent
 
+    readonly property bool __valueIndicatorActive: {
+        if (root.labelBehavior === MD.Enum.SliderLabelGone)
+            return false;
+        if (root.labelBehavior === MD.Enum.SliderLabelVisible)
+            return root.control ? root.control.enabled : false;
+        return root.handlePressed || root.handleHasFocus || root.handleHovered;
+    }
+
     // The value indicator (bubble)
     MD.Control {
-        y: root.horizontal ? -height - 4 : (parent.height - height) / 2
-        x: root.horizontal ? (parent.width - width) / 2 : -width - 4
+        id: valueIndicator
+        y: {
+            if (!root.horizontal)
+                return (parent.height - height) / 2;
+            if (root.labelBehavior === MD.Enum.SliderLabelWithinBounds) {
+                const above = -height - 4;
+                const below = parent.height + 4;
+                return above >= 0 ? above : below;
+            }
+            return -height - 4;
+        }
+        x: {
+            if (root.horizontal)
+                return (parent.width - width) / 2;
+            if (root.labelBehavior === MD.Enum.SliderLabelWithinBounds) {
+                const left = -width - 4;
+                const right = parent.width + 4;
+                return left >= 0 ? left : right;
+            }
+            return -width - 4;
+        }
 
-        visible: root.handlePressed
+        visible: root.__valueIndicatorActive
         opacity: visible ? 1 : 0
         scale: visible ? 1 : 0
         Behavior on opacity {
@@ -61,10 +89,10 @@ Item {
         id: handleRect
         anchors.centerIn: parent
 
-        width: root.horizontal ? root.handleLineWidth : 44
-        height: root.horizontal ? 44 : root.handleLineWidth
+        width: root.horizontal ? root.handleLineWidth : root.handleHeight
+        height: root.horizontal ? root.handleHeight : root.handleLineWidth
 
-        radius: 2
+        radius: MD.Token.slider.track_inside_corner
         color: root.control ? root.control.mdState.backgroundColor : "transparent"
     }
 
@@ -72,9 +100,9 @@ Item {
     Rectangle {
         id: pillHandle
         anchors.centerIn: parent
-        width: (root.horizontal ? 4 : 44) + 12
-        height: (root.horizontal ? 44 : 4) + 12
-        radius: (4 + 12) / 2
+        width: (root.horizontal ? root.handleLineWidth : root.handleHeight) + 12
+        height: (root.horizontal ? root.handleHeight : root.handleLineWidth) + 12
+        radius: ((root.horizontal ? root.handleLineWidth : root.handleLineWidth) + 12) / 2
         color: "transparent"
         border.color: root.control ? root.control.mdState.backgroundColor : "transparent"
         border.width: 4

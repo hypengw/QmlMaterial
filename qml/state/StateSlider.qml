@@ -22,8 +22,8 @@ MD.MState {
     property real trackOverlayOpacity: 0.12
 
     property int handleLineWidth: item.pressed || item.visualFocus ? 2 : 4
-    property int handleWidth: 12
-    property int handleHeight: 44
+    property int handleWidth: MD.Token.slider.handle_width
+    property int handleHeight: MD.Token.slider.handle_height
 
     Behavior on handleLineWidth {
         NumberAnimation {

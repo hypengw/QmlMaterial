@@ -196,6 +196,33 @@ public:
         CarouselSizeLarge,
     };
     Q_ENUM(CarouselSizeClass)
+
+    enum class SliderLabelBehavior
+    {
+        SliderLabelFloating = 0, ///< Show value indicator while interacting
+        SliderLabelVisible,      ///< Always show value indicator
+        SliderLabelGone,           ///< Never show value indicator
+        SliderLabelWithinBounds,   ///< Show within track bounds while interacting
+    };
+    Q_ENUM(SliderLabelBehavior)
+
+    enum class SliderTickVisibilityMode
+    {
+        SliderTickAutoLimit = 0, ///< Cap discrete stops; no caps on continuous
+        SliderTickAll,           ///< Show all stops (discrete) or end caps (continuous)
+        SliderTickNone,          ///< Hide all stop indicators
+    };
+    Q_ENUM(SliderTickVisibilityMode)
+
+    enum class SliderSize
+    {
+        SliderSizeXSmall = 0, ///< 16dp active track
+        SliderSizeSmall,      ///< 24dp
+        SliderSizeMedium,     ///< 40dp — minimum for inset icon
+        SliderSizeLarge,      ///< 56dp
+        SliderSizeXLarge,     ///< 96dp
+    };
+    Q_ENUM(SliderSize)
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(Enum::ToastFlags);
 } // namespace qml_material

@@ -440,6 +440,43 @@ public:
 };
 
 /**
+ * @brief Slider layout tokens (M3 Slider specs)
+ */
+struct Slider {
+    Q_GADGET
+    QML_ANONYMOUS
+    Q_PROPERTY(qreal active_track_height MEMBER active_track_height CONSTANT FINAL)
+    Q_PROPERTY(qreal inactive_track_height MEMBER inactive_track_height CONSTANT FINAL)
+    Q_PROPERTY(qreal active_track_height_xsmall MEMBER active_track_height_xsmall CONSTANT FINAL)
+    Q_PROPERTY(qreal active_track_height_small MEMBER active_track_height_small CONSTANT FINAL)
+    Q_PROPERTY(qreal active_track_height_medium MEMBER active_track_height_medium CONSTANT FINAL)
+    Q_PROPERTY(qreal active_track_height_large MEMBER active_track_height_large CONSTANT FINAL)
+    Q_PROPERTY(qreal active_track_height_xlarge MEMBER active_track_height_xlarge CONSTANT FINAL)
+    Q_PROPERTY(qreal stop_indicator_size MEMBER stop_indicator_size CONSTANT FINAL)
+    Q_PROPERTY(qreal thumb_track_gap MEMBER thumb_track_gap CONSTANT FINAL)
+    Q_PROPERTY(qreal track_inside_corner MEMBER track_inside_corner CONSTANT FINAL)
+    Q_PROPERTY(qreal inset_icon_size MEMBER inset_icon_size CONSTANT FINAL)
+    Q_PROPERTY(qreal inset_icon_padding MEMBER inset_icon_padding CONSTANT FINAL)
+    Q_PROPERTY(qint32 handle_height MEMBER handle_height CONSTANT FINAL)
+    Q_PROPERTY(qint32 handle_width MEMBER handle_width CONSTANT FINAL)
+public:
+    qreal active_track_height { 16 };
+    qreal inactive_track_height { 4 };
+    qreal active_track_height_xsmall { 16 };
+    qreal active_track_height_small { 24 };
+    qreal active_track_height_medium { 40 };
+    qreal active_track_height_large { 56 };
+    qreal active_track_height_xlarge { 96 };
+    qreal stop_indicator_size { 4 };
+    qreal thumb_track_gap { 6 };
+    qreal track_inside_corner { 2 };
+    qreal inset_icon_size { 24 };
+    qreal inset_icon_padding { 8 };
+    i32   handle_height { 44 };
+    i32   handle_width { 12 };
+};
+
+/**
  * @brief Defines standard spacing values
  *
  * Provides a set of consistent spacing values used for layout,
@@ -524,6 +561,7 @@ class Token : public QObject {
     Q_PROPERTY(qml_material::token::BadgeSize badge READ badge CONSTANT FINAL)
     /// Carousel layout tokens
     Q_PROPERTY(qml_material::token::Carousel carousel READ carousel CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::Slider slider READ slider CONSTANT FINAL)
     public:
     Token(QObject* = nullptr);
     ~Token();
@@ -549,6 +587,7 @@ class Token : public QObject {
     auto icon_button() const -> const IconButtonSize&;
     auto badge() const -> const BadgeSize&;
     auto carousel() const -> const Carousel&;
+    auto slider() const -> const Slider&;
 
     auto datas() -> QQmlListProperty<QObject>;
 
@@ -571,6 +610,7 @@ class Token : public QObject {
     IconButtonSize      m_icon_button;
     BadgeSize       m_badge;
     Carousel        m_carousel;
+    Slider          m_slider;
 
     QList<QObject*> m_datas;
     };

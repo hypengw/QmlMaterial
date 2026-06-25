@@ -773,51 +773,6 @@ MD.Page {
                         }
                     }
                     ComponentCard {
-                        title: 'Sliders'
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 24
-
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                MD.Slider {
-                                    Layout.alignment: Qt.AlignHCenter
-                                }
-                                MD.Slider {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    snapMode: T.Slider.SnapAlways
-                                    from: 0
-                                    stepSize: 20
-                                    to: 100
-                                }
-                                MD.SliderM2 {
-                                    Layout.alignment: Qt.AlignHCenter
-                                }
-                                MD.SliderM2 {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    snapMode: T.Slider.SnapAlways
-                                    from: 0
-                                    stepSize: 20
-                                    to: 100
-                                }
-                            }
-
-                            RowLayout {
-                                spacing: 24
-                                MD.Slider {
-                                    orientation: Qt.Vertical
-                                    snapMode: T.Slider.SnapAlways
-                                    from: 0
-                                    stepSize: 20
-                                    to: 100
-                                }
-                                MD.SliderM2 {
-                                    orientation: Qt.Vertical
-                                }
-                            }
-                        }
-                    }
-                    ComponentCard {
                         title: 'Switches'
                         MD.Switch {
                             Layout.alignment: Qt.AlignHCenter
@@ -1086,6 +1041,265 @@ MD.Page {
                                     icon.name: MD.Token.icon.more_vert
                                 }
                             ]
+                        }
+                    }
+                }
+            }
+
+            MD.Pane {
+                Layout.alignment: Qt.AlignHCenter
+                ColumnLayout {
+                    spacing: 16
+                    MD.Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: 'Sliders'
+                        typescale: MD.Token.typescale.title_large
+                    }
+
+                    ComponentCard {
+                        title: 'M3'
+                        spacing: 12
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 24
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 8
+
+                                MD.Text {
+                                    text: 'Continuous'
+                                    typescale: MD.Token.typescale.label_medium
+                                    opacity: 0.8
+                                }
+                                MD.Slider {
+                                    Layout.fillWidth: true
+                                    from: 0
+                                    to: 100
+                                }
+
+                                MD.Text {
+                                    text: 'No value / stop indicators'
+                                    typescale: MD.Token.typescale.label_medium
+                                    opacity: 0.8
+                                }
+                                MD.Slider {
+                                    Layout.fillWidth: true
+                                    from: 0
+                                    to: 100
+                                    labelBehavior: MD.Enum.SliderLabelGone
+                                    tickVisibilityMode: MD.Enum.SliderTickNone
+                                }
+
+                                MD.Text {
+                                    text: 'Discrete snap, no indicators'
+                                    typescale: MD.Token.typescale.label_medium
+                                    opacity: 0.8
+                                }
+                                MD.Slider {
+                                    Layout.fillWidth: true
+                                    snapMode: T.Slider.SnapAlways
+                                    from: 0
+                                    stepSize: 20
+                                    to: 100
+                                    labelBehavior: MD.Enum.SliderLabelGone
+                                    tickVisibilityMode: MD.Enum.SliderTickNone
+                                }
+
+                                MD.Text {
+                                    text: 'Discrete + stops'
+                                    typescale: MD.Token.typescale.label_medium
+                                    opacity: 0.8
+                                }
+                                MD.Slider {
+                                    Layout.fillWidth: true
+                                    snapMode: T.Slider.SnapAlways
+                                    from: 0
+                                    stepSize: 20
+                                    to: 100
+                                }
+
+                                MD.Text {
+                                    text: 'Snap without stops'
+                                    typescale: MD.Token.typescale.label_medium
+                                    opacity: 0.8
+                                }
+                                MD.Slider {
+                                    Layout.fillWidth: true
+                                    snapMode: T.Slider.SnapAlways
+                                    from: 0
+                                    stepSize: 20
+                                    to: 100
+                                    tickVisibilityMode: MD.Enum.SliderTickNone
+                                }
+
+                                MD.Text {
+                                    text: 'Value label always'
+                                    typescale: MD.Token.typescale.label_medium
+                                    opacity: 0.8
+                                }
+                                MD.Slider {
+                                    Layout.fillWidth: true
+                                    from: 0
+                                    to: 100
+                                    value: 50
+                                    labelBehavior: MD.Enum.SliderLabelVisible
+                                }
+                                MD.Text {
+                                    text: 'Inset icon'
+                                    typescale: MD.Token.typescale.label_medium
+                                    opacity: 0.8
+                                }
+                                MD.Slider {
+                                    Layout.fillWidth: true
+                                    from: 0
+                                    to: 100
+                                    value: 50
+                                    sliderSize: MD.Enum.SliderSizeMedium
+                                    insetIcon: MD.Token.icon.volume_up
+                                    insetIconAtMin: MD.Token.icon.volume_off
+                                    labelBehavior: MD.Enum.SliderLabelGone
+                                    tickVisibilityMode: MD.Enum.SliderTickNone
+                                }
+                            }
+
+                            GridLayout {
+                                Layout.alignment: Qt.AlignTop
+                                columns: 2
+                                rowSpacing: 16
+                                columnSpacing: 24
+
+                                ColumnLayout {
+                                    spacing: 8
+
+                                    MD.Text {
+                                        text: 'Continuous'
+                                        typescale: MD.Token.typescale.label_medium
+                                        opacity: 0.8
+                                    }
+                                    MD.Slider {
+                                        Layout.alignment: Qt.AlignHCenter
+                                        Layout.preferredHeight: 160
+                                        orientation: Qt.Vertical
+                                        from: 0
+                                        to: 100
+                                    }
+                                }
+
+                                ColumnLayout {
+                                    spacing: 8
+
+                                    MD.Text {
+                                        text: 'Discrete + stops'
+                                        typescale: MD.Token.typescale.label_medium
+                                        opacity: 0.8
+                                    }
+                                    MD.Slider {
+                                        Layout.alignment: Qt.AlignHCenter
+                                        Layout.preferredHeight: 160
+                                        orientation: Qt.Vertical
+                                        snapMode: T.Slider.SnapAlways
+                                        from: 0
+                                        stepSize: 20
+                                        to: 100
+                                    }
+                                }
+
+                                ColumnLayout {
+                                    spacing: 8
+
+                                    MD.Text {
+                                        text: 'Snap without stops'
+                                        typescale: MD.Token.typescale.label_medium
+                                        opacity: 0.8
+                                    }
+                                    MD.Slider {
+                                        Layout.alignment: Qt.AlignHCenter
+                                        Layout.preferredHeight: 160
+                                        orientation: Qt.Vertical
+                                        snapMode: T.Slider.SnapAlways
+                                        from: 0
+                                        stepSize: 20
+                                        to: 100
+                                        tickVisibilityMode: MD.Enum.SliderTickNone
+                                    }
+                                }
+
+                                ColumnLayout {
+                                    spacing: 8
+
+                                    MD.Text {
+                                        text: 'Inset icon'
+                                        typescale: MD.Token.typescale.label_medium
+                                        opacity: 0.8
+                                    }
+                                    MD.Slider {
+                                        Layout.alignment: Qt.AlignHCenter
+                                        Layout.preferredHeight: 240
+                                        orientation: Qt.Vertical
+                                        from: 0
+                                        to: 100
+                                        value: 60
+                                        sliderSize: MD.Enum.SliderSizeMedium
+                                        insetIcon: MD.Token.icon.music_note
+                                        insetIconAtMin: MD.Token.icon.volume_off
+                                        labelBehavior: MD.Enum.SliderLabelGone
+                                        tickVisibilityMode: MD.Enum.SliderTickNone
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    ComponentCard {
+                        title: 'M2'
+                        spacing: 12
+
+                        RowLayout {
+                            Layout.alignment: Qt.AlignHCenter
+                            spacing: 24
+
+                            ColumnLayout {
+                                spacing: 8
+
+                                MD.Text {
+                                    text: 'Continuous'
+                                    typescale: MD.Token.typescale.label_medium
+                                    opacity: 0.8
+                                }
+                                MD.SliderM2 {
+                                    Layout.alignment: Qt.AlignHCenter
+                                }
+
+                                MD.Text {
+                                    text: 'Discrete'
+                                    typescale: MD.Token.typescale.label_medium
+                                    opacity: 0.8
+                                }
+                                MD.SliderM2 {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    snapMode: T.Slider.SnapAlways
+                                    from: 0
+                                    stepSize: 20
+                                    to: 100
+                                }
+                            }
+
+                            ColumnLayout {
+                                spacing: 8
+
+                                MD.Text {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    text: 'Vertical'
+                                    typescale: MD.Token.typescale.label_medium
+                                    opacity: 0.8
+                                }
+                                MD.SliderM2 {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    orientation: Qt.Vertical
+                                }
+                            }
                         }
                     }
                 }
