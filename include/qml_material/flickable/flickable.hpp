@@ -110,8 +110,8 @@ public:
     explicit Flickable(QQuickItem* parent = nullptr);
     ~Flickable() override;
 
-    auto flickableData() -> QQmlListProperty<QObject>;
-    auto flickableChildren() -> QQmlListProperty<QQuickItem>;
+    QQmlListProperty<QObject> flickableData();
+    QQmlListProperty<QQuickItem> flickableChildren();
 
     enum FlickableDirection
     {
@@ -131,89 +131,89 @@ public:
     };
     Q_ENUM(InputMaskMode)
 
-    auto contentWidth() const -> qreal;
-    auto setContentWidth(qreal value) -> void;
+    qreal contentWidth() const;
+    void setContentWidth(qreal value);
 
-    auto contentHeight() const -> qreal;
-    auto setContentHeight(qreal value) -> void;
+    qreal contentHeight() const;
+    void setContentHeight(qreal value);
 
-    auto         contentX() const -> qreal;
-    virtual auto setContentX(qreal position) -> void;
+    qreal         contentX() const;
+    virtual void setContentX(qreal position);
 
-    auto         contentY() const -> qreal;
-    virtual auto setContentY(qreal position) -> void;
+    qreal         contentY() const;
+    virtual void setContentY(qreal position);
 
-    auto topMargin() const -> qreal;
-    auto setTopMargin(qreal value) -> void;
+    qreal topMargin() const;
+    void setTopMargin(qreal value);
 
-    auto bottomMargin() const -> qreal;
-    auto setBottomMargin(qreal value) -> void;
+    qreal bottomMargin() const;
+    void setBottomMargin(qreal value);
 
-    auto leftMargin() const -> qreal;
-    auto setLeftMargin(qreal value) -> void;
+    qreal leftMargin() const;
+    void setLeftMargin(qreal value);
 
-    auto rightMargin() const -> qreal;
-    auto setRightMargin(qreal value) -> void;
+    qreal rightMargin() const;
+    void setRightMargin(qreal value);
 
-    virtual auto originY() const -> qreal;
-    virtual auto originX() const -> qreal;
+    virtual qreal originY() const;
+    virtual qreal originX() const;
 
-    auto isMoving() const -> bool;
-    auto isMovingHorizontally() const -> bool;
-    auto isMovingVertically() const -> bool;
-    auto isFlicking() const -> bool;
-    auto isFlickingHorizontally() const -> bool;
-    auto isFlickingVertically() const -> bool;
-    auto isDragging() const -> bool;
-    auto isDraggingHorizontally() const -> bool;
-    auto isDraggingVertically() const -> bool;
+    bool isMoving() const;
+    bool isMovingHorizontally() const;
+    bool isMovingVertically() const;
+    bool isFlicking() const;
+    bool isFlickingHorizontally() const;
+    bool isFlickingVertically() const;
+    bool isDragging() const;
+    bool isDraggingHorizontally() const;
+    bool isDraggingVertically() const;
 
-    auto pressDelay() const -> int;
-    auto setPressDelay(int delay) -> void;
+    int pressDelay() const;
+    void setPressDelay(int delay);
 
-    auto maximumFlickVelocity() const -> qreal;
-    auto setMaximumFlickVelocity(qreal value) -> void;
+    qreal maximumFlickVelocity() const;
+    void setMaximumFlickVelocity(qreal value);
 
-    auto flickDeceleration() const -> qreal;
-    auto setFlickDeceleration(qreal value) -> void;
+    qreal flickDeceleration() const;
+    void setFlickDeceleration(qreal value);
 
-    auto isInteractive() const -> bool;
-    auto setInteractive(bool value) -> void;
+    bool isInteractive() const;
+    void setInteractive(bool value);
 
-    auto horizontalVelocity() const -> qreal;
-    auto verticalVelocity() const -> qreal;
+    qreal horizontalVelocity() const;
+    qreal verticalVelocity() const;
 
-    auto isAtXEnd() const -> bool;
-    auto isAtXBeginning() const -> bool;
-    auto isAtYEnd() const -> bool;
-    auto isAtYBeginning() const -> bool;
+    bool isAtXEnd() const;
+    bool isAtXBeginning() const;
+    bool isAtYEnd() const;
+    bool isAtYBeginning() const;
 
-    auto contentItem() const -> QQuickItem*;
+    QQuickItem* contentItem() const;
 
-    auto flickableDirection() const -> FlickableDirection;
-    auto setFlickableDirection(FlickableDirection direction) -> void;
+    FlickableDirection flickableDirection() const;
+    void setFlickableDirection(FlickableDirection direction);
 
-    auto pixelAligned() const -> bool;
-    auto setPixelAligned(bool align) -> void;
+    bool pixelAligned() const;
+    void setPixelAligned(bool align);
 
-    auto synchronousDrag() const -> bool;
-    auto setSynchronousDrag(bool value) -> void;
+    bool synchronousDrag() const;
+    void setSynchronousDrag(bool value);
 
-    auto acceptedButtons() const -> Qt::MouseButtons;
-    auto setAcceptedButtons(Qt::MouseButtons buttons) -> void;
+    Qt::MouseButtons acceptedButtons() const;
+    void setAcceptedButtons(Qt::MouseButtons buttons);
 
-    auto inputMaskMode() const -> InputMaskMode;
-    auto setInputMaskMode(InputMaskMode mode) -> void;
+    InputMaskMode inputMaskMode() const;
+    void setInputMaskMode(InputMaskMode mode);
 
-    auto interactionItem() const -> QQuickItem*;
-    auto setInteractionItem(QQuickItem* item) -> void;
-    auto resetInteractionItem() -> void;
+    QQuickItem* interactionItem() const;
+    void setInteractionItem(QQuickItem* item);
+    void resetInteractionItem();
 
-    auto visibleArea() -> FlickableVisibleArea*;
+    FlickableVisibleArea* visibleArea();
 
-    Q_INVOKABLE auto resizeContent(qreal width, qreal height, QPointF center) -> void;
-    Q_INVOKABLE auto flick(qreal xVelocity, qreal yVelocity) -> void;
-    Q_INVOKABLE auto cancelFlick() -> void;
+    Q_INVOKABLE void resizeContent(qreal width, qreal height, QPointF center);
+    Q_INVOKABLE void flick(qreal xVelocity, qreal yVelocity);
+    Q_INVOKABLE void cancelFlick();
 
     Q_SIGNAL void contentWidthChanged();
     Q_SIGNAL void contentHeightChanged();

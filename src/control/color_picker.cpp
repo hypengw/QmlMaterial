@@ -94,7 +94,7 @@ static QColor extractCoolDominantColor(const QImage& src) {
     const double avg_sat = (sat_cnt > 0.0) ? (sat_sum / sat_cnt) : 0.0;
     if (sat_cnt < 200 || avg_sat < 0.06) {
         // to blue
-        return QColor::fromHslF(210.0 / 360.0, 0.12, 0.28);
+        return QColor::fromHslF(210.0f / 360.0f, 0.12f, 0.28f);
     }
 
     // find peak bin
@@ -139,7 +139,7 @@ static QColor extractCoolDominantColor(const QImage& src) {
         result = QColor(R, G, B);
     } else {
         // backup: s=0.25, l=0.32
-        result = QColor::fromHslF(peakHue / 360.f, 0.25, 0.32);
+        result = QColor::fromHslF(peakHue / 360.f, 0.25f, 0.32f);
     }
 
     // to HSL space for adjustment
