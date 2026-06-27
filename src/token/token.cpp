@@ -30,6 +30,7 @@ auto Token::segmented_button() const -> const SegmentedButtonSize& { return m_se
 auto Token::icon_button() const -> const IconButtonSize& { return m_icon_button; }
 auto Token::badge() const -> const BadgeSize& { return m_badge; }
 auto Token::carousel() const -> const Carousel& { return m_carousel; }
+auto Token::slider() const -> const Slider& { return m_slider; }
 auto Token::cal_curve_scale(double dpr) const -> double { return dpr >= 2.0 ? 1.0 : 4.0; }
 
 auto Token::datas() -> QQmlListProperty<QObject> { return { this, &m_datas }; }
