@@ -29,8 +29,8 @@ template<class T>
     return (int)x;
 }
 
-[[nodiscard]] constexpr float round(double x) { return (float)std::floor(x + 0.5); }
+[[nodiscard]] inline float round(double x) { return (float)std::floor(x + 0.5); }
 
-[[nodiscard]] constexpr int round_to_int(double x) { return saturate_to_int(round(x)); }
+[[nodiscard]] inline int round_to_int(double x) { return saturate_to_int(round(x)); }
 
 } // namespace qml_material::math

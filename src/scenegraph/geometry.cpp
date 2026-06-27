@@ -1,5 +1,8 @@
 #include "qml_material/scenegraph/geometry.h"
 
+#include <array>
+#include <optional>
+
 #include "qml_material/math/shadow_light.hpp"
 #include "qml_material/scenegraph/mesh/nine_patch.hpp"
 #include "qml_material/scenegraph/skia/skia_shadow.h"
