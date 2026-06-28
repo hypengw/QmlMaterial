@@ -6,6 +6,11 @@ project(
   VERSION ${QM_VERSION}
   LANGUAGES CXX)
 
+# Enable MSVC multi-processor compilation
+if(MSVC)
+  add_compile_options(/MP)
+endif()
+
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_AUTOMOC ON)
