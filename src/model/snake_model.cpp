@@ -24,7 +24,7 @@ SnakeModel::SnakeModel(QObject* parent): QAbstractListModel(parent) {
 }
 SnakeModel::~SnakeModel() {}
 
-int SnakeModel::rowCount(const QModelIndex&) const { return m_items.size(); }
+int SnakeModel::rowCount(const QModelIndex&) const { return static_cast<int>(m_items.size()); }
 
 QVariant SnakeModel::data(const QModelIndex& index, int role) const {
     auto  idx = index.row();

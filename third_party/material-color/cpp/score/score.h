@@ -36,7 +36,7 @@ namespace material_color_utilities {
  */
 struct ScoreOptions {
   size_t desired = 4;  // 4 colors matches the Android wallpaper picker.
-  int fallback_color_argb = 0xff4285f4;  // Google Blue.
+  int fallback_color_argb = static_cast<int>(0xff4285f4u);  // Google Blue.
   bool filter = true;                    // Avoid unsuitable colors.
 };
 

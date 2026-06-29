@@ -44,12 +44,12 @@ auto Util::transparent(QColor in, float alpha) noexcept -> QColor {
 }
 
 auto Util::hoverColor(QColor in) noexcept -> QColor {
-    in.setAlphaF(0.08);
+    in.setAlphaF(0.08f);
     return in;
 }
 
 auto Util::pressColor(QColor in) noexcept -> QColor {
-    in.setAlphaF(0.18);
+    in.setAlphaF(0.18f);
     return in;
 }
 
@@ -155,11 +155,11 @@ void Util::track(QVariant, Track t) {
     switch (t) {
     case TrackCreate:
         m_tracked++;
-        std::printf("track create %lu", m_tracked);
+        std::printf("track create %zu", m_tracked);
         break;
     case TrackDelete:
         m_tracked--;
-        std::printf("track delete %lu", m_tracked);
+        std::printf("track delete %zu", m_tracked);
         break;
     }
 }
@@ -331,7 +331,7 @@ bool     Util::disconnectAll(QObject* obj, const QString& name) {
     return QObject::disconnect(obj, signal, nullptr, QMetaMethod {});
 }
 
-quint32 Util::poolObjectCount() noexcept { return pool_object_count(); }
+quint32 Util::poolObjectCount() noexcept { return static_cast<quint32>(pool_object_count()); }
 qint32  Util::i32Max() noexcept { return std::numeric_limits<qint32>::max(); }
 
 } // namespace qml_material

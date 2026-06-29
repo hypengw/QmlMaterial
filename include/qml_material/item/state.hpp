@@ -13,6 +13,7 @@ namespace qml_material
 
 class State : public QObject, public QQmlParserStatus {
     Q_OBJECT
+    Q_INTERFACES(QQmlParserStatus)
     QML_NAMED_ELEMENT(MStateImpl)
     Q_PROPERTY(QQmlListProperty<QObject> datas READ datas FINAL)
     Q_CLASSINFO("DefaultProperty", "datas")
