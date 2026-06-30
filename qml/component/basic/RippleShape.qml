@@ -15,6 +15,16 @@ Item {
     property alias color: m_back.color
     property alias corners: m_back.corners
     property alias radius: m_back.radius
+    readonly property real _maxCorner: Math.min(root.width, root.height) * 0.5
+    readonly property MD.corners _shapeCorners: MD.Util.corners(
+        root._clampCorner(m_back.corners.topLeft),
+        root._clampCorner(m_back.corners.topRight),
+        root._clampCorner(m_back.corners.bottomLeft),
+        root._clampCorner(m_back.corners.bottomRight))
+
+    function _clampCorner(value) {
+        return Math.min(Math.max(value, 0), root._maxCorner);
+    }
 
     clip: false
 
@@ -58,49 +68,49 @@ Item {
                 }
             }
 
-            startX: m_back.corners.topLeft
+            startX: root._shapeCorners.topLeft
 
             startY: 0
 
             PathLine {
-                x: root.width - m_back.corners.topRight
+                x: root.width - root._shapeCorners.topRight
                 y: 0
             }
             PathArc {
-                relativeX: m_back.corners.topRight
-                relativeY: m_back.corners.topRight
-                radiusX: m_back.corners.topRight
-                radiusY: m_back.corners.topRight
+                relativeX: root._shapeCorners.topRight
+                relativeY: root._shapeCorners.topRight
+                radiusX: root._shapeCorners.topRight
+                radiusY: root._shapeCorners.topRight
             }
             PathLine {
                 x: root.width
-                y: root.height - m_back.corners.bottomRight
+                y: root.height - root._shapeCorners.bottomRight
             }
             PathArc {
-                relativeX: -m_back.corners.bottomRight
-                relativeY: m_back.corners.bottomRight
-                radiusX: m_back.corners.bottomRight
-                radiusY: m_back.corners.bottomRight
+                relativeX: -root._shapeCorners.bottomRight
+                relativeY: root._shapeCorners.bottomRight
+                radiusX: root._shapeCorners.bottomRight
+                radiusY: root._shapeCorners.bottomRight
             }
             PathLine {
-                x: m_back.corners.bottomLeft
+                x: root._shapeCorners.bottomLeft
                 y: root.height
             }
             PathArc {
-                relativeX: -m_back.corners.bottomLeft
-                relativeY: -m_back.corners.bottomLeft
-                radiusX: m_back.corners.bottomLeft
-                radiusY: m_back.corners.bottomLeft
+                relativeX: -root._shapeCorners.bottomLeft
+                relativeY: -root._shapeCorners.bottomLeft
+                radiusX: root._shapeCorners.bottomLeft
+                radiusY: root._shapeCorners.bottomLeft
             }
             PathLine {
                 x: 0
-                y: m_back.corners.topLeft
+                y: root._shapeCorners.topLeft
             }
             PathArc {
-                x: m_back.corners.topLeft
+                x: root._shapeCorners.topLeft
                 y: 0
-                radiusX: m_back.corners.topLeft
-                radiusY: m_back.corners.topLeft
+                radiusX: root._shapeCorners.topLeft
+                radiusY: root._shapeCorners.topLeft
             }
         }
     }

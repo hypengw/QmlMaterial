@@ -186,6 +186,8 @@ set(QML_FILES
     qml/control/ItemDelegate.qml
     qml/control/HorizontalHeaderView.qml
     qml/control/HorizontalHeaderViewDelegate.qml
+    qml/control/VerticalHeaderView.qml
+    qml/control/VerticalHeaderViewDelegate.qml
     qml/control/Label.qml
     qml/control/BusyIndicator.qml
     qml/control/BusyIndicatorShape.qml

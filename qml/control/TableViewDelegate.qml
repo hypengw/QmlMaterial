@@ -9,16 +9,27 @@ T.TableViewDelegate {
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
+    leftPadding: 16
+    rightPadding: 16
+    topPadding: 8
+    bottomPadding: 8
+
     required property int column
     required property int row
     required property var model
     readonly property bool rowHovered: hovered || ((TableView.view as MD.TableView)?.hoveredRow ?? -1) === row
     property int rows: TableView.view?.rows ?? 0
+    property int columns: TableView.view?.columns ?? 0
+    readonly property MD.TableView mdTableView: TableView.view as MD.TableView
     property MD.StateTableViewDelegate mdState: MD.StateTableViewDelegate {
         item: control
     }
-    property int radius: 0
-    property MD.corners corners: MD.Util.corners(radius)
+    property int radius: mdTableView?.effectiveRadius ?? 0
+    property MD.corners corners: mdTableView?.hasHeader
+                                 ? MD.Util.tableWithHeaderCorners(row, column, rows, columns, radius)
+                                 : MD.Util.tableCorners(row, column, rows, columns, radius)
+
+    highlighted: selected
 
     onHoveredChanged: MD.Util.cellHoveredOn(TableView.view, hovered, row, column)
 
@@ -26,13 +37,16 @@ T.TableViewDelegate {
         clip: false
         text: control.model.display ?? ""
         elide: Text.ElideRight
-        color: control.highlighted ? control.palette.highlightedText : control.palette.buttonText
+        typescale: MD.Token.typescale.body_medium
+        verticalAlignment: Text.AlignVCenter
+        color: control.mdState.textColor
+        opacity: control.mdState.contentOpacity
         visible: !control.editing
     }
 
     background: MD.ElevationRectangle {
         implicitWidth: 64
-        implicitHeight: 56
+        implicitHeight: 44
 
         opacity: control.mdState.backgroundOpacity
 
@@ -55,12 +69,19 @@ T.TableViewDelegate {
             color: control.mdState.stateLayerColor
         }
 
-        MD.ItemHolder {
-            id: m_holder_divider
+        MD.Divider {
             anchors.bottom: parent.bottom
             width: parent.width
-            height: implicitHeight
+            color: control.mdState.outlineColor
             visible: control.row + 1 !== control.rows
+        }
+
+        MD.Divider {
+            anchors.right: parent.right
+            height: parent.height
+            orientation: Qt.Vertical
+            color: control.mdState.outlineColor
+            visible: control.column + 1 !== control.columns
         }
     }
 

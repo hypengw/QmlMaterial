@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Templates as T
+import Qt.labs.qmlmodels
 import Qcm.Material as MD
 import "carousel" as CarouselDemo
 
@@ -1464,6 +1465,63 @@ MD.Page {
                             Layout.preferredWidth: 400
                             showHeader: false
                             color: '#6750A4'
+                        }
+                    }
+
+                    ComponentCard {
+                        title: 'Table'
+
+                        TableModel {
+                            id: m_table_model
+
+                            TableModelColumn { display: "component" }
+                            TableModelColumn { display: "usage" }
+
+                            rows: [
+                                { component: "Buttons", usage: "Primary and secondary actions" },
+                                { component: "Bottom sheets", usage: "Modal and persistent surfaces" },
+                                { component: "Navigation", usage: "Destination switching" },
+                                { component: "Text inputs", usage: "Form controls" },
+                                { component: "Tables", usage: "Structured data" }
+                            ]
+                        }
+
+                        GridLayout {
+                            Layout.alignment: Qt.AlignHCenter
+                            Layout.preferredWidth: 560
+                            Layout.preferredHeight: 268
+                            columns: 1
+                            columnSpacing: 0
+                            rowSpacing: 0
+
+                            MD.HorizontalHeaderView {
+                                id: m_horizontal_header
+                                Layout.row: 0
+                                Layout.column: 0
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 48
+                                clip: true
+                                syncView: m_table_view
+                                model: ["Component", "Usage"]
+                            }
+
+                            MD.TableView {
+                                id: m_table_view
+                                Layout.row: 1
+                                Layout.column: 0
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                radius: MD.Token.shape.corner.extra_large
+                                hasHeader: true
+                                model: m_table_model
+                                selectionBehavior: TableView.SelectionDisabled
+                                columnWidthProvider: function(column) {
+                                    return [200, 360][column] ?? 120;
+                                }
+                                rowHeightProvider: function() {
+                                    return 44;
+                                }
+                            }
                         }
                     }
                 }

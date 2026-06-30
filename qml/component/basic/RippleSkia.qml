@@ -54,6 +54,16 @@ Item {
     readonly property real _activePhase:    debugEnabled ? debugPhase    : _phase
     readonly property real _activeTouchX:   (debugEnabled && debugTouchX >= 0) ? debugTouchX : pressX
     readonly property real _activeTouchY:   (debugEnabled && debugTouchY >= 0) ? debugTouchY : pressY
+    readonly property real _maxCorner: Math.min(root.width, root.height) * 0.5
+    readonly property vector4d _shaderCorners: Qt.vector4d(
+        root._clampCorner(root.corners.bottomRight),
+        root._clampCorner(root.corners.topRight),
+        root._clampCorner(root.corners.bottomLeft),
+        root._clampCorner(root.corners.topLeft))
+
+    function _clampCorner(value) {
+        return Math.min(Math.max(value, 0), root._maxCorner);
+    }
 
     // Distance from the touch point to the furthest corner — this is the
     // radius the wave needs to reach so it just covers the whole shape at
@@ -120,7 +130,7 @@ Item {
         property color in_color: root.color
         property color in_sparkleColor: Qt.rgba(1, 1, 1, 0.5)
         property vector2d in_size: Qt.vector2d(root.width, root.height)
-        property vector4d in_corners: root.corners.toVector4D()
+        property vector4d in_corners: root._shaderCorners
 
         vertexShader: "qrc:/Qcm/Material/assets/shader/default.vert.qsb"
         fragmentShader: "qrc:/Qcm/Material/assets/shader/ripple.frag.qsb"
