@@ -26,10 +26,10 @@ class FlickableVisibleArea : public QObject {
 public:
     explicit FlickableVisibleArea(Flickable* parent = nullptr);
 
-    auto xPosition() const -> qreal;
-    auto yPosition() const -> qreal;
-    auto widthRatio() const -> qreal;
-    auto heightRatio() const -> qreal;
+    qreal xPosition() const;
+    qreal yPosition() const;
+    qreal widthRatio() const;
+    qreal heightRatio() const;
 
     auto updateVisible() -> void;
 

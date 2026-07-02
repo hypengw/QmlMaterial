@@ -50,10 +50,10 @@ auto isTouchEvent(QEvent* event) -> bool {
 FlickableVisibleArea::FlickableVisibleArea(Flickable* parent)
     : QObject(parent), m_flickable(parent) {}
 
-auto FlickableVisibleArea::xPosition() const -> qreal { return m_xPosition; }
-auto FlickableVisibleArea::yPosition() const -> qreal { return m_yPosition; }
-auto FlickableVisibleArea::widthRatio() const -> qreal { return m_widthRatio; }
-auto FlickableVisibleArea::heightRatio() const -> qreal { return m_heightRatio; }
+qreal FlickableVisibleArea::xPosition() const { return m_xPosition; }
+qreal FlickableVisibleArea::yPosition() const { return m_yPosition; }
+qreal FlickableVisibleArea::widthRatio() const { return m_widthRatio; }
+qreal FlickableVisibleArea::heightRatio() const { return m_heightRatio; }
 
 auto FlickableVisibleArea::updateVisible() -> void {
     if (! m_flickable) return;
@@ -387,7 +387,7 @@ auto Flickable::resetInteractionItem() -> void { setInteractionItem(nullptr); }
 
 auto Flickable::visibleArea() -> FlickableVisibleArea* { return m_visibleArea; }
 
-auto Flickable::resizeContent(qreal width, qreal height, QPointF center) -> void {
+void Flickable::resizeContent(qreal width, qreal height, QPointF center) {
     const qreal oldWidth  = vWidth();
     const qreal oldHeight = vHeight();
     m_hData.viewSize      = width;
@@ -404,7 +404,7 @@ auto Flickable::resizeContent(qreal width, qreal height, QPointF center) -> void
     updateBeginningEnd();
 }
 
-auto Flickable::flick(qreal xVelocity, qreal yVelocity) -> void {
+void Flickable::flick(qreal xVelocity, qreal yVelocity) {
     m_hData.resetDrag();
     m_vData.resetDrag();
     bool flickedX = false;
@@ -424,7 +424,7 @@ auto Flickable::flick(qreal xVelocity, qreal yVelocity) -> void {
     }
 }
 
-auto Flickable::cancelFlick() -> void {
+void Flickable::cancelFlick() {
     stopAxisMotion(HorizontalAxis);
     stopAxisMotion(VerticalAxis);
     movementEnding();
