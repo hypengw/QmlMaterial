@@ -99,9 +99,7 @@ T.Slider {
         }
     }
     readonly property real __inactiveTrackThickness:
-        control.sliderSize >= MD.Enum.SliderSizeMedium
-            ? control.__activeTrackThickness
-            : MD.Token.slider.inactive_track_height
+        control.__activeTrackThickness
     readonly property real __stopSize: MD.Token.slider.stop_indicator_size
     readonly property real __insideCorner: MD.Token.slider.track_inside_corner
     readonly property real __outerCorner: control.__activeTrackThickness / 2
@@ -146,12 +144,12 @@ T.Slider {
             }
             return control.handleCenter + control.__trackGapSize + control.__insetIconPad;
         }
-        return (control.implicitBackgroundWidth - control.insetIconSize) / 2;
+        return (bgItem.width - control.insetIconSize) / 2;
     }
 
     readonly property real __insetIconY: {
         if (control.horizontal) {
-            return (control.implicitBackgroundHeight - control.insetIconSize) / 2;
+            return (bgItem.height - control.insetIconSize) / 2;
         }
         if (control.__verticalInsetIconFitsAtTop) {
             return control.__insetIconPad;
@@ -239,7 +237,12 @@ T.Slider {
             }
             corners: {
                 const r = control.__inactiveTrackThickness / 2;
-                return MD.Util.corners(r, r, r, r);
+                if (control.horizontal) {
+                    return MD.Util.corners(control.__insideCorner, r,
+                                           control.__insideCorner, r);
+                }
+                return MD.Util.corners(r, r,
+                                       control.__insideCorner, control.__insideCorner);
             }
             color: control.mdState.trackInactiveColor
             visible: width > 0 && height > 0

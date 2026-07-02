@@ -26,28 +26,50 @@ Item {
         return root.handlePressed || root.handleHasFocus || root.handleHovered;
     }
 
+    function __clampToControl(preferred, itemOffset, labelSize, controlSize) {
+        const min = -itemOffset;
+        const max = controlSize - itemOffset - labelSize;
+        if (max < min)
+            return min;
+        return Math.min(Math.max(preferred, min), max);
+    }
+
     // The value indicator (bubble)
     MD.Control {
         id: valueIndicator
         y: {
-            if (!root.horizontal)
-                return (parent.height - height) / 2;
-            if (root.labelBehavior === MD.Enum.SliderLabelWithinBounds) {
-                const above = -height - 4;
-                const below = parent.height + 4;
-                return above >= 0 ? above : below;
+            if (!root.horizontal) {
+                const centered = (parent.height - height) / 2;
+                if (root.labelBehavior === MD.Enum.SliderLabelWithinBounds && root.control)
+                    return root.__clampToControl(centered, root.y, height, root.control.height);
+                return centered;
             }
-            return -height - 4;
+            const above = -height - 4;
+            if (root.labelBehavior !== MD.Enum.SliderLabelWithinBounds || !root.control)
+                return above;
+            if (root.y + above >= 0)
+                return above;
+            const below = parent.height + 4;
+            if (root.y + below + height <= root.control.height)
+                return below;
+            return root.__clampToControl(above, root.y, height, root.control.height);
         }
         x: {
-            if (root.horizontal)
-                return (parent.width - width) / 2;
-            if (root.labelBehavior === MD.Enum.SliderLabelWithinBounds) {
-                const left = -width - 4;
-                const right = parent.width + 4;
-                return left >= 0 ? left : right;
+            if (root.horizontal) {
+                const centered = (parent.width - width) / 2;
+                if (root.labelBehavior === MD.Enum.SliderLabelWithinBounds && root.control)
+                    return root.__clampToControl(centered, root.x, width, root.control.width);
+                return centered;
             }
-            return -width - 4;
+            const left = -width - 4;
+            if (root.labelBehavior !== MD.Enum.SliderLabelWithinBounds || !root.control)
+                return left;
+            if (root.x + left >= 0)
+                return left;
+            const right = parent.width + 4;
+            if (root.x + right + width <= root.control.width)
+                return right;
+            return root.__clampToControl(left, root.x, width, root.control.width);
         }
 
         visible: root.__valueIndicatorActive
