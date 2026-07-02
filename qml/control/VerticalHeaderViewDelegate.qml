@@ -3,7 +3,7 @@ import QtQuick
 import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.HeaderViewDelegate {
+MD.ItemDelegate {
     id: control
 
     leftPadding: 16
@@ -13,6 +13,10 @@ T.HeaderViewDelegate {
 
     required property int row
     required property int column
+    required property var model
+    required property bool selected
+
+    readonly property T.VerticalHeaderView headerView: TableView.view as T.VerticalHeaderView
     readonly property int section: Math.max(row, column)
     readonly property string textRole: control.headerView?.textRole ?? ""
     readonly property int rows: {
@@ -41,8 +45,6 @@ T.HeaderViewDelegate {
         return control.model;
     }
     highlighted: control.selected
-    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
-    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
     background: Rectangle {
         implicitWidth: 56

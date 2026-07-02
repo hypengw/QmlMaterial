@@ -104,7 +104,7 @@ foreach(scene ${VISUAL_SCENES})
     NAME visual_${scene}
     COMMAND bash -c
       "LIBGL_ALWAYS_SOFTWARE=1 \
-       QT_QPA_PLATFORM=eglfs \
+       QT_QPA_PLATFORM=\${QT_QPA_PLATFORM:-eglfs} \
        QML_IMPORT_PATH=${CMAKE_BINARY_DIR}/qml_modules \
        $<TARGET_FILE:qm_grab> \
          ${CMAKE_CURRENT_SOURCE_DIR}/scenes/${scene}.qml \
