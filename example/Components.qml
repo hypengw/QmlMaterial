@@ -460,16 +460,55 @@ MD.Page {
                         Row {
                             Layout.alignment: Qt.AlignHCenter
                             MD.BusyIconButton {
-                                checkable: true
-                                busy: checked
-                                icon.name: MD.Token.icon.add
+                                action: MD.Action {
+                                    id: m_icon_busy_action
+                                    icon.name: MD.Token.icon.add
+                                    onTriggered: {
+                                        if (busy !== MD.Enum.Idle)
+                                            return;
+                                        progress = 0;
+                                        busy = MD.Enum.Busy;
+                                        m_icon_busy_delay.restart();
+                                    }
+                                }
                             }
                             MD.BusyButton {
+                                id: m_busy_button
                                 anchors.verticalCenter: parent.verticalCenter
-                                checkable: true
-                                busy: checked
+                                busy: m_busy_button_timer.running ? MD.Enum.Busy : MD.Enum.Idle
                                 icon.name: MD.Token.icon.add
                                 text: 'add'
+                                onClicked: {
+                                    if (!m_busy_button_timer.running)
+                                        m_busy_button_timer.restart();
+                                }
+                            }
+                        }
+
+                        Timer {
+                            id: m_busy_button_timer
+                            interval: 2000
+                        }
+
+                        Timer {
+                            id: m_icon_busy_delay
+                            interval: 2000
+                            onTriggered: {
+                                m_icon_busy_action.busy = MD.Enum.Progress;
+                                m_icon_progress_timer.restart();
+                            }
+                        }
+
+                        Timer {
+                            id: m_icon_progress_timer
+                            interval: 300
+                            repeat: true
+                            onTriggered: {
+                                m_icon_busy_action.progress = Math.min(1, m_icon_busy_action.progress + 0.05);
+                                if (m_icon_busy_action.progress >= 1) {
+                                    m_icon_busy_action.busy = MD.Enum.Idle;
+                                    stop();
+                                }
                             }
                         }
                     }

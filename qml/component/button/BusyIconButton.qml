@@ -4,11 +4,15 @@ import Qcm.Material as MD
 
 MD.IconButton {
     id: control
-    property bool busy: {
-        if (action instanceof MD.Action) {
+    property int busy: {
+        if (action instanceof MD.Action)
             return (action as MD.Action).busy;
-        }
-        return false;
+        return MD.Enum.Idle;
+    }
+    property real progress: {
+        if (action instanceof MD.Action)
+            return (action as MD.Action).progress;
+        return 0;
     }
     contentItem: Item {
         implicitWidth: control.icon.width
@@ -17,7 +21,7 @@ MD.IconButton {
 
         MD.Loader {
             anchors.centerIn: parent
-            sourceComponent: control.busy ? comp_busy : comp_icon
+            sourceComponent: control.busy !== MD.Enum.Idle ? comp_busy : comp_icon
         }
 
         Component {
@@ -34,7 +38,9 @@ MD.IconButton {
             id: comp_busy
             MD.CircularIndicator {
                 anchors.centerIn: parent
-                running: true
+                indeterminate: control.busy !== MD.Enum.Progress
+                running: control.busy !== MD.Enum.Progress
+                value: control.progress
                 strokeWidth: 2
                 padding: 0
                 implicitWidth: {

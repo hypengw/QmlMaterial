@@ -7,6 +7,18 @@ T.MenuItem {
     id: control
 
     property bool selected: false
+    readonly property int busy: {
+        const a = control.action;
+        if (a instanceof MD.Action)
+            return (a as MD.Action).busy;
+        return MD.Enum.Idle;
+    }
+    readonly property real progress: {
+        const a = control.action;
+        if (a instanceof MD.Action)
+            return (a as MD.Action).progress;
+        return 0;
+    }
     property MD.StateMenuItem mdState: MD.StateMenuItem {
         item: control
     }
@@ -64,16 +76,15 @@ T.MenuItem {
         icon.fill: control.checked
 
         icon_component: m_loading_comp
-        icon_component_active: {
-            const a = control.action;
-            return a instanceof MD.Action && (a as MD.Action).busy;
-        }
+        icon_component_active: control.busy !== MD.Enum.Idle
 
         Component {
             id: m_loading_comp
             MD.CircularIndicator {
                 anchors.centerIn: parent
-                running: true
+                indeterminate: control.busy !== MD.Enum.Progress
+                running: control.busy !== MD.Enum.Progress
+                value: control.progress
                 strokeWidth: 2
                 implicitWidth: {
                     const w = Math.min(control.icon.width, control.icon.height);

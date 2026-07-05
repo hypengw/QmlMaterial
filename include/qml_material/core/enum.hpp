@@ -31,6 +31,14 @@ public:
     };
     Q_ENUM(IconLabelStyle)
 
+    enum class BusyState
+    {
+        Idle = 0,
+        Busy,
+        Progress
+    };
+    Q_ENUM(BusyState)
+
     enum class ButtonSize {
         XS = 0,
         S,

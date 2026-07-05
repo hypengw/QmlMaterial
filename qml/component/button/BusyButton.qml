@@ -4,11 +4,15 @@ import Qcm.Material as MD
 
 MD.Button {
     id: control
-    property bool busy: {
-        if (action instanceof MD.Action) {
+    property int busy: {
+        if (action instanceof MD.Action)
             return (action as MD.Action).busy;
-        }
-        return false;
+        return MD.Enum.Idle;
+    }
+    property real progress: {
+        if (action instanceof MD.Action)
+            return (action as MD.Action).progress;
+        return 0;
     }
     contentItem.visible: !busy
 
@@ -16,13 +20,15 @@ MD.Button {
         id: m_loader
         anchors.centerIn: parent
         opacity: control.mdState.contentOpacity
-        active: control.busy
+        active: control.busy !== MD.Enum.Idle
         sourceComponent: comp_busy
         Component {
             id: comp_busy
             MD.CircularIndicator {
                 anchors.centerIn: parent
-                running: true
+                indeterminate: control.busy !== MD.Enum.Progress
+                running: control.busy !== MD.Enum.Progress
+                value: control.progress
                 strokeWidth: 2
                 padding: 0
                 implicitWidth: {
