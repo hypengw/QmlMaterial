@@ -16,6 +16,9 @@ MD.CarouselItem {
         if (m_image.status === Image.Ready && m_image.sourceSize.height > 0) {
             return m_image.sourceSize.width / m_image.sourceSize.height;
         }
+        if (model.pixelWidth !== undefined && model.pixelHeight > 0) {
+            return model.pixelWidth / model.pixelHeight;
+        }
         if (model !== undefined && model !== null && typeof model !== 'string' && model.aspectRatio !== undefined) {
             return model.aspectRatio;
         }
@@ -89,6 +92,8 @@ MD.CarouselItem {
             radius: root.effectiveCornerRadius
             elevation: MD.Token.elevation.level0
             asynchronous: true
+            cache: false
+            inner.layer.enabled: false
         }
 
         MD.Text {
