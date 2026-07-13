@@ -485,7 +485,7 @@ qt_add_shaders(
   PREFIX
   "/Qcm/Material"
   GLSL
-  "300es,330"
+  "150,140,130,330,300es"
   ${SHADER_OPT}
   DEFINES
   ${SHADER_DEFINES}
