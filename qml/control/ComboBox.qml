@@ -1,6 +1,5 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Window
 import QtQuick.Templates as T
 import Qcm.Material as MD
 
@@ -8,6 +7,7 @@ T.ComboBox {
     id: control
 
     property int type: MD.Enum.TextFieldOutlined
+    property real popupMaximumHeight: 0
     property MD.StateComboBox mdState: MD.StateComboBox {
         item: control
     }
@@ -72,7 +72,9 @@ T.ComboBox {
 
     popup: MD.Menu {
         y: control.editable ? control.height - 5 : 0
-        height: implicitHeight
+        height: control.popupMaximumHeight > 0
+            ? Math.min(implicitHeight, control.popupMaximumHeight)
+            : implicitHeight
         width: control.width
         transformOrigin: Item.Top
         modal: false

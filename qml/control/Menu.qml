@@ -1,7 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Templates as T
-import QtQuick.Window
 import QtQml.Models
 
 import Qcm.Material as MD
@@ -75,7 +74,7 @@ T.Menu {
         model: control.model
     }
 
-    contentItem: ListView {
+    contentItem: MD.ListView {
         implicitHeight: contentHeight
         model: {
             if (control.model) {
@@ -89,7 +88,7 @@ T.Menu {
             }
             return control.contentModel;
         }
-        interactive: Window.window ? contentHeight + control.topPadding + control.bottomPadding > Window.window.height : false
+        interactive: contentHeight + control.topPadding + control.bottomPadding > control.height
         keyNavigationEnabled: false
         T.ScrollIndicator.vertical: MD.ScrollIndicator {}
     }
