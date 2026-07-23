@@ -414,10 +414,11 @@ void ToolBarLayoutPrivate::calculateImplicitSize() {
         maxHeight = std::max(maxHeight, moreButtonInstance->implicitHeight());
     };
 
+    // setImplicitSize can synchronously resize the item; let that relayout invalidate this cache.
+    implicitSizeValid = true;
+
     q->setImplicitSize(maxWidth, maxHeight);
     Q_EMIT q->hiddenActionsChanged();
-
-    implicitSizeValid = true;
 
     q->polish();
 }
