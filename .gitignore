@@ -9,3 +9,4 @@ build
 /qml-explore
 /record
 CMakeLists.txt.user*
+CMakePresets.json

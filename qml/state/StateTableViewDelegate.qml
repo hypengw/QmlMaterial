@@ -5,7 +5,7 @@ import Qcm.Material as MD
 MD.MState {
     id: root
 
-    required property T.TableViewDelegate item
+    required property T.ItemDelegate item
 
     elevation: MD.Token.elevation.level0
     readonly property bool selected: item.selected || item.highlighted

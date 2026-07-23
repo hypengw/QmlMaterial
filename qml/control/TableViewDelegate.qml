@@ -3,11 +3,8 @@ import QtQuick
 import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.TableViewDelegate {
+MD.ItemDelegate {
     id: control
-
-    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
-    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
     leftPadding: 16
     rightPadding: 16
@@ -17,17 +14,20 @@ T.TableViewDelegate {
     required property int column
     required property int row
     required property var model
-    readonly property bool rowHovered: hovered || ((TableView.view as MD.TableView)?.hoveredRow ?? -1) === row
+    required property bool selected
+    required property bool current
+    required property bool editing
+
+    readonly property TableView tableView: TableView.view as TableView
+    readonly property QtObject mdTableView: TableView.view as QtObject
+    readonly property bool rowHovered: hovered || (mdTableView?.hoveredRow ?? -1) === row
     property int rows: TableView.view?.rows ?? 0
     property int columns: TableView.view?.columns ?? 0
-    readonly property MD.TableView mdTableView: TableView.view as MD.TableView
     property MD.StateTableViewDelegate mdState: MD.StateTableViewDelegate {
         item: control
     }
     property int radius: mdTableView?.effectiveRadius ?? 0
-    property MD.corners corners: mdTableView?.hasHeader
-                                 ? MD.Util.tableWithHeaderCorners(row, column, rows, columns, radius)
-                                 : MD.Util.tableCorners(row, column, rows, columns, radius)
+    property MD.corners corners: mdTableView?.hasHeader ? MD.Util.tableWithHeaderCorners(row, column, rows, columns, radius) : MD.Util.tableCorners(row, column, rows, columns, radius)
 
     highlighted: selected
 

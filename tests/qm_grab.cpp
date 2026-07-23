@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
                readResult.pixelSize.width(), readResult.pixelSize.height(),
                QImage::Format_RGBA8888_Premultiplied);
     // Mirror vertically — RHI textures origin is bottom-left for OpenGL.
-    img = img.flipped(Qt::Vertical);
+    img = img.mirrored(false, true);
 
     if (!img.save(outputPng)) {
       std::cerr << "Failed to save PNG: " << outputPng.toStdString() << "\n";

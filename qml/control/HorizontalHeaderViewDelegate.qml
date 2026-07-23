@@ -3,7 +3,7 @@ import QtQuick
 import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.HeaderViewDelegate {
+MD.ItemDelegate {
     id: control
 
     leftPadding: 16
@@ -13,6 +13,10 @@ T.HeaderViewDelegate {
 
     required property int column
     required property int row
+    required property var model
+    required property bool selected
+
+    readonly property T.HorizontalHeaderView headerView: TableView.view as T.HorizontalHeaderView
     readonly property int section: Math.max(row, column)
     readonly property string textRole: control.headerView?.textRole ?? ""
     readonly property int columns: {
@@ -29,12 +33,8 @@ T.HeaderViewDelegate {
             return headerColumns;
         return control.headerView?.syncView?.columns ?? 0;
     }
-    readonly property int radius: (control.headerView?.syncView as MD.TableView)?.effectiveRadius ?? 0
-    readonly property MD.corners corners: MD.Util.corners(
-        section === 0 ? radius : 0,
-        section + 1 === columns ? radius : 0,
-        0,
-        0)
+    readonly property int radius: (control.headerView?.syncView as QtObject)?.effectiveRadius ?? 0
+    readonly property MD.corners corners: MD.Util.corners(section === 0 ? radius : 0, section + 1 === columns ? radius : 0, 0, 0)
     readonly property var displayText: {
         if (control.model === undefined || control.model === null)
             return "";
@@ -47,8 +47,6 @@ T.HeaderViewDelegate {
         return control.model;
     }
     highlighted: control.selected
-    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
-    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
     background: MD.Rectangle {
         implicitWidth: 64

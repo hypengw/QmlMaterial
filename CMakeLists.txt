@@ -440,6 +440,9 @@ target_sources("${LIBNAME}plugin" PRIVATE src/plugin.cpp)
 
 target_compile_features(${LIBNAME} PRIVATE cxx_std_20)
 target_compile_definitions(${LIBNAME} PRIVATE QML_MATERIAL_EXPORT)
+if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
+  target_compile_definitions(${LIBNAME} PUBLIC QML_MATERIAL_STATIC_DEFINE)
+endif()
 set_source_files_properties(
   "${CMAKE_CURRENT_BINARY_DIR}/${LIBNAME}_qmltyperegistrations.cpp"
   TARGET_DIRECTORY "${LIBNAME}" PROPERTIES INCLUDE_DIRECTORIES
