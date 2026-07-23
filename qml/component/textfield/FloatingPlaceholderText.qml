@@ -7,12 +7,24 @@ Text {
     property int verticalPadding: 8
     property int controlHeight: height
     property int largestHeight: 0
+    property color cutoutColor: "transparent"
 
     property bool filled: false
     property real targetScale: 0.8
+    readonly property bool floated: controlFocus || controlHasText
     y: (controlHeight - height) / 2.0
     scale: 1.0
     verticalAlignment: Text.AlignVCenter
+
+    Rectangle {
+        z: -1
+        visible: root.floated && root.cutoutColor.a > 0
+        x: -6
+        anchors.verticalCenter: parent.verticalCenter
+        width: parent.implicitWidth * parent.scale + 12
+        height: Math.max(2, parent.largestHeight * parent.scale)
+        color: root.cutoutColor
+    }
 
     transformOrigin: {
         switch (effectiveHorizontalAlignment) {

@@ -16,6 +16,7 @@ MD.TextFieldEmbed {
     }
 
     font.capitalization: Font.MixedCase
+    typescale: control.mdState.typescale
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, Math.max(contentWidth, m_placeholder.implicitWidth) + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)
 
@@ -59,6 +60,9 @@ MD.TextFieldEmbed {
 
         filled: control.type === MD.Enum.TextFieldFilled
         controlHasText: control.length > 0
+        cutoutColor: control.type === MD.Enum.TextFieldFilled
+                     ? control.mdState.backgroundColor
+                     : "transparent"
         //controlImplicitBackgroundHeight: control.implicitBackgroundHeight
     }
 
@@ -106,8 +110,8 @@ MD.TextFieldEmbed {
             MD.OutlineTextFieldShape {
                 borderColor: control.mdState.outlineColor
                 radius: MD.Token.shape.corner.extra_small
-                floatWidth: m_placeholder.implicitWidth * m_placeholder.targetScale + 2 + 2
-                floatX: 16 - 2
+                floatWidth: m_placeholder.implicitWidth * m_placeholder.targetScale + 8
+                floatX: m_placeholder.x - 4
                 open: control.activeFocus || control.text.length > 0
             }
         }
