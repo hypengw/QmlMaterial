@@ -516,12 +516,59 @@ MD.Page {
                     ComponentCard {
                         title: 'SnakeBar'
 
-                        MD.Button {
-                            Layout.alignment: Qt.AlignHCenter
-                            mdState.type: MD.Enum.BtText
-                            text: 'Show snakeBar'
-                            onClicked: {
-                                m_snake.show("test");
+                        GridLayout {
+                            Layout.fillWidth: true
+                            columns: 2
+                            columnSpacing: 8
+                            rowSpacing: 8
+
+                            MD.Button {
+                                Layout.fillWidth: true
+                                mdState.type: MD.Enum.BtText
+                                text: 'Single line'
+                                onClicked: m_snake.show(
+                                    "Single-line snackbar with action",
+                                    6000,
+                                    0,
+                                    m_snake_action,
+                                    344)
+                            }
+
+                            MD.Button {
+                                Layout.fillWidth: true
+                                mdState.type: MD.Enum.BtText
+                                text: 'Two lines'
+                                onClicked: m_snake.show(
+                                    "Two-line snackbar with action",
+                                    6000,
+                                    0,
+                                    m_snake_action,
+                                    280)
+                            }
+
+                            MD.Button {
+                                Layout.fillWidth: true
+                                mdState.type: MD.Enum.BtText
+                                text: 'Longer action'
+                                onClicked: m_snake.show(
+                                    "Two-line snackbar\nwith longer action",
+                                    6000,
+                                    0,
+                                    m_snake_longer_action,
+                                    344,
+                                    true)
+                            }
+
+                            MD.Button {
+                                Layout.fillWidth: true
+                                mdState.type: MD.Enum.BtText
+                                text: 'Details'
+                                onClicked: m_snake.show(
+                                    "Import completed with additional details. 128 records were processed, 124 were added, three duplicates were skipped, and one record needs manual review before it can be published.",
+                                    6000,
+                                    0,
+                                    m_snake_action,
+                                    420)
                             }
                         }
                     }
@@ -1719,6 +1766,16 @@ MD.Page {
                 }
             }
         }
+    }
+
+    MD.Action {
+        id: m_snake_action
+        text: 'Action'
+    }
+
+    MD.Action {
+        id: m_snake_longer_action
+        text: 'Longer action'
     }
 
     MD.SnakeView {

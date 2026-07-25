@@ -16,12 +16,16 @@ struct SnakeModelItem {
     Q_PROPERTY(qint32 duration MEMBER duration FINAL)
     Q_PROPERTY(Enum::ToastFlags flag MEMBER flag FINAL)
     Q_PROPERTY(QObject* action MEMBER action FINAL)
+    Q_PROPERTY(qreal maximumWidth MEMBER maximum_width FINAL)
+    Q_PROPERTY(bool actionOnNewLine MEMBER action_on_new_line FINAL)
 public:
     qint32           id { 0 };
     QString          text {};
     qint32           duration { 0 };
     Enum::ToastFlags flag {};
     QObject*         action { nullptr };
+    qreal            maximum_width { 0 };
+    bool             action_on_new_line { false };
 };
 
 class SnakeModel : public QAbstractListModel {

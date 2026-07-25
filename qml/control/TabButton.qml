@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Templates as T
 import Qcm.Material as MD
+import Qcm.Material.Layouts as Lite
 
 T.TabButton {
     id: control
@@ -41,15 +42,33 @@ T.TabButton {
     font.weight: typescale.weight
     font.letterSpacing: typescale.tracking
 
-    contentItem: MD.IconLabel {
-        text: control.text
-        color: control.mdState.textColor
-        style: control.iconStyle
-        icon.name: control.icon.name
-        icon.size: control.icon.width
+    contentItem: Lite.Box {
+        alignment: Qt.AlignCenter
         opacity: control.mdState.contentOpacity
 
-        label.lineHeight: control.typescale.line_height
+        Lite.Row {
+            width: Math.min(implicitWidth, parent.width)
+            height: Math.min(implicitHeight, parent.height)
+            alignment: Qt.AlignHCenter | Qt.AlignVCenter
+            spacing: control.spacing
+
+            MD.Icon {
+                visible: control.iconStyle != MD.Enum.TextOnly && control.hasIcon
+                name: control.icon.name
+                size: control.icon.width
+                color: control.mdState.textColor
+            }
+
+            MD.Label {
+                visible: control.iconStyle != MD.Enum.IconOnly
+                text: control.text
+                color: control.mdState.textColor
+                useTypescale: false
+                lineHeight: control.typescale.line_height
+                wrapMode: Text.NoWrap
+                Lite.Layout.fillWidth: true
+            }
+        }
     }
 
     background: MD.Ripple {

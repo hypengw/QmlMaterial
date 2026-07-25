@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Templates as T
 import Qcm.Material as MD
+import Qcm.Material.Layouts as Lite
 
 T.MenuItem {
     id: control
@@ -62,21 +63,42 @@ T.MenuItem {
     font.weight: typescale.weight
     font.letterSpacing: typescale.tracking
 
-    contentItem: MD.IconLabel {
-        label.lineHeight: control.typescale.line_height
-        horizontalAlignment: Qt.AlignLeft
+    contentItem: Lite.Row {
+        alignment: Qt.AlignVCenter
         spacing: control.spacing
 
-        text: control.text
-        color: control.mdState.textColor
+        Item {
+            implicitWidth: Math.max(m_leading_icon.implicitWidth, m_leading_loader.implicitWidth)
+            implicitHeight: Math.max(m_leading_icon.implicitHeight, m_leading_loader.implicitHeight)
+            visible: control.icon.name.length > 0 || m_leading_loader.active
 
-        icon.name: control.icon.name
-        icon.size: control.icon.width
-        icon.color: control.leadingIconColor
-        icon.fill: control.checked
+            MD.Icon {
+                id: m_leading_icon
+                anchors.centerIn: parent
+                visible: name.length > 0 && !m_leading_loader.active
+                name: control.icon.name
+                size: control.icon.width
+                color: control.leadingIconColor
+                fill: control.checked
+            }
 
-        icon_component: m_loading_comp
-        icon_component_active: control.busy !== MD.Enum.Idle
+            MD.Loader {
+                id: m_leading_loader
+                anchors.centerIn: parent
+                active: control.busy !== MD.Enum.Idle
+                visible: active
+                sourceComponent: m_loading_comp
+            }
+        }
+
+        MD.Label {
+            text: control.text
+            color: control.mdState.textColor
+            useTypescale: false
+            lineHeight: control.typescale.line_height
+            wrapMode: Text.NoWrap
+            Lite.Layout.fillWidth: true
+        }
 
         Component {
             id: m_loading_comp

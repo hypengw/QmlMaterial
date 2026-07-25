@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Templates as T
 import Qcm.Material as MD
+import Qcm.Material.Layouts as Lite
 
 T.Button {
     id: control
@@ -36,14 +37,32 @@ T.Button {
 
     z: checked ? 1 : 0
 
-    contentItem: MD.IconLabel {
-        text: control.text
-        color: control.mdState.textColor
-        style: (control.checked || MD.Util.hasIcon(control.icon)) ? MD.Enum.IconAndText : MD.Enum.TextOnly
-        icon.name: control.checked ? "check" : control.icon.name
-        icon.size: control.icon.width
+    contentItem: Lite.Box {
+        alignment: Qt.AlignCenter
         opacity: control.mdState.contentOpacity
-        label.lineHeight: control.typescale.line_height
+
+        Lite.Row {
+            width: Math.min(implicitWidth, parent.width)
+            height: Math.min(implicitHeight, parent.height)
+            alignment: Qt.AlignHCenter | Qt.AlignVCenter
+            spacing: control.spacing
+
+            MD.Icon {
+                visible: control.checked || MD.Util.hasIcon(control.icon)
+                name: control.checked ? "check" : control.icon.name
+                size: control.icon.width
+                color: control.mdState.textColor
+            }
+
+            MD.Label {
+                text: control.text
+                color: control.mdState.textColor
+                useTypescale: false
+                lineHeight: control.typescale.line_height
+                wrapMode: Text.NoWrap
+                Lite.Layout.fillWidth: true
+            }
+        }
     }
 
     background: MD.Rectangle {

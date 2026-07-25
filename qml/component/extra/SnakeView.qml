@@ -14,11 +14,13 @@ ListView {
         id: m_snake
     }
 
-    function show(text, duration = 4000, flag = MD.Enum.TFCloseable, action = null) {
+    function show(text, duration = 4000, flag = MD.Enum.TFCloseable, action = null, maximumWidth = 0, actionOnNewLine = false) {
         const snake = m_snake.createSnake();
         snake.text = text;
         snake.duration = duration;
         snake.flag = flag;
+        snake.maximumWidth = maximumWidth;
+        snake.actionOnNewLine = actionOnNewLine;
         if(action) snake.action = action;
         m_snake.showSnake(snake);
     }
@@ -45,7 +47,6 @@ ListView {
                 properties: "height"
                 easing.type: Easing.InOutCubic
                 from: 0
-                to: addTrans.ViewTransition.item.height
                 duration: 200
             }
             NumberAnimation {
@@ -64,10 +65,14 @@ ListView {
     delegate: Item {
         id: dg_bar
         anchors.horizontalCenter: parent ? parent.horizontalCenter : undefined
-        width: Math.min(Math.max(implicitWidth, 200), ListView.view.width)
+        width: Math.min(Math.max(implicitWidth, 200),
+                        model.maximumWidth > 0
+                            ? Math.min(model.maximumWidth, ListView.view.width)
+                            : ListView.view.width)
         implicitWidth: children[0].implicitWidth
         implicitHeight: children[0].implicitHeight
-        clip: true
+        height: implicitHeight
+        clip: height < implicitHeight
         required property var model
 
         function close() {
@@ -83,6 +88,7 @@ ListView {
             showClose: dg_bar.model.flag
             onClosed: dg_bar.close()
             action: dg_bar.model.action
+            actionOnNewLine: dg_bar.model.actionOnNewLine
             Component.onCompleted: {
                 const sid = dg_bar.model.sid;
                 if (dg_bar.model.action) {

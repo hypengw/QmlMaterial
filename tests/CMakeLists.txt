@@ -126,23 +126,23 @@ add_test(NAME lite_layout COMMAND lite_layout)
 set_tests_properties(lite_layout PROPERTIES
   ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
 
-add_executable(chip_layout chip_layout.cpp)
-target_include_directories(chip_layout PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(chip_layout PRIVATE
+add_executable(control_layout control_layout.cpp)
+target_include_directories(control_layout PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(control_layout PRIVATE
   qml_material qml_material_layouts
   Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::Test)
-add_dependencies(chip_layout qml_materialplugin qml_material_layoutsplugin)
+add_dependencies(control_layout qml_materialplugin qml_material_layoutsplugin)
 if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
-  target_link_libraries(chip_layout PRIVATE
+  target_link_libraries(control_layout PRIVATE
     qml_materialplugin qml_material_layoutsplugin)
 endif()
-set_target_properties(chip_layout PROPERTIES AUTOMOC ON)
-qt_import_qml_plugins(chip_layout)
-add_test(NAME chip_layout COMMAND chip_layout)
-set_tests_properties(chip_layout PROPERTIES
+set_target_properties(control_layout PROPERTIES AUTOMOC ON)
+qt_import_qml_plugins(control_layout)
+add_test(NAME control_layout COMMAND control_layout)
+set_tests_properties(control_layout PROPERTIES
   ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
 
-set(VISUAL_SCENES button action_progress elevation shape ripple ripple_phases loading_indicator_shapes tooltip wave_progress
+set(VISUAL_SCENES button action_progress elevation shape ripple ripple_phases loading_indicator_shapes tooltip wave_progress snackbar
     focus_button focus_iconbutton focus_fab focus_chip
     focus_switch focus_checkbox focus_radio
     datepicker colorpicker colorpicker_button

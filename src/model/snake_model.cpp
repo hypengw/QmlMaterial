@@ -5,9 +5,13 @@ namespace
 {
 auto snake_model_role_names() -> const QHash<int, QByteArray>& {
     static QHash<int, QByteArray> map {
-        { Qt::UserRole, "sid" },          { Qt::UserRole + 1, "text" },
-        { Qt::UserRole + 2, "duration" }, { Qt::UserRole + 3, "flag" },
+        { Qt::UserRole, "sid" },
+        { Qt::UserRole + 1, "text" },
+        { Qt::UserRole + 2, "duration" },
+        { Qt::UserRole + 3, "flag" },
         { Qt::UserRole + 4, "action" },
+        { Qt::UserRole + 5, "maximumWidth" },
+        { Qt::UserRole + 6, "actionOnNewLine" },
     };
     return map;
 }
