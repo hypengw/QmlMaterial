@@ -721,6 +721,16 @@ MD.Page {
                                 enabled: false
                             }
                         }
+                        RowLayout {
+                            Layout.alignment: Qt.AlignHCenter
+
+                            MD.AssistChip {
+                                Layout.preferredWidth: 180
+                                Layout.maximumWidth: 180
+                                text: 'A long chip label constrained by its parent'
+                                icon.name: MD.Token.icon.event
+                            }
+                        }
                     }
 
                     ComponentCard {

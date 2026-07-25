@@ -419,45 +419,6 @@ set_source_files_properties(qml/Token.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 set_source_files_properties(qml/Util.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 include_directories(include)
 
-qt_add_qml_module(
-  ${LIBNAME}
-  URI
-  Qcm.Material
-  ${QML_MATERIAL_BUILD_TYPE}
-  IMPORTS
-  QtQuick.Layouts
-  QtQuick.Shapes
-  DEPENDENCIES
-  QtQuick
-  OUTPUT_TARGETS
-  qml_material_targets
-  RESOURCE_PREFIX
-  /
-  QML_FILES
-  ${QML_FILES}
-  SOURCES
-  ${SOURCES}
-  RESOURCES
-  ${RESOURCES}
-  NO_GENERATE_PLUGIN_SOURCE
-  NO_PLUGIN_OPTIONAL)
-add_library("${LIBNAME}::${LIBNAME}" ALIAS ${LIBNAME})
-
-target_sources("${LIBNAME}plugin" PRIVATE src/plugin.cpp)
-
-target_compile_features(${LIBNAME} PRIVATE cxx_std_20)
-target_compile_definitions(${LIBNAME} PRIVATE QML_MATERIAL_EXPORT)
-if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
-  target_compile_definitions(${LIBNAME} PUBLIC QML_MATERIAL_STATIC_DEFINE)
-endif()
-set_source_files_properties(
-  "${CMAKE_CURRENT_BINARY_DIR}/${LIBNAME}_qmltyperegistrations.cpp"
-  TARGET_DIRECTORY "${LIBNAME}" PROPERTIES INCLUDE_DIRECTORIES
-                                           "${QML_REG_INCLUDE_DIRS}")
-
-# QT_QMLCACHEGEN_ARGUMENTS "--only-bytecode"
-set_target_properties(${LIBNAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
-
 set(LAYOUT_LIBNAME qml_material_layouts)
 qt_add_qml_module(
   ${LAYOUT_LIBNAME}
@@ -493,6 +454,46 @@ target_link_libraries(
   ${LAYOUT_LIBNAME}
   PUBLIC Qt6::Core Qt6::Qml Qt6::Quick
   PRIVATE Qt6::QuickPrivate)
+
+qt_add_qml_module(
+  ${LIBNAME}
+  URI
+  Qcm.Material
+  ${QML_MATERIAL_BUILD_TYPE}
+  IMPORTS
+  QtQuick.Layouts
+  QtQuick.Shapes
+  Qcm.Material.Layouts
+  DEPENDENCIES
+  QtQuick
+  OUTPUT_TARGETS
+  qml_material_targets
+  RESOURCE_PREFIX
+  /
+  QML_FILES
+  ${QML_FILES}
+  SOURCES
+  ${SOURCES}
+  RESOURCES
+  ${RESOURCES}
+  NO_GENERATE_PLUGIN_SOURCE
+  NO_PLUGIN_OPTIONAL)
+add_library("${LIBNAME}::${LIBNAME}" ALIAS ${LIBNAME})
+
+target_sources("${LIBNAME}plugin" PRIVATE src/plugin.cpp)
+
+target_compile_features(${LIBNAME} PRIVATE cxx_std_20)
+target_compile_definitions(${LIBNAME} PRIVATE QML_MATERIAL_EXPORT)
+if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
+  target_compile_definitions(${LIBNAME} PUBLIC QML_MATERIAL_STATIC_DEFINE)
+endif()
+set_source_files_properties(
+  "${CMAKE_CURRENT_BINARY_DIR}/${LIBNAME}_qmltyperegistrations.cpp"
+  TARGET_DIRECTORY "${LIBNAME}" PROPERTIES INCLUDE_DIRECTORIES
+                                           "${QML_REG_INCLUDE_DIRS}")
+
+# QT_QMLCACHEGEN_ARGUMENTS "--only-bytecode"
+set_target_properties(${LIBNAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
 set(TOKEN_COMPILE_DEFINITIONS
     QM_ICON_FONT_URL="${QM_ICON_FONT_URL}"

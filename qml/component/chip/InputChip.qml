@@ -1,8 +1,8 @@
 import QtQuick
-import QtQuick.Layouts
 import QtQuick.Templates as T
 import QtQml.Models
 import Qcm.Material as MD
+import Qcm.Material.Layouts as Lite
 
 T.Button {
     id: control
@@ -36,25 +36,32 @@ T.Button {
     action: null
     contentItem: contentItemRO
 
-    property Item contentItemRO: Row {
+    property Item contentItemRO: Lite.Row {
+        alignment: Qt.AlignHCenter | Qt.AlignVCenter
         opacity: control.mdState.contentOpacity
         spacing: control.spacing
-        Row {
+
+        Lite.Box {
             id: m_leading
-            anchors.verticalCenter: parent.verticalCenter
+            alignment: Qt.AlignCenter
+            visible: control.leadingItem?.visible ?? false
             data: control.leadingItem ? [control.leadingItem] : []
         }
-        Row {
-            anchors.verticalCenter: parent.verticalCenter
+
+        Lite.Row {
+            alignment: Qt.AlignVCenter
             spacing: control.spacing
+            Lite.Layout.fillWidth: true
+
             MD.Label {
-                anchors.verticalCenter: parent.verticalCenter
                 text: control.text
                 verticalAlignment: Text.AlignVCenter
                 typescale: MD.Token.typescale.label_large
+                wrapMode: Text.NoWrap
+                Lite.Layout.fillWidth: true
             }
+
             Item {
-                anchors.verticalCenter: parent.verticalCenter
                 implicitWidth: control.icon.width
                 implicitHeight: control.icon.height
                 visible: control.icon.name

@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Templates as T
 import Qcm.Material as MD
+import Qcm.Material.Layouts as Lite
 
 T.Button {
     id: control
@@ -34,11 +35,12 @@ T.Button {
     icon.height: 18
     font.capitalization: Font.Capitalize
 
-    contentItem: Row {
+    contentItem: Lite.Row {
+        alignment: Qt.AlignHCenter | Qt.AlignVCenter
         opacity: control.mdState.contentOpacity
+
         Item {
             id: m_leading
-            anchors.verticalCenter: parent.verticalCenter
             // Direct bindings (not State.PropertyChanges) so the leading-icon
             // width tracks the inner Row even for chips that are unchecked at
             // construction. PropertyChanges captures the binding's *value* at
@@ -63,31 +65,33 @@ T.Button {
                 OpacityAnimator { duration: 100 }
             }
 
-            Row {
+            Lite.Row {
                 id: m_leading_inner
-                spacing: 0
+                rightPadding: control.spacing
+                alignment: Qt.AlignVCenter
+
                 MD.Icon {
-                    anchors.verticalCenter: parent.verticalCenter
                     name: MD.Token.icon.check
                     size: control.icon.width
                     color: control.mdState.leadingIconColor
                 }
-                MD.Space {
-                    spacing: control.spacing
-                }
             }
         }
-        Row {
-            anchors.verticalCenter: parent.verticalCenter
+
+        Lite.Row {
+            alignment: Qt.AlignVCenter
             spacing: control.spacing
+            Lite.Layout.fillWidth: true
+
             MD.Label {
-                anchors.verticalCenter: parent.verticalCenter
                 text: control.text
                 verticalAlignment: Text.AlignVCenter
                 typescale: MD.Token.typescale.label_large
+                wrapMode: Text.NoWrap
+                Lite.Layout.fillWidth: true
             }
+
             MD.Icon {
-                anchors.verticalCenter: parent.verticalCenter
                 visible: name
                 name: control.icon.name
                 size: control.icon.width

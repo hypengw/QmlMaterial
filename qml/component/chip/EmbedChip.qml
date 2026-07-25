@@ -1,8 +1,8 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Layouts
 import QtQuick.Templates as T
 import Qcm.Material as MD
+import Qcm.Material.Layouts as Lite
 
 T.Button {
     id: control
@@ -63,38 +63,27 @@ T.Button {
         }
     }
 
-    contentItem: Item {
-        implicitWidth: m_content_row.implicitWidth
-        implicitHeight: m_content_row.implicitHeight
+    contentItem: Lite.Row {
+        alignment: Qt.AlignHCenter | Qt.AlignVCenter
+        opacity: control.mdState.contentOpacity
+        spacing: 4
 
-        Row {
-            id: m_content_row
-            opacity: control.mdState.contentOpacity
-            width: Math.min(implicitWidth, parent.width)
-            height: Math.min(implicitHeight, parent.height)
-            anchors.centerIn: parent
-            spacing: 4
+        Loader {
+            visible: control.leading && item?.visible
+            sourceComponent: control.leading
+        }
 
-            Loader {
-                anchors.verticalCenter: parent.verticalCenter
-                width: control.leading && item?.visible ? implicitWidth : 0
-                height: control.leading && item?.visible ? implicitHeight : 0
-                sourceComponent: control.leading
-            }
+        MD.Label {
+            text: control.text
+            verticalAlignment: Text.AlignVCenter
+            typescale: MD.Token.typescale.label_large
+            wrapMode: Text.NoWrap
+            Lite.Layout.fillWidth: true
+        }
 
-            MD.Label {
-                anchors.verticalCenter: parent.verticalCenter
-                text: control.text
-                verticalAlignment: Text.AlignVCenter
-                typescale: MD.Token.typescale.label_large
-            }
-
-            Loader {
-                anchors.verticalCenter: parent.verticalCenter
-                width: control.trailing ? implicitWidth : 0
-                height: control.trailing ? implicitHeight : 0
-                sourceComponent: control.trailing
-            }
+        Loader {
+            visible: control.trailing && item?.visible
+            sourceComponent: control.trailing
         }
     }
 
