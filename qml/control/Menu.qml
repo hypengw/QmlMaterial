@@ -40,7 +40,7 @@ T.Menu {
     }
 
     property var model: null
-    property alias contentDelegate: m_model.delegate
+    property alias contentDelegate: m_instantiator.delegate
 
     enter: Transition {
         NumberAnimation {
@@ -74,12 +74,8 @@ T.Menu {
         }
     }
 
-    DelegateModel {
-        id: m_model
-        model: control.model
-    }
-
     contentItem: MD.ListView {
+        // Qt 6.8-6.11 do not propagate menu item implicit widths to the content item.
         implicitWidth: {
             let preferredWidth = 0;
             for (let index = 0; index < control.count; ++index) {
@@ -91,20 +87,23 @@ T.Menu {
         }
         implicitHeight: contentHeight
         model: {
-            if (control.model) {
-                if (control.contentDelegate) {
-                    return m_model;
-                } else if (control.model instanceof DelegateModel) {
-                    return control.model;
-                } else if (control.model != control.contentModel) {
-                    return m_model;
-                }
+            if (!control.contentDelegate && control.model instanceof DelegateModel) {
+                return control.model;
             }
             return control.contentModel;
         }
         interactive: contentHeight + control.topPadding + control.bottomPadding > control.height
         keyNavigationEnabled: false
         T.ScrollIndicator.vertical: MD.ScrollIndicator {}
+    }
+
+    Instantiator {
+        id: m_instantiator
+        active: control.contentDelegate !== null
+        model: control.model
+
+        onObjectAdded: (index, object) => control.insertItem(index, object)
+        onObjectRemoved: (index, object) => control.removeItem(object)
     }
 
     background: MD.ElevationRectangle {

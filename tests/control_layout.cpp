@@ -355,6 +355,69 @@ private Q_SLOTS:
         QVERIFY(QMetaObject::invokeMethod(menu, "close"));
     }
 
+    void menuContentDelegateReceivesWidth() {
+        const QString text = QStringLiteral(
+            "long long long long long long long long long long long long long long long");
+        const auto source = QStringLiteral(R"(
+            import QtQuick
+            import Qcm.Material as MD
+
+            Item {
+                width: 500
+                height: 300
+
+                MD.Menu {
+                    objectName: "menu"
+                    parent: parent
+                    width: 240
+                    model: ["%1"]
+                    contentDelegate: MD.MenuItem {
+                        objectName: "contentDelegateItem"
+                        required property string modelData
+                        text: modelData
+                    }
+                }
+            }
+        )")
+                                .arg(text)
+                                .toUtf8();
+
+        QQmlComponent component(&m_engine);
+        component.setData(source, QUrl(QStringLiteral("qrc:/tests/menu-content-delegate.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* root = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(root);
+        root->setParentItem(m_window.contentItem());
+
+        auto* menu = root->findChild<QObject*>(QStringLiteral("menu"));
+        QVERIFY(menu);
+        QVERIFY(QMetaObject::invokeMethod(menu, "open"));
+        QCoreApplication::processEvents();
+
+        QQuickItem* delegate = nullptr;
+        QVERIFY(QMetaObject::invokeMethod(
+            menu, "itemAt", Q_RETURN_ARG(QQuickItem*, delegate), Q_ARG(int, 0)));
+        QVERIFY(delegate);
+        settle(delegate);
+        QCOMPARE(menu->property("count").toInt(), 1);
+        QCOMPARE(menu->property("implicitContentWidth").toReal(), delegate->implicitWidth());
+        QCOMPARE(delegate->width(), menu->property("availableWidth").toReal());
+
+        QVERIFY(menu->setProperty("width", 180.0));
+        settle(delegate);
+        QCOMPARE(delegate->width(), menu->property("availableWidth").toReal());
+
+        auto* label = itemWithText(delegate, text);
+        QVERIFY(label);
+        QVERIFY(label->implicitWidth() > label->width());
+        QVERIFY(label->property("truncated").toBool());
+
+        QVERIFY(QMetaObject::invokeMethod(menu, "close"));
+    }
+
     void actionMenuConstrainsLongItem() {
         const QString text = QStringLiteral(
             "long long long long long long long long long long long long long long long");
