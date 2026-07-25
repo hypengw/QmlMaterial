@@ -4,6 +4,7 @@ endif()
 if(NOT TARGET Qt6::GuiPrivate)
   find_package(Qt6 REQUIRED COMPONENTS GuiPrivate)
 endif()
+find_package(Qt6 REQUIRED COMPONENTS Test)
 
 enable_testing()
 
@@ -110,6 +111,20 @@ set_target_properties(toolbar_dynamic_visibility PROPERTIES AUTOMOC ON)
 add_test(NAME toolbar_dynamic_visibility COMMAND toolbar_dynamic_visibility)
 set_tests_properties(toolbar_dynamic_visibility PROPERTIES
   ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+add_executable(lite_layout lite_layout.cpp)
+target_include_directories(lite_layout PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(lite_layout PRIVATE
+  qml_material_layouts Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::Test)
+add_dependencies(lite_layout qml_material_layoutsplugin)
+if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
+  target_link_libraries(lite_layout PRIVATE qml_material_layoutsplugin)
+endif()
+set_target_properties(lite_layout PROPERTIES AUTOMOC ON)
+qt_import_qml_plugins(lite_layout)
+add_test(NAME lite_layout COMMAND lite_layout)
+set_tests_properties(lite_layout PROPERTIES
+  ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
 
 set(VISUAL_SCENES button action_progress elevation shape ripple ripple_phases loading_indicator_shapes tooltip wave_progress
     focus_button focus_iconbutton focus_fab focus_chip

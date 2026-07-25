@@ -46,14 +46,10 @@ if(UNIX AND NOT APPLE)
   set(LINUX CACHE INTERNAL TRUE "")
 endif()
 
-find_package(Qt6 REQUIRED COMPONENTS Core Quick QuickControls2 Gui ShaderTools)
+find_package(Qt6 REQUIRED COMPONENTS Core Quick QuickControls2 Gui Qml ShaderTools QuickPrivate)
 
 if(UNIX AND NOT ANDROID AND NOT EMSCRIPTEN)
   find_package(Qt6 REQUIRED COMPONENTS DBus)
-endif()
-
-if(Qt6Quick_VERSION VERSION_GREATER_EQUAL 6.10)
-  find_package(Qt6 REQUIRED COMPONENTS QuickPrivate)
 endif()
 
 find_package(PkgConfig REQUIRED)
@@ -351,6 +347,17 @@ set(QML_REG_INCLUDE_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/dialog"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/carousel")
 
+set(LAYOUT_SOURCES
+    include/qml_material/layout/layout.hpp
+    include/qml_material/layout/layout_container.hpp
+    src/layout/layout.cpp
+    src/layout/layout_container.cpp
+    src/layout/layout_item_adapter.cpp
+    src/layout/layout_item_adapter_p.hpp)
+
+set(LAYOUT_REG_INCLUDE_DIRS
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/layout")
+
 set(SHADER_DEFINES)
 
 set(QML_MATERIAL_BUILD_TYPE
@@ -450,6 +457,42 @@ set_source_files_properties(
 
 # QT_QMLCACHEGEN_ARGUMENTS "--only-bytecode"
 set_target_properties(${LIBNAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
+
+set(LAYOUT_LIBNAME qml_material_layouts)
+qt_add_qml_module(
+  ${LAYOUT_LIBNAME}
+  URI
+  Qcm.Material.Layouts
+  ${QML_MATERIAL_BUILD_TYPE}
+  DEPENDENCIES
+  QtQuick
+  OUTPUT_TARGETS
+  qml_material_layout_targets
+  RESOURCE_PREFIX
+  /
+  SOURCES
+  ${LAYOUT_SOURCES}
+  NO_PLUGIN_OPTIONAL)
+add_library("${LIBNAME}::${LAYOUT_LIBNAME}" ALIAS ${LAYOUT_LIBNAME})
+
+target_compile_features(${LAYOUT_LIBNAME} PRIVATE cxx_std_20)
+target_compile_definitions(${LAYOUT_LIBNAME} PRIVATE QML_MATERIAL_EXPORT)
+if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
+  target_compile_definitions(${LAYOUT_LIBNAME} PUBLIC QML_MATERIAL_STATIC_DEFINE)
+endif()
+set_source_files_properties(
+  "${CMAKE_CURRENT_BINARY_DIR}/${LAYOUT_LIBNAME}_qmltyperegistrations.cpp"
+  TARGET_DIRECTORY "${LAYOUT_LIBNAME}" PROPERTIES INCLUDE_DIRECTORIES
+                                                   "${LAYOUT_REG_INCLUDE_DIRS}")
+set_target_properties(${LAYOUT_LIBNAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
+target_include_directories(
+  ${LAYOUT_LIBNAME}
+  PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  PRIVATE src/layout)
+target_link_libraries(
+  ${LAYOUT_LIBNAME}
+  PUBLIC Qt6::Core Qt6::Qml Qt6::Quick
+  PRIVATE Qt6::QuickPrivate)
 
 set(TOKEN_COMPILE_DEFINITIONS
     QM_ICON_FONT_URL="${QM_ICON_FONT_URL}"
@@ -551,8 +594,10 @@ if(NOT QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
     PATTERN "*.h"
     PATTERN "*.hpp")
 
-  install(TARGETS ${qml_material_targets} EXPORT ${LIBNAME}-targets)
+  install(TARGETS ${qml_material_targets} ${qml_material_layout_targets}
+          EXPORT ${LIBNAME}-targets)
   install(TARGETS ${LIBNAME} EXPORT ${LIBNAME}-targets)
+  install(TARGETS ${LAYOUT_LIBNAME} EXPORT ${LIBNAME}-targets)
   install(
     EXPORT ${LIBNAME}-targets
     FILE ${LIBNAME}-targets.cmake
@@ -569,12 +614,14 @@ if(NOT QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
     install(TARGETS ${QML_PLUGIN_TARGET}
             LIBRARY DESTINATION ${QML_TARGET_INSTALL_DIR})
 
-    install(
-      DIRECTORY qml
-      DESTINATION ${QML_TARGET_INSTALL_DIR}
-      FILES_MATCHING
-      PATTERN "*.qml"
-      PATTERN "*.mjs")
+    if(ARGC GREATER 1)
+      install(
+        DIRECTORY ${ARGV1}
+        DESTINATION ${QML_TARGET_INSTALL_DIR}
+        FILES_MATCHING
+        PATTERN "*.qml"
+        PATTERN "*.mjs")
+    endif()
 
     install(
       FILES "${QT_QML_OUTPUT_DIRECTORY}/${QML_TARGET_PATH}/qmldir"
@@ -582,6 +629,7 @@ if(NOT QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
       DESTINATION ${QML_TARGET_INSTALL_DIR})
   endfunction()
 
-  qt_install_qml_module(${LIBNAME})
+  qt_install_qml_module(${LIBNAME} qml)
+  qt_install_qml_module(${LAYOUT_LIBNAME})
 
 endif()
