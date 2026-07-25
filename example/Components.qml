@@ -806,6 +806,7 @@ MD.Page {
                             MD.Menu {
                                 id: m_menu
                                 y: parent.height
+                                width: 240
                                 MD.MenuItem {
                                     text: 'First'
                                 }
@@ -814,6 +815,10 @@ MD.Page {
                                 }
                                 MD.MenuItem {
                                     text: 'Third'
+                                }
+                                MD.MenuItem {
+                                    text: 'long long long long long long long long long'
+                                    icon.name: MD.Token.icon.description
                                 }
                             }
                         }

@@ -49,8 +49,7 @@ T.MenuItem {
     */
 
     arrow: MD.Icon {
-        x: control.mirrored ? control.padding : control.width - width - control.padding
-        y: control.topPadding + (control.availableHeight - height) / 2
+        parent: content_layout
 
         visible: control.subMenu
         size: 24
@@ -64,6 +63,7 @@ T.MenuItem {
     font.letterSpacing: typescale.tracking
 
     contentItem: Lite.Row {
+        id: content_layout
         alignment: Qt.AlignVCenter
         spacing: control.spacing
 

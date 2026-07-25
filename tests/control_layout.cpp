@@ -107,7 +107,8 @@ private Q_SLOTS:
 
         auto* content = qvariant_cast<QQuickItem*>(control->property("contentItem"));
         QVERIFY(content);
-        QVERIFY(layoutRow(content));
+        auto* row = layoutRow(content);
+        QVERIFY(row);
 
         auto* label = itemWithText(content, text);
         QVERIFY(label);
@@ -117,6 +118,14 @@ private Q_SLOTS:
         QCOMPARE(label->property("wrapMode").toInt(), 0);
         QVERIFY(label->property("truncated").isValid());
         QVERIFY(label->property("truncated").toBool());
+
+        if (type == QStringLiteral("MenuItem")) {
+            auto* arrow = qvariant_cast<QQuickItem*>(control->property("arrow"));
+            QVERIFY(arrow);
+            QCOMPARE(arrow->parentItem(), row);
+            QVERIFY(! row->childItems().empty());
+            QCOMPARE(row->childItems().back(), arrow);
+        }
     }
 
     void iconStyles_data() {
@@ -286,6 +295,63 @@ private Q_SLOTS:
         QVERIFY(! icon->isVisible());
         QVERIFY(loader->isVisible());
         QVERIFY(loader->property("active").toBool());
+    }
+
+    void menuConstrainsLongItem() {
+        const QString text   = QStringLiteral("long long long long long long long long long");
+        const auto    source = QStringLiteral(R"(
+            import QtQuick
+            import Qcm.Material as MD
+
+            Item {
+                width: 500
+                height: 300
+
+                MD.Menu {
+                    objectName: "menu"
+                    parent: parent
+                    width: 240
+
+                    MD.MenuItem {
+                        objectName: "longItem"
+                        text: "%1"
+                        icon.name: MD.Token.icon.description
+                    }
+                }
+            }
+        )")
+                                   .arg(text)
+                                   .toUtf8();
+
+        QQmlComponent component(&m_engine);
+        component.setData(source, QUrl(QStringLiteral("qrc:/tests/long-menu-item.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* root = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(root);
+        root->setParentItem(m_window.contentItem());
+
+        auto* menu = root->findChild<QObject*>(QStringLiteral("menu"));
+        QVERIFY(menu);
+        QVERIFY(QMetaObject::invokeMethod(menu, "open"));
+        QCoreApplication::processEvents();
+
+        auto* menuItem = root->findChild<QQuickItem*>(QStringLiteral("longItem"));
+        QVERIFY(menuItem);
+        settle(menuItem);
+        QVERIFY(menuItem->width() > 0);
+        QVERIFY(menuItem->width() <= 240.0);
+
+        auto* content = qvariant_cast<QQuickItem*>(menuItem->property("contentItem"));
+        QVERIFY(content);
+        auto* label = itemWithText(content, text);
+        QVERIFY(label);
+        QVERIFY(label->implicitWidth() > label->width());
+        QVERIFY(label->property("truncated").toBool());
+
+        QVERIFY(QMetaObject::invokeMethod(menu, "close"));
     }
 
     void snakeBarActionElides() {
