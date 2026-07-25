@@ -1,4 +1,5 @@
 #include <QCoreApplication>
+#include <QFont>
 #include <QQmlComponent>
 #include <QQmlEngine>
 #include <QQuickItem>
@@ -352,6 +353,54 @@ private Q_SLOTS:
         QVERIFY(label->property("truncated").toBool());
 
         QVERIFY(QMetaObject::invokeMethod(menu, "close"));
+    }
+
+    void textFieldTypography_data() {
+        QTest::addColumn<QString>("type");
+
+        QTest::newRow("filled") << QStringLiteral("TextFieldFilled");
+        QTest::newRow("outlined") << QStringLiteral("TextFieldOutlined");
+    }
+
+    void textFieldTypography() {
+        QFETCH(QString, type);
+
+        const auto source = QStringLiteral(R"(
+            import QtQuick
+            import Qcm.Material as MD
+
+            MD.TextField {
+                type: MD.Enum.%1
+                text: "Input"
+                placeholderText: "Label"
+                property real expectedSize: MD.Token.typescale.body_large.size
+                property real titleSize: MD.Token.typescale.title_large.size
+            }
+        )")
+                                .arg(type)
+                                .toUtf8();
+
+        QQmlComponent component(&m_engine);
+        component.setData(source, QUrl(QStringLiteral("qrc:/tests/text-field-typography.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* textField = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(textField);
+        textField->setParentItem(m_window.contentItem());
+        settle(textField);
+
+        const int  expectedSize = qRound(textField->property("expectedSize").toReal());
+        const int  titleSize    = qRound(textField->property("titleSize").toReal());
+        const auto inputFont    = qvariant_cast<QFont>(textField->property("font"));
+        QCOMPARE(inputFont.pixelSize(), expectedSize);
+        QVERIFY(inputFont.pixelSize() < titleSize);
+
+        auto* placeholder = itemWithText(textField, QStringLiteral("Label"));
+        QVERIFY(placeholder);
+        const auto placeholderFont = qvariant_cast<QFont>(placeholder->property("font"));
+        QCOMPARE(placeholderFont.pixelSize(), expectedSize);
     }
 
     void snakeBarActionElides() {

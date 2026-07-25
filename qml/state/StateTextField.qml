@@ -26,14 +26,7 @@ MD.MState {
     property color placeholderColor: root.ctx.color.on_surface_variant
     property real placeholderOpacity: 1.0
 
-    property MD.typescale typescale: {
-        switch (root.type) {
-        case MD.Enum.TextFieldFilled:
-            return MD.Token.typescale.body_large;
-        default:
-            return MD.Token.typescale.title_large;
-        }
-    }
+    property MD.typescale typescale: MD.Token.typescale.body_large
     property int containerHeight: {
         if (root.type === MD.Enum.TextFieldFilled) {
             return root.dense ? 54 : 56;
