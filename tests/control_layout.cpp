@@ -355,6 +355,66 @@ private Q_SLOTS:
         QVERIFY(QMetaObject::invokeMethod(menu, "close"));
     }
 
+    void actionMenuConstrainsLongItem() {
+        const QString text = QStringLiteral(
+            "long long long long long long long long long long long long long long long");
+        const auto source = QStringLiteral(R"(
+            import QtQuick
+            import Qcm.Material as MD
+
+            Item {
+                id: testRoot
+                width: 500
+                height: 300
+
+                property MD.Action longAction: MD.Action {
+                    text: "%1"
+                    icon.name: MD.Token.icon.description
+                }
+
+                MD.ActionMenu {
+                    objectName: "menu"
+                    parent: testRoot
+                    actions: [testRoot.longAction]
+                    itemDelegate: MD.MenuItem { objectName: "actionItem" }
+                }
+            }
+        )")
+                                .arg(text)
+                                .toUtf8();
+
+        QQmlComponent component(&m_engine);
+        component.setData(source, QUrl(QStringLiteral("qrc:/tests/long-action-menu-item.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* root = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(root);
+        root->setParentItem(m_window.contentItem());
+
+        auto* menu = root->findChild<QObject*>(QStringLiteral("menu"));
+        QVERIFY(menu);
+        QVERIFY(QMetaObject::invokeMethod(menu, "open"));
+        QCoreApplication::processEvents();
+
+        auto* actionItem = root->findChild<QQuickItem*>(QStringLiteral("actionItem"));
+        QVERIFY(actionItem);
+        settle(actionItem);
+
+        QCOMPARE(menu->property("maximumWidth").toReal(), 280.0);
+        QCOMPARE(menu->property("implicitContentWidth").toReal(), actionItem->implicitWidth());
+        QCOMPARE(menu->property("implicitWidth").toReal(), 280.0);
+        QCOMPARE(actionItem->width(), menu->property("availableWidth").toReal());
+
+        auto* label = itemWithText(actionItem, text);
+        QVERIFY(label);
+        QVERIFY(label->implicitWidth() > label->width());
+        QVERIFY(label->property("truncated").toBool());
+
+        QVERIFY(QMetaObject::invokeMethod(menu, "close"));
+    }
+
     void textFieldTypography_data() {
         QTest::addColumn<QString>("type");
 

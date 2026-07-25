@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Templates as T
 
@@ -24,6 +25,7 @@ MD.Menu {
 
         active: root.visible
         delegate: QtObject {
+            required property MD.Action modelData
             readonly property MD.Action action: modelData
 
             property QtObject item: null
@@ -31,16 +33,16 @@ MD.Menu {
 
             Component.onCompleted: {
                 if (action?.separator) {
-                    item = root.separatorDelegate.createObject(null, {
+                    item = root.separatorDelegate.createObject(root.contentItem, {
                         action
                     });
                 } else if (action.displayComponent) {
-                    item = root.loaderDelegate.createObject(null, {
+                    item = root.loaderDelegate.createObject(root.contentItem, {
                         action,
                         sourceComponent: action.displayComponent
                     });
                 } else {
-                    item = root.itemDelegate.createObject(null, {
+                    item = root.itemDelegate.createObject(root.contentItem, {
                         action
                     });
                 }
@@ -53,7 +55,6 @@ MD.Menu {
                 } else {
                     root.removeItem(item);
                 }
-                item.destroy();
             }
         }
     }

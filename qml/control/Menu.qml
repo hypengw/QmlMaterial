@@ -10,8 +10,13 @@ T.Menu {
 
     property alias mdState: item_state
     property bool autoClose: false
+    property real maximumWidth: 280
 
-    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding)
+    implicitWidth: {
+        const preferredWidth = Math.max(implicitBackgroundWidth + leftInset + rightInset,
+                                        implicitContentWidth + leftPadding + rightPadding);
+        return maximumWidth > 0 ? Math.min(preferredWidth, maximumWidth) : preferredWidth;
+    }
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)
 
     margins: 0
@@ -75,6 +80,15 @@ T.Menu {
     }
 
     contentItem: MD.ListView {
+        implicitWidth: {
+            let preferredWidth = 0;
+            for (let index = 0; index < control.count; ++index) {
+                const item = control.itemAt(index);
+                if (item && (!control.visible || item.visible))
+                    preferredWidth = Math.max(preferredWidth, item.implicitWidth);
+            }
+            return preferredWidth;
+        }
         implicitHeight: contentHeight
         model: {
             if (control.model) {

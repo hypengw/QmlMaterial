@@ -822,6 +822,35 @@ MD.Page {
                                 }
                             }
                         }
+                        MD.Button {
+                            Layout.alignment: Qt.AlignHCenter
+                            mdState.type: MD.Enum.BtText
+                            text: 'Open action menu'
+                            onClicked: m_action_menu.open()
+
+                            MD.Action {
+                                id: m_action_menu_first
+                                text: 'First action'
+                                icon.name: MD.Token.icon.add
+                            }
+
+                            MD.Action {
+                                id: m_action_menu_second
+                                text: 'Second action'
+                            }
+
+                            MD.Action {
+                                id: m_action_menu_long
+                                text: 'long long long long long long long long long'
+                                icon.name: MD.Token.icon.description
+                            }
+
+                            MD.ActionMenu {
+                                id: m_action_menu
+                                y: parent.height
+                                actions: [m_action_menu_first, m_action_menu_second, m_action_menu_long]
+                            }
+                        }
                         Row {
                             spacing: 12
                             Layout.alignment: Qt.AlignHCenter
