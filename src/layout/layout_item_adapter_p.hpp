@@ -17,6 +17,7 @@ public:
     void watch(QQuickItem* item);
     void unwatch(QQuickItem* item);
     bool participates(const QQuickItem* item) const;
+    bool isExplicitlyVisible(const QQuickItem* item) const;
 
 private:
     void itemSiblingOrderChanged(QQuickItem* item) override;

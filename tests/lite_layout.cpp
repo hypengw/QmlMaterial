@@ -534,6 +534,218 @@ private Q_SLOTS:
         QCOMPARE(first->x(), 24.0);
     }
 
+    void visibilitySourceControlsParticipation() {
+        auto root = create(R"(
+            import QtQuick
+            import Qcm.Material.Layouts as Lite
+            Item {
+                property alias sourceVisible: source.visible
+                Lite.Row {
+                    objectName: "row"
+                    spacing: 5
+                    Item {
+                        objectName: "first"
+                        implicitWidth: 10
+                        implicitHeight: 10
+                        width: 10
+                        height: 10
+                    }
+                    Item {
+                        objectName: "wrapper"
+                        implicitWidth: 20
+                        implicitHeight: 10
+                        width: 20
+                        height: 10
+                        Lite.Layout.visibilitySource: source
+                        Item {
+                            id: source
+                            objectName: "source"
+                        }
+                    }
+                    Item {
+                        objectName: "last"
+                        implicitWidth: 30
+                        implicitHeight: 10
+                        width: 30
+                        height: 10
+                    }
+                }
+            }
+        )");
+        QVERIFY2(root, qPrintable(m_error));
+        auto* row     = namedItem(root.get(), "row");
+        auto* wrapper = namedItem(root.get(), "wrapper");
+        auto* last    = namedItem(root.get(), "last");
+        settle(row);
+
+        QCOMPARE(row->implicitWidth(), 70.0);
+        QCOMPARE(row->property("contentWidth").toReal(), 70.0);
+        QCOMPARE(wrapper->x(), 15.0);
+        QCOMPARE(last->x(), 40.0);
+
+        QVERIFY(root->setProperty("sourceVisible", false));
+        settle(row);
+        QCOMPARE(row->implicitWidth(), 45.0);
+        QCOMPARE(row->property("contentWidth").toReal(), 45.0);
+        QCOMPARE(last->x(), 15.0);
+
+        QVERIFY(root->setProperty("sourceVisible", true));
+        settle(row);
+        QCOMPARE(row->implicitWidth(), 70.0);
+        QCOMPARE(last->x(), 40.0);
+    }
+
+    void visibilitySourceRecoversAfterAncestorVisibilityChange() {
+        auto root = create(R"(
+            import QtQuick
+            import Qcm.Material.Layouts as Lite
+            Item {
+                property alias sourceVisible: source.visible
+                Lite.Row {
+                    objectName: "row"
+                    spacing: 5
+                    Item {
+                        objectName: "wrapper"
+                        implicitWidth: 20
+                        implicitHeight: 10
+                        width: 20
+                        height: 10
+                        Lite.Layout.visibilitySource: source
+                        Item { id: source }
+                    }
+                    Item {
+                        implicitWidth: 30
+                        implicitHeight: 10
+                        width: 30
+                        height: 10
+                    }
+                }
+            }
+        )");
+        QVERIFY2(root, qPrintable(m_error));
+        QQuickWindow window;
+        root->setParentItem(window.contentItem());
+        auto* row = namedItem(root.get(), "row");
+        settle(row);
+        QCOMPARE(row->implicitWidth(), 55.0);
+
+        root->setVisible(false);
+        settle(row);
+        QVERIFY(root->setProperty("sourceVisible", false));
+        root->setVisible(true);
+        settle(row);
+        QCOMPARE(row->implicitWidth(), 30.0);
+
+        root->setVisible(false);
+        settle(row);
+        QVERIFY(root->setProperty("sourceVisible", true));
+        root->setVisible(true);
+        settle(row);
+        QCOMPARE(row->implicitWidth(), 55.0);
+    }
+
+    void visibilitySourceNullReplacementAndReset() {
+        auto root = create(R"(
+            import QtQuick
+            import Qcm.Material.Layouts as Lite
+            Item {
+                Lite.Row {
+                    objectName: "row"
+                    spacing: 4
+                    Item {
+                        implicitWidth: 10
+                        implicitHeight: 10
+                        width: 10
+                        height: 10
+                    }
+                    Item {
+                        id: wrapper
+                        objectName: "wrapper"
+                        property Item selectedSource: null
+                        implicitWidth: 20
+                        implicitHeight: 10
+                        width: 20
+                        height: 10
+                        Lite.Layout.visibilitySource: selectedSource
+                        Item { objectName: "firstSource" }
+                        Item { objectName: "secondSource" }
+                    }
+                    Item {
+                        implicitWidth: 30
+                        implicitHeight: 10
+                        width: 30
+                        height: 10
+                    }
+                }
+            }
+        )");
+        QVERIFY2(root, qPrintable(m_error));
+        auto* row           = namedItem(root.get(), "row");
+        auto* wrapper       = namedItem(root.get(), "wrapper");
+        auto* first_source  = namedItem(root.get(), "firstSource");
+        auto* second_source = namedItem(root.get(), "secondSource");
+        settle(row);
+        QCOMPARE(row->implicitWidth(), 44.0);
+
+        QVERIFY(wrapper->setProperty("selectedSource", QVariant::fromValue(first_source)));
+        settle(row);
+        QCOMPARE(row->implicitWidth(), 68.0);
+
+        first_source->setVisible(false);
+        settle(row);
+        QCOMPARE(row->implicitWidth(), 44.0);
+
+        QVERIFY(wrapper->setProperty("selectedSource", QVariant::fromValue(second_source)));
+        settle(row);
+        QCOMPARE(row->implicitWidth(), 68.0);
+        first_source->setVisible(true);
+        settle(row);
+        QCOMPARE(row->implicitWidth(), 68.0);
+
+        second_source->setVisible(false);
+        settle(row);
+        QCOMPARE(row->implicitWidth(), 44.0);
+        delete second_source;
+        settle(row);
+        QCOMPARE(row->implicitWidth(), 44.0);
+
+        auto* attached = static_cast<qml_material::LayoutAttached*>(
+            qmlAttachedPropertiesObject<qml_material::Layout>(wrapper, false));
+        QVERIFY(attached);
+        QVERIFY(attached->isVisibilitySourceSet());
+        attached->resetVisibilitySource();
+        settle(row);
+        QVERIFY(! attached->isVisibilitySourceSet());
+        QCOMPARE(row->implicitWidth(), 68.0);
+    }
+
+    void visibilitySourceRejectsNonChild() {
+        WarningCapture capture;
+        auto           root = create(R"(
+            import QtQuick
+            import Qcm.Material.Layouts as Lite
+            Item {
+                Item { id: outside }
+                Lite.Row {
+                    objectName: "row"
+                    Item {
+                        implicitWidth: 20
+                        implicitHeight: 10
+                        Lite.Layout.visibilitySource: outside
+                    }
+                }
+            }
+        )");
+        QVERIFY2(root, qPrintable(m_error));
+        auto* row = namedItem(root.get(), "row");
+        settle(row);
+
+        QCOMPARE(row->implicitWidth(), 0.0);
+        QCOMPARE(capture.countContaining(
+                     QLatin1StringView("Layout.visibilitySource must be a direct visual child")),
+                 1);
+    }
+
     void repeaterParticipationAndMove() {
         auto root = create(R"(
             import QtQuick

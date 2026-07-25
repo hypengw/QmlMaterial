@@ -415,6 +415,155 @@ private Q_SLOTS:
         QVERIFY(QMetaObject::invokeMethod(menu, "close"));
     }
 
+    void embedChipIconsRecoverAfterAncestorVisibilityChange() {
+        const auto source = QByteArrayLiteral(R"(
+            import QtQuick
+            import Qcm.Material as MD
+
+            Item {
+                width: 300
+                height: 100
+                property string leadingIconName: MD.Token.icon.description
+                property string trailingIconName: MD.Token.icon.close
+
+                Item {
+                    objectName: "page"
+
+                    MD.EmbedChip {
+                        objectName: "chip"
+                        text: "Embed"
+                        icon.name: parent.parent.leadingIconName
+                        trailingIconName: parent.parent.trailingIconName
+                    }
+                }
+            }
+        )");
+
+        QQmlComponent component(&m_engine);
+        component.setData(source, QUrl(QStringLiteral("qrc:/tests/embed-chip-visibility.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* root = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(root);
+        root->setParentItem(m_window.contentItem());
+
+        auto* page = root->findChild<QQuickItem*>(QStringLiteral("page"));
+        auto* chip = root->findChild<QQuickItem*>(QStringLiteral("chip"));
+        QVERIFY(page);
+        QVERIFY(chip);
+        settle(chip);
+
+        auto* row = layoutRow(qvariant_cast<QQuickItem*>(chip->property("contentItem")));
+        QVERIFY(row);
+        QVERIFY(row->childItems().size() >= 3);
+        auto* leadingLoader  = row->childItems().front();
+        auto* trailingLoader = row->childItems().back();
+        auto* leadingIcon    = qvariant_cast<QQuickItem*>(leadingLoader->property("item"));
+        auto* trailingIcon   = qvariant_cast<QQuickItem*>(trailingLoader->property("item"));
+        QVERIFY(leadingIcon);
+        QVERIFY(trailingIcon);
+        QVERIFY(leadingLoader->isVisible());
+        QVERIFY(trailingLoader->isVisible());
+        QVERIFY(leadingIcon->isVisible());
+        QVERIFY(trailingIcon->isVisible());
+        const qreal full_width    = row->implicitWidth();
+        const auto  leading_name  = root->property("leadingIconName");
+        const auto  trailing_name = root->property("trailingIconName");
+
+        page->setVisible(false);
+        QCoreApplication::processEvents();
+        QVERIFY(! leadingLoader->isVisible());
+        QVERIFY(! trailingLoader->isVisible());
+        QVERIFY(! leadingIcon->isVisible());
+        QVERIFY(! trailingIcon->isVisible());
+
+        page->setVisible(true);
+        settle(chip);
+        QVERIFY(leadingLoader->isVisible());
+        QVERIFY(trailingLoader->isVisible());
+        QVERIFY(leadingIcon->isVisible());
+        QVERIFY(trailingIcon->isVisible());
+        QCOMPARE(row->implicitWidth(), full_width);
+
+        page->setVisible(false);
+        QCoreApplication::processEvents();
+        QVERIFY(root->setProperty("leadingIconName", QString()));
+        QVERIFY(root->setProperty("trailingIconName", QString()));
+        page->setVisible(true);
+        settle(chip);
+        QVERIFY(leadingLoader->isVisible());
+        QVERIFY(trailingLoader->isVisible());
+        QVERIFY(! leadingIcon->isVisible());
+        QVERIFY(! trailingIcon->isVisible());
+        QCOMPARE(row->implicitWidth(), row->childItems().at(1)->implicitWidth());
+
+        QVERIFY(root->setProperty("leadingIconName", leading_name));
+        QVERIFY(root->setProperty("trailingIconName", trailing_name));
+        settle(chip);
+        QCOMPARE(row->implicitWidth(), full_width);
+    }
+
+    void embedChipCustomVisibilityControlsSpacing() {
+        const auto source = QByteArrayLiteral(R"(
+            import QtQuick
+            import Qcm.Material as MD
+
+            Item {
+                id: testRoot
+                width: 300
+                height: 100
+                property bool trailingVisible: true
+
+                Component {
+                    id: customTrailing
+                    Item {
+                        implicitWidth: 24
+                        implicitHeight: 18
+                        visible: testRoot.trailingVisible
+                    }
+                }
+
+                MD.EmbedChip {
+                    objectName: "chip"
+                    text: "Embed"
+                    trailing: customTrailing
+                }
+            }
+        )");
+
+        QQmlComponent component(&m_engine);
+        component.setData(source, QUrl(QStringLiteral("qrc:/tests/embed-chip-custom.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* root = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(root);
+        root->setParentItem(m_window.contentItem());
+        auto* chip = root->findChild<QQuickItem*>(QStringLiteral("chip"));
+        QVERIFY(chip);
+        settle(chip);
+
+        auto* row = layoutRow(qvariant_cast<QQuickItem*>(chip->property("contentItem")));
+        QVERIFY(row);
+        auto* trailing_loader = row->childItems().back();
+        auto* trailing_item   = qvariant_cast<QQuickItem*>(trailing_loader->property("item"));
+        QVERIFY(trailing_item);
+        const qreal visible_width = row->implicitWidth();
+
+        QVERIFY(root->setProperty("trailingVisible", false));
+        settle(chip);
+        QVERIFY(! trailing_item->isVisible());
+        QCOMPARE(row->implicitWidth(), visible_width - trailing_loader->implicitWidth() - 4.0);
+
+        QVERIFY(root->setProperty("trailingVisible", true));
+        settle(chip);
+        QVERIFY(trailing_item->isVisible());
+        QCOMPARE(row->implicitWidth(), visible_width);
+    }
+
     void textFieldTypography_data() {
         QTest::addColumn<QString>("type");
 

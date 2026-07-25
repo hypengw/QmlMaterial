@@ -55,6 +55,9 @@ struct ChildWatch {
     QPointer<QQuickItem>                 item;
     QPointer<LayoutAttached>             attached;
     std::vector<QMetaObject::Connection> connections;
+    std::vector<QMetaObject::Connection> source_connections;
+    QPointer<QQuickItem>                 visibility_source;
+    bool                                 invalid_source_warned = false;
 };
 
 } // namespace
@@ -118,6 +121,47 @@ public:
         });
     }
 
+    void refreshVisibilitySource(QQuickItem* item) {
+        const auto existing = findWatch(item);
+        if (existing == watches.end()) {
+            return;
+        }
+
+        for (const auto& connection : existing->source_connections) {
+            QObject::disconnect(connection);
+        }
+        existing->source_connections.clear();
+
+        QQuickItem* source = nullptr;
+        if (existing->attached && existing->attached->isVisibilitySourceSet()) {
+            source = existing->attached->visibilitySource();
+        }
+        if (existing->visibility_source != source) {
+            existing->invalid_source_warned = false;
+        }
+        existing->visibility_source = source;
+
+        if (! source) {
+            return;
+        }
+
+        existing->source_connections.push_back(
+            QObject::connect(source, &QQuickItem::visibleChanged, q, [this]() {
+                markAllDirty();
+            }));
+        existing->source_connections.push_back(
+            QObject::connect(source, &QQuickItem::parentChanged, q, [this, item](QQuickItem*) {
+                refreshVisibilitySource(item);
+                markAllDirty();
+            }));
+
+        if (source->parentItem() != item && ! existing->invalid_source_warned) {
+            qmlWarning(q)
+                << "Layout.visibilitySource must be a direct visual child of its target item";
+            existing->invalid_source_warned = true;
+        }
+    }
+
     void addWatch(QQuickItem* item) {
         if (! item || findWatch(item) != watches.end()) {
             return;
@@ -162,10 +206,16 @@ public:
                 QObject::connect(watch.attached, &LayoutAttached::fillHeightChanged, q, [this]() {
                     markGeometryDirty();
                 }));
+            watch.connections.push_back(QObject::connect(
+                watch.attached, &LayoutAttached::visibilitySourceChanged, q, [this, item]() {
+                    refreshVisibilitySource(item);
+                    markAllDirty();
+                }));
         }
 
         watches.push_back(std::move(watch));
         adapter.watch(item);
+        refreshVisibilitySource(item);
     }
 
     void removeWatch(QQuickItem* item, bool removePrivateListener) {
@@ -174,6 +224,9 @@ public:
             return;
         }
         for (const auto& connection : existing->connections) {
+            QObject::disconnect(connection);
+        }
+        for (const auto& connection : existing->source_connections) {
             QObject::disconnect(connection);
         }
         if (removePrivateListener) {
@@ -210,6 +263,14 @@ public:
                 continue;
             }
             const auto watch = findWatch(child);
+            if (watch != watches.end() && watch->attached &&
+                watch->attached->isVisibilitySourceSet()) {
+                auto* source = watch->attached->visibilitySource();
+                if (! source || source->parentItem() != child ||
+                    ! adapter.isExplicitlyVisible(source)) {
+                    continue;
+                }
+            }
             result.push_back({ child, watch != watches.end() ? watch->attached.data() : nullptr });
         }
         return result;

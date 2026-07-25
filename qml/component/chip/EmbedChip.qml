@@ -69,8 +69,8 @@ T.Button {
         spacing: 4
 
         Loader {
-            visible: control.leading && item?.visible
             sourceComponent: control.leading
+            Lite.Layout.visibilitySource: item
         }
 
         MD.Label {
@@ -82,8 +82,8 @@ T.Button {
         }
 
         Loader {
-            visible: control.trailing && item?.visible
             sourceComponent: control.trailing
+            Lite.Layout.visibilitySource: item
         }
     }
 

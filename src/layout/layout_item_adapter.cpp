@@ -45,7 +45,11 @@ bool LayoutItemAdapter::participates(const QQuickItem* item) const {
         return false;
     }
     const auto* item_private = QQuickItemPrivate::get(item);
-    return item_private->explicitVisible && ! item_private->isTransparentForPositioner();
+    return isExplicitlyVisible(item) && ! item_private->isTransparentForPositioner();
+}
+
+bool LayoutItemAdapter::isExplicitlyVisible(const QQuickItem* item) const {
+    return item && QQuickItemPrivate::get(item)->explicitVisible;
 }
 
 void LayoutItemAdapter::itemSiblingOrderChanged(QQuickItem* item) {
