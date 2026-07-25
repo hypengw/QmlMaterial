@@ -20,33 +20,25 @@ jobs:
             compiler: xcode
           - runner: windows-2025
             compiler: msvc
-          - runner: windows-2025
-            compiler: mingw
-          - runner: windows-2025
-            compiler: clang
     timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v4
 
-      # ccache for gcc / linux-clang / xcode / mingw. MSVC & clang-cl
-      # use sccache instead (set up in their own step below).
+      # ccache for gcc / linux-clang / xcode. MSVC uses sccache instead.
       - name: Set up ccache
-        if: matrix.compiler == 'gcc' || matrix.compiler == 'mingw' || matrix.compiler == 'xcode' || (matrix.compiler == 'clang' && runner.os == 'Linux')
+        if: matrix.compiler == 'gcc' || matrix.compiler == 'xcode' || (matrix.compiler == 'clang' && runner.os == 'Linux')
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ccache-${{ matrix.runner }}-${{ matrix.compiler }}
 
-      # sccache for the two Windows toolchains where ccache is unreliable.
-      # Needs -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded (see their
-      # configure steps) to actually get cache hits. Cold on the first
-      # run, warm after.
+      # MSVC needs embedded debug information for reliable sccache hits.
       - name: Set up sccache
-        if: runner.os == 'Windows' && matrix.compiler != 'mingw'
+        if: matrix.compiler == 'msvc'
         uses: mozilla-actions/sccache-action@v0.0.10
 
       - name: Enable sccache GHA cache
-        if: runner.os == 'Windows' && matrix.compiler != 'mingw'
+        if: matrix.compiler == 'msvc'
         run: echo "SCCACHE_GHA_ENABLED=true" >> $env:GITHUB_ENV
         shell: powershell
 
@@ -61,20 +53,11 @@ jobs:
       # macOS runner images already ship CMake + Ninja; nothing to install.
 
       # cmake + the VC++ workload are preinstalled on Windows images.
-      # pkg-config isn't; llvm is only needed for clang-cl.
       - name: Install system deps (Windows)
         if: runner.os == 'Windows'
-        run: |
-          choco install -y pkgconfiglite
-          if ("${{ matrix.compiler }}" -eq "clang") {
-            choco install -y llvm
-          }
+        run: choco install -y pkgconfiglite
         shell: powershell
 
-      # arch/tools apply only to mingw (empty == omitted elsewhere).
-      # mingw pulls from Qt's archive, not MSYS2's rolling repo which
-      # only keeps the current build; tools_mingw1310 is the exact GCC
-      # 13.1.0 these win64_mingw binaries were built against (ABI match).
       - name: Install Qt 6.8.3 (jurplel action)
         id: install_qt
         uses: jurplel/install-qt-action@v4
@@ -82,8 +65,6 @@ jobs:
           version: '6.8.3'
           host: ${{ runner.os == 'macOS' && 'mac' || runner.os == 'Windows' && 'windows' || 'linux' }}
           modules: 'qtshadertools'
-          arch: ${{ matrix.compiler == 'mingw' && 'win64_mingw' || '' }}
-          tools: ${{ matrix.compiler == 'mingw' && 'tools_mingw1310' || '' }}
           cache: true
 
       - name: Show Qt info (debug)
@@ -181,61 +162,6 @@ jobs:
           cmd /c "`"$vsDevCmd`" -arch=amd64 && $cmakeCmd"
         shell: powershell
 
-      # Git Bash: gcc/g++ come from the Qt Tools download, already on PATH
-      # via jurplel, so no MSYS2 login-shell gymnastics needed.
-      - name: Configure CMake (Windows MinGW)
-        if: runner.os == 'Windows' && matrix.compiler == 'mingw'
-        shell: bash
-        run: |
-          set -e
-          QTDIR="${QT_ROOT_DIR:-${QTDIR:-$QT_INSTALL_DIR}}"
-          echo "Using QTDIR=${QTDIR}"
-          gcc --version || true
-          rm -rf build
-          CC=gcc CXX=g++ cmake -S . -B build -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_PREFIX_PATH="${QTDIR}" \
-            -DQt6ShaderTools_DIR="${QTDIR}/lib/cmake/Qt6ShaderTools" \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
-
-      - name: Configure CMake (Windows clang)
-        if: runner.os == 'Windows' && matrix.compiler == 'clang'
-        run: |
-          $llvmBin = 'C:\Program Files\LLVM\bin'
-          if (Test-Path $llvmBin) { $env:PATH = "$llvmBin;$env:PATH" }
-
-          # jurplel/install-qt-action v4 exports QT_ROOT_DIR (the real
-          # one); QTDIR/QT_INSTALL_DIR are legacy fallbacks. Read
-          # $env:* directly, not ${{ env.* }}, which can't see vars a
-          # prior step set via $GITHUB_ENV. Empty after all three means
-          # the Qt install step failed -> loud error, not a guess.
-          $qtDir = $env:QT_ROOT_DIR
-          if (-not $qtDir) { $qtDir = $env:QTDIR }
-          if (-not $qtDir) { $qtDir = $env:QT_INSTALL_DIR }
-          if (-not $qtDir) { Write-Error "QT_ROOT_DIR not set - Qt install step likely failed."; exit 1 }
-          Write-Host "Using Qt dir: $qtDir"
-          $env:PATH = "$(Join-Path $qtDir 'lib');$env:PATH"
-
-          New-Item -ItemType Directory -Force -Path build | Out-Null
-
-          # /Z7 via Embedded (same reason as the MSVC step) so sccache
-          # can cache clang-cl output.
-          $cmakeArgs = @(
-            '-S', '.', '-B', 'build', '-G', 'Ninja',
-            '-DCMAKE_BUILD_TYPE=Release',
-            "-DCMAKE_PREFIX_PATH=$qtDir",
-            "-DQt6ShaderTools_DIR=$qtDir\lib\cmake\Qt6ShaderTools",
-            '-DCMAKE_C_COMPILER=clang-cl',
-            '-DCMAKE_CXX_COMPILER=clang-cl',
-            '-DCMAKE_POLICY_CMP0141=NEW',
-            '-DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded',
-            '-DCMAKE_C_COMPILER_LAUNCHER=sccache',
-            '-DCMAKE_CXX_COMPILER_LAUNCHER=sccache'
-          )
-          & cmake @cmakeArgs
-        shell: powershell
-
       - name: Build (Linux / macOS, parallel)
         if: runner.os != 'Windows'
         run: |
@@ -250,15 +176,8 @@ jobs:
           cmake --build build --config Release --parallel $(nproc || echo 2)
         shell: bash
 
-      - name: Build (Windows MinGW)
-        if: runner.os == 'Windows' && matrix.compiler == 'mingw'
-        shell: bash
-        run: |
-          set -e
-          cmake --build build --parallel "${NUMBER_OF_PROCESSORS:-2}"
-
-      - name: Build (Windows MSVC / clang, parallel)
-        if: runner.os == 'Windows' && matrix.compiler != 'mingw'
+      - name: Build (Windows MSVC, parallel)
+        if: matrix.compiler == 'msvc'
         run: |
           $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
           if (-not (Test-Path $vswhere)) { Write-Error "vswhere.exe not found at $vswhere"; exit 1 }
