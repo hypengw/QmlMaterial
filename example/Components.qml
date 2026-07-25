@@ -745,6 +745,11 @@ MD.Page {
                             MD.SuggestionChip {
                                 text: 'Suggestion'
                             }
+                            MD.EmbedChip {
+                                text: 'Embed'
+                                icon.name: MD.Token.icon.description
+                                trailingIconName: MD.Token.icon.close
+                            }
                         }
                         RowLayout {
                             spacing: 12
@@ -765,6 +770,12 @@ MD.Page {
                             }
                             MD.SuggestionChip {
                                 text: 'Suggestion'
+                                enabled: false
+                            }
+                            MD.EmbedChip {
+                                text: 'Embed'
+                                icon.name: MD.Token.icon.description
+                                trailingIconName: MD.Token.icon.close
                                 enabled: false
                             }
                         }
