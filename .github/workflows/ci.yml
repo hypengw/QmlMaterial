@@ -24,6 +24,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Icon/ typography assets are Git LFS; without this, qrc embeds
+          # pointer files and FontLoader fails (FT_New_Face error 2).
+          lfs: true
 
       # ccache for gcc / linux-clang / xcode. MSVC uses sccache instead.
       - name: Set up ccache
@@ -71,6 +75,47 @@ jobs:
           modules: 'qtshadertools'
           cache: true
           cache-key-prefix: install-qt-action-qmlmaterial-v2
+
+      # aqt kits ship no fonts; Windows offscreen FreeType needs files under
+      # lib/fonts, otherwise SnakeBar heights drift (88 vs 48). Read
+      # $QT_ROOT_DIR from the install step env — not ${{ env.QT_* }}.
+      - name: Install fallback fonts for Qt
+        shell: bash
+        run: |
+          QTDIR="${QT_ROOT_DIR:-${QTDIR:-${QT_INSTALL_DIR:-}}}"
+          if [ -z "${QTDIR}" ] || [ ! -d "${QTDIR}" ]; then
+            echo "QT_ROOT_DIR missing after Qt install"
+            exit 1
+          fi
+          export FONT_DIR="${QTDIR}/lib/fonts"
+          mkdir -p "${FONT_DIR}"
+          curl -fsSL -o /tmp/dejavu.zip \
+            "https://github.com/dejavu-fonts/dejavu-fonts/releases/download/version_2_37/dejavu-fonts-ttf-2.37.zip"
+          python3 - <<'PY'
+          import zipfile
+          from pathlib import Path
+          import os
+          font_dir = Path(os.environ["FONT_DIR"])
+          with zipfile.ZipFile("/tmp/dejavu.zip") as zf:
+              for name in zf.namelist():
+                  if name.endswith((".ttf", ".otf")) and "/ttf/" in name.replace("\\", "/"):
+                      target = font_dir / Path(name).name
+                      target.write_bytes(zf.read(name))
+          count = len(list(font_dir.glob("*.ttf")))
+          print("installed", count, "fonts into", font_dir)
+          if count < 1:
+              raise SystemExit("no fonts extracted")
+          PY
+          # Verify Material icon fonts are real TTFs (not LFS pointers).
+          for f in assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_*.ttf; do
+            sz=$(wc -c < "$f")
+            echo "asset $f size=${sz}"
+            if [ "${sz}" -lt 10000 ]; then
+              echo "Material font looks like an LFS pointer; checkout lfs failed"
+              exit 1
+            fi
+          done
+          echo "QT_QPA_FONTDIR=${FONT_DIR}" >> "$GITHUB_ENV"
 
       - name: Show Qt info (debug)
         run: |
