@@ -214,6 +214,7 @@ jobs:
             cmake -S . -B build -G Ninja \
               -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}" \
+              -DQt6ShaderTools_DIR="${QT_CMAKE_PREFIX}/lib/cmake/Qt6ShaderTools" \
               -DCMAKE_C_COMPILER_LAUNCHER=ccache \
               -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
           fi
