@@ -233,7 +233,23 @@ jobs:
             fi
             export PATH="${GITHUB_WORKSPACE}/build:${GITHUB_WORKSPACE}/build/tests:${PATH}"
             export QT_QPA_PLATFORM=offscreen
-            ctest --test-dir build --output-on-failure -E "visual_" -j 2
+            export QT_ENABLE_HIGHDPI_SCALING=0
+            export QT_SCALE_FACTOR=1
+            if ! ctest --test-dir build --output-on-failure -E "visual_" -j 2; then
+              echo "==== control_layout solo -v2 ===="
+              CTRL=$(find build -name 'control_layout.exe' -type f | head -n 1)
+              if [ -z "${CTRL}" ]; then
+                CTRL=$(find build -name 'control_layout' -type f -executable | head -n 1)
+              fi
+              echo "binary=${CTRL}"
+              if [ -n "${CTRL}" ]; then
+                "${CTRL}" -v2 || true
+              else
+                echo "control_layout binary not found under build/"
+                find build -iname '*control_layout*' || true
+              fi
+              exit 1
+            fi
           elif [ "${{ runner.os }}" = "macOS" ]; then
             # No eglfs on macOS; skip visual tests.
             ctest --test-dir build --output-on-failure -E "visual_" --parallel $(sysctl -n hw.ncpu || echo 2)
