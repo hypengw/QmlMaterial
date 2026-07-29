@@ -56,18 +56,17 @@ class ControlLayoutTest : public QObject {
 
 private Q_SLOTS:
     void initTestCase() {
-        qputenv("QT_ENABLE_HIGHDPI_SCALING", "0");
         m_engine.addImportPath(QCoreApplication::applicationDirPath()
                                + QStringLiteral("/../qml_modules"));
         const QByteArray envPath = qgetenv("QML_IMPORT_PATH");
-        if (!envPath.isEmpty()) {
+        if (! envPath.isEmpty()) {
 #if defined(Q_OS_WIN)
             const QList<QByteArray> parts = envPath.split(';');
 #else
             const QList<QByteArray> parts = envPath.split(':');
 #endif
             for (const QByteArray& part : parts) {
-                if (!part.isEmpty())
+                if (! part.isEmpty())
                     m_engine.addImportPath(QString::fromLocal8Bit(part));
             }
         }
