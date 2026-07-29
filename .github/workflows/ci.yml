@@ -227,6 +227,12 @@ jobs:
         run: |
           if [ "${{ runner.os }}" = "Windows" ]; then
             # Visual tests need EGL/DRM or ANGLE; skip on Windows.
+            QTDIR="${QT_ROOT_DIR:-${QTDIR:-${QT_INSTALL_DIR:-}}}"
+            if [ -n "${QTDIR}" ]; then
+              export PATH="${QTDIR}/bin:${PATH}"
+            fi
+            export PATH="${GITHUB_WORKSPACE}/build:${GITHUB_WORKSPACE}/build/tests:${PATH}"
+            export QT_QPA_PLATFORM=offscreen
             ctest --test-dir build --output-on-failure -E "visual_" -j 2
           elif [ "${{ runner.os }}" = "macOS" ]; then
             # No eglfs on macOS; skip visual tests.

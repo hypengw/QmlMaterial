@@ -49,6 +49,26 @@ class ControlLayoutTest : public QObject {
     Q_OBJECT
 
 private Q_SLOTS:
+    void initTestCase() {
+        qputenv("QT_ENABLE_HIGHDPI_SCALING", "0");
+        m_engine.addImportPath(QCoreApplication::applicationDirPath()
+                               + QStringLiteral("/../qml_modules"));
+        const QByteArray envPath = qgetenv("QML_IMPORT_PATH");
+        if (!envPath.isEmpty()) {
+#if defined(Q_OS_WIN)
+            const QList<QByteArray> parts = envPath.split(';');
+#else
+            const QList<QByteArray> parts = envPath.split(':');
+#endif
+            for (const QByteArray& part : parts) {
+                if (!part.isEmpty())
+                    m_engine.addImportPath(QString::fromLocal8Bit(part));
+            }
+        }
+        m_window.setGeometry(0, 0, 800, 600);
+        m_window.create();
+    }
+
     void constrainedTextElides_data() {
         QTest::addColumn<QString>("type");
         QTest::addColumn<QString>("setup");
@@ -398,9 +418,11 @@ private Q_SLOTS:
         QCoreApplication::processEvents();
 
         QQuickItem* delegate = nullptr;
-        QVERIFY(QMetaObject::invokeMethod(
-            menu, "itemAt", Q_RETURN_ARG(QQuickItem*, delegate), Q_ARG(int, 0)));
-        QVERIFY(delegate);
+        QTRY_VERIFY_WITH_TIMEOUT(
+            QMetaObject::invokeMethod(
+                menu, "itemAt", Q_RETURN_ARG(QQuickItem*, delegate), Q_ARG(int, 0))
+                && delegate,
+            3000);
         settle(delegate);
         QCOMPARE(menu->property("count").toInt(), 1);
         QCOMPARE(menu->property("implicitContentWidth").toReal(), delegate->implicitWidth());
