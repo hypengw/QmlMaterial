@@ -58,6 +58,10 @@ jobs:
         run: choco install -y pkgconfiglite
         shell: powershell
 
+      # jurplel/install-qt-action v4 exports QT_ROOT_DIR (kit root with
+      # bin/lib/cmake). It does NOT export QTDIR. Do not read Qt paths via
+      # ${{ env.QTDIR }} — that expression is empty here and used to wipe
+      # CMAKE_PREFIX_PATH, so cmake picked up a system Qt without QuickPrivate.
       - name: Install Qt 6.8.3 (jurplel action)
         id: install_qt
         uses: jurplel/install-qt-action@v4
@@ -66,44 +70,70 @@ jobs:
           host: ${{ runner.os == 'macOS' && 'mac' || runner.os == 'Windows' && 'windows' || 'linux' }}
           modules: 'qtshadertools'
           cache: true
+          cache-key-prefix: install-qt-action-qmlmaterial-v2
 
       - name: Show Qt info (debug)
         run: |
           QTDIR="${QT_ROOT_DIR:-${QTDIR:-$QT_INSTALL_DIR}}"
+          echo "QT_ROOT_DIR=${QT_ROOT_DIR:-}"
           echo "QTDIR=${QTDIR}"
           ls -la "${QTDIR}/lib/cmake" || true
+          ls -la "${QTDIR}/lib/cmake/Qt6QuickPrivate" || true
+          ls -la "${QTDIR}/lib/cmake/Qt6ShaderTools" || true
         shell: bash
 
-      - name: Verify ShaderTools in Qt tree (Linux)
-        if: runner.os == 'Linux'
-        env:
-          QTDIR: ${{ env.QTDIR || env.QT_INSTALL_DIR || '/opt/Qt/6.8.3' }}
+      - name: Verify Qt private modules and ShaderTools
         run: |
-          echo "Checking for Qt6ShaderTools in ${QTDIR}"
-          if [ -d "${QTDIR}/lib/cmake/Qt6ShaderTools" ]; then
-            echo "Qt6ShaderTools found."
-            ls -la "${QTDIR}/lib/cmake/Qt6ShaderTools" || true
-            exit 0
+          # Same rule as Windows configure: read $QT_ROOT_DIR from the
+          # environment the install step wrote, not ${{ env.QTDIR }}.
+          QTDIR="${QT_ROOT_DIR:-${QTDIR:-${QT_INSTALL_DIR:-}}}"
+          if [ -z "${QTDIR}" ] || [ ! -d "${QTDIR}" ]; then
+            echo "QT_ROOT_DIR not set or missing after Qt install."
+            exit 1
           fi
-          echo "Qt6ShaderTools NOT found; installer action may not have provided it."
-          ls -la "${QTDIR}/lib/cmake" || true
+          echo "Using QTDIR=${QTDIR}"
+          missing=0
+          for pkg in Qt6QuickPrivate Qt6GuiPrivate Qt6ShaderTools; do
+            if [ -d "${QTDIR}/lib/cmake/${pkg}" ]; then
+              echo "OK ${pkg}"
+            else
+              echo "MISSING ${pkg} under ${QTDIR}/lib/cmake"
+              missing=1
+            fi
+          done
+          if [ "${missing}" -ne 0 ]; then
+            ls -la "${QTDIR}/lib/cmake" || true
+            exit 1
+          fi
         shell: bash
 
       - name: Configure CMake (Linux / macOS)
         if: runner.os != 'Windows'
-        env:
-          CMAKE_PREFIX_PATH: ${{ env.QTDIR || env.QT_INSTALL_DIR || '' }}:/usr/lib/x86_64-linux-gnu/cmake
         run: |
-          QTDIR="${QT_ROOT_DIR:-${QTDIR:-${QT_INSTALL_DIR:-/opt/Qt/6.8.3}}}"
+          QTDIR="${QT_ROOT_DIR:-${QTDIR:-${QT_INSTALL_DIR:-}}}"
+          if [ -z "${QTDIR}" ] || [ ! -d "${QTDIR}" ]; then
+            echo "QT_ROOT_DIR not set or missing after Qt install."
+            exit 1
+          fi
           if [ -d "${QTDIR}/gcc_64/bin" ]; then
             QT_BIN="${QTDIR}/gcc_64/bin"; QT_LIB="${QTDIR}/gcc_64/lib"
+            QT_CMAKE_PREFIX="${QTDIR}/gcc_64"
           else
             QT_BIN="${QTDIR}/bin"; QT_LIB="${QTDIR}/lib"
+            QT_CMAKE_PREFIX="${QTDIR}"
           fi
           export PATH="${QT_BIN}:${PATH}"
           export LD_LIBRARY_PATH="${QT_LIB}:${LD_LIBRARY_PATH:-}"
+          # Prefer the aqt kit. Keep distro cmake helpers as a secondary path
+          # on Linux only (pkg-config etc.), never as the only prefix.
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            CMAKE_PREFIX_PATH="${QT_CMAKE_PREFIX}:/usr/lib/x86_64-linux-gnu/cmake"
+          else
+            CMAKE_PREFIX_PATH="${QT_CMAKE_PREFIX}"
+          fi
 
           echo "Using QTDIR=${QTDIR}"
+          echo "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}"
           echo "which qsb: $(which qsb || true)"
 
           mkdir -p build
@@ -112,14 +142,14 @@ jobs:
               CC=clang CXX=clang++ cmake -S . -B build -G Ninja \
                 -DCMAKE_BUILD_TYPE=Release \
                 -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}" \
-                -DQt6ShaderTools_DIR="${QTDIR}/lib/cmake/Qt6ShaderTools" \
+                -DQt6ShaderTools_DIR="${QT_CMAKE_PREFIX}/lib/cmake/Qt6ShaderTools" \
                 -DCMAKE_C_COMPILER_LAUNCHER=ccache \
                 -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
             else
               CC=gcc CXX=g++ cmake -S . -B build -G Ninja \
                 -DCMAKE_BUILD_TYPE=Release \
                 -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}" \
-                -DQt6ShaderTools_DIR="${QTDIR}/lib/cmake/Qt6ShaderTools" \
+                -DQt6ShaderTools_DIR="${QT_CMAKE_PREFIX}/lib/cmake/Qt6ShaderTools" \
                 -DCMAKE_C_COMPILER_LAUNCHER=ccache \
                 -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
             fi
