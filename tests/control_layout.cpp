@@ -1,11 +1,17 @@
 #include <QCoreApplication>
 #include <QFont>
+#include <QGuiApplication>
 #include <QQmlComponent>
 #include <QQmlEngine>
 #include <QQuickItem>
 #include <QQuickWindow>
 #include <QtTest>
 #include <memory>
+
+#ifdef Q_OS_WIN
+#    include <QAbstractNativeEventFilter>
+#    include <windows.h>
+#endif
 
 #include "qml_material/layout/layout_container.hpp"
 
@@ -924,6 +930,35 @@ private:
     QQuickWindow m_window;
 };
 
-QTEST_MAIN(ControlLayoutTest)
+#ifdef Q_OS_WIN
+// Same workaround as example/main.cpp: Windows UIA + Qt accessibility can
+// crash while Material controls are created/pressed.
+class UiaBlocker : public QAbstractNativeEventFilter {
+public:
+    bool nativeEventFilter(const QByteArray& eventType, void* message, qintptr* result) override {
+        if (eventType == "windows_generic_MSG") {
+            if (static_cast<MSG*>(message)->message == WM_GETOBJECT) {
+                *result = 0;
+                return true;
+            }
+        }
+        return false;
+    }
+};
+#endif
+
+int main(int argc, char* argv[]) {
+    qputenv("QT_ENABLE_HIGHDPI_SCALING", "0");
+    qputenv("QT_SCALE_FACTOR", "1");
+
+    QGuiApplication app(argc, argv);
+#ifdef Q_OS_WIN
+    static UiaBlocker uiaBlocker;
+    app.installNativeEventFilter(&uiaBlocker);
+#endif
+
+    ControlLayoutTest tc;
+    return QTest::qExec(&tc, argc, argv);
+}
 
 #include "control_layout.moc"

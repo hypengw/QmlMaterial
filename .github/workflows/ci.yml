@@ -236,14 +236,26 @@ jobs:
             export QT_ENABLE_HIGHDPI_SCALING=0
             export QT_SCALE_FACTOR=1
             if ! ctest --test-dir build --output-on-failure -E "visual_" -j 2; then
-              echo "==== control_layout solo -v2 ===="
+              echo "==== control_layout solo diagnostics ===="
               CTRL=$(find build -name 'control_layout.exe' -type f | head -n 1)
               if [ -z "${CTRL}" ]; then
                 CTRL=$(find build -name 'control_layout' -type f -executable | head -n 1)
               fi
               echo "binary=${CTRL}"
               if [ -n "${CTRL}" ]; then
-                "${CTRL}" -v2 || true
+                # QtTest stdout is often lost on Windows crash; -o writes a file.
+                set +e
+                "${CTRL}" -o control_layout_result.txt,txt -v2 \
+                  >control_layout_stdout.txt 2>control_layout_stderr.txt
+                rc=$?
+                set -e
+                echo "control_layout exit=${rc}"
+                echo "==== stdout ===="
+                cat control_layout_stdout.txt || true
+                echo "==== stderr ===="
+                cat control_layout_stderr.txt || true
+                echo "==== qt-test -o txt ===="
+                cat control_layout_result.txt || true
               else
                 echo "control_layout binary not found under build/"
                 find build -iname '*control_layout*' || true
