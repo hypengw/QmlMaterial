@@ -82,7 +82,7 @@ jobs:
           ls -la "${QTDIR}/lib/cmake/Qt6ShaderTools" || true
         shell: bash
 
-      - name: Verify Qt private modules and ShaderTools
+      - name: Verify Qt kit and ShaderTools
         run: |
           # Same rule as Windows configure: read $QT_ROOT_DIR from the
           # environment the install step wrote, not ${{ env.QTDIR }}.
@@ -92,19 +92,21 @@ jobs:
             exit 1
           fi
           echo "Using QTDIR=${QTDIR}"
-          missing=0
-          for pkg in Qt6QuickPrivate Qt6GuiPrivate Qt6ShaderTools; do
-            if [ -d "${QTDIR}/lib/cmake/${pkg}" ]; then
-              echo "OK ${pkg}"
-            else
-              echo "MISSING ${pkg} under ${QTDIR}/lib/cmake"
-              missing=1
-            fi
-          done
-          if [ "${missing}" -ne 0 ]; then
+          if [ ! -d "${QTDIR}/lib/cmake/Qt6ShaderTools" ]; then
+            echo "MISSING Qt6ShaderTools under ${QTDIR}/lib/cmake"
             ls -la "${QTDIR}/lib/cmake" || true
             exit 1
           fi
+          echo "OK Qt6ShaderTools"
+          # Private cmake packages are often absent on aqt Qt 6.8; CMake
+          # gets Qt6::QuickPrivate via Quick. Warn only.
+          for pkg in Qt6QuickPrivate Qt6GuiPrivate; do
+            if [ -d "${QTDIR}/lib/cmake/${pkg}" ]; then
+              echo "OK ${pkg}"
+            else
+              echo "WARN ${pkg} not present as a separate package (expected on Qt 6.8 aqt)"
+            fi
+          done
         shell: bash
 
       - name: Configure CMake (Linux / macOS)

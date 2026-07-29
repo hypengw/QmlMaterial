@@ -46,7 +46,12 @@ if(UNIX AND NOT APPLE)
   set(LINUX CACHE INTERNAL TRUE "")
 endif()
 
-find_package(Qt6 REQUIRED COMPONENTS Core Quick QuickControls2 Gui Qml ShaderTools QuickPrivate)
+find_package(Qt6 REQUIRED COMPONENTS Core Quick QuickControls2 Gui Qml ShaderTools)
+# Qt < ~6.9 often exposes Qt6::QuickPrivate via Quick; Qt 6.9+ needs an
+# explicit private package (aqt 6.8.3 CI has no Qt6QuickPrivateConfig).
+if(NOT TARGET Qt6::QuickPrivate)
+  find_package(Qt6 REQUIRED COMPONENTS QuickPrivate)
+endif()
 
 if(UNIX AND NOT ANDROID AND NOT EMSCRIPTEN)
   find_package(Qt6 REQUIRED COMPONENTS DBus)
