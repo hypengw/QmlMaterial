@@ -1289,6 +1289,20 @@ MD.Page {
                                     labelBehavior: MD.Enum.SliderLabelVisible
                                 }
                                 MD.Text {
+                                    text: 'Fractional step (auto decimals)'
+                                    typescale: MD.Token.typescale.label_medium
+                                    opacity: 0.8
+                                }
+                                MD.Slider {
+                                    Layout.fillWidth: true
+                                    from: 0
+                                    to: 1
+                                    stepSize: 0.1
+                                    snapMode: T.Slider.SnapAlways
+                                    value: 0.5
+                                    labelBehavior: MD.Enum.SliderLabelVisible
+                                }
+                                MD.Text {
                                     text: 'Inset icon'
                                     typescale: MD.Token.typescale.label_medium
                                     opacity: 0.8
