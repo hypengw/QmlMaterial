@@ -24,6 +24,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Icon/ typography assets are Git LFS; without this, qrc embeds
+          # pointer files and FontLoader fails (FT_New_Face error 2).
+          lfs: true
 
       # ccache for gcc / linux-clang / xcode. MSVC uses sccache instead.
       - name: Set up ccache
@@ -58,6 +62,10 @@ jobs:
         run: choco install -y pkgconfiglite
         shell: powershell
 
+      # jurplel/install-qt-action v4 exports QT_ROOT_DIR (kit root with
+      # bin/lib/cmake). It does NOT export QTDIR. Do not read Qt paths via
+      # ${{ env.QTDIR }} — that expression is empty here and used to wipe
+      # CMAKE_PREFIX_PATH, so cmake picked up a system Qt without QuickPrivate.
       - name: Install Qt 6.8.3 (jurplel action)
         id: install_qt
         uses: jurplel/install-qt-action@v4
@@ -66,69 +74,106 @@ jobs:
           host: ${{ runner.os == 'macOS' && 'mac' || runner.os == 'Windows' && 'windows' || 'linux' }}
           modules: 'qtshadertools'
           cache: true
+          cache-key-prefix: install-qt-action-qmlmaterial-v2
 
-      - name: Show Qt info (debug)
-        run: |
-          QTDIR="${QT_ROOT_DIR:-${QTDIR:-$QT_INSTALL_DIR}}"
-          echo "QTDIR=${QTDIR}"
-          ls -la "${QTDIR}/lib/cmake" || true
+      # aqt kits ship no fonts; Windows offscreen FreeType needs lib/fonts
+      # (SnakeBar heights otherwise drift). Download via Python — native
+      # Windows Python cannot open Git Bash /tmp paths.
+      - name: Install fallback fonts for Qt
         shell: bash
-
-      - name: Verify ShaderTools in Qt tree (Linux)
-        if: runner.os == 'Linux'
-        env:
-          QTDIR: ${{ env.QTDIR || env.QT_INSTALL_DIR || '/opt/Qt/6.8.3' }}
         run: |
-          echo "Checking for Qt6ShaderTools in ${QTDIR}"
-          if [ -d "${QTDIR}/lib/cmake/Qt6ShaderTools" ]; then
-            echo "Qt6ShaderTools found."
-            ls -la "${QTDIR}/lib/cmake/Qt6ShaderTools" || true
-            exit 0
+          QTDIR="${QT_ROOT_DIR:-${QTDIR:-${QT_INSTALL_DIR:-}}}"
+          if [ -z "${QTDIR}" ] || [ ! -d "${QTDIR}" ]; then
+            echo "QT_ROOT_DIR missing after Qt install"
+            exit 1
           fi
-          echo "Qt6ShaderTools NOT found; installer action may not have provided it."
-          ls -la "${QTDIR}/lib/cmake" || true
+          export FONT_DIR="${QTDIR}/lib/fonts"
+          export ZIP_DIR="${RUNNER_TEMP:-${TMPDIR:-/tmp}}"
+          mkdir -p "${FONT_DIR}" "${ZIP_DIR}"
+          python3 - <<'PY'
+          import os
+          import urllib.request
+          import zipfile
+          from pathlib import Path
+
+          font_dir = Path(os.environ["FONT_DIR"])
+          zip_path = Path(os.environ["ZIP_DIR"]) / "dejavu-fonts-ttf-2.37.zip"
+          url = (
+              "https://github.com/dejavu-fonts/dejavu-fonts/releases/"
+              "download/version_2_37/dejavu-fonts-ttf-2.37.zip"
+          )
+          font_dir.mkdir(parents=True, exist_ok=True)
+          urllib.request.urlretrieve(url, zip_path)
+          with zipfile.ZipFile(zip_path) as zf:
+              for name in zf.namelist():
+                  norm = name.replace("\\", "/")
+                  if norm.endswith((".ttf", ".otf")) and "/ttf/" in norm:
+                      (font_dir / Path(norm).name).write_bytes(zf.read(name))
+          if not any(font_dir.glob("*.ttf")):
+              raise SystemExit("no fonts extracted")
+
+          for path in Path("assets").glob(
+              "MaterialSymbolsRounded.wght_400.opsz_24.fill_*.ttf"
+          ):
+              if path.stat().st_size < 10000:
+                  raise SystemExit(f"Material font looks like an LFS pointer: {path}")
+          PY
+          echo "QT_QPA_FONTDIR=${FONT_DIR}" >> "$GITHUB_ENV"
+
+      - name: Verify Qt kit and ShaderTools
+        run: |
+          # Read $QT_ROOT_DIR from the install step env, not ${{ env.QTDIR }}.
+          QTDIR="${QT_ROOT_DIR:-${QTDIR:-${QT_INSTALL_DIR:-}}}"
+          if [ -z "${QTDIR}" ] || [ ! -d "${QTDIR}" ]; then
+            echo "QT_ROOT_DIR not set or missing after Qt install."
+            exit 1
+          fi
+          if [ ! -d "${QTDIR}/lib/cmake/Qt6ShaderTools" ]; then
+            echo "MISSING Qt6ShaderTools under ${QTDIR}/lib/cmake"
+            ls -la "${QTDIR}/lib/cmake" || true
+            exit 1
+          fi
         shell: bash
 
       - name: Configure CMake (Linux / macOS)
         if: runner.os != 'Windows'
-        env:
-          CMAKE_PREFIX_PATH: ${{ env.QTDIR || env.QT_INSTALL_DIR || '' }}:/usr/lib/x86_64-linux-gnu/cmake
         run: |
-          QTDIR="${QT_ROOT_DIR:-${QTDIR:-${QT_INSTALL_DIR:-/opt/Qt/6.8.3}}}"
+          QTDIR="${QT_ROOT_DIR:-${QTDIR:-${QT_INSTALL_DIR:-}}}"
+          if [ -z "${QTDIR}" ] || [ ! -d "${QTDIR}" ]; then
+            echo "QT_ROOT_DIR not set or missing after Qt install."
+            exit 1
+          fi
           if [ -d "${QTDIR}/gcc_64/bin" ]; then
             QT_BIN="${QTDIR}/gcc_64/bin"; QT_LIB="${QTDIR}/gcc_64/lib"
+            QT_CMAKE_PREFIX="${QTDIR}/gcc_64"
           else
             QT_BIN="${QTDIR}/bin"; QT_LIB="${QTDIR}/lib"
+            QT_CMAKE_PREFIX="${QTDIR}"
           fi
           export PATH="${QT_BIN}:${PATH}"
           export LD_LIBRARY_PATH="${QT_LIB}:${LD_LIBRARY_PATH:-}"
-
-          echo "Using QTDIR=${QTDIR}"
-          echo "which qsb: $(which qsb || true)"
+          # Prefer the aqt kit. Distro cmake helpers are secondary on Linux only.
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            CMAKE_PREFIX_PATH="${QT_CMAKE_PREFIX}:/usr/lib/x86_64-linux-gnu/cmake"
+          else
+            CMAKE_PREFIX_PATH="${QT_CMAKE_PREFIX}"
+          fi
 
           mkdir -p build
-          if [ "${{ runner.os }}" = "Linux" ]; then
-            if [ "${{ matrix.compiler }}" = "clang" ]; then
-              CC=clang CXX=clang++ cmake -S . -B build -G Ninja \
-                -DCMAKE_BUILD_TYPE=Release \
-                -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}" \
-                -DQt6ShaderTools_DIR="${QTDIR}/lib/cmake/Qt6ShaderTools" \
-                -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-                -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
-            else
-              CC=gcc CXX=g++ cmake -S . -B build -G Ninja \
-                -DCMAKE_BUILD_TYPE=Release \
-                -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}" \
-                -DQt6ShaderTools_DIR="${QTDIR}/lib/cmake/Qt6ShaderTools" \
-                -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-                -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
-            fi
+          CMAKE_ARGS=(
+            -S . -B build -G Ninja
+            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}"
+            -DQt6ShaderTools_DIR="${QT_CMAKE_PREFIX}/lib/cmake/Qt6ShaderTools"
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          )
+          if [ "${{ runner.os }}" = "Linux" ] && [ "${{ matrix.compiler }}" = "clang" ]; then
+            CC=clang CXX=clang++ cmake "${CMAKE_ARGS[@]}"
+          elif [ "${{ runner.os }}" = "Linux" ]; then
+            CC=gcc CXX=g++ cmake "${CMAKE_ARGS[@]}"
           else
-            cmake -S . -B build -G Ninja \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}" \
-              -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-              -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+            cmake "${CMAKE_ARGS[@]}"
           fi
         shell: bash
 
@@ -146,7 +191,6 @@ jobs:
           if (-not $qtDir) { $qtDir = $env:QTDIR }
           if (-not $qtDir) { $qtDir = $env:QT_INSTALL_DIR }
           if (-not $qtDir) { Write-Error "QT_ROOT_DIR not set - Qt install step likely failed."; exit 1 }
-          Write-Host "Using Qt dir: $qtDir"
 
           $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
           if (-not (Test-Path $vswhere)) { Write-Error "vswhere.exe not found at $vswhere"; exit 1 }
@@ -195,6 +239,14 @@ jobs:
         run: |
           if [ "${{ runner.os }}" = "Windows" ]; then
             # Visual tests need EGL/DRM or ANGLE; skip on Windows.
+            QTDIR="${QT_ROOT_DIR:-${QTDIR:-${QT_INSTALL_DIR:-}}}"
+            if [ -n "${QTDIR}" ]; then
+              export PATH="${QTDIR}/bin:${PATH}"
+            fi
+            export PATH="${GITHUB_WORKSPACE}/build:${GITHUB_WORKSPACE}/build/tests:${PATH}"
+            export QT_QPA_PLATFORM=offscreen
+            export QT_ENABLE_HIGHDPI_SCALING=0
+            export QT_SCALE_FACTOR=1
             ctest --test-dir build --output-on-failure -E "visual_" -j 2
           elif [ "${{ runner.os }}" = "macOS" ]; then
             # No eglfs on macOS; skip visual tests.

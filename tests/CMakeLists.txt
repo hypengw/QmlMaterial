@@ -140,7 +140,8 @@ set_target_properties(control_layout PROPERTIES AUTOMOC ON)
 qt_import_qml_plugins(control_layout)
 add_test(NAME control_layout COMMAND control_layout)
 set_tests_properties(control_layout PROPERTIES
-  ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
+  RUN_SERIAL ON
+  ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_ENABLE_HIGHDPI_SCALING=0;QT_SCALE_FACTOR=1;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
 
 set(VISUAL_SCENES button action_progress elevation shape ripple ripple_phases loading_indicator_shapes tooltip wave_progress snackbar
     focus_button focus_iconbutton focus_fab focus_chip
