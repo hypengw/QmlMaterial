@@ -17,6 +17,7 @@ T.Control {
     readonly property alias maximumContentWidth: m_layout.implicitWidth
     readonly property MD.Action moreAction: MD.Action {
         icon.name: MD.Token.icon.more_vert
+        tooltip: qsTr("More actions")
         property var oldPopup: null
         onTriggered: {
             if (!oldPopup || !oldPopup.visible) {
@@ -33,11 +34,23 @@ T.Control {
     }
 
     property string overflowIconName: "overflow-menu"
-    property Component iconDelegate: MD.IconButton {
+    component ActionButton: MD.IconButton {
+        id: button
+
+        readonly property string toolTipText: {
+            const materialAction = button.action as MD.Action;
+            return materialAction?.tooltip || button.action?.text || "";
+        }
+
+        hoverEnabled: true
+        MD.ToolTip.text: button.toolTipText
+        MD.ToolTip.visible: button.hovered && button.toolTipText.length > 0 && !button.pressed
+    }
+    property Component iconDelegate: ActionButton {
         action: MD.ToolBarLayout.action
     }
     property Component fullDelegate: iconDelegate
-    property Component moreDelegate: MD.IconButton {
+    property Component moreDelegate: ActionButton {
         action: root.moreAction
     }
 

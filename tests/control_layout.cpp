@@ -13,6 +13,7 @@
 #    include <windows.h>
 #endif
 
+#include "qml_material/control/tool_tip.hpp"
 #include "qml_material/layout/layout_container.hpp"
 
 namespace
@@ -35,6 +36,23 @@ QQuickItem* itemWithText(QQuickItem* root, const QString& text) {
         }
     }
     return root->property("text").toString() == text ? root : nullptr;
+}
+
+QQuickItem* itemWithAction(QQuickItem* root, QObject* action) {
+    if (qvariant_cast<QObject*>(root->property("action")) == action) {
+        return root;
+    }
+    for (auto* child : root->childItems()) {
+        if (auto* match = itemWithAction(child, action)) {
+            return match;
+        }
+    }
+    return nullptr;
+}
+
+qml_material::ToolTipAttached* attachedToolTip(QObject* target) {
+    return static_cast<qml_material::ToolTipAttached*>(
+        qmlAttachedPropertiesObject<qml_material::ToolTip>(target, false));
 }
 
 qml_material::Row* layoutRow(QQuickItem* root) {
@@ -223,6 +241,277 @@ private Q_SLOTS:
         }
         QVERIFY(icon);
         QCOMPARE(icon->isVisible(), iconVisible);
+    }
+
+    void attachedToolTipLifecycle() {
+        const auto source = QByteArrayLiteral(R"(
+            import QtQuick
+            import Qcm.Material as MD
+
+            Item {
+                width: 320
+                height: 120
+
+                Item {
+                    objectName: "first"
+                    width: 80
+                    height: 40
+                    MD.ToolTip.text: "First"
+                    MD.ToolTip.delay: 0
+                    MD.ToolTip.timeout: -1
+                }
+                Item {
+                    objectName: "second"
+                    x: 100
+                    width: 80
+                    height: 40
+                    MD.ToolTip.text: "Second"
+                    MD.ToolTip.delay: 0
+                    MD.ToolTip.timeout: -1
+                }
+            }
+        )");
+
+        QQmlComponent component(&m_engine);
+        component.setData(source, QUrl(QStringLiteral("qrc:/tests/attached-tooltip.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* root = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(root);
+        root->setParentItem(m_window.contentItem());
+
+        auto* first  = root->findChild<QQuickItem*>(QStringLiteral("first"));
+        auto* second = root->findChild<QQuickItem*>(QStringLiteral("second"));
+        QVERIFY(first);
+        QVERIFY(second);
+
+        auto* firstAttached  = attachedToolTip(first);
+        auto* secondAttached = attachedToolTip(second);
+        QVERIFY(firstAttached);
+        QVERIFY(secondAttached);
+        QCOMPARE(firstAttached->text(), QStringLiteral("First"));
+        QCOMPARE(firstAttached->delay(), 0);
+        QCOMPARE(firstAttached->timeout(), -1);
+        QVERIFY(! firstAttached->visible());
+
+        auto* sharedToolTip = firstAttached->toolTip();
+        QVERIFY(sharedToolTip);
+        QCOMPARE(secondAttached->toolTip(), sharedToolTip);
+
+        firstAttached->show(firstAttached->text(), 0);
+        QTRY_VERIFY(firstAttached->visible());
+        QCOMPARE(sharedToolTip->property("text").toString(), QStringLiteral("First"));
+        QCOMPARE(qvariant_cast<QQuickItem*>(sharedToolTip->property("parent")), first);
+
+        secondAttached->setText(QStringLiteral("Inactive second"));
+        QCOMPARE(sharedToolTip->property("text").toString(), QStringLiteral("First"));
+        firstAttached->setText(QStringLiteral("Updated first"));
+        QCOMPARE(sharedToolTip->property("text").toString(), QStringLiteral("Updated first"));
+
+        QVERIFY(sharedToolTip->setProperty("width", 321.0));
+        QVERIFY(sharedToolTip->setProperty("height", 123.0));
+        secondAttached->show(secondAttached->text(), 0);
+        QTRY_VERIFY(secondAttached->visible());
+        QVERIFY(! firstAttached->visible());
+        QCOMPARE(qvariant_cast<QQuickItem*>(sharedToolTip->property("parent")), second);
+        QCOMPARE(sharedToolTip->property("text").toString(), QStringLiteral("Inactive second"));
+        QVERIFY(sharedToolTip->property("width").toReal() != 321.0);
+        QVERIFY(sharedToolTip->property("height").toReal() != 123.0);
+
+        firstAttached->hide();
+        QVERIFY(secondAttached->visible());
+        secondAttached->hide();
+        QTRY_VERIFY(! secondAttached->visible());
+
+        firstAttached->setDelay(60);
+        firstAttached->show(QStringLiteral("Delayed"));
+        QVERIFY(! firstAttached->visible());
+        firstAttached->hide();
+        QTest::qWait(100);
+        QVERIFY(! sharedToolTip->property("visible").toBool());
+
+        firstAttached->setDelay(0);
+        firstAttached->setTimeout(40);
+        firstAttached->show(QStringLiteral("Timed"));
+        QTRY_VERIFY(firstAttached->visible());
+        QTRY_VERIFY_WITH_TIMEOUT(! firstAttached->visible(), 1000);
+
+        firstAttached->setTimeout(-1);
+        firstAttached->show(QStringLiteral("Before destruction"), 0);
+        QTRY_VERIFY(firstAttached->visible());
+        QPointer<QQuickItem> firstGuard(first);
+        delete first;
+        QVERIFY(firstGuard.isNull());
+        QTRY_VERIFY(! sharedToolTip->property("visible").toBool());
+
+        QQmlEngine otherEngine;
+        QQmlComponent otherComponent(&otherEngine);
+        otherComponent.setData(
+            QByteArrayLiteral(R"(
+                import QtQuick
+                import Qcm.Material as MD
+                Item { MD.ToolTip.text: "Other engine" }
+            )"),
+            QUrl(QStringLiteral("qrc:/tests/attached-tooltip-other-engine.qml")));
+        QVERIFY2(! otherComponent.isError(), qPrintable(otherComponent.errorString()));
+        std::unique_ptr<QObject> otherObject(otherComponent.create());
+        QVERIFY2(otherObject, qPrintable(otherComponent.errorString()));
+        auto* otherAttached = attachedToolTip(otherObject.get());
+        QVERIFY(otherAttached);
+        QVERIFY(otherAttached->toolTip());
+        QVERIFY(otherAttached->toolTip() != sharedToolTip);
+    }
+
+    void toolTipTypeContract() {
+        QQmlComponent initiallyVisible(&m_engine);
+        initiallyVisible.setData(
+            QByteArrayLiteral(R"(
+                import QtQuick
+                import Qcm.Material as MD
+                Item {
+                    width: 80
+                    height: 40
+                    MD.ToolTip.visible: true
+                    MD.ToolTip.delay: 0
+                    MD.ToolTip.text: "Initially visible"
+                }
+            )"),
+            QUrl(QStringLiteral("qrc:/tests/tooltip-initially-visible.qml")));
+        QVERIFY2(! initiallyVisible.isError(), qPrintable(initiallyVisible.errorString()));
+        std::unique_ptr<QObject> initiallyVisibleObject(initiallyVisible.create());
+        QVERIFY2(initiallyVisibleObject, qPrintable(initiallyVisible.errorString()));
+        auto* initiallyVisibleItem = qobject_cast<QQuickItem*>(initiallyVisibleObject.get());
+        QVERIFY(initiallyVisibleItem);
+        initiallyVisibleItem->setParentItem(m_window.contentItem());
+        auto* initiallyVisibleAttached = attachedToolTip(initiallyVisibleItem);
+        QVERIFY(initiallyVisibleAttached);
+        QTRY_VERIFY(initiallyVisibleAttached->visible());
+        QCOMPARE(initiallyVisibleAttached->toolTip()->property("text").toString(),
+                 QStringLiteral("Initially visible"));
+        initiallyVisibleAttached->hide();
+
+        QQmlComponent attachedOnly(&m_engine);
+        attachedOnly.setData(
+            QByteArrayLiteral(R"(
+                import Qcm.Material as MD
+                MD.ToolTip {}
+            )"),
+            QUrl(QStringLiteral("qrc:/tests/tooltip-uncreatable.qml")));
+        QVERIFY(attachedOnly.isError());
+
+        QQmlComponent plain(&m_engine);
+        plain.setData(
+            QByteArrayLiteral(R"(
+                import Qcm.Material as MD
+                MD.PlainToolTip {}
+            )"),
+            QUrl(QStringLiteral("qrc:/tests/plain-tooltip.qml")));
+        QVERIFY2(! plain.isError(), qPrintable(plain.errorString()));
+        std::unique_ptr<QObject> plainObject(plain.create());
+        QVERIFY2(plainObject, qPrintable(plain.errorString()));
+    }
+
+    void actionToolBarTooltips() {
+        const auto source = QByteArrayLiteral(R"(
+            import QtQuick
+            import Qcm.Material as MD
+
+            Item {
+                width: 240
+                height: 64
+
+                property MD.Action explicitAction: MD.Action {
+                    text: "Refresh"
+                    tooltip: "Reload content"
+                    icon.name: MD.Token.icon.refresh
+                }
+                property MD.Action fallbackAction: MD.Action {
+                    text: "Settings"
+                    icon.name: MD.Token.icon.settings
+                }
+
+                MD.ActionToolBar {
+                    objectName: "toolbar"
+                    anchors.fill: parent
+                    actions: [parent.explicitAction, parent.fallbackAction]
+                }
+            }
+        )");
+
+        QQmlComponent component(&m_engine);
+        component.setData(source, QUrl(QStringLiteral("qrc:/tests/action-toolbar-tooltip.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* root = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(root);
+        root->setParentItem(m_window.contentItem());
+        settle(root, 12);
+
+        auto* toolbar        = root->findChild<QQuickItem*>(QStringLiteral("toolbar"));
+        auto* explicitAction = qvariant_cast<QObject*>(root->property("explicitAction"));
+        auto* fallbackAction = qvariant_cast<QObject*>(root->property("fallbackAction"));
+        QVERIFY(toolbar);
+        QVERIFY(explicitAction);
+        QVERIFY(fallbackAction);
+
+        auto* explicitButton = itemWithAction(toolbar, explicitAction);
+        auto* fallbackButton = itemWithAction(toolbar, fallbackAction);
+        auto* moreAction     = qvariant_cast<QObject*>(toolbar->property("moreAction"));
+        auto* moreButton     = itemWithAction(toolbar, moreAction);
+        QVERIFY(explicitButton);
+        QVERIFY(fallbackButton);
+        QVERIFY(moreAction);
+        QVERIFY(moreButton);
+
+        QCOMPARE(explicitButton->property("toolTipText").toString(),
+                 QStringLiteral("Reload content"));
+        QCOMPARE(fallbackButton->property("toolTipText").toString(), QStringLiteral("Settings"));
+        QCOMPARE(moreButton->property("toolTipText").toString(), QStringLiteral("More actions"));
+
+        auto* explicitToolTip = attachedToolTip(explicitButton);
+        auto* fallbackToolTip = attachedToolTip(fallbackButton);
+        auto* moreToolTip     = attachedToolTip(moreButton);
+        QVERIFY(explicitToolTip);
+        QVERIFY(fallbackToolTip);
+        QVERIFY(moreToolTip);
+        QCOMPARE(explicitToolTip->text(), QStringLiteral("Reload content"));
+        QCOMPARE(fallbackToolTip->text(), QStringLiteral("Settings"));
+        QCOMPARE(moreToolTip->text(), QStringLiteral("More actions"));
+
+        auto* sharedToolTip = explicitToolTip->toolTip();
+        QVERIFY(sharedToolTip);
+        QCOMPARE(fallbackToolTip->toolTip(), sharedToolTip);
+        QCOMPARE(moreToolTip->toolTip(), sharedToolTip);
+
+        explicitToolTip->show(explicitToolTip->text(), 0);
+        QTRY_VERIFY(explicitToolTip->visible());
+        QCOMPARE(sharedToolTip->property("text").toString(), QStringLiteral("Reload content"));
+        QCOMPARE(qvariant_cast<QQuickItem*>(sharedToolTip->property("parent")), explicitButton);
+
+        fallbackToolTip->show(fallbackToolTip->text(), 0);
+        QTRY_VERIFY(fallbackToolTip->visible());
+        QVERIFY(! explicitToolTip->visible());
+        QCOMPARE(qvariant_cast<QQuickItem*>(sharedToolTip->property("parent")), fallbackButton);
+
+        explicitToolTip->hide();
+        QVERIFY(fallbackToolTip->visible());
+        fallbackToolTip->hide();
+        QTRY_VERIFY(! fallbackToolTip->visible());
+
+        moreToolTip->show(moreToolTip->text(), 0);
+        QTRY_VERIFY(moreToolTip->visible());
+        QCOMPARE(sharedToolTip->property("text").toString(), QStringLiteral("More actions"));
+        moreToolTip->hide();
+
+        QVERIFY(explicitAction->setProperty("tooltip", QStringLiteral("Reload current page")));
+        settle(root);
+        QCOMPARE(explicitButton->property("toolTipText").toString(),
+                 QStringLiteral("Reload current page"));
+        QCOMPARE(explicitToolTip->text(), QStringLiteral("Reload current page"));
     }
 
     void expandedCenteredControlsKeepNaturalContent_data() {

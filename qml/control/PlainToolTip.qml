@@ -3,7 +3,7 @@ import QtQuick.Templates as T
 import Qcm.Material as MD
 
 /**
- * @brief Material Design 3 plain tooltip
+ * @brief Material Design 3 plain tooltip popup
  * @ingroup control
  */
 T.ToolTip {

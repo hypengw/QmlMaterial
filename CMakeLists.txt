@@ -106,6 +106,8 @@ set(SOURCES
     src/control/page_context.cpp
     src/control/color_picker.cpp
     src/control/popup.cpp
+    src/control/tool_tip.cpp
+    include/qml_material/control/tool_tip.hpp
     src/layout/width_provider.cpp
     src/layout/toolbar_layout.cpp
     src/layout/toolbar_layout_delegate.cpp
@@ -178,7 +180,7 @@ set(QML_FILES
     qml/control/Popup.qml
     qml/control/BottomSheet.qml
     qml/control/Switch.qml
-    qml/control/ToolTip.qml
+    qml/control/PlainToolTip.qml
     qml/control/TabBar.qml
     qml/control/TabButton.qml
     qml/control/TableViewDelegate.qml

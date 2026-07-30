@@ -9,6 +9,7 @@ T.Action {
     property real progress: 0
     property bool closeMenu: true
     property bool separator: false
+    property string tooltip: ""
     property Component displayComponent
     icon.width: 24
     icon.height: 24

@@ -672,10 +672,8 @@ MD.Page {
                             MD.Button {
                                 mdState.type: MD.Enum.BtFilledTonal
                                 text: 'Plain'
-                                MD.ToolTip {
-                                    visible: parent.hovered || parent.down
-                                    text: 'Add to favorites'
-                                }
+                                MD.ToolTip.visible: hovered || down
+                                MD.ToolTip.text: 'Add to favorites'
                             }
 
                             MD.Button {
