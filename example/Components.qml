@@ -1110,6 +1110,63 @@ MD.Page {
                         }
                     }
                     ComponentCard {
+                        title: 'Icon-only Navigation Rail Items'
+
+                        RowLayout {
+                            Layout.alignment: Qt.AlignHCenter
+                            spacing: 24
+
+                            ColumnLayout {
+                                Layout.alignment: Qt.AlignTop
+
+                                MD.Label {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    text: 'Collapsed'
+                                    typescale: MD.Token.typescale.label_large
+                                }
+
+                                MD.RailItem {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    Layout.preferredWidth: 96
+                                    iconStyle: MD.Enum.IconOnly
+                                    action: MD.Action {
+                                        text: 'Settings'
+                                        tooltip: 'Configure application'
+                                        icon.name: MD.Token.icon.settings
+                                        checkable: true
+                                        checked: true
+                                    }
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.alignment: Qt.AlignTop
+
+                                MD.Label {
+                                    Layout.alignment: Qt.AlignLeft
+                                    Layout.preferredWidth: 88
+                                    text: 'Expanded'
+                                    horizontalAlignment: Text.AlignHCenter
+                                    typescale: MD.Token.typescale.label_large
+                                }
+
+                                MD.RailItem {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    Layout.preferredWidth: 88
+                                    expand: true
+                                    iconStyle: MD.Enum.IconOnly
+                                    action: MD.Action {
+                                        text: 'Search'
+                                        tooltip: 'Search library'
+                                        icon.name: MD.Token.icon.search
+                                        checkable: true
+                                        checked: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    ComponentCard {
                         title: 'Tabs'
                         MD.TabBar {
                             Layout.fillWidth: true

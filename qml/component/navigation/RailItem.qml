@@ -7,6 +7,8 @@ T.Button {
 
     property int iconStyle: hasIcon ? MD.Enum.IconAndText : MD.Enum.TextOnly
     readonly property bool hasIcon: MD.Util.hasIcon(icon)
+    readonly property bool _showIcon: iconStyle !== MD.Enum.TextOnly && hasIcon
+    readonly property bool _showLabel: iconStyle !== MD.Enum.IconOnly
     property MD.StateRailItem mdState: MD.StateRailItem {
         item: control
     }
@@ -22,6 +24,7 @@ T.Button {
 
     padding: 0
     spacing: 0
+    hoverEnabled: true
 
     icon.width: 24
     icon.height: 24
@@ -43,13 +46,44 @@ T.Button {
     readonly property real _iconLabelSpacing: 12
 
     // expanded indicator wraps content
-    readonly property real _expandedIndicatorW: _expandedLeadingPad + control.icon.width + _iconLabelSpacing + m_label.implicitWidth + _expandedTrailingPad
+    readonly property real _expandedIndicatorW: {
+        if (control.iconStyle === MD.Enum.IconOnly)
+            return _expandedIndicatorH;
+        let width = _expandedLeadingPad + _expandedTrailingPad;
+        if (control._showIcon)
+            width += control.icon.width;
+        if (control._showLabel)
+            width += m_label.implicitWidth;
+        if (control._showIcon && control._showLabel)
+            width += _iconLabelSpacing;
+        return width;
+    }
     readonly property real _expandedWidth: _expandedIndicatorW + _indicatorMargin * 2
+    readonly property real _implicitWidth: {
+        if (!control.expand)
+            return _collapsedWidth;
+        if (control.iconStyle === MD.Enum.IconOnly)
+            return _expandedWidth;
+        return Math.max(_expandedIndicatorW, 220);
+    }
+    readonly property real _collapsedHeight: {
+        let height = _collapsedIndicatorH;
+        if (control._showLabel)
+            height += 4 + m_label.implicitHeight;
+        return height;
+    }
+
+    MD.ToolTip.text: {
+        const materialAction = control.action as MD.Action;
+        return materialAction?.tooltip || control.text || "";
+    }
+    MD.ToolTip.visible: control.iconStyle === MD.Enum.IconOnly && control.hovered
+                        && !control.pressed && MD.ToolTip.text.length > 0
 
     contentItem: Item {
         id: m_content
-        implicitWidth: control.expand ? Math.max(control._expandedIndicatorW, 220) : control._collapsedWidth
-        implicitHeight: control.expand ? control._expandedIndicatorH : (control._collapsedIndicatorH + 4 + m_label.implicitHeight)
+        implicitWidth: control._implicitWidth
+        implicitHeight: control.expand ? control._expandedIndicatorH : control._collapsedHeight
 
         Behavior on implicitWidth {
             NumberAnimation {
@@ -67,6 +101,7 @@ T.Button {
         // -- icon --
         MD.Icon {
             id: m_icon
+            visible: control._showIcon
             name: control.icon.name
             size: control.icon.width
             color: control.mdState.supportTextColor
@@ -78,6 +113,7 @@ T.Button {
         // -- label --
         MD.Text {
             id: m_label
+            visible: control._showLabel
             text: control.text
             font.capitalization: Font.Capitalize
             typescale: control.expand ? MD.Token.typescale.label_large : MD.Token.typescale.label_medium
@@ -112,7 +148,12 @@ T.Button {
                         y: (control._expandedIndicatorH - control.icon.height) / 2
                     }
                     m_label {
-                        x: control._expandedLeadingPad + control._indicatorMargin + control.icon.width + control._iconLabelSpacing
+                        x: {
+                            let position = control._expandedLeadingPad + control._indicatorMargin;
+                            if (control._showIcon)
+                                position += control.icon.width + control._iconLabelSpacing;
+                            return position;
+                        }
                         y: (control._expandedIndicatorH - m_label.implicitHeight) / 2
                     }
                 }
@@ -144,8 +185,8 @@ T.Button {
     }
 
     background: Item {
-        implicitWidth: control.expand ? Math.max(control._expandedIndicatorW, 220) : control._collapsedWidth
-        implicitHeight: control.expand ? control._expandedIndicatorH : (control._collapsedIndicatorH + 4 + m_label.implicitHeight)
+        implicitWidth: control._implicitWidth
+        implicitHeight: control.expand ? control._expandedIndicatorH : control._collapsedHeight
 
         Behavior on implicitWidth {
             NumberAnimation {
@@ -164,7 +205,13 @@ T.Button {
             id: m_indicator
             x: control.expand ? control._indicatorMargin : (control._collapsedWidth - control._collapsedIndicatorW) / 2
             y: 0
-            width: control.expand ? control.width - control._indicatorMargin * 2 : control._collapsedIndicatorW
+            width: {
+                if (!control.expand)
+                    return control._collapsedIndicatorW;
+                if (control.iconStyle === MD.Enum.IconOnly)
+                    return control._expandedIndicatorW;
+                return control.width - control._indicatorMargin * 2;
+            }
             height: control.expand ? control._expandedIndicatorH : control._collapsedIndicatorH
 
             radius: height / 2

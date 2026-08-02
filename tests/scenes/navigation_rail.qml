@@ -65,4 +65,35 @@ Item {
             }
         }
     }
+
+    Column {
+        x: 456
+        y: 16
+        width: 248
+        spacing: 12
+
+        MD.RailItem {
+            width: 96
+            iconStyle: MD.Enum.IconOnly
+            action: MD.Action {
+                text: 'Settings'
+                tooltip: 'Configure application'
+                icon.name: MD.Token.icon.settings
+                checkable: true
+                checked: true
+            }
+        }
+
+        MD.RailItem {
+            expand: true
+            iconStyle: MD.Enum.IconOnly
+            action: MD.Action {
+                text: 'Search'
+                tooltip: 'Search library'
+                icon.name: MD.Token.icon.search
+                checkable: true
+                checked: true
+            }
+        }
+    }
 }

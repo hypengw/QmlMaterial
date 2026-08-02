@@ -50,6 +50,18 @@ QQuickItem* itemWithAction(QQuickItem* root, QObject* action) {
     return nullptr;
 }
 
+QQuickItem* itemWithIcon(QQuickItem* root) {
+    if (! root->property("name").toString().isEmpty()) {
+        return root;
+    }
+    for (auto* child : root->childItems()) {
+        if (auto* match = itemWithIcon(child)) {
+            return match;
+        }
+    }
+    return nullptr;
+}
+
 qml_material::ToolTipAttached* attachedToolTip(QObject* target) {
     return static_cast<qml_material::ToolTipAttached*>(
         qmlAttachedPropertiesObject<qml_material::ToolTip>(target, false));
@@ -241,6 +253,118 @@ private Q_SLOTS:
         }
         QVERIFY(icon);
         QCOMPARE(icon->isVisible(), iconVisible);
+    }
+
+    void railItemIconOnly() {
+        const auto source = QByteArrayLiteral(R"(
+            import QtQuick
+            import Qcm.Material as MD
+
+            Item {
+                width: 360
+                height: 160
+                property int iconAndTextStyle: MD.Enum.IconAndText
+                property int iconOnlyStyle: MD.Enum.IconOnly
+                property MD.Action railAction: MD.Action {
+                    text: "Settings"
+                    tooltip: "Configure application"
+                    icon.name: MD.Token.icon.settings
+                }
+
+                MD.RailItem {
+                    objectName: "collapsed"
+                    width: 96
+                    action: parent.railAction
+                    iconStyle: MD.Enum.IconOnly
+                }
+                MD.RailItem {
+                    objectName: "expanded"
+                    x: 120
+                    expand: true
+                    action: parent.railAction
+                    iconStyle: MD.Enum.IconOnly
+                }
+            }
+        )");
+
+        QQmlComponent component(&m_engine);
+        component.setData(source, QUrl(QStringLiteral("qrc:/tests/rail-item-icon-only.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* root = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(root);
+        root->setParentItem(m_window.contentItem());
+        settle(root);
+
+        auto* collapsed = root->findChild<QQuickItem*>(QStringLiteral("collapsed"));
+        auto* expanded  = root->findChild<QQuickItem*>(QStringLiteral("expanded"));
+        auto* action    = qvariant_cast<QObject*>(root->property("railAction"));
+        QVERIFY(collapsed);
+        QVERIFY(expanded);
+        QVERIFY(action);
+
+        auto verifyIconOnly = [](QQuickItem* item, qreal expectedHeight, qreal expectedIconX) {
+            auto* content = qvariant_cast<QQuickItem*>(item->property("contentItem"));
+            QVERIFY(content);
+            QCOMPARE(content->implicitHeight(), expectedHeight);
+
+            auto* label = itemWithText(content, QStringLiteral("Settings"));
+            auto* icon  = itemWithIcon(content);
+            QVERIFY(label);
+            QVERIFY(icon);
+            QVERIFY(! label->isVisible());
+            QVERIFY(icon->isVisible());
+            QCOMPARE(icon->x(), expectedIconX);
+        };
+
+        verifyIconOnly(collapsed, 32.0, 36.0);
+        verifyIconOnly(expanded, 56.0, 32.0);
+        QCOMPARE(expanded->implicitWidth(), 88.0);
+        QCOMPARE(expanded->width(), 88.0);
+
+        auto* expandedBackground = qvariant_cast<QQuickItem*>(expanded->property("background"));
+        QVERIFY(expandedBackground);
+        QCOMPARE(expandedBackground->childItems().size(), 1);
+        auto* expandedIndicator = expandedBackground->childItems().front();
+        QCOMPARE(expandedIndicator->x(), 16.0);
+        QCOMPARE(expandedIndicator->width(), 56.0);
+        QCOMPARE(expandedIndicator->height(), 56.0);
+
+        auto* collapsedToolTip = attachedToolTip(collapsed);
+        auto* expandedToolTip  = attachedToolTip(expanded);
+        QVERIFY(collapsedToolTip);
+        QVERIFY(expandedToolTip);
+        QCOMPARE(collapsedToolTip->text(), QStringLiteral("Configure application"));
+        QCOMPARE(expandedToolTip->text(), QStringLiteral("Configure application"));
+        QCOMPARE(collapsedToolTip->toolTip(), expandedToolTip->toolTip());
+
+        collapsedToolTip->show(collapsedToolTip->text(), 0);
+        QTRY_VERIFY(collapsedToolTip->visible());
+        QCOMPARE(qvariant_cast<QQuickItem*>(collapsedToolTip->toolTip()->property("parent")),
+                 collapsed);
+        collapsedToolTip->hide();
+        QTRY_VERIFY(! collapsedToolTip->visible());
+
+        QVERIFY(action->setProperty("tooltip", QStringLiteral("Configure")));
+        settle(root);
+        QCOMPARE(collapsedToolTip->text(), QStringLiteral("Configure"));
+
+        QVERIFY(action->setProperty("tooltip", QString()));
+        settle(root);
+        QCOMPARE(collapsedToolTip->text(), QStringLiteral("Settings"));
+
+        QVERIFY(collapsed->setProperty("iconStyle", root->property("iconAndTextStyle")));
+        auto* collapsedContent = qvariant_cast<QQuickItem*>(collapsed->property("contentItem"));
+        auto* collapsedLabel   = itemWithText(collapsedContent, QStringLiteral("Settings"));
+        QVERIFY(collapsedLabel);
+        QTRY_VERIFY(collapsedLabel->isVisible());
+        QTRY_VERIFY(collapsedContent->implicitHeight() > 32.0);
+
+        QVERIFY(collapsed->setProperty("iconStyle", root->property("iconOnlyStyle")));
+        QTRY_VERIFY(! collapsedLabel->isVisible());
+        QTRY_COMPARE(collapsedContent->implicitHeight(), 32.0);
     }
 
     void attachedToolTipLifecycle() {
