@@ -1,13 +1,13 @@
 # Material Design 3 for Qml
 This is a library of Qml implementing Google's Material Design.
 
-## 🌐 [Live Demo](https://hypengw.github.io/QmlMaterialWeb/)
+## 🌐 [Live Demo](https://hypengw.github.io/QmlMaterial/wasm/)
 
 ### Dependencies
 
 - Qt 6.8+
 
-## [Doc](https://hypengw.github.io/QmlMaterial/index.html)
+## [Doc](https://hypengw.github.io/QmlMaterial/)
 Work in progress
 
 ## Installation
@@ -63,4 +63,4 @@ Set the option to it if you need animation when switching `FILL`.
 - [material-color-utilities](https://github.com/material-foundation/material-color-utilities)
 - [kirigami](https://invent.kde.org/frameworks/kirigami)
 - [quickshell](https://git.outfoxxed.me/quickshell/quickshell)
-- [skia](https://skia.org) (principles behind shadow / blur mask math; BSD-3)
+- [skia](https://skia.org)

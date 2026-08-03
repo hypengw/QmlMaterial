@@ -1,7 +1,9 @@
 #include "qml_material/control/color_picker.hpp"
 
 #include <QtCore/QRunnable>
-#include <QtCore/QThreadPool>
+#if QT_CONFIG(thread)
+#    include <QtCore/QThreadPool>
+#endif
 
 namespace qml_material
 {
@@ -176,11 +178,15 @@ void ColorPickerRunnable::run() {
 
 ColorPicker::ColorPicker(QObject* parent): QObject(parent) {
     connect(this, &ColorPicker::pick, [this] {
+#if QT_CONFIG(thread)
         auto pick = new ColorPickerRunnable();
         pick->setAutoDelete(true);
         pick->image = m_image;
         connect(pick, &ColorPickerRunnable::finished, this, &ColorPicker::setColor);
         QThreadPool::globalInstance()->start(pick);
+#else
+        setColor(extractCoolDominantColor(m_image));
+#endif
     });
 }
 ColorPicker::~ColorPicker() {}

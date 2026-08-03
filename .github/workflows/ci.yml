@@ -14,8 +14,6 @@ jobs:
         include:
           - runner: ubuntu-24.04
             compiler: gcc
-          - runner: ubuntu-24.04
-            compiler: clang
           - runner: macos-15
             compiler: xcode
           - runner: windows-2025
@@ -29,9 +27,9 @@ jobs:
           # pointer files and FontLoader fails (FT_New_Face error 2).
           lfs: true
 
-      # ccache for gcc / linux-clang / xcode. MSVC uses sccache instead.
+      # ccache for GCC and Xcode. MSVC uses sccache instead.
       - name: Set up ccache
-        if: matrix.compiler == 'gcc' || matrix.compiler == 'xcode' || (matrix.compiler == 'clang' && runner.os == 'Linux')
+        if: matrix.compiler == 'gcc' || matrix.compiler == 'xcode'
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ccache-${{ matrix.runner }}-${{ matrix.compiler }}
@@ -51,7 +49,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential cmake ninja-build pkg-config libgl1-mesa-dev libgles2-mesa-dev libegl1-mesa-dev libgbm-dev xvfb wget unzip
-          if [ "${{ matrix.compiler }}" = "clang" ]; then sudo apt-get install -y clang; fi
         shell: bash
 
       # macOS runner images already ship CMake + Ninja; nothing to install.
@@ -168,9 +165,7 @@ jobs:
             -DCMAKE_C_COMPILER_LAUNCHER=ccache
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
           )
-          if [ "${{ runner.os }}" = "Linux" ] && [ "${{ matrix.compiler }}" = "clang" ]; then
-            CC=clang CXX=clang++ cmake "${CMAKE_ARGS[@]}"
-          elif [ "${{ runner.os }}" = "Linux" ]; then
+          if [ "${{ runner.os }}" = "Linux" ]; then
             CC=gcc CXX=g++ cmake "${CMAKE_ARGS[@]}"
           else
             cmake "${CMAKE_ARGS[@]}"

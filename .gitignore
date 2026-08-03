@@ -2,6 +2,7 @@
 build
 .cache
 /build*
+!/build_wasm.sh
 /doc/html
 /doc/doxygen-awesome-css
 /compile_commands.json

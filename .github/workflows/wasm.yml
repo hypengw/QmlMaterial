@@ -1,0 +1,150 @@
+name: WASM CI and Pages
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  wasm:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build pkg-config
+
+      - name: Cache Emscripten
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/emsdk
+          key: emsdk-${{ runner.os }}-3.1.56
+
+      - name: Install Emscripten 3.1.56
+        run: |
+          if [ ! -x "${RUNNER_TEMP}/emsdk/emsdk" ]; then
+            git clone --depth 1 https://github.com/emscripten-core/emsdk.git "${RUNNER_TEMP}/emsdk"
+          fi
+          "${RUNNER_TEMP}/emsdk/emsdk" install 3.1.56
+          "${RUNNER_TEMP}/emsdk/emsdk" activate 3.1.56
+
+      - name: Install Qt 6.8.3 for WebAssembly
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          host: all_os
+          target: wasm
+          arch: wasm_singlethread
+          modules: qtshadertools
+          cache: true
+          cache-key-prefix: install-qt-action-qmlmaterial-wasm-v1
+
+      - name: Verify Qt WebAssembly kit
+        run: |
+          test -x "${QT_ROOT_DIR}/bin/qt-cmake"
+          test -n "${QT_HOST_PATH:-}"
+          test -d "${QT_HOST_PATH}/lib/cmake"
+
+      - name: Build WebAssembly example
+        run: |
+          EMSDK_ROOT="${RUNNER_TEMP}/emsdk" \
+          QT_WASM_PATH="${QT_ROOT_DIR}" \
+          BUILD_DIR="${GITHUB_WORKSPACE}/build_wasm" \
+          ./build_wasm.sh
+
+      - name: Package WebAssembly site
+        run: |
+          output="${GITHUB_WORKSPACE}/build_wasm/example"
+          site="${GITHUB_WORKSPACE}/build_wasm/site"
+          install -d "${site}"
+          install -m 644 "${output}/qm_example.html" "${site}/index.html"
+          install -m 644 "${output}/qm_example.js" "${site}/qm_example.js"
+          install -m 644 "${output}/qm_example.wasm" "${site}/qm_example.wasm"
+          install -m 644 "${output}/qtloader.js" "${site}/qtloader.js"
+
+      - name: Upload WebAssembly artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: qml-material-wasm
+          path: build_wasm/site/
+          if-no-files-found: error
+          retention-days: 7
+
+  pages:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: wasm
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install documentation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz
+          pip3 install doxyqml
+          git clone --depth 1 https://github.com/jothepro/doxygen-awesome-css.git doc/doxygen-awesome-css
+
+      - name: Build documentation
+        run: |
+          curl -L https://github.com/doxygen/doxygen/releases/download/Release_1_12_0/doxygen-1.12.0.linux.bin.tar.gz | tar -xz
+          export PATH="${GITHUB_WORKSPACE}/doxygen-1.12.0/bin:${PATH}"
+          cmake -E chdir doc doxygen
+
+      - name: Download WebAssembly artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: qml-material-wasm
+          path: _site/wasm
+
+      - name: Assemble Pages site
+        run: |
+          cp -a doc/html/. _site/
+          touch _site/.nojekyll
+          test -s _site/index.html
+          test -s _site/wasm/index.html
+          test -s _site/wasm/qm_example.wasm
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site/
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: pages
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
