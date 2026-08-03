@@ -24,22 +24,28 @@ if [[ -n "${QT_WASM_PATH:-}" ]]; then
 else
     qt_wasm_path="${HOME}/.local/share/Qt/${qt_version}/wasm_singlethread"
     source_qt_path="${HOME}/.local/share/Qt/${qt_version}/qt-everywhere-src-${qt_version}/qtbase"
-    if [[ ! -x "${qt_wasm_path}/bin/qt-cmake" && -x "${source_qt_path}/bin/qt-cmake" ]]; then
+    if [[ ! -f "${qt_wasm_path}/bin/qt-cmake" && -f "${source_qt_path}/bin/qt-cmake" ]]; then
         qt_wasm_path="${source_qt_path}"
     fi
 fi
 
-if [[ ! -x "${qt_wasm_path}/bin/qt-cmake" ]]; then
+qt_cmake="${qt_wasm_path}/bin/qt-cmake"
+qt_toolchain="${qt_wasm_path}/lib/cmake/Qt6/qt.toolchain.cmake"
+
+if [[ ! -f "${qt_cmake}" ]]; then
     echo "Qt for WebAssembly not found: ${qt_wasm_path}/bin/qt-cmake" >&2
     exit 1
 fi
-if [[ ! -d "${qt_host_path}/lib/cmake" ]]; then
-    echo "Qt host tools not found: ${qt_host_path}/lib/cmake" >&2
+if [[ ! -f "${qt_toolchain}" ]]; then
+    echo "Qt WebAssembly toolchain not found: ${qt_toolchain}" >&2
+    exit 1
+fi
+if [[ ! -f "${qt_host_path}/lib/cmake/Qt6/Qt6Config.cmake" ]]; then
+    echo "Qt host tools not found: ${qt_host_path}" >&2
     exit 1
 fi
 
 export QT_HOST_PATH="${qt_host_path}"
-export QT_HOST_PATH_CMAKE_DIR="${QT_HOST_PATH_CMAKE_DIR:-${qt_host_path}/lib/cmake}"
 
 cmake_args=(
     -S "${project_dir}"
@@ -48,6 +54,7 @@ cmake_args=(
     -DQM_BUILD_EXAMPLE=ON
     -DQM_BUILD_TESTS=OFF
     -DCMAKE_BUILD_TYPE="${BUILD_TYPE:-MinSizeRel}"
+    -DQT_HOST_PATH="${qt_host_path}"
 )
 
 chainload_toolchain="${QT_CHAINLOAD_TOOLCHAIN_FILE:-}"
@@ -58,10 +65,11 @@ if [[ -n "${chainload_toolchain}" ]]; then
     cmake_args+=("-DQT_CHAINLOAD_TOOLCHAIN_FILE=${chainload_toolchain}")
 fi
 
-"${qt_wasm_path}/bin/qt-cmake" "${cmake_args[@]}" --fresh "$@"
+sh "${qt_cmake}" "${cmake_args[@]}" --fresh "$@"
 cmake --build "${build_dir}" --target qm_example --parallel
 
-for output in qm_example.html qm_example.js qm_example.wasm qtloader.js; do
+outputs=(qm_example.html qm_example.js qm_example.wasm qtloader.js qtlogo.svg)
+for output in "${outputs[@]}"; do
     output_path="${build_dir}/example/${output}"
     if [[ ! -s "${output_path}" ]]; then
         echo "Missing WebAssembly output: ${output_path}" >&2
@@ -69,4 +77,25 @@ for output in qm_example.html qm_example.js qm_example.wasm qtloader.js; do
     fi
 done
 
-echo "WebAssembly example built in ${build_dir}/example"
+wasm_output="${build_dir}/example/qm_example.wasm"
+qml_plugins=(
+    Qcm_MaterialPlugin
+    Qcm_Material_LayoutsPlugin
+    QmlShapesPlugin
+    QtQuickEffectsPlugin
+)
+for qml_plugin in "${qml_plugins[@]}"; do
+    if ! grep -aFq "${qml_plugin}" "${wasm_output}"; then
+        echo "Missing static QML plugin in WebAssembly output: ${qml_plugin}" >&2
+        exit 1
+    fi
+done
+
+site_dir="${build_dir}/site"
+cmake -E make_directory "${site_dir}"
+cmake -E copy_if_different "${build_dir}/example/qm_example.html" "${site_dir}/index.html"
+for output in qm_example.js qm_example.wasm qtloader.js qtlogo.svg; do
+    cmake -E copy_if_different "${build_dir}/example/${output}" "${site_dir}/${output}"
+done
+
+echo "WebAssembly site built in ${site_dir}"

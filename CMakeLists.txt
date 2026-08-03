@@ -560,14 +560,6 @@ target_include_directories(
   PRIVATE "include/${LIBNAME}" src)
 
 add_subdirectory(third_party)
-if(QM_BUILD_EXAMPLE)
-  add_subdirectory(example)
-endif()
-if(QM_BUILD_TESTS)
-  enable_testing()
-  add_subdirectory(tests)
-endif()
-
 target_link_libraries(
   ${LIBNAME}
   PUBLIC Qt6::Core Qt6::Quick
@@ -577,6 +569,21 @@ target_link_libraries(
 
 if(UNIX AND NOT ANDROID AND NOT EMSCRIPTEN)
   target_link_libraries(${LIBNAME} PRIVATE Qt6::DBus)
+endif()
+
+if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
+  add_subdirectory(qml)
+  target_link_libraries("${LIBNAME}plugin"
+                        PUBLIC qml_material_qml_imports
+                               "${LAYOUT_LIBNAME}plugin")
+endif()
+
+if(QM_BUILD_EXAMPLE)
+  add_subdirectory(example)
+endif()
+if(QM_BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(tests)
 endif()
 
 if(NOT QML_MATERIAL_BUILD_TYPE MATCHES STATIC)

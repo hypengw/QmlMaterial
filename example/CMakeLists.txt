@@ -37,7 +37,7 @@ target_link_libraries(qm_example PRIVATE Qt6::Core Qt6::Quick)
 target_compile_definitions(qm_example PRIVATE QT_QML_OUTPUT_DIRECTORY="${QT_QML_OUTPUT_DIRECTORY}")
 
 if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
-  qt_import_qml_plugins(qm_example)
   target_link_libraries(qm_example PRIVATE qml_materialplugin)
   target_compile_definitions(qm_example PRIVATE QML_STATIC)
+  qt_import_qml_plugins(qm_example)
 endif()

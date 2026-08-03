@@ -50,28 +50,12 @@ jobs:
           cache: true
           cache-key-prefix: install-qt-action-qmlmaterial-wasm-v1
 
-      - name: Verify Qt WebAssembly kit
-        run: |
-          test -x "${QT_ROOT_DIR}/bin/qt-cmake"
-          test -n "${QT_HOST_PATH:-}"
-          test -d "${QT_HOST_PATH}/lib/cmake"
-
       - name: Build WebAssembly example
         run: |
           EMSDK_ROOT="${RUNNER_TEMP}/emsdk" \
           QT_WASM_PATH="${QT_ROOT_DIR}" \
           BUILD_DIR="${GITHUB_WORKSPACE}/build_wasm" \
           ./build_wasm.sh
-
-      - name: Package WebAssembly site
-        run: |
-          output="${GITHUB_WORKSPACE}/build_wasm/example"
-          site="${GITHUB_WORKSPACE}/build_wasm/site"
-          install -d "${site}"
-          install -m 644 "${output}/qm_example.html" "${site}/index.html"
-          install -m 644 "${output}/qm_example.js" "${site}/qm_example.js"
-          install -m 644 "${output}/qm_example.wasm" "${site}/qm_example.wasm"
-          install -m 644 "${output}/qtloader.js" "${site}/qtloader.js"
 
       - name: Upload WebAssembly artifact
         uses: actions/upload-artifact@v4
@@ -121,6 +105,7 @@ jobs:
           test -s _site/index.html
           test -s _site/wasm/index.html
           test -s _site/wasm/qm_example.wasm
+          test -s _site/wasm/qtlogo.svg
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
