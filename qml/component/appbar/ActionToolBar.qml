@@ -18,17 +18,24 @@ T.Control {
     readonly property MD.Action moreAction: MD.Action {
         icon.name: MD.Token.icon.more_vert
         tooltip: qsTr("More actions")
-        property var oldPopup: null
+        property var presentation: null
         onTriggered: {
-            if (!oldPopup || !oldPopup.visible) {
-                oldPopup = MD.Util.showPopup(m_comp_menu, {}, root);
-                oldPopup.y = root.height;
-            }
+            if (presentation?.active)
+                return;
+            presentation = m_menu_presenter.present(m_menu_component);
         }
     }
+
+    MD.PopupPresenter {
+        id: m_menu_presenter
+        host: root
+    }
+
     Component {
-        id: m_comp_menu
+        id: m_menu_component
+
         MD.ActionMenu {
+            y: root.height
             actions: m_layout.hiddenActions
         }
     }

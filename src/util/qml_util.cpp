@@ -217,9 +217,15 @@ QObject* Util::showPopup(const QJSValue& url_or_comp, const QVariantMap& props, 
         if (popup->metaObject()->indexOfSignal("openRejected(QString)") >= 0) {
             QObject::connect(popup, SIGNAL(openRejected(QString)), this, SLOT(onPopupFinished()));
         }
-        if (! QMetaObject::invokeMethod(popup, "requestOpen")) {
-            QMetaObject::invokeMethod(popup, "open");
-        }
+        const auto* meta   = popup->metaObject();
+        const char* method = nullptr;
+        if (meta->indexOfMethod("requestOpen()") >= 0)
+            method = "requestOpen";
+        else if (meta->indexOfMethod("open()") >= 0)
+            method = "open";
+
+        if (! method || ! QMetaObject::invokeMethod(popup, method))
+            qCWarning(qml_material_logcat()) << "cannot show popup: no callable open method";
     }
     return popup;
 }

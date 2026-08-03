@@ -253,7 +253,10 @@ void Pool::startIncubation(qint64 id) {
 
     task.incubator = std::make_unique<PoolIncubator>(this, id, toQtMode(task.mode));
     task.incubator->setInitialProperties(task.initialProperties);
-    task.component->create(*task.incubator);
+    auto* context = task.component->creationContext();
+    if (! context) context = qmlContext(this);
+    if (! context && task.component->engine()) context = task.component->engine()->rootContext();
+    task.component->create(*task.incubator, context, qmlContext(this));
 }
 
 void Pool::incubatorStateChanged(qint64 id, QQmlIncubator::Status status) {

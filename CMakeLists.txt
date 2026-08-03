@@ -106,6 +106,8 @@ set(SOURCES
     src/control/page_context.cpp
     src/control/color_picker.cpp
     src/control/popup.cpp
+    src/control/popup_presenter.cpp
+    include/qml_material/control/popup_presenter.hpp
     src/control/tool_tip.cpp
     include/qml_material/control/tool_tip.hpp
     src/layout/width_provider.cpp
