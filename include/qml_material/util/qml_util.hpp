@@ -5,14 +5,24 @@
 #include <QQuickItem>
 #include <QPointer>
 #include <QQuickWindow>
+#include <memory>
 
 #include "qml_material/util/corner.hpp"
 #include "qml_material/core/enum.hpp"
 #include "qml_material/token/token.hpp"
 #include "qml_material/core.hpp"
+#include "qml_material/export.hpp"
 
 namespace qml_material
 {
+
+struct QML_MATERIAL_API ComponentSource {
+    QPointer<QQmlComponent>        component;
+    std::unique_ptr<QQmlComponent> ownedComponent;
+    QString                        errorString;
+
+    explicit operator bool() const { return component != nullptr; }
+};
 
 class Util : public QObject {
     Q_OBJECT
@@ -102,16 +112,19 @@ public:
     Q_INVOKABLE static bool     disconnectAll(QObject* obj, const QString&);
 
     Q_INVOKABLE static quint32 poolObjectCount() noexcept;
-    Q_INVOKABLE static qint32 i32Max() noexcept;
+    Q_INVOKABLE static qint32  i32Max() noexcept;
+
 private:
-    Q_SLOT void onPopupClosed();
+    Q_SLOT void onPopupFinished();
 
 private:
     usize m_tracked { 0 };
 };
 
-auto tryCreateComponent(const QVariant& val, QQmlComponent::CompilationMode useAsync,
-                        const std::function<QQmlComponent*()>& createComponent) -> QQmlComponent*;
+QML_MATERIAL_API auto resolveComponentSource(const QVariant& source, QQmlEngine* engine,
+                                             QQmlContext*                   context,
+                                             QQmlComponent::CompilationMode mode)
+    -> ComponentSource;
 
 /// Platform-split entry point. Each `src/platform/<os>/` provides its
 /// own implementation. Linux uses xdg-desktop-portal `OpenURI`; other
@@ -124,6 +137,6 @@ namespace qcm
 {
 auto qml_dyn_count() -> std::atomic<i32>&;
 auto createItem(QQmlEngine* engine, const QJSValue& url_or_comp, const QVariantMap& props,
-                QObject* parent) -> QObject*;
+                QObject* parent, QQmlContext* context) -> QObject*;
 
 } // namespace qcm

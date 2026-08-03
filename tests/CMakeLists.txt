@@ -143,6 +143,23 @@ set_tests_properties(control_layout PROPERTIES
   RUN_SERIAL ON
   ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_ENABLE_HIGHDPI_SCALING=0;QT_SCALE_FACTOR=1;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
 
+add_executable(dynamic_creation dynamic_creation.cpp)
+target_include_directories(dynamic_creation PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(dynamic_creation PRIVATE
+  qml_material qml_material_layouts
+  Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::Test)
+add_dependencies(dynamic_creation qml_materialplugin qml_material_layoutsplugin)
+if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
+  target_link_libraries(dynamic_creation PRIVATE
+    qml_materialplugin qml_material_layoutsplugin)
+endif()
+set_target_properties(dynamic_creation PROPERTIES AUTOMOC ON)
+qt_import_qml_plugins(dynamic_creation)
+add_test(NAME dynamic_creation COMMAND dynamic_creation)
+set_tests_properties(dynamic_creation PROPERTIES
+  RUN_SERIAL ON
+  ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
+
 set(VISUAL_SCENES button action_progress elevation shape ripple ripple_phases loading_indicator_shapes tooltip wave_progress snackbar
     focus_button focus_iconbutton focus_fab focus_chip
     focus_switch focus_checkbox focus_radio

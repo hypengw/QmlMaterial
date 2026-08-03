@@ -9,6 +9,61 @@ T.Popup {
 
     property alias mdState: item_state
     property int radius: MD.Token.shape.corner.large
+    property bool readyForOpen: true
+    readonly property bool openPending: m_open_state.pending
+
+    signal openRejected(string error)
+
+    function requestOpen() {
+        if (m_open_state.rejected) {
+            if (m_open_state.replayRejection) {
+                m_open_state.replayRejection = false;
+                control.openRejected(m_open_state.error);
+            }
+            return;
+        }
+        if (control.visible || m_open_state.pending)
+            return;
+
+        if (control.readyForOpen) {
+            control.open();
+        } else {
+            m_open_state.pending = true;
+        }
+    }
+
+    function rejectOpen(error) {
+        if (m_open_state.rejected || control.visible)
+            return;
+
+        const requested = m_open_state.pending;
+        m_open_state.pending = false;
+        m_open_state.rejected = true;
+        m_open_state.replayRejection = !requested;
+        m_open_state.error = String(error ?? "");
+        control.openRejected(m_open_state.error);
+    }
+
+    onReadyForOpenChanged: {
+        if (readyForOpen && m_open_state.pending) {
+            m_open_state.pending = false;
+            control.open();
+        }
+    }
+    onClosed: {
+        m_open_state.pending = false;
+        m_open_state.rejected = false;
+        m_open_state.replayRejection = false;
+        m_open_state.error = "";
+    }
+
+    QtObject {
+        id: m_open_state
+        property bool pending: false
+        property bool rejected: false
+        property bool replayRejection: false
+        property string error: ""
+    }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)

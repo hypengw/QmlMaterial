@@ -2,6 +2,8 @@
 
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QFileInfo>
+#include <QQmlContext>
 #include <QQmlEngine>
 #include <format>
 
@@ -200,20 +202,32 @@ auto Util::tokenShape() noexcept -> token::Shape { return token::Shape(); }
 auto Util::tokenState() noexcept -> token::State { return token::State(); }
 
 QObject* Util::createItem(const QJSValue& url_or_comp, const QVariantMap& props, QObject* parent) {
-    return qcm::createItem(qmlEngine(this), url_or_comp, props, parent);
+    auto* context = parent ? qmlContext(parent) : qmlContext(this);
+    return qcm::createItem(qmlEngine(this), url_or_comp, props, parent, context);
 }
 QObject* Util::showPopup(const QJSValue& url_or_comp, const QVariantMap& props, QObject* parent,
                          bool open_and_destry) {
     auto popup = createItem(url_or_comp, props, parent);
+    if (! popup) {
+        qCWarning(qml_material_logcat()) << "cannot show popup: creation failed";
+        return nullptr;
+    }
     if (open_and_destry) {
-        QObject::connect(popup, SIGNAL(closed()), this, SLOT(onPopupClosed()));
-        QMetaObject::invokeMethod(popup, "open");
+        QObject::connect(popup, SIGNAL(closed()), this, SLOT(onPopupFinished()));
+        if (popup->metaObject()->indexOfSignal("openRejected(QString)") >= 0) {
+            QObject::connect(popup, SIGNAL(openRejected(QString)), this, SLOT(onPopupFinished()));
+        }
+        if (! QMetaObject::invokeMethod(popup, "requestOpen")) {
+            QMetaObject::invokeMethod(popup, "open");
+        }
     }
     return popup;
 }
 
-void Util::onPopupClosed() {
+void Util::onPopupFinished() {
     auto s = sender();
+    if (! s || s->property("_qcm_destroy_scheduled").toBool()) return;
+    s->setProperty("_qcm_destroy_scheduled", true);
     if (auto engine = qmlEngine(s)) {
         auto js = engine->toManagedValue(s);
         if (auto p = js.property("destroy"); p.isCallable()) {
@@ -253,8 +267,8 @@ double Util::bezierY(double t, double p1x, double p1y, double p2x, double p2y) n
     for (int i = 0; i < 6; ++i) {
         const double omt = 1.0 - s;
         const double x   = 3.0 * omt * omt * s * p1x + 3.0 * omt * s * s * p2x + s * s * s;
-        const double dx  = 3.0 * omt * omt * p1x + 6.0 * omt * s * (p2x - p1x) +
-                          3.0 * s * s * (1.0 - p2x);
+        const double dx =
+            3.0 * omt * omt * p1x + 6.0 * omt * s * (p2x - p1x) + 3.0 * s * s * (1.0 - p2x);
         if (std::abs(dx) < 1e-6) break;
         s -= (x - t) / dx;
         s = std::clamp(s, 0.0, 1.0);
@@ -336,33 +350,65 @@ qint32  Util::i32Max() noexcept { return std::numeric_limits<qint32>::max(); }
 
 } // namespace qml_material
 
-auto qml_material::tryCreateComponent(const QVariant& val, QQmlComponent::CompilationMode useAsync,
-                                      const std::function<QQmlComponent*()>& createComponent)
-    -> QQmlComponent* {
-    QQmlComponent* component = nullptr;
-    if (component = val.value<QQmlComponent*>(); component) {
-        return component;
-    } else {
-        if (val.typeId() == QMetaType::QString) {
-            const auto str = val.toString();
-            if (str.startsWith(u"qrc:/") || str.startsWith(u"file:/")) {
-                component = createComponent();
-                QUrl url  = str;
-                component->loadUrl(url, useAsync);
-            } else if (auto splits = str.split('/'); splits.size() == 2) {
-                component = createComponent();
-                component->loadFromModule(splits[0], splits[1], useAsync);
-            }
-        } else if (val.typeId() == QMetaType::QUrl) {
-            component      = createComponent();
-            const auto url = val.toUrl();
-            component->loadUrl(url, useAsync);
-        }
-        if (! component) {
-            qCWarning(qml_material_logcat()) << "can't create component from" << val;
-        }
-        return component;
+auto qml_material::resolveComponentSource(const QVariant& source, QQmlEngine* engine,
+                                          QQmlContext* context, QQmlComponent::CompilationMode mode)
+    -> ComponentSource {
+    ComponentSource result;
+    if (auto* component = source.value<QQmlComponent*>()) {
+        result.component = component;
+        return result;
     }
+    if (! engine) {
+        result.errorString = QStringLiteral("cannot resolve a component without a QML engine");
+        return result;
+    }
+
+    auto loadUrl = [&](QUrl url) {
+        if (url.isRelative() && QFileInfo(url.toString()).isAbsolute()) {
+            url = QUrl::fromLocalFile(url.toString());
+        } else if (url.isRelative() && context) {
+            url = context->resolvedUrl(url);
+        }
+        if (! url.isValid() || url.isEmpty()) {
+            result.errorString = QStringLiteral("component URL is empty or invalid");
+            return;
+        }
+        result.ownedComponent = std::make_unique<QQmlComponent>(engine);
+        result.component      = result.ownedComponent.get();
+        result.component->loadUrl(url, mode);
+    };
+
+    if (source.typeId() == QMetaType::QUrl) {
+        loadUrl(source.toUrl());
+        return result;
+    }
+    if (source.typeId() != QMetaType::QString) {
+        const auto* typeName = source.metaType().name();
+        result.errorString   = QStringLiteral("unsupported component source type: %1")
+                                   .arg(QString::fromUtf8(typeName ? typeName : "unknown"));
+        return result;
+    }
+
+    const auto value = source.toString().trimmed();
+    const QUrl url(value);
+    const bool isUrl = value.endsWith(u".qml", Qt::CaseInsensitive) || value.startsWith(u"./") ||
+                       value.startsWith(u"../") || value.startsWith(u'/') ||
+                       value.startsWith(u":/") || ! url.scheme().isEmpty();
+    if (isUrl) {
+        loadUrl(value.startsWith(u":/") ? QUrl(QStringLiteral("qrc") + value) : url);
+        return result;
+    }
+
+    const auto parts = value.split(u'/');
+    if (parts.size() != 2 || parts[0].isEmpty() || parts[1].isEmpty()) {
+        result.errorString =
+            QStringLiteral("component source must be a URL or module/type: %1").arg(value);
+        return result;
+    }
+    result.ownedComponent = std::make_unique<QQmlComponent>(engine);
+    result.component      = result.ownedComponent.get();
+    result.component->loadFromModule(parts[0], parts[1], mode);
+    return result;
 }
 
 namespace qcm
@@ -374,29 +420,28 @@ auto qml_dyn_count() -> std::atomic<i32>& {
 }
 
 auto createItem(QQmlEngine* engine, const QJSValue& url_or_comp, const QVariantMap& props,
-                QObject* parent) -> QObject* {
-    std::unique_ptr<QQmlComponent, void (*)(QQmlComponent*)> comp { nullptr, nullptr };
-    if (auto p = qobject_cast<QQmlComponent*>(url_or_comp.toQObject())) {
-        comp = decltype(comp)(p, [](QQmlComponent*) {
-        });
-    } else if (auto p = url_or_comp.toVariant(); ! p.isNull()) {
-        auto raw = qml_material::tryCreateComponent(p, QQmlComponent::PreferSynchronous, [engine] {
-            return new QQmlComponent(engine, nullptr);
-        });
-        if (raw) {
-            comp = decltype(comp)(raw, [](QQmlComponent* q) {
-                delete q;
-            });
-        }
-    } else {
-        qCWarning(qml_material_logcat()) << "can't create component from" << url_or_comp.toString();
+                QObject* parent, QQmlContext* context) -> QObject* {
+    QVariant source = url_or_comp.toVariant();
+    if (auto* component = qobject_cast<QQmlComponent*>(url_or_comp.toQObject())) {
+        source = QVariant::fromValue(component);
+    }
+    if (! source.isValid() || source.isNull()) {
+        qCWarning(qml_material_logcat()) << "cannot create component from an empty source";
         return nullptr;
     }
+
+    auto resolved = qml_material::resolveComponentSource(
+        source, engine, context, QQmlComponent::PreferSynchronous);
+    if (! resolved) {
+        qCWarning(qml_material_logcat()) << resolved.errorString;
+        return nullptr;
+    }
+    auto* comp = resolved.component.data();
 
     switch (comp->status()) {
     case QQmlComponent::Status::Ready: {
         QObject* obj { nullptr };
-        QMetaObject::invokeMethod(comp.get(),
+        QMetaObject::invokeMethod(comp,
                                   "createObject",
                                   Q_RETURN_ARG(QObject*, obj),
                                   Q_ARG(QObject*, parent),
