@@ -24,7 +24,7 @@ Item {
     implicitHeight: 240
 
     function _angleFromXY(x, y) {
-        let a = Math.atan2(y - root._cy, x - root._cx) * 180 / Math.PI;
+        let a = Math.atan2(root._cy - y, x - root._cx) * 180 / Math.PI;
         if (a < 0) a += 360;
         return a;
     }
@@ -78,10 +78,10 @@ Item {
     Item {
         readonly property real _ang: root.hue * 2 * Math.PI
         x: root._cx + root._midR * Math.cos(_ang) - width / 2
-        y: root._cy + root._midR * Math.sin(_ang) - height / 2
+        y: root._cy - root._midR * Math.sin(_ang) - height / 2
         width: root.thickness + 8
         height: 4
-        rotation: root.hue * 360
+        rotation: -root.hue * 360
 
         Rectangle {
             anchors.fill: parent

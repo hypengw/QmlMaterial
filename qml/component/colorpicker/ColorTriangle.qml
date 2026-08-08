@@ -20,7 +20,7 @@ Item {
     readonly property real _r: Math.min(width, height) / 2
 
     // V_H aligned with current hue position on the ring.
-    readonly property real _hAng: hue * 2 * Math.PI
+    readonly property real _hAng: -hue * 2 * Math.PI
     readonly property real _wAng: _hAng + 2 * Math.PI / 3
     readonly property real _kAng: _hAng + 4 * Math.PI / 3
 
