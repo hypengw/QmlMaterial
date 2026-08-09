@@ -40,6 +40,8 @@ T.ItemDelegate {
     }
 
     property string supportText
+    property Component supporting: null
+    readonly property bool hasSupporting: supporting !== null || supportText.length > 0
     property int elide: Text.ElideRight
     property int wrapMode: Text.NoWrap
     property int maximumLineCount: 1
@@ -56,14 +58,20 @@ T.ItemDelegate {
     property int radius: 0
     property MD.corners corners: MD.Util.corners(radius)
 
-    property int heightMode: {
-        if (supportText)
-            return MD.Enum.ListItemTwoLine;
-        else
-            return MD.Enum.ListItemOneLine;
-    }
+    property int heightMode: hasSupporting ? MD.Enum.ListItemTwoLine : MD.Enum.ListItemOneLine
 
     font.capitalization: Font.MixedCase
+
+    Component {
+        id: m_default_supporting
+
+        MD.Text {
+            text: control.supportText
+            color: control.mdState.supportTextColor
+            typescale: MD.Token.typescale.body_medium
+            verticalAlignment: Qt.AlignVCenter
+        }
+    }
 
     contentItem: Item {
         implicitHeight: m_content.implicitHeight
@@ -111,13 +119,12 @@ T.ItemDelegate {
                         verticalAlignment: Qt.AlignVCenter
                     }
 
-                    MD.Text {
+                    MD.Loader {
+                        id: m_supporting
+
                         width: parent.width
-                        visible: text.length > 0
-                        text: control.supportText
-                        color: control.mdState.supportTextColor
-                        typescale: MD.Token.typescale.body_medium
-                        verticalAlignment: Qt.AlignVCenter
+                        active: control.hasSupporting
+                        sourceComponent: control.supporting ?? m_default_supporting
                     }
                 }
 
