@@ -337,6 +337,7 @@ set(QML_FILES
     qml/component/path/RectPath.qml
     qml/component/ListBusyFooter.qml
     qml/component/Changelog.qml
+    qml/component/ChangelogDialog.qml
     qml/component/helper/ItemHolder.qml
     qml/container/PageContainer.qml)
 

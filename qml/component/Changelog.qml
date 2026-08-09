@@ -14,6 +14,8 @@ MD.VerticalListView {
     implicitWidth: 360
     implicitHeight: expand ? contentHeight + topMargin + bottomMargin : 360
     interactive: !expand
+    leftMargin: 20
+    rightMargin: 20
     spacing: 0
     model: MD.AppStreamReleaseModel {
         id: releaseModel
