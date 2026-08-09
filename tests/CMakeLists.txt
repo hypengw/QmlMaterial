@@ -53,6 +53,11 @@ target_include_directories(carousel_engine_defaults PRIVATE ${CMAKE_SOURCE_DIR}/
 target_link_libraries(carousel_engine_defaults PRIVATE Qt6::Core)
 add_test(NAME carousel_engine_defaults COMMAND carousel_engine_defaults)
 
+add_executable(appstream_release_model appstream_release_model.cpp)
+target_link_libraries(appstream_release_model PRIVATE qml_material Qt6::Core Qt6::Test)
+set_target_properties(appstream_release_model PROPERTIES AUTOMOC ON)
+add_test(NAME appstream_release_model COMMAND appstream_release_model)
+
 set(CAROUSEL_ENGINE_SOURCES
   ${CMAKE_SOURCE_DIR}/src/carousel/carousel_view.cpp
   ${CMAKE_SOURCE_DIR}/src/carousel/carousel_attached.cpp

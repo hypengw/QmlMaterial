@@ -134,6 +134,7 @@ set(SOURCES
     include/qml_material/carousel/carousel_strategy.hpp
     include/qml_material/carousel/carousel_view.hpp
     src/model/palette_model.cpp
+    src/model/appstream_release_model.cpp
     src/model/snake_model.cpp
     src/token/color.cpp
     src/token/icon.cpp
@@ -335,6 +336,7 @@ set(QML_FILES
     qml/component/path/RoundPath.qml
     qml/component/path/RectPath.qml
     qml/component/ListBusyFooter.qml
+    qml/component/Changelog.qml
     qml/component/helper/ItemHolder.qml
     qml/container/PageContainer.qml)
 
