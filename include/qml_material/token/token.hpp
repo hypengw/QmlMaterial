@@ -11,6 +11,7 @@
 #include "qml_material/token/split_button.hpp"
 #include "qml_material/token/button.hpp"
 #include "qml_material/token/segmented_button.hpp"
+#include "qml_material/token/combo_box.hpp"
 #include "qml_material/token/text_field.hpp"
 #include "qml_material/token/badge.hpp"
 #include "qml_material/anim/interpolator.hpp"
@@ -558,6 +559,8 @@ class Token : public QObject {
     Q_PROPERTY(qml_material::token::SegmentedButtonSize segmented_button READ segmented_button CONSTANT FINAL)
     /// Icon button size settings
     Q_PROPERTY(qml_material::token::IconButtonSize icon_button READ icon_button CONSTANT FINAL)
+    /// Combo box size settings
+    Q_PROPERTY(qml_material::token::ComboBoxSize combo_box READ combo_box CONSTANT FINAL)
     /// Text field size settings
     Q_PROPERTY(qml_material::token::TextFieldSize text_field READ text_field CONSTANT FINAL)
     /// Badge size settings
@@ -588,6 +591,7 @@ class Token : public QObject {
     auto button() const -> const ButtonSize&;
     auto segmented_button() const -> const SegmentedButtonSize&;
     auto icon_button() const -> const IconButtonSize&;
+    auto combo_box() const -> const ComboBoxSize&;
     auto text_field() const -> const TextFieldSize&;
     auto badge() const -> const BadgeSize&;
     auto carousel() const -> const Carousel&;
@@ -612,6 +616,7 @@ class Token : public QObject {
     ButtonSize          m_button;
     SegmentedButtonSize m_segmented_button;
     IconButtonSize      m_icon_button;
+    ComboBoxSize    m_combo_box;
     TextFieldSize   m_text_field;
     BadgeSize       m_badge;
     Carousel        m_carousel;

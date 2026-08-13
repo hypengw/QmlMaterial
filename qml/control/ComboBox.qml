@@ -13,14 +13,15 @@ T.ComboBox {
     }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
-    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding, implicitIndicatorHeight + topPadding + bottomPadding)
+    implicitHeight: mdState.containerHeight
 
     topInset: 0
     bottomInset: 0
     leftInset: 0
     rightInset: 0
 
-    padding: 12
+    padding: mdState.horizontalPadding
+    spacing: mdState.spacing
     leftPadding: padding + (!control.mirrored || !indicator || !indicator.visible ? 0 : indicator.width + spacing)
     rightPadding: padding + (control.mirrored || !indicator || !indicator.visible ? 0 : indicator.width + spacing)
     topPadding: 0
@@ -40,11 +41,11 @@ T.ComboBox {
         x: control.mirrored ? control.padding : control.width - width - control.padding
         y: control.topPadding + (control.availableHeight - height) / 2
         name: MD.Token.icon.arrow_drop_down
-        size: 24
+        size: control.mdState.indicatorSize
     }
 
     contentItem: MD.TextInput {
-        typescale: MD.Token.typescale.body_large
+        typescale: control.mdState.typescale
 
         padding: 0
         text: control.editable ? control.editText : control.displayText
@@ -62,7 +63,7 @@ T.ComboBox {
 
     background: Item {
         implicitWidth: 64
-        implicitHeight: 48
+        implicitHeight: control.mdState.containerHeight
         MD.OutlineTextFieldShape {
             anchors.fill: parent
             borderColor: control.mdState.outlineColor

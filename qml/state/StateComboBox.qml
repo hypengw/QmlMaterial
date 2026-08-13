@@ -6,7 +6,30 @@ MD.MState {
     id: root
 
     required property T.ComboBox item
+    property int size: MD.Enum.M
 
+    readonly property MD.ComboBoxSizeItem sizeToken: {
+        switch (root.size) {
+        case MD.Enum.XS:
+            return MD.Token.combo_box.xsmall;
+        case MD.Enum.S:
+            return MD.Token.combo_box.small;
+        case MD.Enum.M:
+            return MD.Token.combo_box.medium;
+        case MD.Enum.L:
+            return MD.Token.combo_box.large;
+        case MD.Enum.XL:
+            return MD.Token.combo_box.xlarge;
+        default:
+            return MD.Token.combo_box.medium;
+        }
+    }
+
+    readonly property real containerHeight: sizeToken.container_height
+    readonly property real horizontalPadding: sizeToken.horizontal_padding
+    readonly property real indicatorSize: sizeToken.indicator_size
+    readonly property real spacing: sizeToken.indicator_spacing
+    property MD.typescale typescale: sizeToken.type_scale
 
     elevation: MD.Token.elevation.level0
     textColor: root.ctx.color.on_surface

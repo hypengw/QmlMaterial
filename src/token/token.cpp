@@ -28,6 +28,7 @@ auto Token::split_button() const -> const SplitButtonSize& { return m_split_butt
 auto Token::button() const -> const ButtonSize& { return m_button; }
 auto Token::segmented_button() const -> const SegmentedButtonSize& { return m_segmented_button; }
 auto Token::icon_button() const -> const IconButtonSize& { return m_icon_button; }
+auto Token::combo_box() const -> const ComboBoxSize& { return m_combo_box; }
 auto Token::text_field() const -> const TextFieldSize& { return m_text_field; }
 auto Token::badge() const -> const BadgeSize& { return m_badge; }
 auto Token::carousel() const -> const Carousel& { return m_carousel; }

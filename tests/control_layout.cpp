@@ -1200,6 +1200,76 @@ private Q_SLOTS:
         QCOMPARE(qvariant_cast<QFont>(textField->property("font")).pixelSize(), fontSize);
     }
 
+    void comboBoxSizes_data() {
+        QTest::addColumn<QString>("sizeBinding");
+        QTest::addColumn<qreal>("containerHeight");
+        QTest::addColumn<qreal>("horizontalPadding");
+        QTest::addColumn<qreal>("indicatorSize");
+        QTest::addColumn<qreal>("indicatorSpacing");
+        QTest::addColumn<int>("fontSize");
+        QTest::addColumn<bool>("mediumSize");
+
+        QTest::newRow("xs") << QStringLiteral("mdState.size: MD.Enum.XS") << 32.0 << 8.0
+                            << 18.0 << 0.0 << 12 << false;
+        QTest::newRow("s") << QStringLiteral("mdState.size: MD.Enum.S") << 40.0 << 10.0
+                           << 20.0 << 0.0 << 14 << false;
+        QTest::newRow("default-m") << QString() << 48.0 << 12.0 << 24.0 << 0.0 << 16 << true;
+        QTest::newRow("l") << QStringLiteral("mdState.size: MD.Enum.L") << 56.0 << 16.0
+                           << 24.0 << 0.0 << 16 << false;
+        QTest::newRow("xl") << QStringLiteral("mdState.size: MD.Enum.XL") << 72.0 << 24.0
+                            << 32.0 << 0.0 << 16 << false;
+    }
+
+    void comboBoxSizes() {
+        QFETCH(QString, sizeBinding);
+        QFETCH(qreal, containerHeight);
+        QFETCH(qreal, horizontalPadding);
+        QFETCH(qreal, indicatorSize);
+        QFETCH(qreal, indicatorSpacing);
+        QFETCH(int, fontSize);
+        QFETCH(bool, mediumSize);
+
+        const auto source = QStringLiteral(R"(
+            import QtQuick
+            import Qcm.Material as MD
+
+            MD.ComboBox {
+                model: ["Option"]
+                %1
+                property bool mediumSize: mdState.size === MD.Enum.M
+                property real resolvedHeight: mdState.containerHeight
+                property real resolvedHorizontalPadding: mdState.horizontalPadding
+                property real resolvedIndicatorSize: mdState.indicatorSize
+                property real resolvedSpacing: mdState.spacing
+                property int resolvedFontSize: contentItem.font.pixelSize
+            }
+        )")
+                                .arg(sizeBinding)
+                                .toUtf8();
+
+        QQmlComponent component(&m_engine);
+        component.setData(source, QUrl(QStringLiteral("qrc:/tests/combo-box-size.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* comboBox = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(comboBox);
+        comboBox->setParentItem(m_window.contentItem());
+        settle(comboBox);
+
+        QCOMPARE(comboBox->property("mediumSize").toBool(), mediumSize);
+        QCOMPARE(comboBox->property("resolvedHeight").toReal(), containerHeight);
+        QCOMPARE(comboBox->implicitHeight(), containerHeight);
+        QCOMPARE(comboBox->property("resolvedHorizontalPadding").toReal(), horizontalPadding);
+        QCOMPARE(comboBox->property("resolvedIndicatorSize").toReal(), indicatorSize);
+        QCOMPARE(comboBox->property("resolvedSpacing").toReal(), indicatorSpacing);
+        QCOMPARE(comboBox->property("leftPadding").toReal(), horizontalPadding);
+        QCOMPARE(comboBox->property("rightPadding").toReal(),
+                 horizontalPadding + indicatorSize + indicatorSpacing);
+        QCOMPARE(comboBox->property("resolvedFontSize").toInt(), fontSize);
+    }
+
     void snakeBarActionElides() {
         const QString text   = QStringLiteral("A very long snackbar action label");
         const auto    source = QStringLiteral(R"(

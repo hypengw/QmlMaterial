@@ -861,13 +861,27 @@ MD.Page {
                             }
                         }
                         Row {
-                            spacing: 12
+                            spacing: 8
                             Layout.alignment: Qt.AlignHCenter
                             MD.ComboBox {
-                                model: ["First", "Second", "Third"]
+                                model: ["XS"]
+                                mdState.size: MD.Enum.XS
                             }
                             MD.ComboBox {
-                                model: ["First", "Second", "Third"]
+                                model: ["S"]
+                                mdState.size: MD.Enum.S
+                            }
+                            MD.ComboBox {
+                                model: ["M"]
+                                mdState.size: MD.Enum.M
+                            }
+                            MD.ComboBox {
+                                model: ["L"]
+                                mdState.size: MD.Enum.L
+                            }
+                            MD.ComboBox {
+                                model: ["XL"]
+                                mdState.size: MD.Enum.XL
                             }
                         }
                     }
