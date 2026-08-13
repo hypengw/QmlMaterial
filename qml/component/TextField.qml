@@ -112,7 +112,7 @@ MD.TextFieldEmbed {
                 radius: MD.Token.shape.corner.extra_small
                 floatWidth: m_placeholder.implicitWidth * m_placeholder.targetScale + 8
                 floatX: m_placeholder.x - 4
-                open: control.activeFocus || control.text.length > 0
+                open: m_placeholder.text.length > 0 && m_placeholder.floated
             }
         }
     }
