@@ -11,6 +11,7 @@
 #include "qml_material/token/split_button.hpp"
 #include "qml_material/token/button.hpp"
 #include "qml_material/token/segmented_button.hpp"
+#include "qml_material/token/text_field.hpp"
 #include "qml_material/token/badge.hpp"
 #include "qml_material/anim/interpolator.hpp"
 #include "qml_material/core/enum.hpp"
@@ -557,6 +558,8 @@ class Token : public QObject {
     Q_PROPERTY(qml_material::token::SegmentedButtonSize segmented_button READ segmented_button CONSTANT FINAL)
     /// Icon button size settings
     Q_PROPERTY(qml_material::token::IconButtonSize icon_button READ icon_button CONSTANT FINAL)
+    /// Text field size settings
+    Q_PROPERTY(qml_material::token::TextFieldSize text_field READ text_field CONSTANT FINAL)
     /// Badge size settings
     Q_PROPERTY(qml_material::token::BadgeSize badge READ badge CONSTANT FINAL)
     /// Carousel layout tokens
@@ -585,6 +588,7 @@ class Token : public QObject {
     auto button() const -> const ButtonSize&;
     auto segmented_button() const -> const SegmentedButtonSize&;
     auto icon_button() const -> const IconButtonSize&;
+    auto text_field() const -> const TextFieldSize&;
     auto badge() const -> const BadgeSize&;
     auto carousel() const -> const Carousel&;
     auto slider() const -> const Slider&;
@@ -608,6 +612,7 @@ class Token : public QObject {
     ButtonSize          m_button;
     SegmentedButtonSize m_segmented_button;
     IconButtonSize      m_icon_button;
+    TextFieldSize   m_text_field;
     BadgeSize       m_badge;
     Carousel        m_carousel;
     Slider          m_slider;

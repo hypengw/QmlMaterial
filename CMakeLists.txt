@@ -71,6 +71,7 @@ set(LIBNAME qml_material)
 set(SOURCES
     include/qml_material/core/helper.hpp
     include/qml_material/token/badge.hpp
+    include/qml_material/token/text_field.hpp
     include/qml_material/util/loggingcategory.hpp
     include/qml_material/math/scalar.hpp
     include/qml_material/math/gaussian.hpp

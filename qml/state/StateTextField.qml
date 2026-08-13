@@ -6,8 +6,30 @@ MD.MState {
     id: root
     required property T.TextField item
     property int type
-    property bool dense: false
+    property int size: MD.Enum.M
 
+    readonly property MD.TextFieldSizeItem sizeToken: {
+        switch (root.size) {
+        case MD.Enum.XS:
+            return MD.Token.text_field.xsmall;
+        case MD.Enum.S:
+            return MD.Token.text_field.small;
+        case MD.Enum.M:
+            return MD.Token.text_field.medium;
+        case MD.Enum.L:
+            return MD.Token.text_field.large;
+        case MD.Enum.XL:
+            return MD.Token.text_field.xlarge;
+        default:
+            return MD.Token.text_field.medium;
+        }
+    }
+
+    readonly property real containerHeight: sizeToken.container_height
+    readonly property real horizontalPadding: sizeToken.horizontal_padding
+    readonly property real verticalPadding: sizeToken.vertical_padding
+    readonly property real iconSize: sizeToken.icon_size
+    readonly property real spacing: sizeToken.icon_spacing
 
     elevation: MD.Token.elevation.level0
     textColor: root.ctx.color.on_surface
@@ -26,15 +48,7 @@ MD.MState {
     property color placeholderColor: root.ctx.color.on_surface_variant
     property real placeholderOpacity: 1.0
 
-    property MD.typescale typescale: MD.Token.typescale.body_large
-    property int containerHeight: {
-        if (root.type === MD.Enum.TextFieldFilled) {
-            return root.dense ? 54 : 56;
-        }
-        return root.dense ? 56 : 64;
-    }
-    property int topPadding: root.dense ? 12 : 16
-    property int bottomPadding: root.dense ? 12 : 16
+    property MD.typescale typescale: sizeToken.type_scale
     property int corner: MD.Token.shape.corner.extra_small
 
     state: {

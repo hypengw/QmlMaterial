@@ -895,21 +895,39 @@ MD.Page {
                         }
 
                         MD.Label {
-                            text: "Dense"
+                            text: "Sizes"
                             Layout.alignment: Qt.AlignHCenter
                             typescale: MD.Token.typescale.title_medium
                         }
                         MD.TextField {
                             Layout.fillWidth: true
                             type: MD.Enum.TextFieldFilled
-                            placeholderText: 'Filled · dense'
-                            mdState.dense: true
+                            placeholderText: 'Filled · XS'
+                            mdState.size: MD.Enum.XS
                         }
                         MD.TextField {
                             Layout.fillWidth: true
                             type: MD.Enum.TextFieldOutlined
-                            placeholderText: 'Outlined · dense'
-                            mdState.dense: true
+                            placeholderText: 'Outlined · S'
+                            mdState.size: MD.Enum.S
+                        }
+                        MD.TextField {
+                            Layout.fillWidth: true
+                            type: MD.Enum.TextFieldFilled
+                            placeholderText: 'Filled · M'
+                            mdState.size: MD.Enum.M
+                        }
+                        MD.TextField {
+                            Layout.fillWidth: true
+                            type: MD.Enum.TextFieldOutlined
+                            placeholderText: 'Outlined · L'
+                            mdState.size: MD.Enum.L
+                        }
+                        MD.TextField {
+                            Layout.fillWidth: true
+                            type: MD.Enum.TextFieldFilled
+                            placeholderText: 'Filled · XL'
+                            mdState.size: MD.Enum.XL
                         }
                     }
                     ComponentCard {

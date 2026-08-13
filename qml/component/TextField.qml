@@ -18,28 +18,30 @@ MD.TextFieldEmbed {
     font.capitalization: Font.MixedCase
     typescale: control.mdState.typescale
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, Math.max(contentWidth, m_placeholder.implicitWidth) + leftPadding + rightPadding)
-    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)
+    implicitHeight: mdState.containerHeight
 
     // If we're clipped, set topInset to half the height of the placeholder text to avoid it being clipped.
     topInset: clip ? m_placeholder.largestHeight / 2 : 0
     bottomInset: 0
 
-    leftPadding: leading.visible ? 16 + 12 + leading.implicitWidth : 16
-    rightPadding: trailing.visible ? 16 + 12 + trailing.implicitWidth : 16
+    leftPadding: leading.visible
+        ? mdState.horizontalPadding + mdState.spacing + leading.implicitWidth
+        : mdState.horizontalPadding
+    rightPadding: trailing.visible
+        ? mdState.horizontalPadding + mdState.spacing + trailing.implicitWidth
+        : mdState.horizontalPadding
 
     bottomPadding: {
         if (mdState.type === MD.Enum.TextFieldFilled)
-            return mdState.bottomPadding / 2;
+            return mdState.verticalPadding / 2;
         else
-            return mdState.bottomPadding;
+            return mdState.verticalPadding;
     }
     topPadding: {
         if (mdState.type === MD.Enum.TextFieldFilled) {
-            const ch = cursorRectangle.height;
-            const ph = m_placeholder.implicitHeight;
-            return ph + mdState.topPadding / 2;
+            return mdState.containerHeight - contentHeight - bottomPadding;
         } else {
-            return mdState.topPadding;
+            return mdState.verticalPadding;
         }
     }
 
@@ -56,7 +58,7 @@ MD.TextFieldEmbed {
 
         controlFocus: control.activeFocus
         controlHeight: control.height
-        verticalPadding: 8
+        verticalPadding: control.mdState.verticalPadding / 2
 
         filled: control.type === MD.Enum.TextFieldFilled
         controlHasText: control.length > 0
@@ -69,19 +71,19 @@ MD.TextFieldEmbed {
     property Item leading: MD.Icon {
         anchors.left: parent?.left
         anchors.verticalCenter: parent?.verticalCenter
-        anchors.leftMargin: 12
+        anchors.leftMargin: control.mdState.horizontalPadding
         name: control.leadingIcon
         visible: name
-        size: 24
+        size: control.mdState.iconSize
     }
 
     property Item trailing: MD.Icon {
         anchors.right: parent?.right
         anchors.verticalCenter: parent?.verticalCenter
-        anchors.rightMargin: 12
+        anchors.rightMargin: control.mdState.horizontalPadding
         visible: name
         name: control.trailingIcon
-        size: 24
+        size: control.mdState.iconSize
     }
 
     Item {
@@ -91,6 +93,7 @@ MD.TextFieldEmbed {
 
     background: Item {
         implicitWidth: 64
+        implicitHeight: control.mdState.containerHeight
 
         MD.Loader {
             anchors.fill: parent

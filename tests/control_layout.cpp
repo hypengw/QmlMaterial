@@ -1087,6 +1087,7 @@ private Q_SLOTS:
                 placeholderText: "Label"
                 property real expectedSize: MD.Token.typescale.body_large.size
                 property real titleSize: MD.Token.typescale.title_large.size
+                property bool usesDefaultSize: mdState.size === MD.Enum.M
             }
         )")
                                 .arg(type)
@@ -1108,11 +1109,95 @@ private Q_SLOTS:
         const auto inputFont    = qvariant_cast<QFont>(textField->property("font"));
         QCOMPARE(inputFont.pixelSize(), expectedSize);
         QVERIFY(inputFont.pixelSize() < titleSize);
+        QVERIFY(textField->property("usesDefaultSize").toBool());
+        QCOMPARE(textField->implicitHeight(), 56.0);
 
         auto* placeholder = itemWithText(textField, QStringLiteral("Label"));
         QVERIFY(placeholder);
         const auto placeholderFont = qvariant_cast<QFont>(placeholder->property("font"));
         QCOMPARE(placeholderFont.pixelSize(), expectedSize);
+    }
+
+    void textFieldSizes_data() {
+        QTest::addColumn<QString>("type");
+        QTest::addColumn<QString>("size");
+        QTest::addColumn<qreal>("containerHeight");
+        QTest::addColumn<qreal>("horizontalPadding");
+        QTest::addColumn<qreal>("verticalPadding");
+        QTest::addColumn<qreal>("iconSize");
+        QTest::addColumn<qreal>("iconSpacing");
+        QTest::addColumn<int>("fontSize");
+
+        const auto addRows = [](const QString& type) {
+            const auto prefix = type == QStringLiteral("TextFieldFilled") ? "filled" : "outlined";
+            QTest::newRow(qPrintable(QStringLiteral("%1-xs").arg(prefix)))
+                << type << QStringLiteral("XS") << 40.0 << 12.0 << 8.0 << 18.0 << 8.0 << 12;
+            QTest::newRow(qPrintable(QStringLiteral("%1-s").arg(prefix)))
+                << type << QStringLiteral("S") << 48.0 << 12.0 << 12.0 << 20.0 << 8.0 << 14;
+            QTest::newRow(qPrintable(QStringLiteral("%1-m").arg(prefix)))
+                << type << QStringLiteral("M") << 56.0 << 16.0 << 16.0 << 24.0 << 12.0 << 16;
+            QTest::newRow(qPrintable(QStringLiteral("%1-l").arg(prefix)))
+                << type << QStringLiteral("L") << 64.0 << 20.0 << 20.0 << 24.0 << 12.0 << 16;
+            QTest::newRow(qPrintable(QStringLiteral("%1-xl").arg(prefix)))
+                << type << QStringLiteral("XL") << 72.0 << 24.0 << 24.0 << 32.0 << 16.0 << 16;
+        };
+        addRows(QStringLiteral("TextFieldFilled"));
+        addRows(QStringLiteral("TextFieldOutlined"));
+    }
+
+    void textFieldSizes() {
+        QFETCH(QString, type);
+        QFETCH(QString, size);
+        QFETCH(qreal, containerHeight);
+        QFETCH(qreal, horizontalPadding);
+        QFETCH(qreal, verticalPadding);
+        QFETCH(qreal, iconSize);
+        QFETCH(qreal, iconSpacing);
+        QFETCH(int, fontSize);
+
+        const auto source = QStringLiteral(R"(
+            import QtQuick
+            import Qcm.Material as MD
+
+            MD.TextField {
+                type: MD.Enum.%1
+                mdState.size: MD.Enum.%2
+                text: "Input"
+                placeholderText: "Label"
+                leadingIcon: MD.Token.icon.search
+                trailingIcon: MD.Token.icon.info
+                property real resolvedHeight: mdState.containerHeight
+                property real resolvedHorizontalPadding: mdState.horizontalPadding
+                property real resolvedVerticalPadding: mdState.verticalPadding
+                property real resolvedIconSize: mdState.iconSize
+                property real resolvedSpacing: mdState.spacing
+            }
+        )")
+                                .arg(type, size)
+                                .toUtf8();
+
+        QQmlComponent component(&m_engine);
+        component.setData(source, QUrl(QStringLiteral("qrc:/tests/text-field-size.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* textField = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(textField);
+        textField->setParentItem(m_window.contentItem());
+        settle(textField);
+
+        QCOMPARE(textField->property("resolvedHeight").toReal(), containerHeight);
+        QCOMPARE(textField->implicitHeight(), containerHeight);
+        QCOMPARE(textField->property("resolvedHorizontalPadding").toReal(), horizontalPadding);
+        QCOMPARE(textField->property("resolvedVerticalPadding").toReal(), verticalPadding);
+        QCOMPARE(textField->property("resolvedIconSize").toReal(), iconSize);
+        QCOMPARE(textField->property("resolvedSpacing").toReal(), iconSpacing);
+        QCOMPARE(textField->property("leftPadding").toReal(),
+                 horizontalPadding + iconSize + iconSpacing);
+        QCOMPARE(textField->property("rightPadding").toReal(),
+                 horizontalPadding + iconSize + iconSpacing);
+        QCOMPARE(qvariant_cast<QFont>(textField->property("font")).pixelSize(), fontSize);
     }
 
     void snakeBarActionElides() {
