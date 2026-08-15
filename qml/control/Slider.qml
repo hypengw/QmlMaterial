@@ -20,6 +20,7 @@ T.Slider {
     property int labelBehavior: MD.Enum.SliderLabelFloating
     property int tickVisibilityMode: MD.Enum.SliderTickAutoLimit
     property int sliderSize: MD.Enum.SliderSizeXSmall
+    property int valueLabelDecimals: -1
 
     property string insetIcon: ''
     property string insetIconAtMin: ''
@@ -61,6 +62,20 @@ T.Slider {
 
     readonly property real __steps: Math.abs(to - from) / stepSize
     readonly property bool __isDiscrete: stepSize >= Number.EPSILON && snapMode === Slider.SnapAlways && Math.abs(Math.round(__steps) - __steps) < Number.EPSILON
+    readonly property int __resolvedValueLabelDecimals: {
+        if (control.valueLabelDecimals >= 0)
+            return control.valueLabelDecimals;
+        if (!(control.stepSize > 0))
+            return 0;
+
+        let step = Math.abs(control.stepSize);
+        let decimals = 0;
+        while (decimals < 6 && Math.abs(step - Math.round(step)) > 1e-6) {
+            step *= 10;
+            ++decimals;
+        }
+        return decimals;
+    }
 
     // Cap visible tick dots so wide ranges (e.g. 1..240 step 1) don't
     // collapse into a solid line. Snap behavior stays driven by
@@ -186,6 +201,7 @@ T.Slider {
             return control.topPadding + offset;
         }
         value: control.value
+        valueLabelDecimals: control.__resolvedValueLabelDecimals
         labelBehavior: control.labelBehavior
         handleHasFocus: control.visualFocus
         handlePressed: control.pressed

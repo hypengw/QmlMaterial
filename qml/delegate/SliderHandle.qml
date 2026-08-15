@@ -7,6 +7,7 @@ Item {
     implicitHeight: horizontal ? handleHeight : handleWidth
 
     property real value: 0
+    property int valueLabelDecimals: 0
     property int labelBehavior: MD.Enum.SliderLabelFloating
     property bool handleHasFocus: false
     property bool handlePressed: false
@@ -32,6 +33,12 @@ Item {
         if (max < min)
             return min;
         return Math.min(Math.max(preferred, min), max);
+    }
+
+    function formatValueLabel(value) {
+        if (root.valueLabelDecimals <= 0)
+            return Math.round(value).toString();
+        return Number(value).toFixed(root.valueLabelDecimals);
     }
 
     // The value indicator (bubble)
@@ -92,7 +99,7 @@ Item {
             implicitWidth: children[0].implicitWidth
             MD.Text {
                 anchors.centerIn: parent
-                text: Math.round(root.value)
+                text: root.formatValueLabel(root.value)
                 typescale: MD.Token.typescale.label_medium
                 color: root.control ? root.control.mdState.ctx.color.inverse_on_surface : "transparent"
             }
