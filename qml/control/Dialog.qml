@@ -26,10 +26,10 @@ T.Dialog {
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding + (implicitHeaderHeight > 0 ? implicitHeaderHeight + spacing : 0) + (implicitFooterHeight > 0 ? implicitFooterHeight + spacing : 0))
 
     width: Math.min(implicitWidth, 560)
-    height: Math.min(implicitHeight, parent.height - 48 * 2)
+    height: Math.min(implicitHeight, parent ? parent.height - 48 * 2 : implicitHeight)
 
-    x: (parent.width - width) / 2
-    y: (parent.height - height) / 2
+    x: parent ? (parent.width - width) / 2 : 0
+    y: parent ? (parent.height - height) / 2 : 0
 
     spacing: 0
     topPadding: 12
