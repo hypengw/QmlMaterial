@@ -563,7 +563,7 @@ endforeach()
 
 target_include_directories(
   ${LIBNAME}
-  PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}include>"
+  PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   PRIVATE "include/${LIBNAME}" src)
 
 add_subdirectory(third_party)
