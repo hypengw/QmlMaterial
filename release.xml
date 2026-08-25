@@ -1,0 +1,10 @@
+<releases>
+  <release version="0.1.6" date="2026-05-04">
+    <description>
+      <p>Changed:</p>
+      <ul>
+        <li>Refactor SearchBar text handling without overriding the final Button text property.</li>
+      </ul>
+    </description>
+  </release>
+</releases>
