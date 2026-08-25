@@ -1,9 +1,50 @@
 <releases>
+  <release version="0.2.0" date="2026-08-25">
+    <description>
+      <p>Added:</p>
+      <ul>
+        <li>Material 3 carousels with multi-browse, multi-aspect, hero, and full-screen layouts. #18 by @edward-abrosimov</li>
+        <li>Color, date, file, and folder pickers, including XDG desktop portal integration.</li>
+        <li>Bottom sheets, page containers, focus indicators, and numeric stepper controls.</li>
+        <li>Material 3 Badge component. #15 by @edward-abrosimov</li>
+        <li>Attached, plain, and rich tooltips with Action tooltip support.</li>
+        <li>Lightweight layout containers plus custom flickable and popup infrastructure with asynchronous component creation.</li>
+        <li>AppStream changelog models and presentation components.</li>
+        <li>Action display and progress controls plus icon-only RailItem variants.</li>
+        <li>Cross-platform Qt 6.8 build and test CI with compatible table and header delegates. #21 by @AirmanDRay</li>
+        <li>WebAssembly CI with GitHub Pages deployment.</li>
+      </ul>
+      <p>Changed:</p>
+      <ul>
+        <li>Expand Slider support with Material 3 sizes, tick modes, inset icons, trailing content, and improved interaction. #19 by @edward-abrosimov</li>
+        <li>Add wave variants and updated behavior to circular and linear progress indicators.</li>
+        <li>Replace TextField dense mode with XS through XL size tokens and add the same size range to ComboBox.</li>
+        <li>Rework NavigationRail sizing, scrolling, animation, and expanded content handling.</li>
+        <li>Reorganize public C++ headers by subsystem and export required Qt private dependencies from the installed CMake package.</li>
+      </ul>
+      <p>Fixed:</p>
+      <ul>
+        <li>Constrained menu, chip, action menu, and toolbar sizing and text elision.</li>
+        <li>Outlined TextField notch placement around leading icons. #24 by @edward-abrosimov</li>
+        <li>Outlined TextField typography and empty outline rendering.</li>
+        <li>Color picker hue direction and hexadecimal swatch layout.</li>
+        <li>Carousel model synchronization, dynamic aspect ratios, and image cache behavior. #23 by @edward-abrosimov</li>
+        <li>Dialog null-parent handling. #28 by @simonoffcc</li>
+        <li>Popup closure and state object lifetimes.</li>
+        <li>MSVC builds and the example application's Windows accessibility crash. #20 by @AirmanDRay</li>
+        <li>Cross-platform CI Qt discovery and Windows font and test setup. #25 by @edward-abrosimov</li>
+        <li>Desktop GLSL compatibility for older OpenGL shader profiles. #22 by @edward-abrosimov</li>
+        <li>Disabled SplitButton visuals and interaction. #17 by @edward-abrosimov</li>
+        <li>ColorRadio inner-circle alignment. #16 by @edward-abrosimov</li>
+        <li>Installed include paths and Qt package configuration.</li>
+      </ul>
+    </description>
+  </release>
   <release version="0.1.6" date="2026-05-04">
     <description>
       <p>Changed:</p>
       <ul>
-        <li>Refactor SearchBar text handling without overriding the final Button text property.</li>
+        <li>Refactor SearchBar text handling without overriding the final Button text property. #14 by @edward-abrosimov</li>
       </ul>
     </description>
   </release>
