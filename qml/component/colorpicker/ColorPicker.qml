@@ -103,8 +103,8 @@ T.Control {
                 Layout.alignment: Qt.AlignVCenter
                 text: control._hexOf(control.color).toUpperCase()
                 leadingItem: Rectangle {
-                    width: 20
-                    height: 20
+                    implicitWidth: 20
+                    implicitHeight: 20
                     radius: 4
                     color: control.color
                     border.width: 1

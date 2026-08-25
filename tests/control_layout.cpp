@@ -1,4 +1,5 @@
 #include <QCoreApplication>
+#include <QColor>
 #include <QFont>
 #include <QGuiApplication>
 #include <QQmlComponent>
@@ -36,6 +37,21 @@ QQuickItem* itemWithText(QQuickItem* root, const QString& text) {
         }
     }
     return root->property("text").toString() == text ? root : nullptr;
+}
+
+QQuickItem* itemWithImplicitSizeAndColor(QQuickItem* root, const QSizeF& size,
+                                         const QColor& color) {
+    if (qFuzzyCompare(root->implicitWidth(), size.width()) &&
+        qFuzzyCompare(root->implicitHeight(), size.height()) &&
+        root->property("color").value<QColor>() == color) {
+        return root;
+    }
+    for (auto* child : root->childItems()) {
+        if (auto* match = itemWithImplicitSizeAndColor(child, size, color)) {
+            return match;
+        }
+    }
+    return nullptr;
 }
 
 QQuickItem* itemWithAction(QQuickItem* root, QObject* action) {
@@ -1268,6 +1284,38 @@ private Q_SLOTS:
         QCOMPARE(comboBox->property("rightPadding").toReal(),
                  horizontalPadding + indicatorSize + indicatorSpacing);
         QCOMPARE(comboBox->property("resolvedFontSize").toInt(), fontSize);
+    }
+
+    void colorPickerSwatchDoesNotOverlapHexText() {
+        QQmlComponent component(&m_engine);
+        component.setData(QByteArrayLiteral(R"(
+            import Qcm.Material as MD
+
+            MD.ColorPicker {
+                color: "#6750A4"
+                showHeader: false
+            }
+        )"),
+                          QUrl(QStringLiteral("qrc:/tests/color-picker-swatch.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* picker = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(picker);
+        picker->setParentItem(m_window.contentItem());
+        settle(picker);
+
+        auto* swatch = itemWithImplicitSizeAndColor(
+            picker, QSizeF(20, 20), QColor(QStringLiteral("#6750A4")));
+        auto* label = itemWithText(picker, QStringLiteral("#6750A4FF"));
+        QVERIFY(swatch);
+        QVERIFY(label);
+
+        const QRectF swatchRect(swatch->mapToItem(picker, QPointF {}), swatch->size());
+        const QRectF labelRect(label->mapToItem(picker, QPointF {}), label->size());
+        QVERIFY(! swatchRect.intersects(labelRect));
+        QVERIFY(swatchRect.right() <= labelRect.left());
     }
 
     void snakeBarActionElides() {
