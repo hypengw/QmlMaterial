@@ -25,7 +25,7 @@ T.ItemDelegate {
     icon.width: 24
     icon.height: 24
 
-    font.capitalization: Font.Capitalize
+    font.capitalization: Font.MixedCase
 
     property alias trailing: item_holder_trailing.contentItem
 

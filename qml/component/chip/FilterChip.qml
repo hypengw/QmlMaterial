@@ -33,7 +33,7 @@ T.Button {
 
     icon.width: 18
     icon.height: 18
-    font.capitalization: Font.Capitalize
+    font.capitalization: Font.MixedCase
 
     contentItem: Lite.Row {
         alignment: Qt.AlignHCenter | Qt.AlignVCenter

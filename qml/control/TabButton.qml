@@ -37,7 +37,7 @@ T.TabButton {
     icon.height: 24
 
     property MD.typescale typescale: MD.Token.typescale.label_medium
-    font.capitalization: Font.Capitalize
+    font.capitalization: Font.MixedCase
     font.pixelSize: typescale.size
     font.weight: typescale.weight
     font.letterSpacing: typescale.tracking

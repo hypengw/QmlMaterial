@@ -38,7 +38,7 @@ T.ToolBar {
 
         MD.Text {
             id: m_title
-            font.capitalization: Font.Capitalize
+            font.capitalization: Font.MixedCase
             typescale: control.mdState.typescale
             Binding {
                 when: control.type === MD.Enum.AppBarCenterAligned
