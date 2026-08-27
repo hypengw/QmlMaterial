@@ -115,7 +115,7 @@ T.Button {
             id: m_label
             visible: control._showLabel
             text: control.text
-            font.capitalization: Font.Capitalize
+            font.capitalization: Font.MixedCase
             typescale: control.expand ? MD.Token.typescale.label_large : MD.Token.typescale.label_medium
             prominent: control.checked
             color: control.expand ? control.mdState.expandedLabelColor : control.mdState.collapsedLabelColor

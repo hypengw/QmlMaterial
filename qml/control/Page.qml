@@ -32,7 +32,7 @@ T.Page {
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding + (implicitHeaderHeight > 0 ? implicitHeaderHeight + spacing : 0) + (implicitFooterHeight > 0 ? implicitFooterHeight + spacing : 0))
 
     // bottomPadding: header.visible ? radius : 0
-    font.capitalization: Font.Capitalize
+    font.capitalization: Font.MixedCase
 
     background: MD.Rectangle {
         color: control.backgroundColor

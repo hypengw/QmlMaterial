@@ -30,7 +30,7 @@ T.Button {
     icon.height: 18
 
     property MD.typescale typescale: MD.Token.typescale.label_large
-    font.capitalization: Font.Capitalize
+    font.capitalization: Font.MixedCase
     font.pixelSize: typescale.size
     font.weight: typescale.weight
     font.letterSpacing: typescale.tracking

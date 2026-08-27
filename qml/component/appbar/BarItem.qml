@@ -51,7 +51,7 @@ T.Button {
 
             MD.Text {
                 Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
-                font.capitalization: Font.Capitalize
+                font.capitalization: Font.MixedCase
                 typescale: MD.Token.typescale.label_medium
                 text: control.text
                 prominent: control.checked

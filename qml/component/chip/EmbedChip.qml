@@ -30,7 +30,7 @@ T.Button {
     icon.width: 18
     icon.height: 18
     action: null
-    font.capitalization: Font.Capitalize
+    font.capitalization: Font.MixedCase
 
     property string trailingIconName
     property Component leading: m_leading_comp
