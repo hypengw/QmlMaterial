@@ -166,6 +166,7 @@ set_tests_properties(dynamic_creation PROPERTIES
   ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
 
 set(VISUAL_SCENES button action_progress elevation shape ripple ripple_phases loading_indicator_shapes tooltip wave_progress snackbar
+    icon_artifacts
     focus_button focus_iconbutton focus_fab focus_chip
     focus_switch focus_checkbox focus_radio
     datepicker colorpicker colorpicker_button

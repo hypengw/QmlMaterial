@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Window
 import Qcm.Material as MD
 
 Item {
@@ -15,7 +14,6 @@ Item {
     property alias horizontalAlignment: m_text_icon.horizontalAlignment
     property alias verticalAlignment: m_text_icon.verticalAlignment
 
-    property int lineHeight: MD.Token.typescale.label_large.line_height
     property color color: MD.MProp.color.on_background
 
     property real _fill: fill ? 1 : 0
@@ -39,7 +37,6 @@ Item {
     Text {
         id: m_text_icon
         anchors.centerIn: parent
-        renderType: Text.CurveRendering
 
         font.family: root.fill ? MD.Token.font.icon_fill_family : MD.Token.font.icon_family
         font.weight: root.weight
@@ -51,14 +48,13 @@ Item {
                 "FILL": root._fillSeg
             };
         }
-        font.pixelSize: root.size / scale
-        scale: 1.0 / MD.Token.cal_curve_scale(Screen.devicePixelRatio)
+        font.pixelSize: root.size
 
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         text: root.name
         color: root.color
-        lineHeight: root.lineHeight
+        lineHeight: font.pixelSize
         lineHeightMode: Text.FixedHeight
     }
 }
