@@ -95,6 +95,37 @@ qml_material::Row* layoutRow(QQuickItem* root) {
     return nullptr;
 }
 
+QQuickItem* innerTextItem(QQuickItem* root) {
+    if (root->property("font").isValid() && root->property("text").isValid()) {
+        return root;
+    }
+    for (auto* child : root->childItems()) {
+        if (auto* match = innerTextItem(child)) {
+            return match;
+        }
+    }
+    return nullptr;
+}
+
+int curveRenderingType(QQmlEngine& engine) {
+    static int cached = -1;
+    if (cached >= 0) {
+        return cached;
+    }
+    QQmlComponent component(&engine);
+    component.setData(
+        QByteArrayLiteral("import QtQuick\nQtObject { property int v: Text.CurveRendering }"),
+        QUrl(QStringLiteral("qrc:/tests/curve-rendering-enum.qml")));
+    if (component.isError()) {
+        return cached = 0;
+    }
+    std::unique_ptr<QObject> object(component.create());
+    if (! object) {
+        return cached = 0;
+    }
+    return cached = object->property("v").toInt();
+}
+
 } // namespace
 
 class ControlLayoutTest : public QObject {
@@ -1538,6 +1569,90 @@ private Q_SLOTS:
         QVERIFY(snakeBar);
         QCOMPARE(snakeBar->property("actionOnNewLine").toBool(), true);
         QCOMPARE(snakeBar->implicitHeight(), 112.0);
+    }
+
+    void iconRenderingMatchesFabPath_data() {
+        QTest::addColumn<int>("size");
+
+        QTest::newRow("18") << 18;
+        QTest::newRow("20") << 20;
+        QTest::newRow("24") << 24;
+    }
+
+    void iconRenderingMatchesFabPath() {
+        QFETCH(int, size);
+
+        const auto source = QStringLiteral(R"(
+            import QtQuick
+            import Qcm.Material as MD
+
+            MD.Icon {
+                id: icon
+                name: MD.Token.icon.content_copy
+                size: %1
+            }
+        )")
+                                .arg(size)
+                                .toUtf8();
+
+        QQmlComponent component(&m_engine);
+        component.setData(source, QUrl(QStringLiteral("qrc:/tests/icon-rendering.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* icon = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(icon);
+        icon->setParentItem(m_window.contentItem());
+        settle(icon);
+
+        QCOMPARE(icon->implicitWidth(), qreal(size));
+        QCOMPARE(icon->implicitHeight(), qreal(size));
+
+        auto* text = innerTextItem(icon);
+        QVERIFY(text);
+        const auto font = qvariant_cast<QFont>(text->property("font"));
+        QCOMPARE(font.pixelSize(), size);
+        QCOMPARE(text->property("lineHeight").toReal(), qreal(font.pixelSize()));
+        QCOMPARE(text->scale(), 1.0);
+        QVERIFY(text->property("renderType").toInt() != curveRenderingType(m_engine));
+    }
+
+    void iconButtonContentIconSize() {
+        const auto source = QByteArrayLiteral(R"(
+            import QtQuick
+            import Qcm.Material as MD
+
+            MD.IconButton {
+                id: button
+                icon.name: MD.Token.icon.delete
+            }
+        )");
+
+        QQmlComponent component(&m_engine);
+        component.setData(source, QUrl(QStringLiteral("qrc:/tests/icon-button-icon-size.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* button = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(button);
+        button->setParentItem(m_window.contentItem());
+        settle(button);
+
+        auto* mdState = qvariant_cast<QObject*>(button->property("mdState"));
+        QVERIFY(mdState);
+        const qreal iconSize = mdState->property("iconSize").toReal();
+        QCOMPARE(iconSize, 24.0);
+
+        auto* content = qvariant_cast<QQuickItem*>(button->property("contentItem"));
+        QVERIFY(content);
+        QCOMPARE(content->implicitWidth(), iconSize);
+        QCOMPARE(content->implicitHeight(), iconSize);
+
+        auto* icon = itemWithIcon(content);
+        QVERIFY(icon);
+        QCOMPARE(icon->property("size").toInt(), qRound(iconSize));
     }
 
 private:
