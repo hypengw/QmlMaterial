@@ -44,7 +44,7 @@ T.Button {
         Lite.Box {
             id: m_leading
             alignment: Qt.AlignCenter
-            visible: control.leadingItem?.visible ?? false
+            visible: control.leadingItem !== null
             data: control.leadingItem ? [control.leadingItem] : []
         }
 

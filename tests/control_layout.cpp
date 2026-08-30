@@ -54,6 +54,18 @@ QQuickItem* itemWithImplicitSizeAndColor(QQuickItem* root, const QSizeF& size,
     return nullptr;
 }
 
+QQuickItem* itemWithLeadingItem(QQuickItem* root, QQuickItem* leadingItem) {
+    if (qvariant_cast<QQuickItem*>(root->property("leadingItem")) == leadingItem) {
+        return root;
+    }
+    for (auto* child : root->childItems()) {
+        if (auto* match = itemWithLeadingItem(child, leadingItem)) {
+            return match;
+        }
+    }
+    return nullptr;
+}
+
 QQuickItem* itemWithAction(QQuickItem* root, QObject* action) {
     if (qvariant_cast<QObject*>(root->property("action")) == action) {
         return root;
@@ -1325,6 +1337,7 @@ private Q_SLOTS:
             MD.ColorPicker {
                 color: "#6750A4"
                 showHeader: false
+                visible: false
             }
         )"),
                           QUrl(QStringLiteral("qrc:/tests/color-picker-swatch.qml")));
@@ -1342,6 +1355,16 @@ private Q_SLOTS:
         auto* label = itemWithText(picker, QStringLiteral("#6750A4FF"));
         QVERIFY(swatch);
         QVERIFY(label);
+
+        picker->setVisible(true);
+        settle(picker);
+
+        QVERIFY(swatch->isVisible());
+        auto* chip = itemWithLeadingItem(picker, swatch);
+        QVERIFY(chip);
+
+        const QPointF swatchPosition = swatch->mapToItem(chip, QPointF {});
+        QCOMPARE(swatchPosition.x(), chip->property("leftPadding").toReal());
 
         const QRectF swatchRect(swatch->mapToItem(picker, QPointF {}), swatch->size());
         const QRectF labelRect(label->mapToItem(picker, QPointF {}), label->size());
