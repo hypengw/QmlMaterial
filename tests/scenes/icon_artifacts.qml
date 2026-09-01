@@ -9,7 +9,7 @@ import Qcm.Material as MD
 Rectangle {
     id: root
     width: 560
-    height: 420
+    height: 700
     color: MD.Token.color.surface
 
     readonly property var artifactIcons: [
@@ -18,6 +18,7 @@ Rectangle {
         { label: "videocam", name: MD.Token.icon.videocam }
     ]
     readonly property var iconSizes: [18, 20, 24]
+    readonly property var parentScales: [0.3, 0.5, 1.5, 2, 3]
 
     ColumnLayout {
         anchors.fill: parent
@@ -125,6 +126,62 @@ Rectangle {
                             name: modelData.name
                             size: parent.size
                             color: MD.MProp.color.on_surface
+                        }
+                    }
+                }
+            }
+        }
+
+        MD.Text {
+            text: "MD.Icon under scaled parent 0.3×–3× (zoom out + zoom in, size 20)"
+            typescale: MD.Token.typescale.label_large
+        }
+
+        GridLayout {
+            columns: root.artifactIcons.length + 1
+            columnSpacing: 16
+            rowSpacing: 8
+
+            MD.Text {
+                text: ""
+            }
+            Repeater {
+                model: root.artifactIcons
+                delegate: MD.Text {
+                    required property var modelData
+                    text: modelData.label
+                    typescale: MD.Token.typescale.label_small
+                    Layout.alignment: Qt.AlignHCenter
+                }
+            }
+
+            Repeater {
+                model: root.parentScales
+                delegate: RowLayout {
+                    required property real modelData
+                    readonly property real parentScale: modelData
+
+                    MD.Text {
+                        text: parentScale + "×"
+                        typescale: MD.Token.typescale.label_small
+                    }
+                    Repeater {
+                        model: root.artifactIcons
+                        delegate: Item {
+                            required property var modelData
+                            readonly property real rowScale: parent.parent.parentScale
+                            Layout.alignment: Qt.AlignHCenter
+                            width: 20 * rowScale
+                            height: 20 * rowScale
+                            scale: rowScale
+                            transformOrigin: Item.Center
+
+                            MD.Icon {
+                                anchors.centerIn: parent
+                                name: modelData.name
+                                size: 20
+                                color: MD.MProp.color.on_surface
+                            }
                         }
                     }
                 }

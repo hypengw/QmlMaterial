@@ -34,9 +34,22 @@ Item {
         return v;
     }
 
+    readonly property real _parentScale: {
+        var s = 1.0;
+        for (var p = root.parent; p; p = p.parent)
+            s *= p.scale;
+        return s;
+    }
+    readonly property real _renderScale: {
+        if (MD.Util.epsilonEqual(_parentScale, 1.0))
+            return 1.0;
+        return _parentScale;
+    }
+
     Text {
         id: m_text_icon
         anchors.centerIn: parent
+        transformOrigin: Item.Center
 
         font.family: root.fill ? MD.Token.font.icon_fill_family : MD.Token.font.icon_family
         font.weight: root.weight
@@ -48,7 +61,8 @@ Item {
                 "FILL": root._fillSeg
             };
         }
-        font.pixelSize: root.size
+        font.pixelSize: Math.max(1, Math.round(root.size * root._renderScale))
+        scale: 1.0 / root._renderScale
 
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter

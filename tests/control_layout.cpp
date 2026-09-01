@@ -1641,6 +1641,90 @@ private Q_SLOTS:
         QVERIFY(text->property("renderType").toInt() != curveRenderingType(m_engine));
     }
 
+    void iconCompensatesParentScale() {
+        const auto source = QByteArrayLiteral(R"(
+            import QtQuick
+            import Qcm.Material as MD
+
+            Item {
+                id: host
+                scale: 2
+
+                MD.Icon {
+                    id: icon
+                    name: MD.Token.icon.content_copy
+                    size: 20
+                }
+            }
+        )");
+
+        QQmlComponent component(&m_engine);
+        component.setData(source, QUrl(QStringLiteral("qrc:/tests/icon-parent-scale.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* host = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(host);
+        host->setParentItem(m_window.contentItem());
+        settle(host);
+
+        auto* icon = itemWithIcon(host);
+        QVERIFY(icon);
+        QCOMPARE(icon->property("size").toInt(), 20);
+        QCOMPARE(icon->property("_parentScale").toReal(), 2.0);
+        QCOMPARE(icon->property("_renderScale").toReal(), 2.0);
+
+        auto* text = innerTextItem(icon);
+        QVERIFY(text);
+        const auto font = qvariant_cast<QFont>(text->property("font"));
+        QCOMPARE(font.pixelSize(), 40);
+        QCOMPARE(text->property("lineHeight").toReal(), qreal(font.pixelSize()));
+        QCOMPARE(text->scale(), 0.5);
+    }
+
+    void iconCompensatesParentScaleZoomOut() {
+        const auto source = QByteArrayLiteral(R"(
+            import QtQuick
+            import Qcm.Material as MD
+
+            Item {
+                id: host
+                scale: 0.5
+
+                MD.Icon {
+                    id: icon
+                    name: MD.Token.icon.content_copy
+                    size: 20
+                }
+            }
+        )");
+
+        QQmlComponent component(&m_engine);
+        component.setData(source, QUrl(QStringLiteral("qrc:/tests/icon-parent-scale-zoom-out.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* host = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(host);
+        host->setParentItem(m_window.contentItem());
+        settle(host);
+
+        auto* icon = itemWithIcon(host);
+        QVERIFY(icon);
+        QCOMPARE(icon->property("size").toInt(), 20);
+        QCOMPARE(icon->property("_parentScale").toReal(), 0.5);
+        QCOMPARE(icon->property("_renderScale").toReal(), 0.5);
+
+        auto* text = innerTextItem(icon);
+        QVERIFY(text);
+        const auto font = qvariant_cast<QFont>(text->property("font"));
+        QCOMPARE(font.pixelSize(), 10);
+        QCOMPARE(text->property("lineHeight").toReal(), qreal(font.pixelSize()));
+        QCOMPARE(text->scale(), 2.0);
+    }
+
     void iconButtonContentIconSize() {
         const auto source = QByteArrayLiteral(R"(
             import QtQuick
