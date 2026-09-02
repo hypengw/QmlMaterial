@@ -15,7 +15,7 @@ MD.MState {
             return ctx.color.on_surface_variant;
         }
     }
-    property color iconColor: root.error ? ctx.color.on_primary : ctx.color.on_error
+    property color iconColor: root.error ? ctx.color.on_error : ctx.color.on_primary
     property color iconBackgroundColor: root.error ? ctx.color.error : ctx.color.primary
     textColor: ctx.color.on_surface
     backgroundColor: "transparent"
