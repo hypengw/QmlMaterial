@@ -1174,7 +1174,10 @@ private Q_SLOTS:
         auto* placeholder = itemWithText(textField, QStringLiteral("Label"));
         QVERIFY(placeholder);
         const auto placeholderFont = qvariant_cast<QFont>(placeholder->property("font"));
-        QCOMPARE(placeholderFont.pixelSize(), expectedSize);
+        const int  restPixelSize   = placeholder->property("restPixelSize").toInt();
+        QCOMPARE(restPixelSize, expectedSize);
+        QCOMPARE(placeholderFont.pixelSize(),
+                 qRound(restPixelSize * placeholder->property("targetScale").toReal()));
     }
 
     void textFieldSizes_data() {
