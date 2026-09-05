@@ -17,7 +17,7 @@ MD.TextFieldEmbed {
 
     font.capitalization: Font.MixedCase
     typescale: control.mdState.typescale
-    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, Math.max(contentWidth, m_placeholder.implicitWidth) + leftPadding + rightPadding)
+    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, Math.max(contentWidth, m_placeholder.restImplicitWidth) + leftPadding + rightPadding)
     implicitHeight: mdState.containerHeight
 
     // If we're clipped, set topInset to half the height of the placeholder text to avoid it being clipped.
@@ -50,7 +50,7 @@ MD.TextFieldEmbed {
         x: control.leftPadding
         width: control.width - (control.leftPadding + control.rightPadding)
         text: control.placeholderText
-        font: control.font
+        sourceFont: control.font
         color: control.mdState.placeholderColor
         opacity: control.mdState.placeholderOpacity
         elide: Text.ElideRight
@@ -113,7 +113,7 @@ MD.TextFieldEmbed {
             MD.OutlineTextFieldShape {
                 borderColor: control.mdState.outlineColor
                 radius: MD.Token.shape.corner.extra_small
-                floatWidth: m_placeholder.implicitWidth * m_placeholder.targetScale + 8
+                floatWidth: m_placeholder.implicitWidth + 8
                 floatX: m_placeholder.x - 4
                 open: m_placeholder.text.length > 0 && m_placeholder.floated
             }

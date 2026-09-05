@@ -6,36 +6,45 @@ Text {
     property bool controlHasText: false
     property int verticalPadding: 8
     property int controlHeight: height
-    property int largestHeight: 0
     property color cutoutColor: "transparent"
+    property font sourceFont
 
     property bool filled: false
     property real targetScale: 0.8
     readonly property bool floated: controlFocus || controlHasText
-    y: (controlHeight - height) / 2.0
-    scale: 1.0
+    readonly property int restPixelSize: sourceFont.pixelSize
+    readonly property int floatedPixelSize: Math.round(restPixelSize * targetScale)
+    readonly property int largestHeight: restMetrics.height
+    readonly property real restImplicitWidth: restMetrics.width
+
+    font.family: sourceFont.family
+    font.styleName: sourceFont.styleName
+    font.weight: sourceFont.weight
+    font.letterSpacing: sourceFont.letterSpacing
+    font.capitalization: sourceFont.capitalization
+    font.hintingPreference: sourceFont.hintingPreference
+    font.pixelSize: floated ? floatedPixelSize : restPixelSize
+    y: Math.round((controlHeight - height) / 2.0)
     verticalAlignment: Text.AlignVCenter
+
+    TextMetrics {
+        id: restMetrics
+        text: root.text
+        font.family: root.sourceFont.family
+        font.weight: root.sourceFont.weight
+        font.letterSpacing: root.sourceFont.letterSpacing
+        font.capitalization: root.sourceFont.capitalization
+        font.pixelSize: root.restPixelSize
+    }
 
     Rectangle {
         z: -1
         visible: root.floated && root.cutoutColor.a > 0
         x: -6
         anchors.verticalCenter: parent.verticalCenter
-        width: parent.implicitWidth * parent.scale + 12
-        height: Math.max(2, parent.largestHeight * parent.scale)
+        width: parent.implicitWidth + 12
+        height: Math.max(2, parent.height)
         color: root.cutoutColor
-    }
-
-    transformOrigin: {
-        switch (effectiveHorizontalAlignment) {
-        case Text.AlignLeft:
-        case Text.AlignJustify:
-            return Item.Left;
-        case Text.AlignRight:
-            return Item.Right;
-        case Text.AlignHCenter:
-            return Item.Center;
-        }
     }
 
     states: [
@@ -43,8 +52,8 @@ Text {
             name: 'float'
             when: root.controlFocus || root.controlHasText
             PropertyChanges {
-                root.y: root.filled ? root.verticalPadding : -root.largestHeight / 2.0
-                root.scale: root.targetScale
+                root.y: root.filled ? root.verticalPadding : -Math.round(root.largestHeight
+                                                                         * root.targetScale / 2.0)
             }
         }
     ]
@@ -52,34 +61,17 @@ Text {
     transitions: [
         Transition {
             to: ''
-            ParallelAnimation {
-                YAnimator {
-                    duration: 300
-                    easing.type: Easing.OutSine
-                }
-                ScaleAnimator {
-                    duration: 300
-                    easing.type: Easing.OutSine
-                }
+            YAnimator {
+                duration: 300
+                easing.type: Easing.OutSine
             }
         },
         Transition {
             to: 'float'
-            ParallelAnimation {
-                YAnimator {
-                    duration: 300
-                    easing.type: Easing.OutSine
-                }
-                ScaleAnimator {
-                    duration: 300
-                    easing.type: Easing.OutSine
-                }
+            YAnimator {
+                duration: 300
+                easing.type: Easing.OutSine
             }
         }
     ]
-
-    Component.onCompleted: {
-        largestHeight = implicitHeight;
-        effectiveHorizontalAlignmentChanged();
-    }
 }
