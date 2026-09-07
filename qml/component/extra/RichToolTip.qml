@@ -91,7 +91,7 @@ T.ToolTip {
             text: control.subhead
             typescale: control.subheadTypescale
             color: control.mdState.textColor
-            wrapMode: Text.Wrap
+            wrapMode: Text.WordWrap
             elide: Text.ElideNone
         }
 
@@ -103,7 +103,7 @@ T.ToolTip {
             text: control.text
             typescale: control.typescale
             color: control.mdState.supportTextColor
-            wrapMode: Text.Wrap
+            wrapMode: Text.WordWrap
             elide: Text.ElideNone
         }
 
