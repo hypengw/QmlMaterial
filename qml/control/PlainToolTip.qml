@@ -77,7 +77,7 @@ T.ToolTip {
         color: control.mdState.textColor
         verticalAlignment: Text.AlignVCenter
         horizontalAlignment: Text.AlignHCenter
-        wrapMode: Text.Wrap
+        wrapMode: Text.WordWrap
     }
 
     background: MD.ElevationRectangle {
