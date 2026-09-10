@@ -248,7 +248,7 @@ MD.Page {
                             MD.SplitButton {
                                 text: 'Disabled'
                                 mdState.type: MD.Enum.BtFilled
-                                enabled:false
+                                enabled: false
                                 menu: MD.Menu {
                                     MD.MenuItem {
                                         text: 'Action 1'
@@ -258,7 +258,6 @@ MD.Page {
                                     }
                                 }
                             }
-
                         }
                     }
 
@@ -884,6 +883,13 @@ MD.Page {
                                 mdState.size: MD.Enum.XL
                             }
                         }
+                        MD.ComboBox {
+                            Layout.alignment: Qt.AlignHCenter
+                            Layout.preferredWidth: 200
+                            label: "Size"
+                            editable: true
+                            model: ["Small", "Medium", "Large"]
+                        }
                     }
 
                     ComponentCard {
@@ -1088,7 +1094,6 @@ MD.Page {
                             }
                         }
                     }
-
                 }
             }
             MD.Pane {

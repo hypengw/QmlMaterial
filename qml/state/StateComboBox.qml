@@ -36,6 +36,8 @@ MD.MState {
     backgroundColor: "transparent"
     supportTextColor: root.ctx.color.on_surface_variant
     outlineColor: root.ctx.color.outline
+    property color labelColor: root.ctx.color.on_surface_variant
+    property real labelOpacity: 1.0
 
     state: {
         if (!item.enabled) return "disabled";
@@ -51,6 +53,8 @@ MD.MState {
             name: "disabled"
             PropertyChanges {
                 root.supportTextColor: root.ctx.color.on_surface
+                root.labelColor: root.ctx.color.on_surface
+                root.labelOpacity: MD.Token.state.disabled_content
                 root.item.contentItem.opacity: 0.38
                 root.item.background.opacity: 0.12
             }
@@ -60,6 +64,7 @@ MD.MState {
             PropertyChanges {
                 root.textColor: root.ctx.color.on_surface
                 root.supportTextColor: root.ctx.color.error
+                root.labelColor: root.ctx.color.error
                 root.outlineColor: root.ctx.color.error
             }
         },
@@ -68,18 +73,21 @@ MD.MState {
             PropertyChanges {
                 root.textColor: root.ctx.color.on_surface
                 root.supportTextColor: root.ctx.color.error
+                root.labelColor: root.ctx.color.on_error_container
                 root.outlineColor: root.ctx.color.on_error_container
             }
         },
         State {
             name: "focus"
             PropertyChanges {
+                root.labelColor: root.ctx.color.primary
                 root.outlineColor: root.ctx.color.primary
             }
         },
         State {
             name: "hovered"
             PropertyChanges {
+                root.labelColor: root.ctx.color.on_surface
                 root.outlineColor: root.ctx.color.on_surface
             }
         }
