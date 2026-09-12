@@ -95,6 +95,15 @@ target_link_libraries(model_data_changed PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPriv
 set_target_properties(model_data_changed PROPERTIES AUTOMOC ON)
 add_test(NAME model_data_changed COMMAND model_data_changed)
 
+add_executable(model_current_item
+  model_current_item.cpp
+  ${CAROUSEL_ENGINE_SOURCES}
+  ${CAROUSEL_ENGINE_HEADERS})
+target_include_directories(model_current_item PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(model_current_item PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Qml Qt6::Quick Qt6::QuickPrivate)
+set_target_properties(model_current_item PROPERTIES AUTOMOC ON)
+add_test(NAME model_current_item COMMAND model_current_item)
+
 add_executable(qm_grab qm_grab.cpp)
 target_link_libraries(qm_grab PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Quick Qt6::Qml)
 set_target_properties(qm_grab PROPERTIES AUTOMOC ON)

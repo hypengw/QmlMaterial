@@ -36,6 +36,8 @@ T.Control {
     }
     property bool showPageIndicator: false
     property bool showNavigationButtons: false
+    property bool wheelNavigationEnabled: true
+    property real minimumViewportHeight: MD.Token.carousel.container_height_horizontal
     property string header: ''
 
     readonly property bool wheelRequiresShift: control.layout !== MD.Enum.CarouselFullScreen
@@ -48,7 +50,7 @@ T.Control {
     readonly property real chromeRowSpacing: MD.Token.carousel.chrome_row_spacing
     readonly property real tokenViewportHeight: control.layout === MD.Enum.CarouselFullScreen
         ? MD.Token.carousel.default_item_extent
-        : MD.Token.carousel.container_height_horizontal
+        : control.minimumViewportHeight
     readonly property real viewportHeight: control.orientation === Qt.Vertical
         ? Math.max(0, control.height - control.chromeOverhead)
         : Math.max(control.tokenViewportHeight,
@@ -78,7 +80,7 @@ T.Control {
         : MD.Token.carousel.default_height_vertical
     implicitHeight: orientation === Qt.Vertical
         ? MD.Token.carousel.default_height_vertical
-        : (viewportHeight + chromeOverhead)
+        : (tokenViewportHeight + chromeOverhead)
 
     focusPolicy: Qt.NoFocus
 
@@ -163,6 +165,7 @@ T.Control {
     }
 
     MD.WheelHandler {
+        active: control.wheelNavigationEnabled
         target: m_view.flickable
         scrollFlickableTarget: false
         horizontalScrollModifiers: Qt.NoModifier

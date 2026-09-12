@@ -28,6 +28,7 @@ T.Control {
     readonly property bool useModal: forceModal || !useEmbed
     // user-togglable expanded state for embedded mode
     property bool expanded: false
+    property bool drawerGestureEnabled: true
     // automatically expand when the window becomes large enough to embed
     property bool autoExpand: true
     // items use the horizontal (expanded) layout
@@ -222,6 +223,7 @@ T.Control {
         id: m_drawer
         parent: T.Overlay.overlay
         modal: control.useModal
+        interactive: control.drawerGestureEnabled
         MD.MProp.textColor: MD.MProp.color.on_surface
         MD.MProp.backgroundColor: MD.MProp.color.surface_container
 
@@ -281,6 +283,7 @@ T.Control {
             id: m_flick
             topMargin: 12
             bottomMargin: 12
+            contentHeight: m_content.implicitHeight
             implicitWidth: m_content.implicitWidth
             implicitHeight: m_content.implicitHeight + 12 * 2
             anchors.fill: parent

@@ -3,6 +3,7 @@
 #include <QAbstractItemModel>
 #include <QJSValue>
 #include <QMetaObject>
+#include <QMetaType>
 #include <QPropertyAnimation>
 #include <QAbstractAnimation>
 #include <QQmlContext>
@@ -54,6 +55,27 @@ QJSValue modelAsJsValue(const QVariant& model)
     return {};
 }
 
+QObject* modelAsObject(const QVariant& model)
+{
+    if (auto* object = model.value<QObject*>()) {
+        return object;
+    }
+    const QJSValue js = modelAsJsValue(model);
+    if (js.isQObject()) {
+        return js.toQObject();
+    }
+    QVariant converted = model;
+    if (converted.convert(QMetaType::fromType<QObject*>())) {
+        return converted.value<QObject*>();
+    }
+    return nullptr;
+}
+
+QAbstractItemModel* modelAsItemModel(const QVariant& model)
+{
+    return qobject_cast<QAbstractItemModel*>(modelAsObject(model));
+}
+
 int modelArrayLength(const QVariant& model)
 {
     if (model.canConvert<QVariantList>()) {
@@ -86,7 +108,7 @@ QVariant modelElementAt(const QVariant& model, int index)
     if (js.isArray()) {
         return normalizeModelRow(js.property(index).toVariant(QJSValue::ConvertJSObjects));
     }
-    if (auto* item_model = qobject_cast<QAbstractItemModel*>(model.value<QObject*>())) {
+    if (auto* item_model = modelAsItemModel(model)) {
         if (index < 0 || index >= item_model->rowCount()) {
             return {};
         }
@@ -177,7 +199,7 @@ void CarouselView::setModel(const QVariant& model)
     }
     unbindItemModel();
     m_model = model;
-    if (auto* item_model = qobject_cast<QAbstractItemModel*>(m_model.value<QObject*>())) {
+    if (auto* item_model = modelAsItemModel(m_model)) {
         bindItemModel(item_model);
     }
     updateCount();
@@ -283,6 +305,9 @@ void CarouselView::setCurrentIndex(int index)
     const int clamped = m_count > 0 ? qBound(0, index, m_count - 1) : 0;
     const bool changed = m_current_index != clamped;
     m_current_index    = clamped;
+    m_current_model_index = m_item_model && m_count > 0
+        ? QPersistentModelIndex(m_item_model->index(clamped, 0))
+        : QPersistentModelIndex();
     if (changed) {
         Q_EMIT currentIndexChanged();
     }
@@ -562,7 +587,7 @@ void CarouselView::updateCount()
     if (m_model.userType() == QMetaType::Int || m_model.userType() == QMetaType::UInt
         || m_model.userType() == QMetaType::LongLong) {
         new_count = m_model.toInt();
-    } else if (auto* model = qobject_cast<QAbstractItemModel*>(m_model.value<QObject*>())) {
+    } else if (auto* model = modelAsItemModel(m_model)) {
         new_count = model->rowCount();
     } else {
         new_count = modelArrayLength(m_model);
@@ -575,6 +600,7 @@ void CarouselView::updateCount()
 
 void CarouselView::unbindItemModel()
 {
+    m_current_model_index = QPersistentModelIndex {};
     if (!m_item_model) {
         return;
     }
@@ -590,6 +616,7 @@ void CarouselView::bindItemModel(QAbstractItemModel* model)
     m_item_model = model;
     connect(model, &QAbstractItemModel::rowsInserted, this, &CarouselView::onModelRowsChanged);
     connect(model, &QAbstractItemModel::rowsRemoved, this, &CarouselView::onModelRowsChanged);
+    connect(model, &QAbstractItemModel::rowsMoved, this, &CarouselView::onModelRowsChanged);
     connect(model, &QAbstractItemModel::modelReset, this, &CarouselView::onModelRowsChanged);
     connect(model, &QAbstractItemModel::layoutChanged, this, &CarouselView::onModelRowsChanged);
     connect(model, &QAbstractItemModel::dataChanged, this, &CarouselView::onModelDataChanged);
@@ -597,9 +624,14 @@ void CarouselView::bindItemModel(QAbstractItemModel* model)
 
 void CarouselView::onModelRowsChanged()
 {
+    const int logical_row = m_current_model_index.isValid() ? m_current_model_index.row() : -1;
     updateCount();
     rebuildItems();
-    syncCurrentIndexAfterCountChange();
+    if (logical_row >= 0) {
+        setCurrentIndex(logical_row);
+    } else {
+        syncCurrentIndexAfterCountChange();
+    }
 }
 
 void CarouselView::onModelDataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight,
@@ -621,6 +653,7 @@ void CarouselView::onModelDataChanged(const QModelIndex& topLeft, const QModelIn
 void CarouselView::syncCurrentIndexAfterCountChange()
 {
     if (m_count <= 0) {
+        m_current_model_index = QPersistentModelIndex {};
         if (m_current_index != 0) {
             m_current_index = 0;
             Q_EMIT currentIndexChanged();
@@ -671,6 +704,7 @@ void CarouselView::clearLayout()
         m_current_index = 0;
         Q_EMIT currentIndexChanged();
     }
+    m_current_model_index = QPersistentModelIndex {};
 }
 
 qreal CarouselView::snapOffsetForIndex(int index) const
@@ -796,15 +830,18 @@ void CarouselView::createDelegate(int index)
     if (!ctx) {
         return;
     }
-    QQmlContext* child_ctx = new QQmlContext(ctx);
-
-    QObject* obj = m_delegate->createWithInitialProperties(initialPropertiesForDelegate(index), child_ctx);
-    child_ctx->setParent(obj);
+    QObject* obj = m_delegate->createWithInitialProperties(initialPropertiesForDelegate(index), ctx);
+    if (!obj) {
+        qmlWarning(this) << "Failed to create carousel delegate:" << m_delegate->errorString();
+        return;
+    }
     auto* item = qobject_cast<QQuickItem*>(obj);
     if (!item) {
+        qmlWarning(this) << "Carousel delegate must create a QQuickItem";
         delete obj;
         return;
     }
+    item->setParent(m_content);
     item->setParentItem(m_content);
 
     item->setProperty("_carouselIndex", index);
@@ -1030,9 +1067,15 @@ void CarouselView::updateLayout()
     if (usesFreeScrollSnap() && active_index != m_current_index && flick
         && (flick->isMoving() || m_snapping)) {
         m_current_index = active_index;
+        m_current_model_index = m_item_model
+            ? QPersistentModelIndex(m_item_model->index(active_index, 0))
+            : QPersistentModelIndex();
         Q_EMIT currentIndexChanged();
     } else if (active_index != m_current_index && flick && (flick->isMoving() || m_snapping)) {
         m_current_index = active_index;
+        m_current_model_index = m_item_model
+            ? QPersistentModelIndex(m_item_model->index(active_index, 0))
+            : QPersistentModelIndex();
         Q_EMIT currentIndexChanged();
     }
 }

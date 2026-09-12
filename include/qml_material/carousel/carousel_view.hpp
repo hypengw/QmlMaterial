@@ -7,7 +7,7 @@
 #include <QVariant>
 #include <QVector>
 
-#include <QModelIndex>
+#include <QPersistentModelIndex>
 
 #include "qml_material/carousel/carousel_attached.hpp"
 #include "qml_material/carousel/carousel_strategy.hpp"
@@ -178,6 +178,7 @@ private:
     QVariant                         m_model;
     QQmlComponent*                   m_delegate = nullptr;
     QPointer<QAbstractItemModel>     m_item_model;
+    QPersistentModelIndex            m_current_model_index;
     int                              m_count    = 0;
     int                              m_layout   = 0;
     Qt::Orientation                  m_orientation = Qt::Horizontal;
