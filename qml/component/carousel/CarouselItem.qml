@@ -15,6 +15,7 @@ Item {
     readonly property int carouselOrientation: CarouselView.carouselOrientation
     readonly property int carouselCurrentIndex: CarouselView.carouselCurrentIndex
     property string accessibilityTitle: ''
+    property real cornerRadius: MD.Token.carousel.item_corner
 
     readonly property bool down: m_area.pressed
     readonly property bool hovered: m_area.containsMouse
@@ -26,7 +27,7 @@ Item {
     readonly property real visibleHeight: Math.max(0, height * (1 - maskStart - maskEnd))
     // M3 carousel peek: pill when width = 2 * corner radius (cap radius to half visible size).
     readonly property real effectiveCornerRadius: {
-        const maxRadius = MD.Token.carousel.item_corner;
+        const maxRadius = root.cornerRadius;
         if (root.visibleWidth <= 0 || root.visibleHeight <= 0) {
             return maxRadius;
         }

@@ -1717,6 +1717,34 @@ private Q_SLOTS:
         QCOMPARE(carousel->height(), 72.0);
     }
 
+    void carouselItemUsesCornerRadiusOverride() {
+        const auto source = QByteArrayLiteral(R"(
+            import QtQuick
+            import Qcm.Material as MD
+
+            MD.CarouselItem {
+                property bool masked: false
+                index: 0
+                width: 72
+                height: 72
+                cornerRadius: 12
+                maskEnd: masked ? 0.75 : 0
+            }
+        )");
+
+        QQmlComponent component(&m_engine);
+        component.setData(source, QUrl(QStringLiteral("qrc:/tests/carousel-item-corner.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        QCOMPARE(object->property("effectiveCornerRadius").toReal(), 12.0);
+
+        object->setProperty("masked", true);
+        settle(qobject_cast<QQuickItem*>(object.get()));
+        QCOMPARE(object->property("effectiveCornerRadius").toReal(), 9.0);
+    }
+
     void carouselAcceptsQmlVarItemModel() {
         QStandardItemModel model(1, 1);
         model.setData(model.index(0, 0), QStringLiteral("Wallpaper"));

@@ -846,8 +846,17 @@ void CarouselView::createDelegate(int index)
 
     item->setProperty("_carouselIndex", index);
     item->setProperty("_carouselView", QVariant::fromValue<QObject*>(this));
-    connect(item, SIGNAL(clicked()), this, SLOT(onDelegateClicked()));
-    connect(item, SIGNAL(aspectRatioChanged()), this, SLOT(onDelegateAspectRatioChanged()));
+    if (item->metaObject()->indexOfSignal("clicked()") >= 0) {
+        connect(item, SIGNAL(clicked()), this, SLOT(onDelegateClicked()));
+    }
+    if (item->metaObject()->indexOfSignal("itemAspectRatioChanged()") >= 0) {
+        connect(item,
+                SIGNAL(itemAspectRatioChanged()),
+                this,
+                SLOT(onDelegateAspectRatioChanged()));
+    } else if (item->metaObject()->indexOfSignal("aspectRatioChanged()") >= 0) {
+        connect(item, SIGNAL(aspectRatioChanged()), this, SLOT(onDelegateAspectRatioChanged()));
+    }
 
     m_items[index] = item;
 }
