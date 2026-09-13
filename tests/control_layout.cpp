@@ -1598,7 +1598,7 @@ private Q_SLOTS:
         QCOMPARE(snakeBar->implicitHeight(), 112.0);
     }
 
-    void iconRenderingMatchesFabPath_data() {
+    void iconRenderingUsesCurvePath_data() {
         QTest::addColumn<int>("size");
 
         QTest::newRow("18") << 18;
@@ -1606,7 +1606,7 @@ private Q_SLOTS:
         QTest::newRow("24") << 24;
     }
 
-    void iconRenderingMatchesFabPath() {
+    void iconRenderingUsesCurvePath() {
         QFETCH(int, size);
 
         const auto source = QStringLiteral(R"(
@@ -1642,7 +1642,87 @@ private Q_SLOTS:
         QCOMPARE(font.pixelSize(), size);
         QCOMPARE(text->property("lineHeight").toReal(), qreal(font.pixelSize()));
         QCOMPARE(text->scale(), 1.0);
-        QVERIFY(text->property("renderType").toInt() != curveRenderingType(m_engine));
+        QCOMPARE(text->property("renderType").toInt(), curveRenderingType(m_engine));
+    }
+
+    void iconKeepsCurveConfigurationUnderParentScale_data() {
+        QTest::addColumn<qreal>("parentScale");
+
+        QTest::newRow("zoom-out-small") << 0.3;
+        QTest::newRow("zoom-out") << 0.5;
+        QTest::newRow("zoom-in-small") << 1.5;
+        QTest::newRow("zoom-in") << 2.0;
+        QTest::newRow("zoom-in-large") << 3.0;
+    }
+
+    void iconKeepsCurveConfigurationUnderParentScale() {
+        QFETCH(qreal, parentScale);
+
+        const auto source = QByteArrayLiteral(R"(
+            import QtQuick
+            import Qcm.Material as MD
+
+            Item {
+                id: host
+                MD.Icon {
+                    name: MD.Token.icon.content_copy
+                    size: 20
+                }
+            }
+        )");
+
+        QQmlComponent component(&m_engine);
+        component.setData(source, QUrl(QStringLiteral("qrc:/tests/icon-parent-scale.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* host = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(host);
+        host->setScale(parentScale);
+        host->setParentItem(m_window.contentItem());
+        settle(host);
+
+        auto* icon = itemWithIcon(host);
+        QVERIFY(icon);
+        QCOMPARE(icon->property("size").toInt(), 20);
+
+        auto* text = innerTextItem(icon);
+        QVERIFY(text);
+        const auto font = qvariant_cast<QFont>(text->property("font"));
+        QCOMPARE(font.pixelSize(), 20);
+        QCOMPARE(text->property("lineHeight").toReal(), qreal(font.pixelSize()));
+        QCOMPARE(text->scale(), 1.0);
+        QCOMPARE(text->property("renderType").toInt(), curveRenderingType(m_engine));
+    }
+
+    void iconRenderTypeCanBeOverridden() {
+        const auto source = QByteArrayLiteral(R"(
+            import QtQuick
+            import Qcm.Material as MD
+
+            MD.Icon {
+                property int expectedRenderType: Text.QtRendering
+                name: MD.Token.icon.content_copy
+                renderType: Text.QtRendering
+            }
+        )");
+
+        QQmlComponent component(&m_engine);
+        component.setData(source, QUrl(QStringLiteral("qrc:/tests/icon-render-type.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* icon = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(icon);
+
+        const int expectedRenderType = icon->property("expectedRenderType").toInt();
+        QCOMPARE(icon->property("renderType").toInt(), expectedRenderType);
+
+        auto* text = innerTextItem(icon);
+        QVERIFY(text);
+        QCOMPARE(text->property("renderType").toInt(), expectedRenderType);
     }
 
     void iconButtonContentIconSize() {

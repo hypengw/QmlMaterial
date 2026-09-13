@@ -2,14 +2,11 @@ import QtQuick
 import QtQuick.Layouts
 import Qcm.Material as MD
 
-// Visual regression repro for MD.Icon on vertical-stroke glyphs (copy, delete, videocam).
-// Top row: IconButton → MD.Icon (lineHeight = pixelSize, default renderType).
-// Middle row: FAB-style Text reference (lineHeight = pixelSize).
-// Bottom: raw MD.Icon at typical iconSize values (18 / 20 / 24).
+// Visual regression repro for vertical-stroke glyphs at common sizes and parent scales.
 Rectangle {
     id: root
     width: 560
-    height: 420
+    height: 700
     color: MD.Token.color.surface
 
     readonly property var artifactIcons: [
@@ -18,6 +15,7 @@ Rectangle {
         { label: "videocam", name: MD.Token.icon.videocam }
     ]
     readonly property var iconSizes: [18, 20, 24]
+    readonly property var parentScales: [0.3, 0.5, 1.5, 2, 3]
 
     ColumnLayout {
         anchors.fill: parent
@@ -125,6 +123,73 @@ Rectangle {
                             name: modelData.name
                             size: parent.size
                             color: MD.MProp.color.on_surface
+                        }
+                    }
+                }
+            }
+        }
+
+        MD.Text {
+            text: "Curve-rendered MD.Icon under scaled parent (size 20)"
+            typescale: MD.Token.typescale.label_large
+        }
+
+        Item {
+            id: scaleGrid
+            Layout.fillWidth: true
+            Layout.preferredHeight: 220
+
+            readonly property real labelWidth: 112
+            readonly property real cellWidth: 72
+            readonly property real rowHeight: 64
+
+            Repeater {
+                model: root.parentScales
+                delegate: MD.Text {
+                    required property int index
+                    required property real modelData
+                    x: scaleGrid.labelWidth + index * scaleGrid.cellWidth
+                       + (scaleGrid.cellWidth - width) / 2
+                    text: modelData + "×"
+                    typescale: MD.Token.typescale.label_small
+                }
+            }
+
+            Repeater {
+                model: root.artifactIcons
+                delegate: Item {
+                    required property int index
+                    required property var modelData
+                    x: 0
+                    y: 24 + index * scaleGrid.rowHeight
+                    width: scaleGrid.width
+                    height: scaleGrid.rowHeight
+
+                    MD.Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: parent.modelData.label
+                        typescale: MD.Token.typescale.label_small
+                    }
+
+                    Repeater {
+                        model: root.parentScales
+                        delegate: Item {
+                            required property int index
+                            required property real modelData
+                            x: scaleGrid.labelWidth + index * scaleGrid.cellWidth
+                               + (scaleGrid.cellWidth - width) / 2
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 20
+                            height: 20
+                            scale: modelData
+                            transformOrigin: Item.Center
+
+                            MD.Icon {
+                                anchors.fill: parent
+                                name: parent.parent.modelData.name
+                                size: 20
+                                color: MD.MProp.color.on_surface
+                            }
                         }
                     }
                 }

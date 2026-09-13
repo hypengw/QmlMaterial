@@ -13,6 +13,7 @@ Item {
     property bool fill: false
     property alias horizontalAlignment: m_text_icon.horizontalAlignment
     property alias verticalAlignment: m_text_icon.verticalAlignment
+    property alias renderType: m_text_icon.renderType
 
     property color color: MD.MProp.color.on_background
 
@@ -37,6 +38,8 @@ Item {
     Text {
         id: m_text_icon
         anchors.centerIn: parent
+
+        renderType: Text.CurveRendering
 
         font.family: root.fill ? MD.Token.font.icon_fill_family : MD.Token.font.icon_family
         font.weight: root.weight
