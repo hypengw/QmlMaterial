@@ -249,6 +249,11 @@ private Q_SLOTS:
             import Qcm.Material as MD
             Item {
                 width: 500; height: 400
+                function itemInsets() {
+                    const bg = view.currentItem.background;
+                    return [bg.mapToItem(pane, 0, 0).x,
+                            pane.width - bg.mapToItem(pane, bg.width, 0).x];
+                }
                 MD.VerticalListView {
                     id: view
                     objectName: "view"
@@ -257,9 +262,13 @@ private Q_SLOTS:
                     topMargin: 16; bottomMargin: 20
                     busy: true
                     model: 20
-                    delegate: Item { width: ListView.view.contentWidth; height: 40 }
+                    delegate: MD.ListItem {
+                        width: ListView.view.contentWidth; height: 40
+                        leftMargin: 16; rightMargin: 16
+                    }
                 }
                 MD.FlickablePane {
+                    id: pane
                     objectName: "pane"
                     view: view
                     excludeBegin: 40
@@ -288,6 +297,18 @@ private Q_SLOTS:
         settle(root);
         QCOMPARE(pane->width(), 472.0);
         QCOMPARE(footer->width(), 472.0);
+        view->setProperty("contentWidth", 800);
+        settle(root);
+        for (const auto contentX : {-4, 0, 12}) {
+            view->setProperty("contentX", contentX);
+            QCOMPARE(view->property("contentX").toReal(), qreal(contentX));
+            QVariant insets;
+            QVERIFY(QMetaObject::invokeMethod(root, "itemInsets", Q_RETURN_ARG(QVariant, insets)));
+            const auto values = insets.value<QJSValue>().toVariant().toList();
+            QCOMPARE(values.size(), 2);
+            QCOMPARE(values[0].toReal(), 16.0);
+            QCOMPARE(values[1].toReal(), 16.0);
+        }
     }
 
     void tableGeometry() {

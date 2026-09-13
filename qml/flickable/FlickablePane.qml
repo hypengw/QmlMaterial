@@ -15,7 +15,7 @@ MD.Rectangle {
     property int contentWidth: view?.contentItem.width ?? 0
     property int contentHeight: view?.contentItem.height ?? 0
 
-    x: (view?.originX ?? 0) + (includeHorizontalMargins ? 0 : (view?.leftMargin ?? 0))
+    x: view ? view.originX - (includeHorizontalMargins ? 0 : view.contentX) : 0
     y: view ? -view.contentY + view.originY + excludeBegin - topMargin : 0
 
     color: MD.MProp.backgroundColor
