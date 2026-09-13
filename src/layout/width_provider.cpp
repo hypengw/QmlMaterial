@@ -12,8 +12,15 @@ WidthProvider::WidthProvider(QObject* parent)
       m_spacing(0),
       m_left_margin(0),
       m_right_margin(0) {
-    connect(
-        this, &WidthProvider::totalChanged, this, &WidthProvider::refresh, Qt::DirectConnection);
+#define X(Name) \
+    connect(    \
+        this, &WidthProvider::Name##Changed, this, &WidthProvider::refresh, Qt::DirectConnection)
+    X(minimum);
+    X(leftMargin);
+    X(rightMargin);
+    X(total);
+    X(spacing);
+#undef X
 }
 
 auto WidthProvider::width() const noexcept -> double { return m_width; }
@@ -61,28 +68,27 @@ auto WidthProvider::calculateX(qint32 column) noexcept -> qint32 {
 }
 
 void WidthProvider::refresh() {
-    auto old   = m_width;
-    auto total = m_total - m_left_margin - m_right_margin;
+    const auto old_width  = m_width;
+    const auto old_column = m_column;
+    const auto total      = m_total - m_left_margin - m_right_margin;
 
-    if (m_minimum <= 0 || total <= 0) {
-        return;
+    m_width  = 0;
+    m_column = 1;
+
+    if (m_minimum > 0 && total > 0 && m_minimum + m_spacing > 0) {
+        // Find the maximum count satisfying:
+        // count * minimum + (count - 1) * spacing <= total.
+        const i64 count = std::max<i64>((total + m_spacing) / (m_minimum + m_spacing), 1);
+
+        m_width  = static_cast<double>(total - (count - 1) * m_spacing) / count;
+        m_column = count;
     }
 
-    // find maxmum `count` satisfy:
-    // $ count * m_minimum + (count - 1) * m_spacing <= total $
-    // only keep integer
-    const i64 d = (total + m_spacing) / (m_minimum + m_spacing);
-    // at least one
-    const i64 count = std::max<i64>(d, 1);
-
-    m_width = static_cast<double>(total - (count - 1) * m_spacing) / count;
-
-    if (! qFuzzyCompare(old, m_width)) {
+    if (! qFuzzyCompare(old_width, m_width)) {
         widthChanged();
     }
 
-    if (count != m_column) {
-        m_column = count;
+    if (old_column != m_column) {
         columnChanged();
     }
 }
