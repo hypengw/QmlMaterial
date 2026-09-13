@@ -8,6 +8,7 @@ Item {
     property list<QtObject> actions
     readonly property real targetWidth: Math.ceil(actionLayout.implicitWidth) + 2
     readonly property int hiddenCount: actionLayout.hiddenActions.length
+    property alias maxShowActionNum: actionLayout.maxShowActionNum
 
     implicitWidth: targetWidth
     implicitHeight: actionLayout.implicitHeight

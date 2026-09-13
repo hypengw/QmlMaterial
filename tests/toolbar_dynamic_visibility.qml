@@ -11,6 +11,7 @@ Item {
     property bool linkVisible: false
     readonly property int hiddenCount: actionBarHost.hiddenCount
     readonly property real actionBarWidth: actionBarHost.width
+    property alias maxShowActionNum: actionBarHost.maxShowActionNum
 
     QtObject {
         id: linkAction

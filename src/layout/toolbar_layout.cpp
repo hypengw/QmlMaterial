@@ -283,6 +283,7 @@ void   ToolBarLayout::setMaxShowActionNum(qint32 maxShowActionNum) {
         return;
     }
     d->maxShowActionNum = maxShowActionNum;
+    relayout();
     maxShowActionNumChanged();
 }
 
@@ -378,8 +379,13 @@ void ToolBarLayoutPrivate::calculateImplicitSize() {
 
     visibleActionsWidth = 0.0;
 
+    const auto visibleCountBeforeLimit = std::count_if(
+        sortedDelegates.cbegin(), sortedDelegates.cend(),
+        [](const auto* delegate) { return delegate->isVisible(); });
+    const bool needsMoreButton = !hiddenActions.isEmpty() ||
+                                visibleCountBeforeLimit > std::max(0, q->maxShowActionNum());
     if (maxWidth >
-        q->width() - (hiddenActions.isEmpty() ? 0.0 : moreButtonInstance->width() + spacing)) {
+        q->width() - (needsMoreButton ? moreButtonInstance->width() + spacing : 0.0)) {
 
         qreal layoutWidth = q->width() - (moreButtonInstance->width() + spacing);
         if (alignment & Qt::AlignHCenter) {
@@ -402,13 +408,19 @@ void ToolBarLayoutPrivate::calculateImplicitSize() {
         visibleActionsWidth = maxWidth;
     }
 
-    if (sortedDelegates.size() > q->maxShowActionNum() + hiddenActions.size()) {
-        for (auto i = q->maxShowActionNum(); i < sortedDelegates.size(); i++) {
-            auto* delegate = sortedDelegates[i];
+    int visibleCount = 0;
+    visibleActionsWidth = 0;
+    for (auto* delegate : std::as_const(sortedDelegates)) {
+        if (! delegate->isVisible()) continue;
+        if (visibleCount >= std::max(0, q->maxShowActionNum())) {
             delegate->hide();
             hiddenActions.append(delegate->action());
+            continue;
         }
+        ++visibleCount;
+        visibleActionsWidth += delegate->width() + spacing;
     }
+    if (visibleCount > 0) visibleActionsWidth -= spacing;
 
     if (! hiddenActions.isEmpty()) {
         maxHeight = std::max(maxHeight, moreButtonInstance->implicitHeight());
