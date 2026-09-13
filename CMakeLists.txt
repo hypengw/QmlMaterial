@@ -279,6 +279,9 @@ set(QML_FILES
     qml/delegate/ListGridBaseDelegate.qml
     qml/flickable/Flickable.qml
     qml/flickable/VerticalFlickable.qml
+    qml/flickable/PageVerticalFlickable.qml
+    qml/flickable/PageVerticalListView.qml
+    qml/flickable/PageHorizontalListView.qml
     qml/flickable/VerticalGridView.qml
     qml/flickable/VerticalListView.qml
     qml/flickable/HorizontalListView.qml

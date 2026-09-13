@@ -3,6 +3,8 @@ import Qcm.Material as MD
 
 TableView {
     id: control
+    readonly property real viewportContentWidth: Math.max(0, width - leftMargin - rightMargin)
+    readonly property real viewportContentHeight: Math.max(0, height - topMargin - bottomMargin)
 
     property int radius: MD.Token.shape.corner.extra_large
     property bool hasHeader: false

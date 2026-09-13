@@ -174,6 +174,18 @@ set_tests_properties(dynamic_creation PROPERTIES
   RUN_SERIAL ON
   ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
 
+add_executable(page_layout page_layout.cpp)
+target_include_directories(page_layout PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(page_layout PRIVATE qml_material qml_material_layouts Qt6::Test Qt6::Quick)
+add_dependencies(page_layout qml_materialplugin qml_material_layoutsplugin)
+if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
+  target_link_libraries(page_layout PRIVATE qml_materialplugin qml_material_layoutsplugin)
+endif()
+set_target_properties(page_layout PROPERTIES AUTOMOC ON)
+qt_import_qml_plugins(page_layout)
+add_test(NAME page_layout COMMAND page_layout)
+set_tests_properties(page_layout PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
+
 set(VISUAL_SCENES button action_progress elevation shape ripple ripple_phases loading_indicator_shapes tooltip wave_progress snackbar
     icon_artifacts
     focus_button focus_iconbutton focus_fab focus_chip

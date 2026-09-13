@@ -6,12 +6,15 @@ import Qcm.Material as MD
 
 T.HorizontalHeaderView {
     id: control
+    property bool followSyncViewMargins: false
 
     property int radius: (syncView as MD.TableView)?.effectiveRadius ?? MD.Token.shape.corner.extra_large
     property color outlineColor: (syncView as MD.TableView)?.outlineColor ?? MD.Token.color.outline_variant
     property int outlineWidth: (syncView as MD.TableView)?.outlineWidth ?? 1
 
-    implicitWidth: syncView ? syncView.width : 0
+    // syncView already synchronizes the content offset, including its margins.
+    x: followSyncViewMargins && syncView ? syncView.x : 0
+    implicitWidth: syncView?.width ?? 0
     // The contentHeight of TableView will be zero at start-up, until the delegate
     // items have been loaded. This means that even if the implicit height of
     // HorizontalHeaderView should be the same as the content height in the end, we
@@ -22,8 +25,11 @@ T.HorizontalHeaderView {
     delegate: MD.HorizontalHeaderViewDelegate { }
 
     MD.Rectangle {
+        objectName: "headerOutline"
         parent: control
         anchors.fill: parent
+        anchors.leftMargin: control.followSyncViewMargins ? (control.syncView?.leftMargin ?? 0) : 0
+        anchors.rightMargin: control.followSyncViewMargins ? (control.syncView?.rightMargin ?? 0) : 0
         z: 1000
         corners: MD.Util.corners(control.radius, control.radius, 0, 0)
         color: "transparent"

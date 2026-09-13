@@ -10,7 +10,7 @@ MD.ListView {
 
     footer: MD.ListBusyFooter {
         running: root.busy
-        width: ListView.view.width
+        width: root.contentWidth
         height: implicitHeight
     }
 
