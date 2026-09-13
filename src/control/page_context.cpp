@@ -3,19 +3,52 @@
 
 namespace qml_material
 {
-PageContext::PageContext(QObject* parent): QObject(parent), m_inherit(nullptr) {}
+PageContext::PageContext(QObject* parent): QObject(parent) {}
 
-PageContext::~PageContext() {}
+PageContext::~PageContext() { disconnectInherit(); }
 
-auto PageContext::inherit() const -> PageContext* { return m_inherit; }
+auto PageContext::inherit() const -> PageContext* { return m_inherit.data(); }
 void PageContext::setInherit(PageContext* v) {
-    if (v != m_inherit) {
-        m_inherit = v;
-        inheritChanged();
+    if (v == m_inherit.data() || v == this) {
+        return;
     }
+    for (auto* ancestor = v; ancestor; ancestor = ancestor->inherit()) {
+        if (ancestor == this) return;
+    }
+
+    disconnectInherit();
+    m_inherit = v;
+
+    if (v) {
+#define X(Func, Mem)                                                                      \
+    m_inherit_connections.append(connect(v, &PageContext::Func##Changed, this, [this]() { \
+        if (! Mem.has_value()) Func##Changed();                                           \
+    }))
+        X(leadingAction, m_leading_action);
+        X(headerType, m_header_type);
+        X(backgroundRadius, m_background_radius);
+        X(headerBackgroundOpacity, m_header_background_opacity);
+        X(radius, m_radius);
+        X(showHeader, m_show_header);
+        X(showBackground, m_show_background);
+        X(leftMargin, m_left_margin);
+        X(rightMargin, m_right_margin);
+        X(topMargin, m_top_margin);
+        X(bottomMargin, m_bottom_margin);
+#undef X
+        m_inherit_connections.append(connect(v, &QObject::destroyed, this, [this]() {
+            m_inherit = nullptr;
+            m_inherit_connections.clear();
+            inheritChanged();
+            notifyInheritedProperties();
+        }));
+    }
+
+    inheritChanged();
+    notifyInheritedProperties();
 }
 
-#define X(Func, Mem, Def) Mem.value_or(m_inherit != nullptr ? m_inherit->Func() : Def)
+#define X(Func, Mem, Def) (Mem.has_value() ? *Mem : (m_inherit ? m_inherit->Func() : Def))
 
 auto PageContext::leadingAction() const -> QObject* {
     return X(leadingAction, m_leading_action, nullptr);
@@ -118,6 +151,52 @@ void PageContext::setBottomMargin(qint32 v) {
     }
 }
 #undef X
+
+#define X(Func, Signal, Mem)          \
+    void PageContext::reset##Func() { \
+        if (Mem.has_value()) {        \
+            Mem.reset();              \
+            Signal##Changed();        \
+        }                             \
+    }
+X(LeadingAction, leadingAction, m_leading_action)
+X(HeaderType, headerType, m_header_type)
+X(BackgroundRadius, backgroundRadius, m_background_radius)
+X(HeaderBackgroundOpacity, headerBackgroundOpacity, m_header_background_opacity)
+X(Radius, radius, m_radius)
+X(ShowHeader, showHeader, m_show_header)
+X(ShowBackground, showBackground, m_show_background)
+X(LeftMargin, leftMargin, m_left_margin)
+X(RightMargin, rightMargin, m_right_margin)
+X(TopMargin, topMargin, m_top_margin)
+X(BottomMargin, bottomMargin, m_bottom_margin)
+#undef X
+
+void PageContext::disconnectInherit() {
+    for (const auto& connection : m_inherit_connections) {
+        QObject::disconnect(connection);
+    }
+    m_inherit_connections.clear();
+}
+
+void PageContext::notifyInheritedProperties() {
+#define X(Func, Mem)         \
+    if (! Mem.has_value()) { \
+        Func##Changed();     \
+    }
+    X(leadingAction, m_leading_action)
+    X(headerType, m_header_type)
+    X(backgroundRadius, m_background_radius)
+    X(headerBackgroundOpacity, m_header_background_opacity)
+    X(radius, m_radius)
+    X(showHeader, m_show_header)
+    X(showBackground, m_show_background)
+    X(leftMargin, m_left_margin)
+    X(rightMargin, m_right_margin)
+    X(topMargin, m_top_margin)
+    X(bottomMargin, m_bottom_margin)
+#undef X
+}
 } // namespace qml_material
 
 #include <qml_material/control/moc_page_context.cpp>
