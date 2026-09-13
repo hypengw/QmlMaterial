@@ -8,6 +8,7 @@ T.ComboBox {
 
     property int type: MD.Enum.TextFieldOutlined
     property real popupMaximumHeight: 0
+    property string label
     property MD.StateComboBox mdState: MD.StateComboBox {
         item: control
     }
@@ -15,7 +16,16 @@ T.ComboBox {
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: mdState.containerHeight
 
-    topInset: 0
+    font.capitalization: Font.MixedCase
+    Binding {
+        when: control.mdState.typescale
+        control.font.pixelSize: control.mdState.typescale.size
+        control.font.weight: control.mdState.typescale.weight
+        control.font.letterSpacing: control.mdState.typescale.tracking
+        restoreMode: Binding.RestoreNone
+    }
+
+    topInset: clip ? m_label.largestHeight / 2 : 0
     bottomInset: 0
     leftInset: 0
     rightInset: 0
@@ -61,6 +71,25 @@ T.ComboBox {
         verticalAlignment: TextInput.AlignVCenter
     }
 
+    MD.FloatingPlaceholderText {
+        id: m_label
+        x: control.leftPadding
+        width: control.width - (control.leftPadding + control.rightPadding)
+        text: control.label
+        sourceFont: control.font
+        color: control.mdState.labelColor
+        opacity: control.mdState.labelOpacity
+        elide: Text.ElideRight
+
+        controlFocus: control.activeFocus
+        controlHeight: control.height
+        verticalPadding: 0
+
+        filled: false
+        controlHasText: (control.editable ? control.editText : control.displayText).length > 0
+        cutoutColor: "transparent"
+    }
+
     background: Item {
         implicitWidth: 64
         implicitHeight: control.mdState.containerHeight
@@ -68,6 +97,9 @@ T.ComboBox {
             anchors.fill: parent
             borderColor: control.mdState.outlineColor
             radius: MD.Token.shape.corner.extra_small
+            floatWidth: m_label.implicitWidth + 8
+            floatX: m_label.x - 4
+            open: m_label.text.length > 0 && m_label.floated
         }
     }
 
