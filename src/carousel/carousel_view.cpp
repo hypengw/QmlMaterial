@@ -805,7 +805,6 @@ void CarouselView::createDelegate(int index)
         m_items.append(nullptr);
     }
     if (m_items[index]) {
-        applyDelegateProperties(m_items[index], index);
         const qreal aspect = m_items[index]->property("itemAspectRatio").toDouble();
         if (aspect > 0) {
             while (m_item_aspects.size() < m_count) {

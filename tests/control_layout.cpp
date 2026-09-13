@@ -1881,6 +1881,55 @@ private Q_SLOTS:
         QCOMPARE(root->property("delegateCount").toInt(), 1);
     }
 
+    void carouselLayoutDoesNotRewriteDelegateModel() {
+        const auto source = QByteArrayLiteral(R"(
+            pragma ComponentBehavior: Bound
+            import QtQuick
+            import Qcm.Material as MD
+
+            Item {
+                id: root
+                width: 480
+                height: 160
+                property int modelChangeCount: 0
+
+                MD.Carousel {
+                    id: carousel
+                    objectName: "carousel"
+                    anchors.fill: parent
+                    layout: MD.Enum.CarouselHero
+                    model: [{}, {}, {}]
+                    delegate: Item {
+                        required property int index
+                        required property var model
+                        property real itemAspectRatio: 1.5
+                        onModelChanged: root.modelChangeCount += 1
+                    }
+                }
+            }
+        )");
+
+        QQmlComponent component(&m_engine);
+        component.setData(source, QUrl(QStringLiteral("qrc:/tests/carousel-model-lifecycle.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* root = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(root);
+        root->setParentItem(m_window.contentItem());
+        settle(root);
+
+        auto* carousel = root->findChild<QQuickItem*>(QStringLiteral("carousel"));
+        QVERIFY(carousel);
+        const int initialModelChangeCount = root->property("modelChangeCount").toInt();
+        QVERIFY(initialModelChangeCount > 0);
+
+        carousel->setProperty("itemExtent", carousel->property("itemExtent").toReal() + 1);
+        settle(root);
+        QCOMPARE(root->property("modelChangeCount").toInt(), initialModelChangeCount);
+    }
+
 private:
     QQmlEngine   m_engine;
     QQuickWindow m_window;
