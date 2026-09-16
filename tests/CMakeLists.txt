@@ -174,6 +174,21 @@ set_tests_properties(dynamic_creation PROPERTIES
   RUN_SERIAL ON
   ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
 
+add_executable(attached_property_propagation attached_property_propagation.cpp)
+target_include_directories(attached_property_propagation PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(attached_property_propagation PRIVATE
+  qml_material material_color Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::Test)
+add_dependencies(attached_property_propagation qml_materialplugin)
+if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
+  target_link_libraries(attached_property_propagation PRIVATE qml_materialplugin)
+endif()
+set_target_properties(attached_property_propagation PROPERTIES AUTOMOC ON)
+qt_import_qml_plugins(attached_property_propagation)
+add_test(NAME attached_property_propagation COMMAND attached_property_propagation)
+set_tests_properties(attached_property_propagation PROPERTIES
+  RUN_SERIAL ON
+  ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
+
 add_executable(page_layout page_layout.cpp)
 target_include_directories(page_layout PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(page_layout PRIVATE qml_material qml_material_layouts Qt6::Test Qt6::Quick)

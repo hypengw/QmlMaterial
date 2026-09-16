@@ -69,6 +69,7 @@ endif()
 set(LIBNAME qml_material)
 
 set(SOURCES
+    include/qml_material/core/attached_property.hpp
     include/qml_material/core/helper.hpp
     include/qml_material/token/badge.hpp
     include/qml_material/token/combo_box.hpp
@@ -95,6 +96,7 @@ set(SOURCES
     src/scenegraph/blur_mask_material.cpp
     src/scenegraph/texture_cache.cpp
     src/core/enum.cpp
+    src/core/attached_property.cpp
     src/core/helper.cpp
     src/style/theme.cpp
     src/anim/circular_indicator_updator.cpp
@@ -573,7 +575,6 @@ add_subdirectory(third_party)
 target_link_libraries(
   ${LIBNAME}
   PUBLIC Qt6::Core Qt6::Quick
-         Qt6::QuickControls2 # QQuickAttachedPropertyPropagator
          Qt6::QuickPrivate # QQuickStateGroup
   PRIVATE material_color)
 
