@@ -1,13 +1,15 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 import Qcm.Material.Layouts as Lite
 
-T.Button {
+MD.ButtonBase {
     id: control
 
-    property int position: MD.Enum.PosSingle
-    property int size: MD.Enum.S
+    readonly property MD.SegmentedButtonGroup segmentedGroup: MD.ContainerBase.container as MD.SegmentedButtonGroup
+    property int position: !segmentedGroup || segmentedGroup.count === 1 ? MD.Enum.PosSingle
+        : MD.ContainerBase.index === 0 ? MD.Enum.PosFirst
+        : MD.ContainerBase.index === segmentedGroup.count - 1 ? MD.Enum.PosLast : MD.Enum.PosMiddle
+    property int size: segmentedGroup?.size ?? MD.Enum.S
     property alias mdState: m_state
 
     MD.StateSegmentedButton {
@@ -29,6 +31,7 @@ T.Button {
 
     icon.width: mdState.iconSize
     icon.height: mdState.iconSize
+    icon.color: control.mdState.textColor
 
     property MD.typescale typescale: mdState.typescale
     font.pixelSize: typescale.size
@@ -47,17 +50,29 @@ T.Button {
             alignment: Qt.AlignHCenter | Qt.AlignVCenter
             spacing: control.spacing
 
-            MD.Icon {
-                visible: control.checked || MD.Util.hasIcon(control.icon)
-                name: control.checked ? "check" : control.icon.name
-                size: control.icon.width
-                color: control.mdState.textColor
+            Item {
+                visible: control.checked || !control.icon.empty
+                implicitWidth: control.icon.width
+                implicitHeight: control.icon.height
+                MD.Icon {
+                    anchors.centerIn: parent
+                    visible: control.checked
+                    name: "check"
+                    size: Math.min(parent.width, parent.height)
+                    color: control.mdState.textColor
+                }
+                MD.IconView {
+                    anchors.fill: parent
+                    visible: !control.checked
+                    icon: control.icon
+                }
             }
 
             MD.Label {
                 text: control.text
                 color: control.mdState.textColor
                 useTypescale: false
+                font: control.font
                 lineHeight: control.typescale.line_height
                 wrapMode: Text.NoWrap
                 Lite.Layout.fillWidth: true

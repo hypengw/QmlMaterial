@@ -1,9 +1,8 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.Slider {
+MD.SliderBase {
     id: control
 
     property MD.StateSliderM2 mdState: MD.StateSliderM2 {
@@ -19,6 +18,7 @@ T.Slider {
     topPadding: 0
     bottomPadding: 0
     clip: false
+    backgroundLayout: MD.ControlBase.LayoutNone
 
     property vector2d overlay: Qt.vector2d(0, 0)
 
@@ -44,6 +44,8 @@ T.Slider {
         y: control.topPadding + (control.horizontal ? (control.availableHeight - height) / 2 : 0)
         implicitWidth: control.horizontal ? 200 : 4
         implicitHeight: control.horizontal ? 4 : 200
+        width: control.horizontal ? control.availableWidth : implicitWidth
+        height: control.horizontal ? implicitHeight : control.availableHeight
         opacity: control.mdState.backgroundOpacity
 
         Rectangle {

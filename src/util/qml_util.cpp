@@ -1,4 +1,6 @@
 #include "qml_material/util/qml_util.hpp"
+#include "qml_material/control/popup.hpp"
+#include "qml_material/util/control_environment.hpp"
 
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -31,14 +33,7 @@ Util::~Util() {}
 void Util::openUrlExternally(const QString& url) { sysOpenUrl(url); }
 void Util::openFolderExternally(const QString& url) { sysOpenFolder(url); }
 
-bool Util::hasIcon(const QJSValue& v) const {
-    auto name   = v.property("name");
-    auto source = v.property("source");
-    if (name.isString() && source.toVariant().isValid()) {
-        return ! name.toString().isEmpty() || ! source.toString().isEmpty();
-    }
-    return false;
-}
+bool Util::hasIcon(ActionIcon* icon) const { return icon && !icon->isEmpty(); }
 
 auto Util::transparent(QColor in, float alpha) noexcept -> QColor {
     in.setAlphaF(alpha);
@@ -58,6 +53,10 @@ auto Util::pressColor(QColor in) noexcept -> QColor {
 void Util::closePopup(QObject* obj) {
     if (! obj) return;
     do {
+        if (auto popup = qobject_cast<Popup*>(obj)) {
+            popup->close();
+            return;
+        }
         auto meta = obj->metaObject();
         do {
             auto cn = meta->className();
@@ -335,8 +334,13 @@ void Util::cellHoveredOn(QQuickItem* item, bool hovered, qint32 row, qint32 colu
     }
 }
 
-QObject* Util::getParent(QObject* obj) { return obj ? obj->parent() : nullptr; }
-bool     Util::disconnectAll(QObject* obj, const QString& name) {
+QObject*    Util::getParent(QObject* obj) { return obj ? obj->parent() : nullptr; }
+QQuickItem* Util::controlAncestor(QQuickItem* item) {
+    for (; item; item = item->parentItem())
+        if (dynamic_cast<ControlEnvironment*>(item)) return item;
+    return nullptr;
+}
+bool Util::disconnectAll(QObject* obj, const QString& name) {
     if (! obj) {
         qCWarning(qml_material_logcat()) << "disconnectAll: obj is null";
         return false;

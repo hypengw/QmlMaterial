@@ -8,7 +8,20 @@ find_package(Qt6 REQUIRED COMPONENTS Test)
 
 enable_testing()
 
-add_executable(hero_center_end hero_center_end.cpp
+add_executable(icon_spec integration/icon_spec.cpp)
+target_link_libraries(icon_spec PRIVATE qml_material Qt6::Quick Qt6::Qml Qt6::Test)
+target_compile_definitions(icon_spec PRIVATE QM_QML_IMPORT_PATH="${QT_QML_OUTPUT_DIRECTORY}")
+target_compile_definitions(icon_spec PRIVATE QM_ICON_TEST_QML="${CMAKE_CURRENT_SOURCE_DIR}/integration/icon_spec.qml")
+add_dependencies(icon_spec qml_materialplugin)
+if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
+  target_link_libraries(icon_spec PRIVATE qml_materialplugin)
+endif()
+set_target_properties(icon_spec PROPERTIES AUTOMOC ON)
+qt_import_qml_plugins(icon_spec)
+add_test(NAME icon_spec COMMAND icon_spec)
+set_tests_properties(icon_spec PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+add_executable(hero_center_end carousel/hero_center_end.cpp
   ${CMAKE_SOURCE_DIR}/src/carousel/carousel_strategies.cpp
   ${CMAKE_SOURCE_DIR}/src/carousel/carousel_keylines.cpp
   ${CMAKE_SOURCE_DIR}/src/carousel/carousel_scroll_strategy.cpp)
@@ -16,7 +29,7 @@ target_include_directories(hero_center_end PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(hero_center_end PRIVATE Qt6::Core)
 add_test(NAME hero_center_end COMMAND hero_center_end)
 
-add_executable(fullscreen_layout fullscreen_layout.cpp
+add_executable(fullscreen_layout carousel/fullscreen_layout.cpp
   ${CMAKE_SOURCE_DIR}/src/carousel/carousel_strategies.cpp
   ${CMAKE_SOURCE_DIR}/src/carousel/carousel_keylines.cpp
   ${CMAKE_SOURCE_DIR}/src/carousel/carousel_scroll_strategy.cpp)
@@ -24,7 +37,7 @@ target_include_directories(fullscreen_layout PRIVATE ${CMAKE_SOURCE_DIR}/include
 target_link_libraries(fullscreen_layout PRIVATE Qt6::Core)
 add_test(NAME fullscreen_layout COMMAND fullscreen_layout)
 
-add_executable(multi_browse_layout multi_browse_layout.cpp
+add_executable(multi_browse_layout carousel/multi_browse_layout.cpp
   ${CMAKE_SOURCE_DIR}/src/carousel/carousel_strategies.cpp
   ${CMAKE_SOURCE_DIR}/src/carousel/carousel_keylines.cpp
   ${CMAKE_SOURCE_DIR}/src/carousel/carousel_scroll_strategy.cpp)
@@ -32,7 +45,7 @@ target_include_directories(multi_browse_layout PRIVATE ${CMAKE_SOURCE_DIR}/inclu
 target_link_libraries(multi_browse_layout PRIVATE Qt6::Core)
 add_test(NAME multi_browse_layout COMMAND multi_browse_layout)
 
-add_executable(uncontained_layout uncontained_layout.cpp
+add_executable(uncontained_layout carousel/uncontained_layout.cpp
   ${CMAKE_SOURCE_DIR}/src/carousel/carousel_strategies.cpp
   ${CMAKE_SOURCE_DIR}/src/carousel/carousel_keylines.cpp
   ${CMAKE_SOURCE_DIR}/src/carousel/carousel_scroll_strategy.cpp)
@@ -40,7 +53,7 @@ target_include_directories(uncontained_layout PRIVATE ${CMAKE_SOURCE_DIR}/includ
 target_link_libraries(uncontained_layout PRIVATE Qt6::Core)
 add_test(NAME uncontained_layout COMMAND uncontained_layout)
 
-add_executable(hero_start_layout hero_start_layout.cpp
+add_executable(hero_start_layout carousel/hero_start_layout.cpp
   ${CMAKE_SOURCE_DIR}/src/carousel/carousel_strategies.cpp
   ${CMAKE_SOURCE_DIR}/src/carousel/carousel_keylines.cpp
   ${CMAKE_SOURCE_DIR}/src/carousel/carousel_scroll_strategy.cpp)
@@ -48,12 +61,12 @@ target_include_directories(hero_start_layout PRIVATE ${CMAKE_SOURCE_DIR}/include
 target_link_libraries(hero_start_layout PRIVATE Qt6::Core)
 add_test(NAME hero_start_layout COMMAND hero_start_layout)
 
-add_executable(carousel_engine_defaults carousel_engine_defaults.cpp)
+add_executable(carousel_engine_defaults carousel/carousel_engine_defaults.cpp)
 target_include_directories(carousel_engine_defaults PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(carousel_engine_defaults PRIVATE Qt6::Core)
 add_test(NAME carousel_engine_defaults COMMAND carousel_engine_defaults)
 
-add_executable(appstream_release_model appstream_release_model.cpp)
+add_executable(appstream_release_model model/appstream_release_model.cpp)
 target_link_libraries(appstream_release_model PRIVATE qml_material Qt6::Core Qt6::Test)
 set_target_properties(appstream_release_model PROPERTIES AUTOMOC ON)
 add_test(NAME appstream_release_model COMMAND appstream_release_model)
@@ -69,7 +82,7 @@ set(CAROUSEL_ENGINE_HEADERS
   ${CMAKE_SOURCE_DIR}/include/qml_material/carousel/carousel_attached.hpp)
 
 add_executable(set_current_index_sync
-  set_current_index_sync.cpp
+  carousel/set_current_index_sync.cpp
   ${CAROUSEL_ENGINE_SOURCES}
   ${CAROUSEL_ENGINE_HEADERS})
 target_include_directories(set_current_index_sync PRIVATE ${CMAKE_SOURCE_DIR}/include)
@@ -78,7 +91,7 @@ set_target_properties(set_current_index_sync PROPERTIES AUTOMOC ON)
 add_test(NAME set_current_index_sync COMMAND set_current_index_sync)
 
 add_executable(model_shrink
-  model_shrink.cpp
+  carousel/model_shrink.cpp
   ${CAROUSEL_ENGINE_SOURCES}
   ${CAROUSEL_ENGINE_HEADERS})
 target_include_directories(model_shrink PRIVATE ${CMAKE_SOURCE_DIR}/include)
@@ -87,7 +100,7 @@ set_target_properties(model_shrink PROPERTIES AUTOMOC ON)
 add_test(NAME model_shrink COMMAND model_shrink)
 
 add_executable(model_data_changed
-  model_data_changed.cpp
+  carousel/model_data_changed.cpp
   ${CAROUSEL_ENGINE_SOURCES}
   ${CAROUSEL_ENGINE_HEADERS})
 target_include_directories(model_data_changed PRIVATE ${CMAKE_SOURCE_DIR}/include)
@@ -96,7 +109,7 @@ set_target_properties(model_data_changed PROPERTIES AUTOMOC ON)
 add_test(NAME model_data_changed COMMAND model_data_changed)
 
 add_executable(model_current_item
-  model_current_item.cpp
+  carousel/model_current_item.cpp
   ${CAROUSEL_ENGINE_SOURCES}
   ${CAROUSEL_ENGINE_HEADERS})
 target_include_directories(model_current_item PRIVATE ${CMAKE_SOURCE_DIR}/include)
@@ -104,12 +117,12 @@ target_link_libraries(model_current_item PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPriv
 set_target_properties(model_current_item PROPERTIES AUTOMOC ON)
 add_test(NAME model_current_item COMMAND model_current_item)
 
-add_executable(qm_grab qm_grab.cpp)
+add_executable(qm_grab visual/qm_grab.cpp)
 target_link_libraries(qm_grab PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Quick Qt6::Qml)
 set_target_properties(qm_grab PROPERTIES AUTOMOC ON)
 
 add_executable(toolbar_dynamic_visibility
-  toolbar_dynamic_visibility.cpp
+  layout/toolbar_dynamic_visibility.cpp
   ${CMAKE_SOURCE_DIR}/src/layout/toolbar_layout.cpp
   ${CMAKE_SOURCE_DIR}/src/layout/toolbar_layout_delegate.cpp
   ${CMAKE_SOURCE_DIR}/src/layout/toolbar_layout_delegate.hpp
@@ -118,15 +131,15 @@ target_include_directories(toolbar_dynamic_visibility PRIVATE
   ${CMAKE_SOURCE_DIR}/include
   ${CMAKE_SOURCE_DIR}/src/layout)
 target_compile_definitions(toolbar_dynamic_visibility PRIVATE
-  TOOLBAR_DYNAMIC_QML_PATH="${CMAKE_CURRENT_SOURCE_DIR}/toolbar_dynamic_visibility.qml")
+  TOOLBAR_DYNAMIC_QML_PATH="${CMAKE_CURRENT_SOURCE_DIR}/layout/toolbar_dynamic_visibility.qml")
 target_link_libraries(toolbar_dynamic_visibility PRIVATE
-  Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick)
+  qml_material Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick)
 set_target_properties(toolbar_dynamic_visibility PROPERTIES AUTOMOC ON)
 add_test(NAME toolbar_dynamic_visibility COMMAND toolbar_dynamic_visibility)
 set_tests_properties(toolbar_dynamic_visibility PROPERTIES
   ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
-add_executable(lite_layout lite_layout.cpp)
+add_executable(lite_layout layout/lite_layout.cpp)
 target_include_directories(lite_layout PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(lite_layout PRIVATE
   qml_material_layouts Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::Test)
@@ -140,7 +153,7 @@ add_test(NAME lite_layout COMMAND lite_layout)
 set_tests_properties(lite_layout PROPERTIES
   ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
 
-add_executable(control_layout control_layout.cpp)
+add_executable(control_layout layout/control_layout.cpp)
 target_include_directories(control_layout PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(control_layout PRIVATE
   qml_material qml_material_layouts
@@ -157,7 +170,7 @@ set_tests_properties(control_layout PROPERTIES
   RUN_SERIAL ON
   ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_ENABLE_HIGHDPI_SCALING=0;QT_SCALE_FACTOR=1;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
 
-add_executable(dynamic_creation dynamic_creation.cpp)
+add_executable(dynamic_creation integration/dynamic_creation.cpp)
 target_include_directories(dynamic_creation PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(dynamic_creation PRIVATE
   qml_material qml_material_layouts
@@ -174,7 +187,7 @@ set_tests_properties(dynamic_creation PROPERTIES
   RUN_SERIAL ON
   ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
 
-add_executable(attached_property_propagation attached_property_propagation.cpp)
+add_executable(attached_property_propagation integration/attached_property_propagation.cpp)
 target_include_directories(attached_property_propagation PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(attached_property_propagation PRIVATE
   qml_material material_color Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::Test)
@@ -189,7 +202,7 @@ set_tests_properties(attached_property_propagation PROPERTIES
   RUN_SERIAL ON
   ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
 
-add_executable(page_layout page_layout.cpp)
+add_executable(page_layout layout/page_layout.cpp)
 target_include_directories(page_layout PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(page_layout PRIVATE qml_material qml_material_layouts Qt6::Test Qt6::Quick)
 add_dependencies(page_layout qml_materialplugin qml_material_layoutsplugin)
@@ -202,7 +215,7 @@ add_test(NAME page_layout COMMAND page_layout)
 set_tests_properties(page_layout PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
 
 set(VISUAL_SCENES button action_progress elevation shape ripple ripple_phases loading_indicator_shapes tooltip wave_progress snackbar
-    icon_artifacts
+    icon_artifacts icon_spec
     focus_button focus_iconbutton focus_fab focus_chip
     focus_switch focus_checkbox focus_radio
     datepicker colorpicker colorpicker_button
@@ -216,7 +229,7 @@ foreach(scene ${VISUAL_SCENES})
        QT_QPA_PLATFORM=\${QT_QPA_PLATFORM:-eglfs} \
        QML_IMPORT_PATH=${CMAKE_BINARY_DIR}/qml_modules \
        $<TARGET_FILE:qm_grab> \
-         ${CMAKE_CURRENT_SOURCE_DIR}/scenes/${scene}.qml \
+         ${CMAKE_CURRENT_SOURCE_DIR}/visual/scenes/${scene}.qml \
          ${CMAKE_CURRENT_BINARY_DIR}/out/visual_${scene}.png \
        && test -s ${CMAKE_CURRENT_BINARY_DIR}/out/visual_${scene}.png"
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}

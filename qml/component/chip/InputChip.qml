@@ -1,10 +1,9 @@
 import QtQuick
-import QtQuick.Templates as T
 import QtQml.Models
 import Qcm.Material as MD
 import Qcm.Material.Layouts as Lite
 
-T.Button {
+MD.ButtonBase {
     id: control
 
     property MD.StateInputChip mdState: MD.StateInputChip {
@@ -27,11 +26,12 @@ T.Button {
     bottomInset: 0
     verticalPadding: 0
     leftPadding: leadingItem ? 8 : 16
-    rightPadding: icon.name ? 8 : 16
+    rightPadding: !icon.empty ? 8 : 16
     spacing: 8
 
     icon.width: 18
     icon.height: 18
+    icon.color: control.mdState.textColor
 
     action: null
     contentItem: contentItemRO
@@ -64,13 +64,13 @@ T.Button {
             Item {
                 implicitWidth: control.icon.width
                 implicitHeight: control.icon.height
-                visible: control.icon.name
+                visible: !control.icon.empty
 
                 MD.StandardIconButton {
                     anchors.centerIn: parent
 
                     implicitBackgroundSize: 0
-                    icon: control.icon
+                    contentItem: MD.IconView { icon: control.icon }
                     action: control.action
                 }
             }

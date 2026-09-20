@@ -26,11 +26,8 @@ MD.IconButton {
 
         Component {
             id: comp_icon
-            MD.Icon {
-                name: control.icon.name
-                size: Math.min(control.icon.width, control.icon.height)
-                color: control.mdState.textColor
-                fill: control.checked
+            MD.IconView {
+                icon: control.icon
             }
         }
 

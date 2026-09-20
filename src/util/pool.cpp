@@ -276,7 +276,7 @@ void Pool::incubatorStateChanged(qint64 id, QQmlIncubator::Status status) {
 
     auto error = errors_to_string(task.incubator->errors());
     if (auto* object = task.incubator->object()) delete object;
-    task.incubator->clear();
+    // Qt still has to finish its creation accounting after the Error callback.
     finishError(id, error.isEmpty() ? QStringLiteral("object incubation failed") : error);
 }
 

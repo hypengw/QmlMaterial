@@ -1,6 +1,5 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Templates as T
 
 import Qcm.Material as MD
 
@@ -16,7 +15,7 @@ import Qcm.Material as MD
  *  - `wavy: true` renders the active segment(s) as wavy paths via
  *    LinearIndicatorWaveShape (M3 expressive)
  */
-T.ProgressBar {
+MD.ProgressBarBase {
     id: control
     enum AnimStateType {
         Running,

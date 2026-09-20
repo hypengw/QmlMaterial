@@ -1,14 +1,13 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 import Qcm.Material.Layouts as Lite
 
-T.TabButton {
+MD.TabButtonBase {
     id: control
 
-    property int type: MD.Enum.PrimaryTab
+    property int type: MD.TabBar.tabBar?.type ?? MD.Enum.PrimaryTab
     property int iconStyle: hasIcon ? MD.Enum.IconAndText : MD.Enum.TextOnly
-    readonly property bool hasIcon: MD.Util.hasIcon(icon)
+    readonly property bool hasIcon: !icon.empty
 
     property MD.StateTabButton mdState: MD.StateTabButton {
         item: control
@@ -17,9 +16,6 @@ T.TabButton {
     Binding {
         control.mdState.type: control.type
     }
-
-    // use checked instead
-    // property bool active: T.TabBar.index === T.TabBar.tabBar.currentIndex
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
@@ -35,6 +31,7 @@ T.TabButton {
 
     icon.width: 24
     icon.height: 24
+    icon.color: control.mdState.textColor
 
     property MD.typescale typescale: MD.Token.typescale.label_medium
     font.capitalization: Font.MixedCase
@@ -52,11 +49,9 @@ T.TabButton {
             alignment: Qt.AlignHCenter | Qt.AlignVCenter
             spacing: control.spacing
 
-            MD.Icon {
+            MD.IconView {
                 visible: control.iconStyle != MD.Enum.TextOnly && control.hasIcon
-                name: control.icon.name
-                size: control.icon.width
-                color: control.mdState.textColor
+                icon: control.icon
             }
 
             MD.Label {
@@ -64,6 +59,7 @@ T.TabButton {
                 text: control.text
                 color: control.mdState.textColor
                 useTypescale: false
+                font: control.font
                 lineHeight: control.typescale.line_height
                 wrapMode: Text.NoWrap
                 Lite.Layout.fillWidth: true

@@ -1,12 +1,11 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 /**
  * @brief Material Design 3 plain tooltip popup
  * @ingroup control
  */
-T.ToolTip {
+MD.ToolTipPopupBase {
     id: control
 
     property MD.MState mdState: MD.MState {
@@ -33,7 +32,7 @@ T.ToolTip {
 
     delay: 500
 
-    closePolicy: T.Popup.CloseOnEscape | T.Popup.CloseOnPressOutsideParent | T.Popup.CloseOnReleaseOutsideParent
+    closePolicy: MD.PopupBase.CloseOnEscape | MD.PopupBase.CloseOnPressOutsideParent | MD.PopupBase.CloseOnReleaseOutsideParent
 
     font.pixelSize: typescale.size
     font.weight: typescale.weight

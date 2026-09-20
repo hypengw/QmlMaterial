@@ -12,6 +12,7 @@
 #include "qml_material/token/token.hpp"
 #include "qml_material/core.hpp"
 #include "qml_material/export.hpp"
+#include "qml_material/control/icon_spec.hpp"
 
 namespace qml_material
 {
@@ -47,7 +48,7 @@ public:
     Q_INVOKABLE void openUrlExternally(const QString& url);
     Q_INVOKABLE void openFolderExternally(const QString& url);
 
-    Q_INVOKABLE bool hasIcon(const QJSValue& v) const;
+    Q_INVOKABLE bool hasIcon(ActionIcon* icon) const;
 
     Q_INVOKABLE static void closePopup(QObject* obj);
 
@@ -106,10 +107,11 @@ public:
     Q_INVOKABLE static void forceSetImplicitHeight(QQuickItem* item, qreal height);
     Q_INVOKABLE static void forceSetImplicitWidth(QQuickItem* item, qreal width);
 
-    Q_INVOKABLE static void     cellHoveredOn(QQuickItem* item, bool hovered, qint32 row,
-                                              qint32 column);
-    Q_INVOKABLE static QObject* getParent(QObject* obj);
-    Q_INVOKABLE static bool     disconnectAll(QObject* obj, const QString&);
+    Q_INVOKABLE static void        cellHoveredOn(QQuickItem* item, bool hovered, qint32 row,
+                                                 qint32 column);
+    Q_INVOKABLE static QObject*    getParent(QObject* obj);
+    Q_INVOKABLE static QQuickItem* controlAncestor(QQuickItem* item);
+    Q_INVOKABLE static bool        disconnectAll(QObject* obj, const QString&);
 
     Q_INVOKABLE static quint32 poolObjectCount() noexcept;
     Q_INVOKABLE static qint32  i32Max() noexcept;

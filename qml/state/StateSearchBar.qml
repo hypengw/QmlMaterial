@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.MState {
@@ -12,7 +11,7 @@ MD.MState {
     stateLayerColor: "transparent"//root.ctx.color.surface_tint
     outlineColor: root.ctx.color.outline
 
-    required property T.Button item
+    required property MD.ButtonBase item
    
 
     property real placeholderOpacity: 1.0

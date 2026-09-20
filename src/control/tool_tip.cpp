@@ -1,9 +1,10 @@
 #include "qml_material/control/tool_tip.hpp"
+#include "qml_material/control/tool_tip_popup.hpp"
 
-#include <QMetaProperty>
 #include <QQmlComponent>
 #include <QQmlEngine>
 #include <QQmlInfo>
+#include <QScopeGuard>
 #include <QQuickItem>
 #include <QUrl>
 #include <QVariant>
@@ -17,13 +18,6 @@ namespace
 constexpr auto managerPropertyName = "_qcm_material_tool_tip_manager";
 constexpr auto plainToolTipUrl     = "qrc:/Qcm/Material/qml/control/PlainToolTip.qml";
 
-bool resetProperty(QObject* object, const char* name) {
-    const auto propertyIndex = object->metaObject()->indexOfProperty(name);
-    if (propertyIndex < 0) return false;
-
-    const auto property = object->metaObject()->property(propertyIndex);
-    return property.isResettable() && property.reset(object);
-}
 } // namespace
 
 class ToolTipManager final : public QObject {
@@ -47,7 +41,7 @@ public:
         return manager;
     }
 
-    QObject* toolTip(bool create) {
+    ToolTipPopup* toolTip(bool create) {
         if (m_toolTip || ! create) return m_toolTip;
 
         QQmlComponent component(m_engine, QUrl(QString::fromLatin1(plainToolTipUrl)));
@@ -56,44 +50,72 @@ public:
             return nullptr;
         }
 
-        auto* toolTip = component.create();
+        auto* object  = component.create();
+        auto* toolTip = qobject_cast<ToolTipPopup*>(object);
         if (! toolTip) {
+            delete object;
             reportErrors(component);
             return nullptr;
         }
 
         toolTip->setParent(this);
         m_toolTip = toolTip;
-        connect(toolTip, SIGNAL(visibleChanged()), this, SLOT(toolTipVisibleChanged()));
+        connect(toolTip, &Popup::visibleChanged, this, &ToolTipManager::toolTipVisibleChanged);
         return toolTip;
     }
 
     bool isVisible(const ToolTipAttached* attached) const {
-        return attached && attached == m_current && m_toolTip &&
-               m_toolTip->property("visible").toBool();
+        return attached && attached == m_current && m_toolTip && m_toolTip->isVisible();
     }
 
     void show(ToolTipAttached* attached, const QString& text, int timeout) {
-        auto* item = attached ? attached->target() : nullptr;
+        QPointer<ToolTipManager>  guard(this);
+        QPointer<ToolTipAttached> source(attached);
+        QPointer<QQuickItem>      item = attached ? attached->target() : nullptr;
         if (! item) return;
+        if (m_showing) {
+            const auto revision = ++m_requestRevision;
+            QMetaObject::invokeMethod(
+                this,
+                [this, source, text, timeout, revision] {
+                    if (source && revision == m_requestRevision) show(source, text, timeout);
+                },
+                Qt::QueuedConnection);
+            return;
+        }
+        m_showing          = true;
+        const auto cleanup = qScopeGuard([guard] {
+            if (guard) guard->m_showing = false;
+        });
 
-        auto* toolTip = this->toolTip(true);
+        QPointer<ToolTipPopup> toolTip = this->toolTip(true);
         if (! toolTip) return;
+        const auto revision = ++m_requestRevision;
+        const auto current  = [&] {
+            return guard && source && item && toolTip && revision == m_requestRevision;
+        };
 
         if (m_current && m_current != attached) {
             m_showRequested = false;
-            invokeHide(toolTip, m_current);
+            toolTip->dismissImmediately();
+            if (! current()) return;
         }
 
         m_current = attached;
         setOwner(item);
 
-        resetProperty(toolTip, "width");
-        resetProperty(toolTip, "height");
-        toolTip->setProperty("parent", QVariant::fromValue(item));
-        toolTip->setProperty("text", text);
-        toolTip->setProperty("delay", attached->delay());
-        toolTip->setProperty("timeout", attached->timeout());
+        toolTip->resetWidth();
+        if (! current()) return;
+        toolTip->resetHeight();
+        if (! current()) return;
+        toolTip->setParentItem(item);
+        if (! current()) return;
+        toolTip->setText(text);
+        if (! current()) return;
+        toolTip->setDelay(attached->delay());
+        if (! current()) return;
+        toolTip->setTimeout(attached->timeout());
+        if (! current()) return;
 
         m_requestText    = text;
         m_requestTimeout = timeout;
@@ -103,16 +125,18 @@ public:
 
     void hide(ToolTipAttached* attached) {
         if (! attached || attached != m_current || ! m_toolTip) return;
+        ++m_requestRevision;
         m_showRequested = false;
-        invokeHide(m_toolTip, attached);
+        m_toolTip->hide();
     }
 
     void release(ToolTipAttached* attached) {
         if (! attached || attached != m_current) return;
+        ++m_requestRevision;
         m_showRequested = false;
-        if (m_toolTip) invokeHide(m_toolTip, nullptr);
         m_current.clear();
         setOwner(nullptr);
+        if (m_toolTip) m_toolTip->dismissImmediately();
     }
 
     void sync(ToolTipAttached* attached, const char* property, const QVariant& value) {
@@ -121,20 +145,24 @@ public:
             return;
         }
 
-        m_toolTip->setProperty(property, value);
         if (std::strcmp(property, "text") == 0) {
             m_requestText = value.toString();
+            m_toolTip->setText(m_requestText);
         } else if (std::strcmp(property, "timeout") == 0) {
             m_requestTimeout = -1;
-        } else if (std::strcmp(property, "delay") == 0 && m_showRequested &&
-                   ! m_toolTip->property("visible").toBool() && m_owner && m_owner->window()) {
-            invokeRequestedShow();
+            m_toolTip->setTimeout(value.toInt());
+        } else if (std::strcmp(property, "delay") == 0) {
+            QPointer<ToolTipManager> guard(this);
+            m_toolTip->setDelay(value.toInt());
+            if (! guard || ! m_toolTip) return;
+            if (m_showRequested && ! m_toolTip->isVisible() && m_owner && m_owner->window())
+                invokeRequestedShow();
         }
     }
 
 private Q_SLOTS:
     void toolTipVisibleChanged() {
-        if (m_toolTip && ! m_toolTip->property("visible").toBool()) m_showRequested = false;
+        if (m_toolTip && ! m_toolTip->isVisible()) m_showRequested = false;
         if (m_current) m_current->notifyVisibleChanged();
     }
 
@@ -152,21 +180,7 @@ private:
 
     void invokeRequestedShow() {
         if (! m_toolTip || ! m_owner || ! m_showRequested) return;
-        if (QMetaObject::invokeMethod(
-                m_toolTip, "show", Q_ARG(QString, m_requestText), Q_ARG(int, m_requestTimeout))) {
-            return;
-        }
-
-        m_showRequested = false;
-        qmlWarning(m_owner) << "Failed to invoke PlainToolTip.show()";
-    }
-
-    void invokeHide(QObject* toolTip, ToolTipAttached* warningContext) {
-        if (QMetaObject::invokeMethod(toolTip, "hide")) return;
-
-        QObject* context = warningContext ? static_cast<QObject*>(warningContext->target())
-                                          : static_cast<QObject*>(m_engine);
-        qmlWarning(context) << "Failed to invoke PlainToolTip.hide()";
+        m_toolTip->show(m_requestText, m_requestTimeout);
     }
 
     void reportErrors(const QQmlComponent& component) const {
@@ -181,12 +195,14 @@ private:
     }
 
     QPointer<QQmlEngine>      m_engine;
-    QPointer<QObject>         m_toolTip;
+    QPointer<ToolTipPopup>    m_toolTip;
     QPointer<ToolTipAttached> m_current;
     QPointer<QQuickItem>      m_owner;
     QString                   m_requestText;
     int                       m_requestTimeout { -1 };
     bool                      m_showRequested { false };
+    quint64                   m_requestRevision = 0;
+    bool                      m_showing         = false;
 };
 
 ToolTipAttached::ToolTipAttached(QObject* parent): QObject(parent) {

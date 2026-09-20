@@ -1,4 +1,5 @@
 
-import QtQuick.Templates as T
+import Qcm.Material as MD
 
-T.MenuSeparator {}
+/** @ingroup control */
+MD.Control {}

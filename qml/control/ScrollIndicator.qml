@@ -1,4 +1,8 @@
 import QtQuick
-import QtQuick.Templates as T
+import Qcm.Material as MD
 
-T.ScrollIndicator {}
+/** @ingroup control */
+MD.ScrollIndicatorBase {
+    implicitWidth: implicitLayoutWidth
+    implicitHeight: implicitLayoutHeight
+}

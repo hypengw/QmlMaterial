@@ -1,12 +1,11 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.Button {
+MD.ButtonBase {
     id: control
 
-    // T.Button::text is FINAL; the field value is `searchText`.
+    // MD.ButtonBase::text is FINAL; the field value is `searchText`.
     property alias searchText: item_input.text
 
     property bool leading_input: false
@@ -61,7 +60,7 @@ T.Button {
         MD.IconButton {
             id: item_trailing
             action: control.trailing_action
-            visible: icon.name
+            visible: !icon.empty
             MD.InputBlock {
                 when: !control.trailing_input
                 target: item_trailing

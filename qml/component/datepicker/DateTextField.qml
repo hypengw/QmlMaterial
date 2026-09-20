@@ -1,6 +1,5 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.TextField {
@@ -50,7 +49,7 @@ MD.TextField {
 
     MD.DatePickerDialog {
         id: m_dialog
-        parent: T.Overlay.overlay
+        parent: control.MD.Overlay.overlay
         selectionMode: MD.DatePicker.SelectionMode.Single
         selectedDate: control.value
         onAcceptedDate: function (d) {

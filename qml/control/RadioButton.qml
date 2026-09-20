@@ -1,9 +1,12 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.RadioButton {
+MD.RadioButtonBase {
     id: control
+    property MD.typescale typescale: MD.Token.typescale.label_large
+    font.pixelSize: typescale.size
+    font.weight: typescale.weight
+    font.letterSpacing: typescale.tracking
     property MD.StateRadioButton mdState: MD.StateRadioButton {
         item: control
     }
@@ -58,7 +61,7 @@ T.RadioButton {
         leftPadding: control.indicator && !control.mirrored ? control.indicator.width + control.spacing : 0
         rightPadding: control.indicator && control.mirrored ? control.indicator.width + control.spacing : 0
 
-        typescale: MD.Token.typescale.label_large
+        typescale: control.typescale
         text: control.text
         font: control.font
         color: control.mdState.textColor

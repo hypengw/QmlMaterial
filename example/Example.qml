@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.Page {
@@ -40,7 +39,7 @@ MD.Page {
     ]
 
     onPageIndexChanged: {
-        m_container.replace(m_container.currentItem, pageModel[pageIndex].source, {});
+        m_container.switchTo(pageModel[pageIndex].source, {}, false);
     }
 
     Component.onCompleted: {
@@ -131,7 +130,7 @@ MD.Page {
                                     required property int index
                                     required property var model
                                     action: MD.Action {
-                                        T.ActionGroup.group: m_palette_group
+                                        MD.ActionGroup.group: m_palette_group
                                         icon.name: ''
                                         checkable: true
                                         checked: m_palette_view.currentIndex === index
@@ -178,7 +177,7 @@ MD.Page {
                 }
             }
 
-            MD.StackView {
+            MD.PageContainer {
                 id: m_container
                 Layout.fillHeight: true
                 Layout.fillWidth: true

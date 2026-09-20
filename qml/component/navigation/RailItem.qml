@@ -1,12 +1,11 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.Button {
+MD.ButtonBase {
     id: control
 
     property int iconStyle: hasIcon ? MD.Enum.IconAndText : MD.Enum.TextOnly
-    readonly property bool hasIcon: MD.Util.hasIcon(icon)
+    readonly property bool hasIcon: !icon.empty
     readonly property bool _showIcon: iconStyle !== MD.Enum.TextOnly && hasIcon
     readonly property bool _showLabel: iconStyle !== MD.Enum.IconOnly
     property MD.StateRailItem mdState: MD.StateRailItem {
@@ -28,6 +27,8 @@ T.Button {
 
     icon.width: 24
     icon.height: 24
+    icon.color: control.mdState.supportTextColor
+    icon.fill: control.checked
 
     property bool expand: false
     property Item trailing: null
@@ -99,13 +100,10 @@ T.Button {
         }
 
         // -- icon --
-        MD.Icon {
+        MD.IconView {
             id: m_icon
             visible: control._showIcon
-            name: control.icon.name
-            size: control.icon.width
-            color: control.mdState.supportTextColor
-            fill: control.checked
+            icon: control.icon
 
             // positioned by states
         }

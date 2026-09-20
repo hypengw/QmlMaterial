@@ -1,10 +1,10 @@
 import QtQuick
-import QtQuick.Templates as T
 import QtQuick.Window
 
 import Qcm.Material as MD
 
-T.Popup {
+/** @ingroup control */
+MD.PopupBase {
     id: control
 
     property alias mdState: item_state
@@ -78,7 +78,7 @@ T.Popup {
     font.letterSpacing: typescale.tracking
 
     MD.MProp.size: MD.ThemeSize {
-        width: control.parent.width
+        width: control.parent ? control.parent.width : 0
         duration: 0
     }
 
@@ -126,7 +126,7 @@ T.Popup {
         elevation: control.mdState.elevation
     }
 
-    T.Overlay.modal: Rectangle {
+    MD.Overlay.modal: Rectangle {
         color: MD.Util.transparent(MD.Token.color.scrim, 0.32)
         Behavior on opacity {
             NumberAnimation {
@@ -135,7 +135,7 @@ T.Popup {
         }
     }
 
-    T.Overlay.modeless: Rectangle {
+    MD.Overlay.modeless: Rectangle {
         color: MD.Util.transparent(MD.Token.color.scrim, 0.32)
         Behavior on opacity {
             NumberAnimation {

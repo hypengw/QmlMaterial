@@ -1,9 +1,8 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Window
 import Qcm.Material as MD
 
-MD.Popup2 {
+MD.PopupBase {
     id: control
 
     property alias mdState: m_state
@@ -14,7 +13,7 @@ MD.Popup2 {
     property real collapsedHeight: -1
     property real maxSheetWidth: 640
     property real wideSideMargin: 56
-    property real topMargin: 72
+    topMargin: 72
     property int animationDuration: 250
     readonly property real sheetWidth: _sheetWidth
     default property alias content: m_content.data
@@ -25,10 +24,10 @@ MD.Popup2 {
 
     readonly property real _parentWidth: parent ? parent.width : width
     readonly property real _parentHeight: parent ? parent.height : height
-    readonly property real _windowWidth: Window.window ? Window.window.width : _parentWidth
-    readonly property real _windowHeight: Window.window ? Window.window.height : _parentHeight
-    readonly property real _overlayWidth: fullScreen ? (overlayWidth > 0 ? overlayWidth : _windowWidth) : _parentWidth
-    readonly property real _overlayHeight: fullScreen ? (overlayHeight > 0 ? overlayHeight : _windowHeight) : _parentHeight
+    readonly property real _windowWidth: overlayWidth > 0 ? overlayWidth : _parentWidth
+    readonly property real _windowHeight: overlayHeight > 0 ? overlayHeight : _parentHeight
+    readonly property real _overlayWidth: modal ? _windowWidth : _parentWidth
+    readonly property real _overlayHeight: modal ? _windowHeight : _parentHeight
     readonly property bool _useMaxWidth: _overlayWidth >= maxSheetWidth + wideSideMargin * 2
     readonly property real _sheetWidth: _useMaxWidth ? maxSheetWidth : _overlayWidth
     readonly property real _availableHeight: Math.max(0, _overlayHeight - topMargin)
@@ -52,11 +51,13 @@ MD.Popup2 {
     height: _overlayHeight
     z: 1000
     modal: sheetType === MD.Enum.BottomSheetModal
+    focus: modal
     dim: modal
-    fullScreen: modal
+    positioningItem: modal ? overlayItem : null
+    collisionPolicy: MD.PopupBase.Unrestricted
     deferredCompletion: true
     popupItem: m_panel
-    closePolicy: modal ? MD.Popup2.CloseOnEscape | MD.Popup2.CloseOnPressOutside : MD.Popup2.NoAutoClose
+    closePolicy: modal ? MD.PopupBase.CloseOnEscape | MD.PopupBase.CloseOnPressOutside : MD.PopupBase.NoAutoClose
 
     onAboutToShow: _startEnter()
     onAboutToHide: _startExit()

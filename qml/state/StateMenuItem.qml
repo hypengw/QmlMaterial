@@ -1,10 +1,9 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.MState {
     id: root
-    required property T.MenuItem item
+    required property MD.ButtonBase item
     property bool selected: false
    
 

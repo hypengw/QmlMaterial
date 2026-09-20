@@ -1,8 +1,7 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.BusyIndicator {
+MD.BusyIndicatorBase {
     id: control
 
     // Delay before the indicator appears (ms).

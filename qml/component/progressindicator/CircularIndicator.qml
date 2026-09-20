@@ -1,6 +1,5 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Templates as T
 
 import Qcm.Material as MD
 
@@ -19,7 +18,7 @@ import Qcm.Material as MD
  * `running` toggles the indeterminate animation with a hide-fade. Determinate
  * is always visible regardless.
  */
-T.ProgressBar {
+MD.ProgressBarBase {
     id: control
     enum AnimStateType {
         Running,

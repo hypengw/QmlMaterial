@@ -1,10 +1,9 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.MState {
     id: root
-    required property T.Switch item
+    required property MD.SwitchBase item
    
 
     elevation: MD.Token.elevation.level1
@@ -12,7 +11,7 @@ MD.MState {
     backgroundColor: root.item.checked ? root.ctx.color.primary : root.ctx.color.surface_container_highest
     stateLayerColor: "transparent"
     property color handleColor: root.item.checked ? root.ctx.color.on_primary : root.ctx.color.outline
-    readonly property bool hasIcon: root.item.icon.name.length > 0
+    readonly property bool hasIcon: !root.item.icon.empty
     property int handleSize: (root.item.checked || root.hasIcon) ? 24 : 16
 
     state: MD.Util.stateText(item.enabled, item.down, item.hovered, false)

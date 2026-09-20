@@ -1,11 +1,10 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.MState {
     id: root
 
-    required property T.TabButton item
+    required property MD.TabButtonBase item
     property int type
    
 

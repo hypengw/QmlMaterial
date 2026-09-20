@@ -1,8 +1,7 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.Control {
+MD.ControlBase {
     id: control
     property MD.StateSplitButton mdState: MD.StateSplitButton {
         item: m_button

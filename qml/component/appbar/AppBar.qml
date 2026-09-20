@@ -1,9 +1,8 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.ToolBar {
+MD.ToolBarBase {
     id: control
     property int radius: 0
     property int type: MD.Enum.AppBarCenterAligned

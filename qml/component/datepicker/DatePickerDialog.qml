@@ -1,6 +1,5 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.Dialog {
@@ -16,7 +15,7 @@ MD.Dialog {
     signal acceptedDate(date d)
     signal acceptedRange(date start, date end)
 
-    standardButtons: T.DialogButtonBox.Cancel | T.DialogButtonBox.Ok
+    standardButtons: MD.Dialog.Cancel | MD.Dialog.Ok
     onAccepted: {
         if (m_picker.selectionMode === MD.DatePicker.SelectionMode.Single) {
             control.acceptedDate(m_picker.selectedDate);

@@ -5,6 +5,7 @@
  */
 
 #include "toolbar_layout_delegate.hpp"
+#include "qml_material/control/action.hpp"
 
 #include "qml_material/util/loggingcategory.hpp"
 
@@ -89,33 +90,30 @@ ToolBarLayoutDelegate::~ToolBarLayoutDelegate()
     }
 }
 
-QObject *ToolBarLayoutDelegate::action() const
+Action*ToolBarLayoutDelegate::action() const
 {
     return m_action;
 }
 
-void ToolBarLayoutDelegate::setAction(QObject *action)
+void ToolBarLayoutDelegate::setAction(Action* action)
 {
     if (action == m_action) {
         return;
     }
 
     if (m_action) {
-        QObject::disconnect(m_action, SIGNAL(visibleChanged()), this, SLOT(actionVisibleChanged()));
-        QObject::disconnect(m_action, SIGNAL(displayHintChanged()), this, SLOT(displayHintChanged()));
+        disconnect(m_action, &Action::visibleChanged, this, &ToolBarLayoutDelegate::actionVisibleChanged);
+        disconnect(m_action, &Action::displayHintChanged, this, &ToolBarLayoutDelegate::displayHintChanged);
     }
 
     m_action = action;
+    m_actionVisible = true;
+    m_displayHint = ToolBarLayout::NoPreference;
     if (m_action) {
-        if (m_action->property("visible").isValid()) {
-            QObject::connect(m_action, SIGNAL(visibleChanged()), this, SLOT(actionVisibleChanged()));
-            m_actionVisible = m_action->property("visible").toBool();
-        }
-
-        if (m_action->property("displayHint").isValid()) {
-            QObject::connect(m_action, SIGNAL(displayHintChanged()), this, SLOT(displayHintChanged()));
-            m_displayHint = ToolBarLayout::DisplayHints{m_action->property("displayHint").toInt()};
-        }
+        connect(m_action, &Action::visibleChanged, this, &ToolBarLayoutDelegate::actionVisibleChanged);
+        connect(m_action, &Action::displayHintChanged, this, &ToolBarLayoutDelegate::displayHintChanged);
+        m_actionVisible = m_action->isVisible();
+        m_displayHint = ToolBarLayout::DisplayHints{m_action->displayHint()};
     }
 }
 
@@ -301,13 +299,13 @@ qreal ToolBarLayoutDelegate::fullWidth() const
 
 void ToolBarLayoutDelegate::actionVisibleChanged()
 {
-    m_actionVisible = m_action->property("visible").toBool();
+    m_actionVisible = m_action->isVisible();
     m_parent->relayout();
 }
 
 void ToolBarLayoutDelegate::displayHintChanged()
 {
-    m_displayHint = ToolBarLayout::DisplayHints{m_action->property("displayHint").toInt()};
+    m_displayHint = ToolBarLayout::DisplayHints{m_action->displayHint()};
     m_parent->relayout();
 }
 

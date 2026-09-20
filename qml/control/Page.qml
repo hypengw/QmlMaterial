@@ -1,11 +1,9 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.Page {
+MD.PageBase {
     id: control
 
-    property bool canBack: false
     property MD.Action leadingAction: MD.MProp.page.leadingAction
     property list<MD.Action> actions
 
@@ -16,7 +14,6 @@ T.Page {
     property color backgroundColor: MD.MProp.color.background
     property int radius: MD.MProp.page.radius
     property int backgroundRadius: MD.MProp.page.backgroundRadius
-    property bool scrolling: false
 
     header: MD.AppBar {
         title: control.title

@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.MState {
@@ -11,7 +10,7 @@ MD.MState {
     supportTextColor: ctx.color.on_surface_variant
     stateLayerColor: "transparent"
 
-    property T.ItemDelegate item
+    property MD.ItemDelegateBase item
 
     state: MD.Util.stateText(item?.enabled ?? true, (item?.pressed ?? false) || (item?.visualFocus ?? false), item?.hovered ?? false, false)
 

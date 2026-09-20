@@ -1,8 +1,7 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.CheckBox {
+MD.CheckBoxBase {
     id: control
 
     property MD.StateCheckBox mdState: MD.StateCheckBox {
@@ -10,6 +9,10 @@ T.CheckBox {
     }
 
     property bool error: false
+    property MD.typescale typescale: MD.Token.typescale.label_large
+    font.pixelSize: typescale.size
+    font.weight: typescale.weight
+    font.letterSpacing: typescale.tracking
     Binding {
         control.mdState.error: control.error
     }
@@ -56,7 +59,7 @@ T.CheckBox {
         leftPadding: control.indicator && !control.mirrored ? control.indicator.width + control.spacing : 0
         rightPadding: control.indicator && control.mirrored ? control.indicator.width + control.spacing : 0
 
-        typescale: MD.Token.typescale.label_large
+        typescale: control.typescale
         text: control.text
         font: control.font
         color: control.mdState.textColor

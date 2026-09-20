@@ -1,10 +1,9 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.Control {
+MD.ControlBase {
     id: control
 
     property int layout: MD.Enum.CarouselUncontained

@@ -1,9 +1,8 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 import Qcm.Material.Layouts as Lite
 
-T.Button {
+MD.ButtonBase {
     id: control
 
     property MD.StateFilterChip mdState: MD.StateFilterChip {
@@ -24,7 +23,7 @@ T.Button {
     bottomInset: 0
     verticalPadding: 0
     leftPadding: control.checked ? 8 : 16
-    rightPadding: MD.Util.hasIcon(icon) ? 8 : 16
+    rightPadding: !icon.empty ? 8 : 16
     spacing: 8
 
     Behavior on leftPadding {
@@ -33,6 +32,7 @@ T.Button {
 
     icon.width: 18
     icon.height: 18
+    icon.color: control.mdState.trailingIconColor
     font.capitalization: Font.MixedCase
 
     contentItem: Lite.Row {
@@ -91,11 +91,9 @@ T.Button {
                 Lite.Layout.fillWidth: true
             }
 
-            MD.Icon {
-                visible: name
-                name: control.icon.name
-                size: control.icon.width
-                color: control.mdState.trailingIconColor
+            MD.IconView {
+                visible: !icon.empty
+                icon: control.icon
             }
         }
     }

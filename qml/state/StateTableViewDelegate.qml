@@ -1,11 +1,10 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.MState {
     id: root
 
-    required property T.ItemDelegate item
+    required property MD.ItemDelegateBase item
 
     elevation: MD.Token.elevation.level0
     readonly property bool selected: item.selected || item.highlighted

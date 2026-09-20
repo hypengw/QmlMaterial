@@ -46,8 +46,8 @@ public:
     ToolBarLayoutDelegate(ToolBarLayout *parent);
     ~ToolBarLayoutDelegate() override;
 
-    QObject *action() const;
-    void setAction(QObject *action);
+    Action* action() const;
+    void setAction(Action* action);
     void createItems(QQmlComponent *fullComponent, QQmlComponent *iconComponent, std::function<void(QQuickItem *)> callback);
 
     bool isReady() const;
@@ -91,7 +91,7 @@ private:
     void triggerRelayout();
 
     ToolBarLayout *m_parent = nullptr;
-    QObject *m_action = nullptr;
+    Action* m_action = nullptr;
     QQuickItem *m_full = nullptr;
     QQuickItem *m_icon = nullptr;
     ToolBarDelegateIncubator *m_fullIncubator = nullptr;

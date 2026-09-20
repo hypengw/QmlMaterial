@@ -1,8 +1,7 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.Button {
+MD.ButtonBase {
     id: control
 
     property int color: MD.Enum.FABColorPrimary
@@ -30,6 +29,8 @@ T.Button {
 
     icon.width: _size(mdState.type, 24, 24, 36)
     icon.height: _size(mdState.type, 24, 24, 36)
+    icon.color: control.mdState.textColor
+    icon.weight: control.font.weight
 
     font.weight: MD.Token.typescale.label_large.weight
     font.pixelSize: Math.min(icon.width, icon.height)
@@ -38,13 +39,9 @@ T.Button {
     contentItem: Item {
         implicitWidth: control.icon.width
         implicitHeight: control.icon.height
-        Text {
+        MD.IconView {
             anchors.centerIn: parent
-            font: control.font
-            text: control.icon.name
-            color: control.mdState.textColor
-            lineHeight: font.pixelSize
-            lineHeightMode: Text.FixedHeight
+            icon: control.icon
         }
     }
 

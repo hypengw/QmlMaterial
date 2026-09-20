@@ -1,6 +1,5 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.ListView {
@@ -14,7 +13,7 @@ MD.ListView {
         height: implicitHeight
     }
 
-    T.ScrollBar.vertical: MD.ScrollBar {}
+    MD.ScrollBarBase.vertical: MD.ScrollBar {}
 
     Connections {
         target: root

@@ -1,6 +1,5 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.Dialog {
@@ -8,7 +7,7 @@ MD.Dialog {
 
     property color color
     property bool showAlpha: true
-    standardButtons: T.DialogButtonBox.Cancel | T.DialogButtonBox.Ok
+    standardButtons: MD.Dialog.Cancel | MD.Dialog.Ok
 
     signal acceptedColor(color c)
 

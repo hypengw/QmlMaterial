@@ -1,9 +1,9 @@
 pragma ComponentBehavior: Bound
 
-import QtQuick.Templates as T
+import QtQuick
 import Qcm.Material as MD
 
-T.VerticalHeaderView {
+MD.VerticalHeaderViewBase {
     id: control
 
     implicitWidth: Math.max(1, contentWidth)

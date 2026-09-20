@@ -1,9 +1,8 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.Control {
+MD.ControlBase {
     id: control
 
     property list<MD.Action> actions
@@ -33,7 +32,7 @@ T.Control {
         spacing: control.actionSpacing
         interactive: contentWidth > width
 
-        delegate: T.Button {
+        delegate: MD.ButtonBase {
             id: m_button
 
             required property int index
@@ -41,22 +40,16 @@ T.Control {
 
             width: Math.max(control.delegateWidth, m_column.implicitWidth + control.delegateHorizontalPadding * 2)
             height: control.delegateHeight
+            action: actionItem
+            icon.width: 24
+            icon.height: 24
+            icon.color: contentColor
+            icon.fill: checked
             enabled: actionItem ? actionItem.enabled : false
-            checkable: actionItem ? actionItem.checkable : false
-            checked: actionItem ? actionItem.checked : false
-            text: actionItem ? actionItem.text : ""
-            icon.name: actionItem ? actionItem.icon.name : ""
-            icon.width: actionItem ? actionItem.icon.width : 24
-            icon.height: actionItem ? actionItem.icon.height : 24
             readonly property color contentColor: {
                 if (!m_button.enabled)
                     return MD.Util.transparent(MD.MProp.color.on_surface, 0.38);
                 return m_button.checked ? MD.MProp.color.on_primary_container : MD.MProp.color.on_surface_variant;
-            }
-
-            onClicked: {
-                if (actionItem)
-                    actionItem.trigger();
             }
 
             contentItem: Item {
@@ -66,12 +59,9 @@ T.Control {
                     anchors.centerIn: parent
                     spacing: 8
 
-                    MD.Icon {
+                    MD.IconView {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        name: m_button.icon.name
-                        size: Math.min(m_button.icon.width, m_button.icon.height)
-                        color: m_button.contentColor
-                        fill: m_button.checked
+                        icon: m_button.icon
                     }
 
                     MD.Label {

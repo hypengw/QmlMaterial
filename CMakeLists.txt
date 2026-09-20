@@ -46,7 +46,7 @@ if(UNIX AND NOT APPLE)
   set(LINUX CACHE INTERNAL TRUE "")
 endif()
 
-find_package(Qt6 REQUIRED COMPONENTS Core Quick QuickControls2 Gui Qml ShaderTools)
+find_package(Qt6 REQUIRED COMPONENTS Core Quick Gui Qml ShaderTools)
 # Qt < ~6.9 often exposes Qt6::QuickPrivate via Quick; Qt 6.9+ needs an
 # explicit private package (aqt 6.8.3 CI has no Qt6QuickPrivateConfig).
 if(NOT TARGET Qt6::QuickPrivate)
@@ -109,10 +109,81 @@ set(SOURCES
     src/util/hct.cpp
     src/control/page_context.cpp
     src/control/color_picker.cpp
+    src/control/control.cpp
+    src/control/slider.cpp
+    src/control/scroll_indicator.cpp
+    src/control/scroll_bar.cpp
+    include/qml_material/control/scroll_bar.hpp
+    include/qml_material/control/scroll_indicator.hpp
+    include/qml_material/control/slider.hpp
+    src/control/label.cpp
+    src/control/combo_box.cpp
+    include/qml_material/control/combo_box.hpp
+    src/control/text_field.cpp
+    include/qml_material/control/text_field.hpp
+    include/qml_material/control/label.hpp
+    src/util/text_control_background.cpp
+    include/qml_material/util/text_control_background.hpp
+    src/control/progress_bar.cpp
+    src/control/page_indicator.cpp
+    include/qml_material/control/page_indicator.hpp
+    include/qml_material/control/progress_bar.hpp
+    include/qml_material/control/busy_indicator.hpp
+    include/qml_material/control/tool_separator.hpp
+    src/control/abstract_button.cpp
+    src/control/check_box.cpp
+    src/control/switch.cpp
+    src/control/tab_bar.cpp
+    src/control/container.cpp
+    src/control/split_view.cpp
+    src/control/split_layout.cpp
+    include/qml_material/control/split_view.hpp
+    src/control/segmented_button_group.cpp
+    include/qml_material/control/check_box.hpp
+    include/qml_material/control/radio_button.hpp
+    include/qml_material/control/switch.hpp
+    include/qml_material/control/item_delegate.hpp
+    include/qml_material/control/tab_button.hpp
+    include/qml_material/control/tab_bar.hpp
+    include/qml_material/control/container.hpp
+    include/qml_material/control/segmented_button_group.hpp
+    src/control/icon_spec.cpp
+    src/control/action.cpp
+    src/control/action_group.cpp
+    src/control/button_group.cpp
+    src/control/dialog_button_box.cpp
+    include/qml_material/control/dialog_button_box.hpp
+    include/qml_material/control/action.hpp
+    include/qml_material/control/action_group.hpp
+    include/qml_material/control/button_group.hpp
+    include/qml_material/control/abstract_button.hpp
+    include/qml_material/control/button.hpp
+    include/qml_material/control/icon_spec.hpp
+    src/control/panel.cpp
+    src/control/page.cpp
+    src/control/page_stack.cpp
+    src/control/page_stack_entries.cpp
+    src/control/page_stack_entries_p.hpp
+    include/qml_material/control/page_stack.hpp
+    include/qml_material/control/page.hpp
+    include/qml_material/control/panel.hpp
+    include/qml_material/control/tool_bar.hpp
+    include/qml_material/control/control.hpp
     src/control/popup.cpp
+    src/control/dialog.cpp
+    src/control/menu.cpp
+    include/qml_material/control/menu.hpp
+    include/qml_material/control/dialog.hpp
+    include/qml_material/control/popup.hpp
+    src/control/overlay.cpp
+    include/qml_material/control/overlay.hpp
     src/control/popup_presenter.cpp
     include/qml_material/control/popup_presenter.hpp
     src/control/tool_tip.cpp
+    src/control/tool_tip_popup.cpp
+    include/qml_material/control/tool_tip_popup.hpp
+    src/control/drawer.cpp
+    include/qml_material/control/drawer.hpp
     include/qml_material/control/tool_tip.hpp
     src/layout/width_provider.cpp
     src/layout/toolbar_layout.cpp
@@ -138,6 +209,18 @@ set(SOURCES
     include/qml_material/carousel/carousel_strategy.hpp
     include/qml_material/carousel/carousel_view.hpp
     src/model/palette_model.cpp
+    src/model/combo_box_model.cpp
+    include/qml_material/model/combo_box_model.hpp
+    src/model/calendar_month_model.cpp
+    include/qml_material/model/calendar_month_model.hpp
+    src/model/header_data_model.cpp
+    include/qml_material/model/header_data_model.hpp
+    src/model/header_list_model.cpp
+    include/qml_material/model/header_list_model.hpp
+    src/model/header_model.cpp
+    include/qml_material/model/header_model.hpp
+    src/control/header_view.cpp
+    include/qml_material/control/header_view.hpp
     src/model/appstream_release_model.cpp
     src/model/snake_model.cpp
     src/token/color.cpp
@@ -159,17 +242,17 @@ set(QML_FILES
     qml/Token.qml
     qml/Util.qml
     qml/control/Button.qml
+    qml/control/Control.qml
+    qml/control/Container.qml
     qml/control/SegmentedButton.qml
     qml/control/SegmentedButtonGroup.qml
-    qml/control/Control.qml
     qml/control/ComboBox.qml
-    qml/control/ButtonGroup.qml
     qml/control/CheckBox.qml
     qml/control/RadioButton.qml
     qml/control/Dialog.qml
     qml/control/DialogButtonBox.qml
     qml/control/Drawer.qml
-    qml/control/StackView.qml
+    qml/control/PageStack.qml
     qml/control/SplitView.qml
     qml/control/Slider.qml
     qml/control/SliderM2.qml
@@ -179,10 +262,7 @@ set(QML_FILES
     qml/control/Page.qml
     qml/control/PageIndicator.qml
     qml/control/Carousel.qml
-    qml/control/Action.qml
-    qml/control/ActionGroup.qml
     qml/control/MenuSeparator.qml
-    qml/control/ToolSeparator.qml
     qml/control/ApplicationWindow.qml
     qml/control/Popup.qml
     qml/control/BottomSheet.qml
@@ -257,6 +337,7 @@ set(QML_FILES
     qml/component/extra/DragHandle.qml
     qml/component/extra/IconLabel.qml
     qml/component/extra/Icon.qml
+    qml/component/extra/IconView.qml
     qml/component/extra/IconSvg.qml
     qml/component/extra/Space.qml
     qml/component/extra/SdfRectangle.qml
@@ -468,6 +549,7 @@ set_target_properties(${LAYOUT_LIBNAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
 target_include_directories(
   ${LAYOUT_LIBNAME}
   PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
   PRIVATE src/layout)
 target_link_libraries(
   ${LAYOUT_LIBNAME}
@@ -501,7 +583,7 @@ add_library("${LIBNAME}::${LIBNAME}" ALIAS ${LIBNAME})
 
 target_sources("${LIBNAME}plugin" PRIVATE src/plugin.cpp)
 
-target_compile_features(${LIBNAME} PRIVATE cxx_std_20)
+target_compile_features(${LIBNAME} PUBLIC cxx_std_20)
 target_compile_definitions(${LIBNAME} PRIVATE QML_MATERIAL_EXPORT)
 if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
   target_compile_definitions(${LIBNAME} PUBLIC QML_MATERIAL_STATIC_DEFINE)
@@ -527,6 +609,7 @@ set_source_files_properties(
 set(SHADER_GLSLS "assets/shader/common.glsl" "assets/shader/sdf.glsl")
 set(SHADER_SOURCES
     "assets/shader/default.vert"
+    "assets/shader/icon_tint.frag"
     "assets/shader/round_clip.frag"
     "assets/shader/sdf_rectangle.frag"
     "assets/shader/rectangle.vert"
@@ -569,6 +652,7 @@ endforeach()
 target_include_directories(
   ${LIBNAME}
   PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
   PRIVATE "include/${LIBNAME}" src)
 
 add_subdirectory(third_party)
@@ -576,7 +660,7 @@ target_link_libraries(
   ${LIBNAME}
   PUBLIC Qt6::Core Qt6::Quick
          Qt6::QuickPrivate # QQuickStateGroup
-  PRIVATE material_color)
+  PRIVATE material_color Qt6::QmlModelsPrivate)
 
 if(UNIX AND NOT ANDROID AND NOT EMSCRIPTEN)
   target_link_libraries(${LIBNAME} PRIVATE Qt6::DBus)

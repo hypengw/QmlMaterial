@@ -1,9 +1,8 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.SplitView {
+MD.SplitViewBase {
     id: control
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
@@ -11,9 +10,10 @@ T.SplitView {
 
     handle: MD.DragHandle {
         id: m_handle
+        containmentMask: null
         opacity: control.handleOpacity
-        pressed: T.SplitHandle.pressed
-        hovered: T.SplitHandle.hovered
+        pressed: MD.SplitHandle.pressed
+        hovered: MD.SplitHandle.hovered
         visualFocus: control.visualFocus
         orientation: control.orientation
         controlHeight: control.height

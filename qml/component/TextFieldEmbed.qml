@@ -1,8 +1,7 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.TextField {
+MD.TextFieldBase {
     id: root
     property MD.typescale typescale: MD.Token.typescale.body_large
     property bool prominent: false
