@@ -6,7 +6,7 @@ import QtQuick.Window
 T.Drawer {
     id: control
 
-    parent: T.Overlay.overlay
+    property Item overlayAnchor: null
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)
@@ -16,6 +16,15 @@ T.Drawer {
 
     width: implicitWidth
     height: parent.height
+
+    Component.onCompleted: {
+        if (!overlayAnchor && parent && parent !== T.Overlay.overlay)
+            overlayAnchor = parent;
+    }
+
+    onAboutToShow: {
+        MD.Util.attachOverlay(control, overlayAnchor || control);
+    }
 
     enter: Transition {
         SmoothedAnimation {

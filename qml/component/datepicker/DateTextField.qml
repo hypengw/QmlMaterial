@@ -1,6 +1,5 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.TextField {
@@ -45,12 +44,15 @@ MD.TextField {
         anchors.verticalCenter: parent?.verticalCenter
         anchors.rightMargin: 8
         icon.name: MD.Token.icon.calendar_today
-        onClicked: m_dialog.open()
+        onClicked: {
+            if (!MD.Util.attachOverlay(m_dialog, control))
+                return;
+            m_dialog.open();
+        }
     }
 
     MD.DatePickerDialog {
         id: m_dialog
-        parent: T.Overlay.overlay
         selectionMode: MD.DatePicker.SelectionMode.Single
         selectedDate: control.value
         onAcceptedDate: function (d) {

@@ -221,7 +221,6 @@ T.Control {
 
     MD.Drawer {
         id: m_drawer
-        parent: T.Overlay.overlay
         modal: control.useModal
         interactive: control.drawerGestureEnabled
         MD.MProp.textColor: MD.MProp.color.on_surface

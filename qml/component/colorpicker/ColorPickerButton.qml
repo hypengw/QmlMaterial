@@ -19,7 +19,11 @@ T.Button {
     leftInset: 0; rightInset: 0; topInset: 0; bottomInset: 0
     hoverEnabled: enabled
 
-    onClicked: m_dialog.open()
+    onClicked: {
+        if (!MD.Util.attachOverlay(m_dialog, control))
+            return;
+        m_dialog.open();
+    }
 
     contentItem: Item {}
 
@@ -79,6 +83,7 @@ T.Button {
 
     MD.ColorPickerDialog {
         id: m_dialog
+        objectName: "colorPickerDialog"
         color: control.color
         showAlpha: control.showAlpha
         onAcceptedColor: function (c) {

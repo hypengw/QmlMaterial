@@ -157,6 +157,23 @@ set_tests_properties(control_layout PROPERTIES
   RUN_SERIAL ON
   ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_ENABLE_HIGHDPI_SCALING=0;QT_SCALE_FACTOR=1;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
 
+add_executable(overlay_attach overlay_attach.cpp)
+target_include_directories(overlay_attach PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(overlay_attach PRIVATE
+  qml_material qml_material_layouts
+  Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::Test)
+add_dependencies(overlay_attach qml_materialplugin qml_material_layoutsplugin)
+if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
+  target_link_libraries(overlay_attach PRIVATE
+    qml_materialplugin qml_material_layoutsplugin)
+endif()
+set_target_properties(overlay_attach PROPERTIES AUTOMOC ON)
+qt_import_qml_plugins(overlay_attach)
+add_test(NAME overlay_attach COMMAND overlay_attach)
+set_tests_properties(overlay_attach PROPERTIES
+  RUN_SERIAL ON
+  ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_ENABLE_HIGHDPI_SCALING=0;QT_SCALE_FACTOR=1;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
+
 add_executable(dynamic_creation dynamic_creation.cpp)
 target_include_directories(dynamic_creation PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(dynamic_creation PRIVATE

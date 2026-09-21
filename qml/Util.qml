@@ -1,10 +1,60 @@
 pragma Singleton
 import QtQuick
 import QtQuick.Templates as T
+import QtQuick.Window
 import Qcm.Material as MD
 
 MD.UtilCpp {
     id: root
+
+    function overlayChildOf(item) {
+        if (!item || !item.children)
+            return null;
+        for (let i = 0; i < item.children.length; ++i) {
+            const ch = item.children[i];
+            if (ch instanceof T.Overlay)
+                return ch;
+        }
+        return null;
+    }
+
+    function overlayFor(anchorItem) {
+        if (!anchorItem)
+            return null;
+        let p = anchorItem;
+        let top = null;
+        while (p) {
+            if (p.overlay)
+                return p.overlay;
+            top = p;
+            p = p.parent;
+        }
+        const fromTree = overlayChildOf(top);
+        if (fromTree)
+            return fromTree;
+        if (anchorItem instanceof Item) {
+            const win = anchorItem.Window.window;
+            if (win && win.contentItem) {
+                let root = win.contentItem;
+                while (root.parent)
+                    root = root.parent;
+                return overlayChildOf(root);
+            }
+        }
+        return null;
+    }
+
+    function attachOverlay(popup, anchorItem) {
+        if (!popup || !anchorItem)
+            return null;
+        const overlay = overlayFor(anchorItem);
+        if (!overlay)
+            return null;
+        if (popup.parent !== overlay)
+            popup.parent = overlay;
+        return overlay;
+    }
+
     function epsilonEqual(x: real, y: real): real {
         return Math.abs(x - y) < Number.EPSILON;
     }
