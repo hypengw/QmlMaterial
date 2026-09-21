@@ -8,6 +8,7 @@ MD.ComboBoxBase {
 
     property int type: MD.Enum.TextFieldOutlined
     property real popupMaximumHeight: 0
+    property real popupMaximumWidth: 280
     property string label
     property Item indicator
     property Item __indicatorItem
@@ -93,6 +94,7 @@ MD.ComboBoxBase {
 
     contentItem: MD.TextInput {
         typescale: control.mdState.typescale
+        clip: true
 
         padding: 0
         text: control.editable ? control.editText : control.displayText
@@ -102,10 +104,23 @@ MD.ComboBoxBase {
         inputMethodHints: control.inputMethodHints
         validator: control.validator
         selectByMouse: control.selectTextByMouse
-        color: control.mdState.textColor
+        color: control.editable ? control.mdState.textColor : "transparent"
         selectionColor: control.mdState.ctx.color.primary
         selectedTextColor: control.mdState.ctx.color.getOn(selectionColor)
         verticalAlignment: TextInput.AlignVCenter
+
+        MD.Text {
+            anchors.fill: parent
+            visible: !control.editable
+            text: control.displayText
+            font: control.font
+            color: control.mdState.textColor
+            wrapMode: Text.NoWrap
+            maximumLineCount: 1
+            elide: Text.ElideRight
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: control.mirrored ? Text.AlignRight : Text.AlignLeft
+        }
     }
 
     MD.FloatingPlaceholderText {
@@ -147,7 +162,7 @@ MD.ComboBoxBase {
         height: control.popupMaximumHeight > 0
             ? Math.min(implicitHeight, control.popupMaximumHeight)
             : implicitHeight
-        width: control.width
+        maximumWidth: control.popupMaximumWidth
         transformOrigin: Item.Top
         modal: false
         focus: false
