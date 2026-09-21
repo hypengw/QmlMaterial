@@ -3,6 +3,9 @@ import Qcm.Material as MD
 
 MD.Shape {
     id: root
+    property bool animationsEnabled: true
+    property bool __completed: false
+    Component.onCompleted: __completed = true
     property real radius: 0
     property alias borderWidth: m_p.strokeWidth
     property alias borderColor: m_p.strokeColor
@@ -25,6 +28,7 @@ MD.Shape {
     ]
     transitions: [
         Transition {
+            enabled: root.__completed && root.animationsEnabled
             NumberAnimation {
                 properties: "openX,openWidth"
                 duration: MD.Token.duration.medium3

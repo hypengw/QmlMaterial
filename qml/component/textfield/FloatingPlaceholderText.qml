@@ -2,6 +2,9 @@ import QtQuick
 
 Text {
     id: root
+    property bool animationsEnabled: true
+    property bool __completed: false
+    Component.onCompleted: __completed = true
     property bool controlFocus: false
     property bool controlHasText: false
     property int verticalPadding: 8
@@ -60,6 +63,7 @@ Text {
 
     transitions: [
         Transition {
+            enabled: root.__completed && root.animationsEnabled
             to: ''
             YAnimator {
                 duration: 300
@@ -67,6 +71,7 @@ Text {
             }
         },
         Transition {
+            enabled: root.__completed && root.animationsEnabled
             to: 'float'
             YAnimator {
                 duration: 300

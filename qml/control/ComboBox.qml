@@ -5,6 +5,7 @@ import Qcm.Material as MD
 /** @ingroup control */
 MD.ComboBoxBase {
     id: control
+    property bool __labelAnimationsEnabled: false
 
     property int type: MD.Enum.TextFieldOutlined
     property real popupMaximumHeight: 0
@@ -39,6 +40,7 @@ MD.ComboBoxBase {
     Component.onCompleted: {
         __syncIndicator();
         __syncPopup();
+        __labelAnimationsEnabled = true;
     }
     popupVisible: popup ? popup.visible : false
     popupActiveFocus: popup ? popup.activeFocus : false
@@ -125,6 +127,7 @@ MD.ComboBoxBase {
 
     MD.FloatingPlaceholderText {
         id: m_label
+        animationsEnabled: control.__labelAnimationsEnabled
         x: control.leftPadding
         width: control.width - (control.leftPadding + control.rightPadding)
         text: control.label
@@ -146,6 +149,7 @@ MD.ComboBoxBase {
         implicitWidth: 64
         implicitHeight: control.mdState.containerHeight
         MD.OutlineTextFieldShape {
+            animationsEnabled: control.__labelAnimationsEnabled
             anchors.fill: parent
             borderColor: control.mdState.outlineColor
             radius: MD.Token.shape.corner.extra_small

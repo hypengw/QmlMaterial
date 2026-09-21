@@ -4,6 +4,8 @@ import Qcm.Material as MD
 
 MD.TextFieldEmbed {
     id: control
+    property bool __labelAnimationsEnabled: false
+    Component.onCompleted: __labelAnimationsEnabled = true
 
     property int type: MD.Enum.TextFieldOutlined
     property string leadingIcon
@@ -47,6 +49,7 @@ MD.TextFieldEmbed {
 
     MD.FloatingPlaceholderText {
         id: m_placeholder
+        animationsEnabled: control.__labelAnimationsEnabled
         x: control.leftPadding
         width: control.width - (control.leftPadding + control.rightPadding)
         text: control.placeholderText
@@ -111,6 +114,7 @@ MD.TextFieldEmbed {
         Component {
             id: m_outline_comp
             MD.OutlineTextFieldShape {
+                animationsEnabled: control.__labelAnimationsEnabled
                 borderColor: control.mdState.outlineColor
                 radius: MD.Token.shape.corner.extra_small
                 floatWidth: m_placeholder.implicitWidth + 8
