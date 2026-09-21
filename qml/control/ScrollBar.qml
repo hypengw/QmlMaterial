@@ -1,16 +1,16 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.ScrollBar {
+/** @ingroup control */
+MD.ScrollBarBase {
     id: control
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
     padding: control.interactive ? 1 : 2
-    visible: control.policy !== T.ScrollBar.AlwaysOff
-    minimumSize: orientation === Qt.Horizontal ? height / width : width / height
+    visible: control.policy !== MD.ScrollBarBase.AlwaysOff
+    minimumSize: orientation === Qt.Horizontal ? (width > 0 ? height / width : 0) : (height > 0 ? width / height : 0)
 
     interactive: hovered || pressed
 
@@ -21,8 +21,6 @@ T.ScrollBar {
         radius: control.orientation === Qt.Horizontal ? height / 2.0 : width / 2.0
 
         color: MD.Util.transparent(MD.Token.color.on_surface, control.pressed ? 0.8 : 0.38)
-        //control.pressed ? control.Material.scrollBarPressedColor :
-        //       control.interactive && control.hovered ? control.Material.scrollBarHoveredColor : control.Material.scrollBarColor
         opacity: 0.0
     }
 
@@ -38,7 +36,7 @@ T.ScrollBar {
     states: [
         State {
             name: "active"
-            when: control.policy === T.ScrollBar.AlwaysOn || (control.active && control.size < 1.0)
+            when: control.policy === MD.ScrollBarBase.AlwaysOn || (control.active && control.size < 1.0)
         }
     ]
 

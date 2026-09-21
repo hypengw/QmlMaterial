@@ -1,10 +1,9 @@
 import QtQuick
 import QtQuick.Window
-import QtQuick.Templates as T
 
 import Qcm.Material as MD
 
-T.Label {
+MD.LabelBase {
     id: root
 
     linkColor: root.palette.link

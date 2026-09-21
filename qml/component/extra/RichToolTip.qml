@@ -1,13 +1,12 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 /**
  * @brief Material Design 3 rich tooltip with optional subhead and actions
  * @ingroup component
  */
-T.ToolTip {
+MD.ToolTipPopupBase {
     id: control
 
     property MD.MState mdState: MD.MState {
@@ -39,7 +38,7 @@ T.ToolTip {
     delay: 0
     timeout: -1
 
-    closePolicy: T.Popup.CloseOnEscape | T.Popup.CloseOnPressOutside | T.Popup.CloseOnReleaseOutside
+    closePolicy: MD.PopupBase.CloseOnEscape | MD.PopupBase.CloseOnPressOutside | MD.PopupBase.CloseOnReleaseOutside
 
     font.pixelSize: typescale.size
     font.weight: typescale.weight

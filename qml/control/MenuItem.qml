@@ -1,11 +1,29 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 import Qcm.Material.Layouts as Lite
 
-T.MenuItem {
+MD.ButtonBase {
     id: control
+
+    property MD.MenuBase menu: null
+    property MD.MenuBase subMenu: null
+    property Item arrow
+    signal triggered()
+    onClicked: {
+        if (subMenu) {
+            if (menu) {
+                menu.openSubMenu(subMenu, control);
+            } else {
+                subMenu.parent = control;
+                subMenu.x = control.mirrored ? -subMenu.width : control.width;
+                subMenu.y = 0;
+                subMenu.open();
+            }
+        } else {
+            triggered();
+        }
+    }
 
     property bool selected: false
     readonly property int busy: {
@@ -36,7 +54,8 @@ T.MenuItem {
 
     icon.width: 24
     icon.height: 24
-    icon.color: mdState.textColor
+    icon.color: control.leadingIconColor
+    icon.fill: control.checked
 
     /*
     indicator: CheckIndicator {
@@ -70,16 +89,13 @@ T.MenuItem {
         Item {
             implicitWidth: Math.max(m_leading_icon.implicitWidth, m_leading_loader.implicitWidth)
             implicitHeight: Math.max(m_leading_icon.implicitHeight, m_leading_loader.implicitHeight)
-            visible: control.icon.name.length > 0 || m_leading_loader.active
+            visible: !control.icon.empty || m_leading_loader.active
 
-            MD.Icon {
+            MD.IconView {
                 id: m_leading_icon
                 anchors.centerIn: parent
-                visible: name.length > 0 && !m_leading_loader.active
-                name: control.icon.name
-                size: control.icon.width
-                color: control.leadingIconColor
-                fill: control.checked
+                visible: !icon.empty && !m_leading_loader.active
+                icon: control.icon
             }
 
             MD.Loader {
@@ -95,6 +111,7 @@ T.MenuItem {
             text: control.text
             color: control.mdState.textColor
             useTypescale: false
+            font: control.font
             lineHeight: control.typescale.line_height
             wrapMode: Text.NoWrap
             Lite.Layout.fillWidth: true

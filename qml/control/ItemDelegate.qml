@@ -1,7 +1,7 @@
 import QtQuick
-import QtQuick.Templates as T
+import Qcm.Material as MD
 
-T.ItemDelegate {
+MD.ItemDelegateBase {
     id: control
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
@@ -12,4 +12,5 @@ T.ItemDelegate {
 
     icon.width: 24
     icon.height: 24
+    icon.color: control.MD.MProp.color.on_background
 }

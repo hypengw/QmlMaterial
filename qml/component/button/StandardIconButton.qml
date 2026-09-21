@@ -1,8 +1,7 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.Button {
+MD.ButtonBase {
     id: control
 
     property MD.StateStandardIconButton mdState: MD.StateStandardIconButton {
@@ -23,23 +22,22 @@ T.Button {
 
     icon.width: 24
     icon.height: 24
+    icon.color: control.mdState.textColor
 
     property int implicitBackgroundSize: 40
     property int backgroundRadius: background.height / 2
-    property alias iconFill: m_icon.fill
+    property alias iconFill: control.icon.fill
 
     contentItem: Item {
         implicitWidth: control.icon.width
         implicitHeight: control.icon.height
         opacity: control.mdState.contentOpacity
 
-        MD.Icon {
+        MD.IconView {
             id: m_icon
 
             anchors.centerIn: parent
-            name: control.icon.name
-            size: Math.min(control.icon.width, control.icon.height)
-            color: control.mdState.textColor
+            icon: control.icon
         }
     }
 

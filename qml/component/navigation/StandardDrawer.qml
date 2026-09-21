@@ -1,10 +1,9 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Templates as T
 
 import Qcm.Material as MD
 
-T.Control {
+MD.ControlBase {
     id: control
     focusPolicy: Qt.NoFocus
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
@@ -89,7 +88,7 @@ T.Control {
 
     MD.Drawer {
         id: m_drawer
-        parent: T.Overlay.overlay
+        parent: control.MD.Overlay.overlay
         MD.MProp.textColor: MD.MProp.color.on_surface
         MD.MProp.backgroundColor: MD.MProp.color.surface_container
 

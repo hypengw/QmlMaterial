@@ -1,12 +1,8 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
-import QtQuick.Window
 
-T.Drawer {
+MD.DrawerBase {
     id: control
-
-    parent: T.Overlay.overlay
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)
@@ -15,7 +11,7 @@ T.Drawer {
     bottomPadding: edge !== Qt.BottomEdge ? 16 : 0
 
     width: implicitWidth
-    height: parent.height
+    height: overlayHeight
 
     enter: Transition {
         SmoothedAnimation {
@@ -31,7 +27,7 @@ T.Drawer {
     property int elevation: !interactive && !dim ? MD.Token.elevation.level0 : MD.Token.elevation.level1
 
     background: Item {
-        implicitWidth: Math.min(360, control.parent?.Window.window?.width ?? 360)
+        implicitWidth: Math.min(360, control.overlayWidth || 360)
         Rectangle {
             anchors.fill: parent
             color: MD.Token.color.surface
@@ -44,7 +40,7 @@ T.Drawer {
         //    elevation: control.elevation
     }
 
-    T.Overlay.modal: Rectangle {
+    MD.Overlay.modal: Rectangle {
         color: MD.Util.transparent(MD.Token.color.scrim, 0.32)
         Behavior on opacity {
             NumberAnimation {
@@ -53,7 +49,7 @@ T.Drawer {
         }
     }
 
-    T.Overlay.modeless: Rectangle {
+    MD.Overlay.modeless: Rectangle {
         color: MD.Util.transparent(MD.Token.color.scrim, 0.32)
         Behavior on opacity {
             NumberAnimation {

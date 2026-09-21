@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.Flickable {
@@ -10,5 +9,5 @@ MD.Flickable {
     contentWidth: width - rightMargin - leftMargin
     implicitHeight: contentHeight + topMargin + bottomMargin
 
-    T.ScrollBar.vertical: MD.ScrollBar {}
+    MD.ScrollBarBase.vertical: MD.ScrollBar {}
 }

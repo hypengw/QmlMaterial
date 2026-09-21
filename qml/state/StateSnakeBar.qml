@@ -1,11 +1,10 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.MState {
     id: root
 
-    required property T.Control item
+    required property MD.ControlBase item
 
     elevation: MD.Token.elevation.level3
     textColor: ctx.color.inverse_primary

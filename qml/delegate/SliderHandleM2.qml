@@ -29,7 +29,7 @@ Item {
         height: 36
         radius: width / 2
         pressed: root.handlePressed || root.handleHasFocus
-        color: root.control.mdState.backgroundColor
-        stateOpacity: root.handleHovered ? MD.Token.state.hover.state_layer_opacity : "transparent"
+        color: root.control ? root.control.mdState.backgroundColor : "transparent"
+        stateOpacity: root.handleHovered ? MD.Token.state.hover.state_layer_opacity : 0
     }
 }

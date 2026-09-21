@@ -24,7 +24,7 @@ MD.Shape {
         objectName: "svg_path:background-checked"
         strokeColor: "transparent"
         fillRule: ShapePath.WindingFill
-        fillColor: root.checkState == Qt.Checked ? root.backgroundColor : "transparent"
+        fillColor: root.checkState != Qt.Unchecked ? root.backgroundColor : "transparent"
         pathHints: ShapePath.PathQuadratic | ShapePath.PathNonIntersecting | ShapePath.PathNonOverlappingControlPointTriangles
         PathSvg {
             path: "M 23 7 L 9 7 Q 8.175 7 7.5875 7.5875 Q 7 8.175 7 9 L 7 23 Q 7 23.825 7.5875 24.4125 Q 8.175 25 9 25 L 23 25 Q 23.825 25 24.4125 24.4125 Q 25 23.825 25 23 L 25 9 Q 25 8.175 24.4125 7.5875 Q 23.825 7 23 7 "
@@ -34,7 +34,7 @@ MD.Shape {
         objectName: "svg_path:background-unchecked"
         strokeColor: "transparent"
         fillRule: ShapePath.WindingFill
-        fillColor: root.checkState != Qt.Checked ? root.outlineColor : "transparent"
+        fillColor: root.checkState == Qt.Unchecked ? root.outlineColor : "transparent"
         pathHints: ShapePath.PathQuadratic | ShapePath.PathNonIntersecting | ShapePath.PathNonOverlappingControlPointTriangles
         PathSvg {
             path: "M 23 7 L 9 7 Q 8.175 7 7.5875 7.5875 Q 7 8.175 7 9 L 7 23 Q 7 23.825 7.5875 24.4125 Q 8.175 25 9 25 L 23 25 Q 23.825 25 24.4125 24.4125 Q 25 23.825 25 23 L 25 9 Q 25 8.175 24.4125 7.5875 Q 23.825 7 23 7 M 23 23 L 9 23 L 9 9 L 23 9 L 23 23 "

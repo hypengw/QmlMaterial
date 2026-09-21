@@ -1,11 +1,10 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.GridView {
     id: root
 
-    T.ScrollBar.vertical: MD.ScrollBar {}
+    MD.ScrollBarBase.vertical: MD.ScrollBar {}
 
     signal calMaxCellHeight
     property bool enabledCalMaxCellHeight: false

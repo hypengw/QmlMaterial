@@ -1,10 +1,9 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.MState {
     id: root
-    required property T.Button item
+    required property MD.ButtonBase item
     property int position: MD.Enum.PosSingle
     property int size: MD.Enum.S
 
@@ -41,11 +40,13 @@ MD.MState {
     property MD.corners corners: {
         switch (root.position) {
         case MD.Enum.PosFirst:
-            return MD.Util.corners(root.cornerRadius, 0, root.cornerRadius, 0);
+            return root.item.mirrored ? MD.Util.corners(0, root.cornerRadius, 0, root.cornerRadius)
+                : MD.Util.corners(root.cornerRadius, 0, root.cornerRadius, 0);
         case MD.Enum.PosMiddle:
             return MD.Util.corners(0);
         case MD.Enum.PosLast:
-            return MD.Util.corners(0, root.cornerRadius, 0, root.cornerRadius);
+            return root.item.mirrored ? MD.Util.corners(root.cornerRadius, 0, root.cornerRadius, 0)
+                : MD.Util.corners(0, root.cornerRadius, 0, root.cornerRadius);
         case MD.Enum.PosSingle:
         default:
             return MD.Util.corners(root.cornerRadius);

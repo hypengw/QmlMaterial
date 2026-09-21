@@ -1,10 +1,9 @@
 import QtQuick
-import QtQuick.Templates as T
 
 import Qcm.Material as MD
 import Qcm.Material.Layouts as Lite
 
-T.Pane {
+MD.PanelBase {
     id: control
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding)
@@ -58,7 +57,7 @@ T.Pane {
                 Lite.Layout.fillWidth: true
             }
 
-            T.Button {
+            MD.ButtonBase {
                 id: btn_action
                 parent: control.stackedAction ? stacked_action_content : inline_content
                 flat: true
@@ -108,7 +107,7 @@ T.Pane {
                 }
             }
 
-            T.Button {
+            MD.ButtonBase {
                 id: btn_icon
                 flat: true
                 visible: control.showClose

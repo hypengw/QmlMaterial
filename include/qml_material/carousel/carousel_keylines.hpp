@@ -42,6 +42,7 @@ enum class HeroPhase
 
 struct HeroMetrics
 {
+    bool single_item = false;
     qreal small_leading  = 0;
     qreal small_center   = 0;
     qreal large_leading  = 0;

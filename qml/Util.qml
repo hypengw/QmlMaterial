@@ -1,6 +1,5 @@
 pragma Singleton
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.UtilCpp {
@@ -55,15 +54,20 @@ MD.UtilCpp {
     function closeMenuOn(obj: QtObject) {
         if (obj instanceof MD.Action) {
             const parent = root.getParent(obj);
-            (parent as T.Menu)?.close();
-        } else if (obj instanceof T.Menu) {
-            (obj as T.Menu)?.close();
+            (parent as MD.MenuBase)?.close();
+        } else if (obj instanceof MD.MenuBase) {
+            (obj as MD.MenuBase)?.close();
         }
     }
 
     function applyTypescale(item: Item, typescale: MD.typescale, prominent: bool) {
-        if (item instanceof T.Control) {
-            const c = item as T.Control;
+        if (item instanceof MD.ControlBase) {
+            const c = item as MD.ControlBase;
+            c.font.pixelSize = typescale.size;
+            c.font.weight = prominent ? typescale.weight_prominent : typescale.weight;
+            c.font.letterSpacing = typescale.tracking;
+        } else if (item instanceof TextInput) {
+            const c = item as TextInput;
             c.font.pixelSize = typescale.size;
             c.font.weight = prominent ? typescale.weight_prominent : typescale.weight;
             c.font.letterSpacing = typescale.tracking;

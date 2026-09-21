@@ -1,9 +1,8 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.Button {
+MD.ButtonBase {
     id: control
 
     property MD.StateIconButton mdState: MD.StateIconButton {
@@ -22,20 +21,19 @@ T.Button {
     padding: 8
     spacing: 0
 
-    icon.width: action ? action.icon.width : mdState.iconSize
-    icon.height: action ? action.icon.height : mdState.iconSize
+    icon.width: mdState.iconSize
+    icon.height: mdState.iconSize
+    icon.color: control.mdState.textColor
+    icon.fill: control.checked
 
     contentItem: Item {
         implicitWidth: control.icon.width
         implicitHeight: control.icon.height
         opacity: control.mdState.contentOpacity
 
-        MD.Icon {
+        MD.IconView {
             anchors.centerIn: parent
-            name: control.icon.name
-            size: Math.min(control.icon.width, control.icon.height)
-            color: control.mdState.textColor
-            fill: control.checked
+            icon: control.icon
         }
     }
 

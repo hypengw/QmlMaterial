@@ -1,11 +1,10 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.MState {
     id: root
 
-    required property T.Button item
+    required property MD.ButtonBase item
    
     property bool elevated: false
     property color leadingIconColor: item.checked ? ctx.color.on_secondary_container : ctx.color.primary

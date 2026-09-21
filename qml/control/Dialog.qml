@@ -1,10 +1,10 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.Dialog {
+/** @ingroup control */
+MD.DialogBase {
     id: control
 
     property int titleCapitalization: Font.Capitalize
@@ -93,7 +93,7 @@ T.Dialog {
         visible: count > 0
     }
 
-    T.Overlay.modal: Rectangle {
+    MD.Overlay.modal: Rectangle {
         color: MD.Util.transparent(control.mdState.ctx.color.scrim, 0.32)
         Behavior on opacity {
             NumberAnimation {
@@ -102,7 +102,7 @@ T.Dialog {
         }
     }
 
-    T.Overlay.modeless: Rectangle {
+    MD.Overlay.modeless: Rectangle {
         color: MD.Util.transparent(control.mdState.ctx.color.scrim, 0.32)
         Behavior on opacity {
             NumberAnimation {

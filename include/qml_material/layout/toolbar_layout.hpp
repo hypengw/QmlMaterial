@@ -11,6 +11,7 @@
 #include <QQuickItem>
 #include <QQmlEngine>
 #include <memory>
+#include "qml_material/control/action.hpp"
 
 namespace qml_material
 {
@@ -24,15 +25,15 @@ class ToolBarLayoutPrivate;
 class ToolBarLayoutAttached : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(QObject *action READ action CONSTANT FINAL)
+    Q_PROPERTY(Action* action READ action CONSTANT FINAL)
 public:
     ToolBarLayoutAttached(QObject *parent = nullptr);
 
-    QObject *action() const;
-    void setAction(QObject *action);
+    Action* action() const;
+    void setAction(Action* action);
 
 private:
-    QObject *m_action = nullptr;
+    Action* m_action = nullptr;
 };
 
 /**
@@ -43,8 +44,8 @@ class ToolBarLayout : public QQuickItem
     Q_OBJECT
     QML_ELEMENT
     QML_ATTACHED(ToolBarLayoutAttached)
-    Q_PROPERTY(QQmlListProperty<QObject> actions READ actionsProperty NOTIFY actionsChanged FINAL)
-    Q_PROPERTY(QList<QObject *> hiddenActions READ hiddenActions NOTIFY hiddenActionsChanged FINAL)
+    Q_PROPERTY(QQmlListProperty<Action> actions READ actionsProperty NOTIFY actionsChanged FINAL)
+    Q_PROPERTY(QList<Action*> hiddenActions READ hiddenActions NOTIFY hiddenActionsChanged FINAL)
     Q_PROPERTY(QQmlComponent *fullDelegate READ fullDelegate WRITE setFullDelegate NOTIFY fullDelegateChanged FINAL)
     Q_PROPERTY(QQmlComponent *iconDelegate READ iconDelegate WRITE setIconDelegate NOTIFY iconDelegateChanged FINAL)
     Q_PROPERTY(QQmlComponent *separatorDelegate READ separatorDelegate WRITE setSeparatorDelegate NOTIFY separatorDelegateChanged FINAL)
@@ -58,7 +59,7 @@ class ToolBarLayout : public QQuickItem
     Q_PROPERTY(qint32 maxShowActionNum READ maxShowActionNum WRITE setMaxShowActionNum NOTIFY maxShowActionNumChanged FINAL)
 
 public:
-    using ActionsProperty = QQmlListProperty<QObject>;
+    using ActionsProperty = QQmlListProperty<Action>;
 
     enum HeightMode {
         AlwaysCenter,
@@ -86,12 +87,12 @@ public:
     ~ToolBarLayout() override;
 
     ActionsProperty actionsProperty() const;
-    void addAction(QObject *action);
-    void removeAction(QObject *action);
+    void addAction(Action* action);
+    void removeAction(Action* action);
     void clearActions();
     Q_SIGNAL void actionsChanged();
 
-    QList<QObject *> hiddenActions() const;
+    QList<Action*> hiddenActions() const;
     Q_SIGNAL void hiddenActionsChanged();
 
     QQmlComponent *fullDelegate() const;

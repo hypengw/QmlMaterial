@@ -1,21 +1,21 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.Button {
+MD.ButtonBase {
     id: control
 
     property MD.StateSplitButtonIndicator mdState: MD.StateSplitButtonIndicator {
         item: control
     }
     
-    property T.Menu menu: null
+    property MD.MenuBase menu: null
 
     implicitWidth: 32
     implicitHeight: 40
 
     icon.width: 18
     icon.height: 18
+    icon.color: control.mdState.textColor
     
     checkable: true
     checked: control.menu ? control.menu.visible : false
@@ -28,11 +28,11 @@ T.Button {
                 control.menu.close();
             } else {
                 // Position the menu below the whole SplitButton component
-                // control.parent is Row, control.parent.parent is T.Control (SplitButton)
+                // control.parent is Row, control.parent.parent is SplitButton.
                 let splitButton = control.parent.parent;
                 
                 // If menu parent is not set or is the SplitButton, we can set x/y directly
-                // T.Menu positions are relative to its parent.
+                // Menu coordinates are relative to its logical parent.
                 if (!control.menu.parent) {
                     control.menu.parent = splitButton;
                 }
@@ -46,10 +46,8 @@ T.Button {
         }
     }
 
-    contentItem: MD.Icon {
-        name: control.icon.name
-        size: control.icon.width
-        color: control.mdState.textColor
+    contentItem: MD.IconView {
+        icon: control.icon
         anchors.centerIn: parent
          opacity: control.mdState.contentOpacity
     }

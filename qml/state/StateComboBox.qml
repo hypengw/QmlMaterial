@@ -1,11 +1,10 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.MState {
     id: root
 
-    required property T.ComboBox item
+    required property MD.ComboBoxBase item
     property int size: MD.Enum.M
 
     readonly property MD.ComboBoxSizeItem sizeToken: {

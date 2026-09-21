@@ -1,12 +1,11 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.Pane {
+MD.PanelBase {
     id: control
 
-    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding)
-    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)
+    implicitWidth: implicitLayoutWidth
+    implicitHeight: implicitLayoutHeight
 
     padding: 0
     property int radius: 0

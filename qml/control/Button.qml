@@ -1,13 +1,12 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 import Qcm.Material.Layouts as Lite
 
-T.Button {
+MD.ButtonBase {
     id: control
 
     property int iconStyle: hasIcon ? MD.Enum.IconAndText : MD.Enum.TextOnly
-    readonly property bool hasIcon: MD.Util.hasIcon(icon)
+    readonly property bool hasIcon: !icon.empty
     property MD.StateButton mdState: MD.StateButton {
         item: control
     }
@@ -28,6 +27,7 @@ T.Button {
 
     icon.width: mdState.iconSize
     icon.height: mdState.iconSize
+    icon.color: control.mdState.textColor
 
     property MD.typescale typescale: MD.Token.typescale.label_large
     font.capitalization: Font.MixedCase // M3 uses mixed case for buttons
@@ -45,11 +45,9 @@ T.Button {
             alignment: Qt.AlignHCenter | Qt.AlignVCenter
             spacing: control.spacing
 
-            MD.Icon {
+            MD.IconView {
                 visible: control.iconStyle != MD.Enum.TextOnly && control.hasIcon
-                name: control.icon.name
-                size: control.icon.width
-                color: control.mdState.textColor
+                icon: control.icon
             }
 
             MD.Label {
@@ -57,6 +55,7 @@ T.Button {
                 text: control.text
                 color: control.mdState.textColor
                 useTypescale: false
+                font: control.font
                 lineHeight: control.typescale.line_height
                 wrapMode: Text.NoWrap
                 Lite.Layout.fillWidth: true

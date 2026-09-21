@@ -1,10 +1,9 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.MState {
     id: root
-    required property T.RadioButton item
+    required property MD.RadioButtonBase item
    
 
     property color iconColor: item.checked ? ctx.color.primary : ctx.color.on_surface_variant

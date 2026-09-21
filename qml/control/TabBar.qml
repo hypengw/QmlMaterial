@@ -1,8 +1,7 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.TabBar {
+MD.TabBarBase {
     id: control
 
     property int type: MD.Enum.PrimaryTab
@@ -13,33 +12,42 @@ T.TabBar {
 
     spacing: 1
 
-    contentItem: ListView {
+    contentItem: Flickable {
         id: m_view
-        model: control.contentModel
-        currentIndex: control.currentIndex
-
-        contentHeight: height - topMargin - bottomMargin
-        implicitWidth: contentWidth + leftMargin + rightMargin
-
-        spacing: control.spacing
-        orientation: ListView.Horizontal
+        contentWidth: control.contentHost.width
+        contentHeight: control.contentHost.height
+        clip: true
         flickableDirection: Flickable.AutoFlickIfNeeded
-        snapMode: ListView.SnapToItem
-
-        highlightMoveDuration: 250
-        highlightResizeDuration: 0
-        highlightFollowsCurrentItem: true
-        highlightRangeMode: ListView.ApplyRange
-        preferredHighlightBegin: 48
-        preferredHighlightEnd: width - 48
-
-        highlight: Item {
+        boundsBehavior: Flickable.StopAtBounds
+        function revealCurrent() {
+            const item = control.currentItem;
+            if (!item) return;
+            const target = item.x < contentX ? item.x
+                : item.x + item.width > contentX + width ? item.x + item.width - width : contentX;
+            contentX = Math.max(0, Math.min(Math.max(0, contentWidth - width), target));
+        }
+        onContentWidthChanged: Qt.callLater(revealCurrent)
+        Binding {
+            target: control.contentHost
+            property: "parent"
+            value: m_view.contentItem
+        }
+        Connections {
+            target: control
+            function onCurrentItemChanged() { Qt.callLater(m_view.revealCurrent); }
+        }
+        Item {
+            x: control.currentItem?.x ?? 0
+            width: control.currentItem?.width ?? 0
+            height: m_view.height
+            visible: control.currentItem !== null
             z: 2
+            Behavior on x { NumberAnimation { duration: 250 } }
             Item {
                 x: control.type == MD.Enum.PrimaryTab ? (parent.width - width) / 2 : 0
-                y: control.position === T.TabBar.Footer ? 0 : parent.height - height
+                y: control.position === MD.TabBar.Footer ? 0 : parent.height - height
                 height: control.type == MD.Enum.PrimaryTab ? 3 : 2
-                width: control.type == MD.Enum.PrimaryTab ? (m_view.currentItem?.implicitContentWidth ?? 0) : parent.width
+                width: control.type == MD.Enum.PrimaryTab ? (control.currentItem?.implicitContentWidth ?? 0) : parent.width
                 clip: true
 
                 Behavior on width {
@@ -56,13 +64,6 @@ T.TabBar {
             }
         }
 
-        ListView.onAdd: {
-            const idx = count - 1;
-            const item = itemAtIndex(idx);
-            if (item instanceof MD.TabButton) {
-                item.type = control.type;
-            }
-        }
     }
 
     background: MD.Rectangle {

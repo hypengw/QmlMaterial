@@ -1,6 +1,5 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.ItemDelegate {
@@ -13,37 +12,13 @@ MD.ItemDelegate {
 
     required property int row
     required property int column
-    required property var model
     required property bool selected
 
-    readonly property T.VerticalHeaderView headerView: TableView.view as T.VerticalHeaderView
-    readonly property int section: Math.max(row, column)
+    readonly property MD.VerticalHeaderViewBase headerView: TableView.view as MD.VerticalHeaderViewBase
+    readonly property int section: headerView?.visualSections[row] ?? row
     readonly property string textRole: control.headerView?.textRole ?? ""
-    readonly property int rows: {
-        const syncRows = control.headerView?.syncView?.rows ?? 0;
-        if (syncRows > 0)
-            return syncRows;
-        const headerModel = control.headerView?.model;
-        if (Array.isArray(headerModel))
-            return headerModel.length;
-        if (typeof headerModel?.length === "number")
-            return headerModel.length;
-        const headerRows = control.headerView?.rows ?? 0;
-        if (headerRows > 0)
-            return headerRows;
-        return control.headerView?.syncView?.rows ?? 0;
-    }
-    readonly property var displayText: {
-        if (control.model === undefined || control.model === null)
-            return "";
-        if (control.textRole.length > 0 && control.model[control.textRole] !== undefined)
-            return control.model[control.textRole];
-        if (control.model.display !== undefined)
-            return control.model.display;
-        if (control.model.modelData !== undefined)
-            return control.model.modelData;
-        return control.model;
-    }
+    readonly property int rows: headerView?.sectionCount ?? 0
+    readonly property string displayText: headerView?.headerTexts[row] ?? ""
     highlighted: control.selected
 
     background: Rectangle {

@@ -1,9 +1,8 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.ItemDelegate {
+MD.ItemDelegateBase {
     id: control
 
     property alias mdState: item_state
@@ -24,6 +23,8 @@ T.ItemDelegate {
 
     icon.width: 24
     icon.height: 24
+    icon.color: control.MD.MProp.color.on_background
+    icon.fill: control.checked
 
     font.capitalization: Font.MixedCase
 
@@ -32,11 +33,9 @@ T.ItemDelegate {
     contentItem: RowLayout {
         spacing: 12
 
-        MD.Icon {
+        MD.IconView {
             id: item_holder_leader
-            name: control.icon.name
-            size: Math.min(control.icon.width, control.icon.height)
-            fill: control.checked
+            icon: control.icon
         }
         MD.Text {
             Layout.fillWidth: true

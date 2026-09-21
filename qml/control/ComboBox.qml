@@ -1,14 +1,49 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.ComboBox {
+/** @ingroup control */
+MD.ComboBoxBase {
     id: control
 
     property int type: MD.Enum.TextFieldOutlined
     property real popupMaximumHeight: 0
+    property real popupMaximumWidth: 280
     property string label
+    property Item indicator
+    property Item __indicatorItem
+    readonly property real implicitIndicatorWidth: indicator ? indicator.implicitWidth : 0
+    readonly property real implicitIndicatorHeight: indicator ? indicator.implicitHeight : 0
+    property MD.PopupBase popup
+    property MD.PopupBase __popupObject
+    function __syncIndicator() {
+        if (__indicatorItem === indicator)
+            return;
+        if (__indicatorItem && __indicatorItem.parent === control)
+            __indicatorItem.parent = null;
+        __indicatorItem = indicator;
+        if (indicator && !indicator.parent)
+            indicator.parent = control;
+    }
+    function __syncPopup() {
+        if (__popupObject === popup)
+            return;
+        if (__popupObject)
+            __popupObject.close();
+        __popupObject = popup;
+        if (popup && !popup.parent)
+            popup.parent = control;
+    }
+    onIndicatorChanged: __syncIndicator()
+    onPopupChanged: __syncPopup()
+    Component.onCompleted: {
+        __syncIndicator();
+        __syncPopup();
+    }
+    popupVisible: popup ? popup.visible : false
+    popupActiveFocus: popup ? popup.activeFocus : false
+    onPopupOpenRequested: if (popup) popup.open()
+    onPopupCloseRequested: if (popup) popup.close()
     property MD.StateComboBox mdState: MD.StateComboBox {
         item: control
     }
@@ -42,12 +77,15 @@ T.ComboBox {
         required property int index
 
         width: ListView.view.width
-        text: model[control.textRole]
+        text: model[control.textRole || "modelData"]
         selected: control.currentIndex == index
         highlighted: control.highlightedIndex == index
+        focusPolicy: Qt.NoFocus
     }
 
     indicator: MD.Icon {
+        parent: control
+        z: 1
         x: control.mirrored ? control.padding : control.width - width - control.padding
         y: control.topPadding + (control.availableHeight - height) / 2
         name: MD.Token.icon.arrow_drop_down
@@ -56,6 +94,7 @@ T.ComboBox {
 
     contentItem: MD.TextInput {
         typescale: control.mdState.typescale
+        clip: true
 
         padding: 0
         text: control.editable ? control.editText : control.displayText
@@ -65,10 +104,23 @@ T.ComboBox {
         inputMethodHints: control.inputMethodHints
         validator: control.validator
         selectByMouse: control.selectTextByMouse
-        color: control.mdState.textColor
+        color: control.editable ? control.mdState.textColor : "transparent"
         selectionColor: control.mdState.ctx.color.primary
         selectedTextColor: control.mdState.ctx.color.getOn(selectionColor)
         verticalAlignment: TextInput.AlignVCenter
+
+        MD.Text {
+            anchors.fill: parent
+            visible: !control.editable
+            text: control.displayText
+            font: control.font
+            color: control.mdState.textColor
+            wrapMode: Text.NoWrap
+            maximumLineCount: 1
+            elide: Text.ElideRight
+            verticalAlignment: Text.AlignVCenter
+            horizontalAlignment: control.mirrored ? Text.AlignRight : Text.AlignLeft
+        }
     }
 
     MD.FloatingPlaceholderText {
@@ -104,11 +156,13 @@ T.ComboBox {
     }
 
     popup: MD.Menu {
+        id: popupMenu
+        parent: control
         y: control.editable ? control.height - 5 : 0
         height: control.popupMaximumHeight > 0
             ? Math.min(implicitHeight, control.popupMaximumHeight)
             : implicitHeight
-        width: control.width
+        maximumWidth: control.popupMaximumWidth
         transformOrigin: Item.Top
         modal: false
         focus: false
@@ -116,6 +170,15 @@ T.ComboBox {
         topMargin: 12
         bottomMargin: 12
         verticalPadding: 8
-        currentIndex: control.currentIndex
+        currentIndex: control.highlightedIndex
+        closePolicy: MD.PopupBase.CloseOnEscape | MD.PopupBase.CloseOnPressOutsideParent
+        onOpened: contentItem.positionViewAtIndex(control.highlightedIndex, ListView.Contain)
+        Connections {
+            target: control
+            function onHighlightedIndexChanged() {
+                if (popupMenu.visible && control.highlightedIndex >= 0)
+                    popupMenu.contentItem.positionViewAtIndex(control.highlightedIndex, ListView.Contain);
+            }
+        }
     }
 }

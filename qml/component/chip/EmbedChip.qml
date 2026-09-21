@@ -1,10 +1,9 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 import Qcm.Material.Layouts as Lite
 
-T.Button {
+MD.ButtonBase {
     id: control
 
     property MD.StateEmbedChip mdState: MD.StateEmbedChip {
@@ -23,12 +22,13 @@ T.Button {
     topInset: 0
     bottomInset: 0
     verticalPadding: 0
-    leftPadding: m_leading_comp && MD.Util.hasIcon(icon) ? 8 : 16
+    leftPadding: m_leading_comp && !icon.empty ? 8 : 16
     rightPadding: m_trailing_comp && trailingIconName ? 8 : 16
     spacing: 8
 
     icon.width: 18
     icon.height: 18
+    icon.color: control.MD.MProp.color.on_background
     action: null
     font.capitalization: Font.MixedCase
 
@@ -38,16 +38,9 @@ T.Button {
 
     Component {
         id: m_leading_comp
-        MD.Icon {
-            visible: name
-            size: {
-                const ic = control.action ? control.action.icon : control.icon;
-                return Math.min(ic.width, ic.height);
-            }
-            name: {
-                const ic = control.action ? control.action.icon : control.icon;
-                return ic.name;
-            }
+        MD.IconView {
+            visible: !icon.empty
+            icon: control.icon
         }
     }
 
@@ -56,10 +49,7 @@ T.Button {
         MD.Icon {
             visible: name
             name: control.trailingIconName
-            size: {
-                const ic = control.action ? control.action.icon : control.icon;
-                return Math.min(ic.width, ic.height);
-            }
+            size: Math.min(control.icon.width, control.icon.height)
         }
     }
 

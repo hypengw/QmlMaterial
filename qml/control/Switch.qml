@@ -1,8 +1,7 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.Switch {
+MD.SwitchBase {
     id: control
 
     property alias mdState: m_sh
@@ -62,7 +61,7 @@ T.Switch {
             readonly property real normalSize: control.mdState.handleSize
             readonly property real largestSize: 28
             readonly property real largestScale: largestSize / normalSize
-            readonly property bool hasIcon: control.icon.name.length > 0
+            readonly property bool hasIcon: !control.icon.empty
 
             Behavior on x {
                 enabled: !control.pressed
@@ -83,12 +82,10 @@ T.Switch {
                 }
             }
 
-            MD.Icon {
+            MD.IconView {
                 anchors.centerIn: parent
-                size: control.icon.width
                 scale: handle.scale === 0 ? 0 : 1 / handle.scale
-                color: control.icon.color
-                name: control.icon.name
+                icon: control.icon
                 visible: handle.hasIcon
             }
         }

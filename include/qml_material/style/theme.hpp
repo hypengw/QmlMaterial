@@ -1,13 +1,14 @@
 #pragma once
 
 #include <functional>
+#include <optional>
 
 #include <QtCore/QObject>
 #include <QtCore/QTimer>
 #include <QtQml/QQmlEngine>
 #include <QtGui/QColor>
-#include <QtQuickControls2/QQuickAttachedPropertyPropagator>
 
+#include "qml_material/core/attached_property.hpp"
 #include "qml_material/token/color.hpp"
 #include "qml_material/control/page_context.hpp"
 
@@ -70,10 +71,10 @@ private:
     qint32 m_window_class;
     qint32 m_width;
     qint32 m_duration;
-    QTimer  m_width_timer;
+    QTimer m_width_timer;
 };
 
-class Theme final : public QQuickAttachedPropertyPropagator {
+class QML_MATERIAL_API Theme final : public AttachedPropertyNode {
     Q_OBJECT
 
     QML_NAMED_ELEMENT(MProp)
@@ -111,8 +112,17 @@ public:
     static Theme* qmlAttachedProperties(QObject* object);
 
 protected:
-    void attachedParentChange(QQuickAttachedPropertyPropagator* newParent,
-                              QQuickAttachedPropertyPropagator* oldParent) override;
+    void updateInheritedValues() override;
+
+private:
+    template<typename V>
+    void setProp(AttachProp<V>& property, const V& value);
+
+    template<typename V>
+    void resetProp(AttachProp<V>& property, const V& inheritedValue);
+
+    template<typename V>
+    bool inheritProp(AttachProp<V>& property, const V& value);
 };
 } // namespace qml_material
 

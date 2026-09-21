@@ -1,10 +1,9 @@
 import QtQuick
 import Qcm.Material as MD
-import QtQuick.Templates as T
 
 MD.MState {
     id: root
-    required property T.TextField item
+    required property MD.TextFieldBase item
     property int type
     property int size: MD.Enum.M
 

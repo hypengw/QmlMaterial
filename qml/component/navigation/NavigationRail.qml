@@ -1,6 +1,5 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Templates as T
 import QtQuick.Window
 
 import Qcm.Material as MD
@@ -9,7 +8,7 @@ import Qcm.Material as MD
 // expanded (220-360dp, horizontal items) share the same RailItem and transition
 // into each other. When embedded it occupies layout space; otherwise the
 // expanded rail is shown as a modal/modeless overlay (ModalWideNavigationRail).
-T.Control {
+MD.ControlBase {
     id: control
     focusPolicy: Qt.NoFocus
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
@@ -150,8 +149,12 @@ T.Control {
             }
 
             // built-in morphing FAB (icon-only -> extended)
-            MD.ElevationRectangle {
+            MD.ButtonBase {
                 id: m_fab
+                action: control.fabAction
+                icon.width: 24
+                icon.height: 24
+                icon.color: MD.MProp.color.on_primary_container
                 visible: !control.fab && control.fabAction
                 // expanded x=16 aligns the FAB indicator left edge with the nav item indicators;
                 // collapsed target uses the final collapsed width (56) so x and width animate together
@@ -159,9 +162,11 @@ T.Control {
                 y: m_menu_btn.y + m_menu_btn.height + 12
                 height: 56
                 width: control.useLarge ? (16 + m_fab_icon.width + 12 + m_fab_label.implicitWidth + 20) : 56
-                radius: MD.Token.shape.corner.large
-                color: MD.MProp.color.primary_container
-                elevationVisible: false
+                background: MD.ElevationRectangle {
+                    radius: MD.Token.shape.corner.large
+                    color: MD.MProp.color.primary_container
+                    elevationVisible: false
+                }
 
                 Behavior on x {
                     NumberAnimation {
@@ -176,11 +181,9 @@ T.Control {
                     }
                 }
 
-                MD.Icon {
+                MD.IconView {
                     id: m_fab_icon
-                    name: control.fabAction?.icon.name ?? ''
-                    size: 24
-                    color: MD.MProp.color.on_primary_container
+                    icon: m_fab.icon
                     x: control.useLarge ? 16 : (56 - width) / 2
                     y: (parent.height - height) / 2
                 }
@@ -195,16 +198,12 @@ T.Control {
                 }
                 MD.Ripple {
                     anchors.fill: parent
-                    radius: parent.radius
+                    radius: MD.Token.shape.corner.large
                     color: MD.MProp.color.on_primary_container
-                    pressed: m_fab_tap.pressed
-                    pressX: m_fab_tap.point.position.x
-                    pressY: m_fab_tap.point.position.y
-                    stateOpacity: m_fab_tap.pressed ? MD.Token.state.pressed.state_layer_opacity : 0
-                }
-                TapHandler {
-                    id: m_fab_tap
-                    onTapped: control.fabAction?.trigger()
+                    pressed: m_fab.pressed
+                    pressX: m_fab.pressX
+                    pressY: m_fab.pressY
+                    stateOpacity: m_fab.pressed ? MD.Token.state.pressed.state_layer_opacity : 0
                 }
             }
 
@@ -221,7 +220,7 @@ T.Control {
 
     MD.Drawer {
         id: m_drawer
-        parent: T.Overlay.overlay
+        parent: control.MD.Overlay.overlay
         modal: control.useModal
         interactive: control.drawerGestureEnabled
         MD.MProp.textColor: MD.MProp.color.on_surface

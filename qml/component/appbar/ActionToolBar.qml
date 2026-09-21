@@ -1,17 +1,16 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Templates as T
 
 import Qcm.Material as MD
 
-T.Control {
+MD.ControlBase {
     id: root
 
     property alias maxShowActionNum: m_layout.maxShowActionNum
     property alias alignment: m_layout.alignment
 
-    property int display: T.Button.IconOnly
+    property int display: MD.ButtonBase.IconOnly
 
     property alias actions: m_layout.actions
     readonly property alias maximumContentWidth: m_layout.implicitWidth

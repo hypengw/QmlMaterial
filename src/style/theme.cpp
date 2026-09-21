@@ -2,68 +2,12 @@
 #include "qml_material/core/enum.hpp"
 #include "qml_material/token/token.hpp"
 
+#include <type_traits>
+
 using namespace qml_material;
 
 namespace
 {
-using Propagator = QQuickAttachedPropertyPropagator;
-
-template<typename F, typename T>
-concept get_prop_cp = requires(F f, Theme* t) {
-    { std::invoke(f, t) } -> std::same_as<Theme::AttachProp<T>&>;
-};
-
-template<typename F>
-void propagate(Theme* self, F&& f) {
-    const auto styles = self->attachedChildren();
-    for (auto* child : styles) {
-        Theme* obj = qobject_cast<Theme*>(child);
-        if (obj) {
-            f(obj);
-        }
-    }
-}
-
-template<typename F, typename T>
-    requires get_prop_cp<F, T>
-void inherit_attach_prop(Theme* self, F&& get_prop, const T& v) {
-    auto& p = std::invoke(get_prop, self);
-    if (p.explicited || p.value == v) return;
-    p.value = v;
-    propagate(self, [&v, &get_prop](Theme* child) {
-        inherit_attach_prop(child, get_prop, v);
-    });
-    std::invoke(p.sig_func, self);
-}
-
-template<typename F, typename T>
-    requires get_prop_cp<F, T>
-void set_prop(Theme* self, const T& v, F&& get_prop) {
-    auto& p      = std::invoke(std::forward<F>(get_prop), self);
-    p.explicited = true;
-    if (p.value != v) {
-        p.value = v;
-        if constexpr (std::is_base_of_v<QObject, std::remove_pointer_t<T>>) {
-            if (p.value && *p.value) {
-                (*p.value)->setParent(self);
-            }
-        }
-        propagate(self, [&v, &get_prop](Theme* child) {
-            inherit_attach_prop(child, get_prop, v);
-        });
-        std::invoke(p.sig_func, self);
-    }
-}
-
-template<typename F, typename T>
-    requires get_prop_cp<F, T>
-void reset_prop(Theme* self, F&& get_prop, const T& init_v) {
-    auto& p = std::invoke(std::forward<F>(get_prop), self);
-    if (! p.explicited) return;
-    p.explicited = false;
-    inherit_attach_prop(self, get_prop, init_v);
-}
-
 struct GlobalTheme {
     ~GlobalTheme() {}
     QColor      textColor;
@@ -90,20 +34,20 @@ GlobalTheme* theGlobalTheme() {
 
 } // namespace
 
-Theme::Theme(QObject* parent): QQuickAttachedPropertyPropagator(parent) {
-    QQuickAttachedPropertyPropagator::initialize();
+Theme::Theme(QObject* parent): AttachedPropertyNode(parent, &Theme::staticMetaObject) {
+    initializeAttachedProperty();
 }
 Theme::~Theme() {}
 
 Theme* Theme::qmlAttachedProperties(QObject* object) { return new Theme(object); }
 
-#define IMPL_ATTACH_PROP(_type_, _name_, _prop_, ...)                                           \
-    Theme::AttachProp<_type_>& Theme::get_##_name_() { return _prop_; }                         \
-    _type_ Theme::_name_() const { return _prop_.value.value_or(theGlobalTheme()->_name_); }    \
-    void   Theme::set_##_name_(_type_ v) { set_prop(this, v, &Theme::get_##_name_); }           \
-    void   Theme::reset_##_name_() {                                                            \
-        Self* obj = qobject_cast<Self*>(attachedParent());                                      \
-        reset_prop(this, &Theme::get_##_name_, obj ? obj->_name_() : theGlobalTheme()->_name_); \
+#define IMPL_ATTACH_PROP(_type_, _name_, _prop_, ...)                                      \
+    Theme::AttachProp<_type_>& Theme::get_##_name_() { return _prop_; }                    \
+    _type_ Theme::_name_() const { return _prop_.value.value_or(theGlobalTheme()->_name_); } \
+    void   Theme::set_##_name_(_type_ v) { setProp(_prop_, v); }                           \
+    void   Theme::reset_##_name_() {                                                       \
+        auto* attached = qobject_cast<Self*>(attachedParent());                            \
+        resetProp(_prop_, attached ? attached->_name_() : theGlobalTheme()->_name_);         \
     }
 
 IMPL_ATTACH_PROP(QColor, textColor, m_textColor)
@@ -113,20 +57,64 @@ IMPL_ATTACH_PROP(MdColorMgr*, color, m_color)
 IMPL_ATTACH_PROP(ThemeSize*, size, m_size)
 IMPL_ATTACH_PROP(PageContext*, page, m_page)
 
-void Theme::attachedParentChange(QQuickAttachedPropertyPropagator* newParent,
-                                 QQuickAttachedPropertyPropagator* oldParent) {
-    Propagator::attachedParentChange(newParent, oldParent);
-    Theme* attachedParentStyle = qobject_cast<Theme*>(newParent);
-    if (attachedParentStyle) {
-#define X(Name) inherit_attach_prop(this, &Theme::get_##Name, attachedParentStyle->Name())
-        X(textColor);
-        X(backgroundColor);
-        X(elevation);
-        X(color);
-        X(size);
-        X(page);
-#undef X
+template<typename V>
+void Theme::setProp(AttachProp<V>& property, const V& value) {
+    property.explicited = true;
+    if (property.value == value) return;
+
+    property.value = value;
+    if constexpr (std::is_pointer_v<V> && std::is_base_of_v<QObject, std::remove_pointer_t<V>>) {
+        if (value) value->setParent(this);
     }
+    propagateAttachedValues();
+    std::invoke(property.sig_func, this);
+}
+
+template<typename V>
+void Theme::resetProp(AttachProp<V>& property, const V& inheritedValue) {
+    if (! property.explicited) return;
+
+    property.explicited = false;
+    if (! inheritProp(property, inheritedValue)) return;
+    propagateAttachedValues();
+    std::invoke(property.sig_func, this);
+}
+
+template<typename V>
+bool Theme::inheritProp(AttachProp<V>& property, const V& value) {
+    if (property.explicited || property.value == value) return false;
+    property.value = value;
+    return true;
+}
+
+void Theme::updateInheritedValues() {
+    auto* attached = qobject_cast<Theme*>(attachedParent());
+
+    const auto textColorChanged =
+        inheritProp(m_textColor, attached ? attached->textColor() : theGlobalTheme->textColor);
+    const auto backgroundColorChanged =
+        inheritProp(m_backgroundColor,
+                    attached ? attached->backgroundColor() : theGlobalTheme->backgroundColor);
+    const auto elevationChanged =
+        inheritProp(m_elevation, attached ? attached->elevation() : theGlobalTheme->elevation);
+    const auto colorChanged =
+        inheritProp(m_color, attached ? attached->color() : theGlobalTheme->color);
+    const auto sizeChanged =
+        inheritProp(m_size, attached ? attached->size() : theGlobalTheme->size);
+    const auto pageChanged =
+        inheritProp(m_page, attached ? attached->page() : theGlobalTheme->page);
+
+    if (! textColorChanged && ! backgroundColorChanged && ! elevationChanged && ! colorChanged &&
+        ! sizeChanged && ! pageChanged)
+        return;
+
+    propagateAttachedValues();
+    if (textColorChanged) std::invoke(m_textColor.sig_func, this);
+    if (backgroundColorChanged) std::invoke(m_backgroundColor.sig_func, this);
+    if (elevationChanged) std::invoke(m_elevation.sig_func, this);
+    if (colorChanged) std::invoke(m_color.sig_func, this);
+    if (sizeChanged) std::invoke(m_size.sig_func, this);
+    if (pageChanged) std::invoke(m_page.sig_func, this);
 }
 
 ThemeSize::ThemeSize(QObject* parent)

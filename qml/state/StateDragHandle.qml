@@ -4,7 +4,8 @@ import Qcm.Material as MD
 MD.MState {
     id: root
     required property Item item
-   
+
+    state: MD.Util.stateText(item.enabled, item.pressed, item.hovered, item.visualFocus)
 
     textColor: root.ctx.color.outline
     backgroundColor: "transparent"

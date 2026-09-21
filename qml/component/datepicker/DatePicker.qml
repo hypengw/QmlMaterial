@@ -1,9 +1,8 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.Control {
+MD.ControlBase {
     id: control
 
     enum SelectionMode { Single, Range }
@@ -73,6 +72,13 @@ T.Control {
 
     background: null
 
+    MD.CalendarMonthModel {
+        id: m_calendar
+        month: control.month
+        year: control.year
+        locale: Qt.locale("en_US")
+    }
+
     contentItem: Column {
         spacing: 0
 
@@ -141,7 +147,7 @@ T.Control {
             }
         }
 
-        T.AbstractDayOfWeekRow {
+        MD.Control {
             id: m_dow
             anchors.horizontalCenter: parent.horizontalCenter
             width: 7 * 40 + 6 * 8
@@ -149,15 +155,14 @@ T.Control {
             spacing: 8
             topPadding: 4
             bottomPadding: 4
-            locale: Qt.locale("en_US")
 
-            delegate: Item {
-                required property string narrowName
+            property Component delegate: Item {
+                required property var modelData
                 implicitWidth: 40
                 implicitHeight: 24
                 MD.Text {
                     anchors.centerIn: parent
-                    text: parent.narrowName.toUpperCase()
+                    text: parent.modelData.narrowName.toUpperCase()
                     typescale: MD.Token.typescale.body_small
                     color: MD.MProp.color.on_surface_variant
                 }
@@ -165,28 +170,24 @@ T.Control {
             contentItem: Row {
                 spacing: m_dow.spacing
                 Repeater {
-                    model: m_dow.source
+                    model: m_calendar.weekDays
                     delegate: m_dow.delegate
                 }
             }
         }
 
-        T.AbstractMonthGrid {
+        MD.Control {
             id: m_grid
+            activeFocusOnTab: true
             anchors.horizontalCenter: parent.horizontalCenter
             width: 7 * 40 + 6 * 8
             implicitHeight: 6 * 40 + 5 * 8 + topPadding + bottomPadding
             spacing: 8
-            month: control.month
-            year: control.year
-            locale: Qt.locale("en_US")
-            onClicked: function (date) {
-                if (control._dayEnabled(date)) control._selectDay(date);
-            }
 
-            delegate: Item {
+            property Component delegate: Item {
+                required property int index
                 required property var model
-                readonly property bool inMonth: model.month === m_grid.month
+                readonly property bool inMonth: model.month === control.month
                 readonly property bool selected: control.selectionMode === DatePicker.SelectionMode.Single
                     ? control._sameDay(model.date, control.selectedDate)
                     : (control._sameDay(model.date, control.rangeStart)
@@ -233,8 +234,38 @@ T.Control {
                 rowSpacing: m_grid.spacing
                 columnSpacing: m_grid.spacing
                 Repeater {
-                    model: m_grid.source
+                    model: m_calendar
                     delegate: m_grid.delegate
+                }
+            }
+
+            MouseArea {
+                id: m_pointer
+                anchors.fill: m_grid.contentItem
+                acceptedButtons: Qt.LeftButton
+                property bool tracking: false
+
+                function indexAt(x, y) {
+                    const cell = m_grid.contentItem.childAt(x, y);
+                    return cell ? cell.index : -1;
+                }
+                onPressed: tracking = true
+                onReleased: function(mouse) {
+                    const index = tracking ? indexAt(mouse.x, mouse.y) : -1;
+                    tracking = false;
+                    if (index >= 0) {
+                        const date = m_calendar.dateAt(index);
+                        if (control._dayEnabled(date)) control._selectDay(date);
+                    }
+                }
+                onCanceled: {
+                    tracking = false;
+                }
+            }
+            Connections {
+                target: m_calendar
+                function onDataChanged() {
+                    m_pointer.tracking = false;
                 }
             }
         }

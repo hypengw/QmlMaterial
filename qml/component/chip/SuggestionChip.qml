@@ -1,12 +1,11 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 import Qcm.Material.Layouts as Lite
 
-T.Button {
+MD.ButtonBase {
     id: control
 
-    readonly property bool hasIcon: MD.Util.hasIcon(icon)
+    readonly property bool hasIcon: !icon.empty
     property MD.StateSuggestionChip mdState: MD.StateSuggestionChip {
         item: control
     }
@@ -28,6 +27,7 @@ T.Button {
 
     icon.width: 18
     icon.height: 18
+    icon.color: control.mdState.iconColor
     property MD.typescale typescale: MD.Token.typescale.label_large
     font.capitalization: Font.MixedCase
     font.pixelSize: typescale.size
@@ -39,17 +39,16 @@ T.Button {
         spacing: control.spacing
         opacity: control.mdState.contentOpacity
 
-        MD.Icon {
+        MD.IconView {
             visible: control.hasIcon
-            color: control.mdState.iconColor
-            name: control.icon.name
-            size: control.icon.width
+            icon: control.icon
         }
 
         MD.Label {
             text: control.text
             color: control.mdState.textColor
             useTypescale: false
+            font: control.font
             lineHeight: control.typescale.line_height
             wrapMode: Text.NoWrap
             Lite.Layout.fillWidth: true

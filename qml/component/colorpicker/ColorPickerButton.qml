@@ -1,9 +1,8 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.Button {
+MD.ButtonBase {
     id: control
 
     property color color: "#6750A4"
@@ -79,7 +78,7 @@ T.Button {
 
     MD.ColorPickerDialog {
         id: m_dialog
-        parent: T.Overlay.overlay
+        parent: control.MD.Overlay.overlay
         color: control.color
         showAlpha: control.showAlpha
         onAcceptedColor: function (c) {

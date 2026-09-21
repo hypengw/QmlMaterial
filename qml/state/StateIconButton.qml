@@ -1,10 +1,9 @@
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
 MD.MState {
     id: root
-    required property T.Button item
+    required property MD.ButtonBase item
     property int type: MD.Enum.IBtStandard
     property int size: MD.Enum.S
     property int widthMode: MD.Enum.DefaultWidth

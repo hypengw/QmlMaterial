@@ -1,13 +1,12 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Templates as T
 
 import Qcm.Material as MD
 
 MD.Menu {
     id: root
 
-    property alias actions: actionsInstantiator.model
+    property list<MD.Action> actions
 
     property Component submenuComponent
     property Component itemDelegate: MD.MenuItem {}
@@ -18,10 +17,11 @@ MD.Menu {
         property MD.Action action
     }
     property MD.Action parentAction
-    property T.MenuItem parentItem
+    property MD.MenuItem parentItem
 
     Instantiator {
         id: actionsInstantiator
+        model: root.actions
 
         active: root.visible
         delegate: QtObject {

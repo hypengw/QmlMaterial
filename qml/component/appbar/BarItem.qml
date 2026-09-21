@@ -1,13 +1,12 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.Button {
+MD.ButtonBase {
     id: control
 
     property int iconStyle: hasIcon ? MD.Enum.IconAndText : MD.Enum.TextOnly
-    readonly property bool hasIcon: MD.Util.hasIcon(icon)
+    readonly property bool hasIcon: !icon.empty
 
     property MD.StateBarItem mdState: MD.StateBarItem {
         item: control
@@ -27,6 +26,8 @@ T.Button {
 
     icon.width: 24
     icon.height: 24
+    icon.color: control.mdState.supportTextColor
+    icon.fill: control.checked
 
     font.weight: MD.Token.typescale.label_large.weight
     font.pointSize: MD.Token.typescale.label_large.size
@@ -39,14 +40,11 @@ T.Button {
             anchors.centerIn: parent
             spacing: 4
 
-            MD.Icon {
+            MD.IconView {
                 Layout.fillWidth: true
                 implicitWidth: 64
                 implicitHeight: 32
-                name: control.icon.name
-                size: control.icon.width
-                color: control.mdState.supportTextColor
-                fill: control.checked
+                icon: control.icon
             }
 
             MD.Text {

@@ -1,9 +1,8 @@
 pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Templates as T
 import Qcm.Material as MD
 
-T.ItemDelegate {
+MD.ItemDelegateBase {
     id: control
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
@@ -22,6 +21,7 @@ T.ItemDelegate {
 
     icon.width: 24
     icon.height: 24
+    icon.color: control.MD.MProp.color.on_background
 
     required property int index
     required property var model
@@ -46,9 +46,8 @@ T.ItemDelegate {
     property int wrapMode: Text.NoWrap
     property int maximumLineCount: 1
 
-    property Component leader: MD.Icon {
-        name: control.action ? control.action.icon.name : control.icon.name
-        size: control.action ? control.action.icon.width : control.icon.width
+    property Component leader: MD.IconView {
+        icon: control.icon
     }
 
     property Component trailing: null
@@ -91,7 +90,9 @@ T.ItemDelegate {
                     anchors.verticalCenter: parent.verticalCenter
                     visible: {
                         let ok = false;
-                        if (item instanceof MD.Icon) {
+                        if (item instanceof MD.IconView) {
+                            ok = !(item as MD.IconView).icon.empty;
+                        } else if (item instanceof MD.Icon) {
                             ok = (item as MD.Icon).name;
                         } else if (item instanceof MD.Loader) {
                             ok = (item as MD.Loader).item?.name;
