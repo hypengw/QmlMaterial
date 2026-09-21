@@ -79,7 +79,6 @@ T.Button {
 
     MD.ColorPickerDialog {
         id: m_dialog
-        parent: T.Overlay.overlay
         color: control.color
         showAlpha: control.showAlpha
         onAcceptedColor: function (c) {
