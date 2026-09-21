@@ -256,6 +256,9 @@ void Popup::resetLocale() {
     refreshEnvironment();
 }
 void Popup::updateOverlay() {
+    // Let Qt detach the item tree before the overlay closes its popups on destruction.
+    // Reparenting a focused surface during window teardown can access a deleted focus scope.
+    if (m_overlay && m_overlay->isWindowDestroying()) return;
     auto next = OverlayManager::get(m_parent ? m_parent->window() : nullptr);
     if (m_overlay == next) return;
     QPointer<Popup> guard(this);

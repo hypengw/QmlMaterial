@@ -5,7 +5,7 @@ Window {
     id: window
 
     default property alias contentData: body.contentData
-    final readonly property Item contentItem: body.contentItem
+    readonly property Item contentItem: body.contentItem
     property alias background: frame.background
     property alias menuBar: frame.header
     property alias header: body.header

@@ -26,6 +26,7 @@ public:
     void unregisterDrawer(Drawer*);
     void releaseDrawer(Drawer*);
     int  popupCount() const { return m_entries.size(); }
+    bool isWindowDestroying() const;
 
 protected:
     bool eventFilter(QObject*, QEvent*) override;

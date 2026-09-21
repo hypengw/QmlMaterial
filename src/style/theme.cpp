@@ -91,18 +91,18 @@ void Theme::updateInheritedValues() {
     auto* attached = qobject_cast<Theme*>(attachedParent());
 
     const auto textColorChanged =
-        inheritProp(m_textColor, attached ? attached->textColor() : theGlobalTheme->textColor);
+        inheritProp(m_textColor, attached ? attached->textColor() : theGlobalTheme()->textColor);
     const auto backgroundColorChanged =
         inheritProp(m_backgroundColor,
-                    attached ? attached->backgroundColor() : theGlobalTheme->backgroundColor);
+                    attached ? attached->backgroundColor() : theGlobalTheme()->backgroundColor);
     const auto elevationChanged =
-        inheritProp(m_elevation, attached ? attached->elevation() : theGlobalTheme->elevation);
+        inheritProp(m_elevation, attached ? attached->elevation() : theGlobalTheme()->elevation);
     const auto colorChanged =
-        inheritProp(m_color, attached ? attached->color() : theGlobalTheme->color);
+        inheritProp(m_color, attached ? attached->color() : theGlobalTheme()->color);
     const auto sizeChanged =
-        inheritProp(m_size, attached ? attached->size() : theGlobalTheme->size);
+        inheritProp(m_size, attached ? attached->size() : theGlobalTheme()->size);
     const auto pageChanged =
-        inheritProp(m_page, attached ? attached->page() : theGlobalTheme->page);
+        inheritProp(m_page, attached ? attached->page() : theGlobalTheme()->page);
 
     if (! textColorChanged && ! backgroundColorChanged && ! elevationChanged && ! colorChanged &&
         ! sizeChanged && ! pageChanged)

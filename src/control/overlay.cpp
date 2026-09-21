@@ -6,6 +6,7 @@
 #include <QTouchEvent>
 #include <QWheelEvent>
 #include <QQmlInfo>
+#include <QtQuick/private/qquickwindow_p.h>
 #include <algorithm>
 
 namespace qml_material
@@ -15,12 +16,15 @@ namespace
 constexpr auto overlayKey = "_qcm_material_overlay";
 }
 OverlayManager* OverlayManager::get(QQuickWindow* window) {
-    if (! window) return nullptr;
+    if (! window || QQuickWindowPrivate::get(window)->inDestructor) return nullptr;
     if (auto existing = window->property(overlayKey).value<QObject*>())
         return qobject_cast<OverlayManager*>(existing);
     auto overlay = new OverlayManager(window);
     window->setProperty(overlayKey, QVariant::fromValue<QObject*>(overlay));
     return overlay;
+}
+bool OverlayManager::isWindowDestroying() const {
+    return m_window && QQuickWindowPrivate::get(m_window)->inDestructor;
 }
 OverlayManager::OverlayManager(QQuickWindow* window)
     : QQuickItem(window->contentItem()), m_window(window) {
@@ -175,7 +179,7 @@ void OverlayManager::remove(Popup* popup) {
     }
 }
 void OverlayManager::restoreFocus(Popup* popup, QQuickItem* previous) {
-    if (! m_window) return;
+    if (! m_window || isWindowDestroying()) return;
     auto current = m_window->activeFocusItem();
     if (current && current != popup->surfaceItem() && ! popup->surfaceItem()->isAncestorOf(current))
         return;

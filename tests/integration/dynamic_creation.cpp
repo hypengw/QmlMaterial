@@ -266,6 +266,44 @@ private:
     }
 
 private Q_SLOTS:
+    void popupSurvivesWindowDestruction() {
+        auto window = std::make_unique<QQuickWindow>();
+        window->resize(640, 480);
+        QQuickItem host;
+        host.setParentItem(window->contentItem());
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            MD.PopupBase {
+                width: 100; height: 80
+                focus: true
+                modal: true
+            }
+        )", QUrl("qrc:/tests/popup-window-destruction.qml"));
+        std::unique_ptr<qml_material::Popup> popup(
+            qobject_cast<qml_material::Popup*>(component.create()));
+        QVERIFY2(popup, qPrintable(component.errorString()));
+        popup->setParentItem(&host);
+        popup->open();
+        QVERIFY(popup->isOpened());
+        QCOMPARE(window->activeFocusItem(), popup->surfaceItem());
+        QSignalSpy closed(popup.get(), &qml_material::Popup::closed);
+        window.reset();
+        QCOMPARE(closed.count(), 1);
+        QVERIFY(!popup->isVisible());
+        QVERIFY(!popup->overlayItem());
+        QVERIFY(!popup->surfaceItem()->window());
+        QVERIFY(!popup->surfaceItem()->parentItem());
+
+        QQuickWindow replacement;
+        host.setParentItem(replacement.contentItem());
+        popup->open();
+        QVERIFY(popup->isOpened());
+        QCOMPARE(popup->surfaceItem()->window(), &replacement);
+        popup->close();
+    }
+
     void popupCoordinates() {
         QQuickWindow window;
         window.resize(640, 480);

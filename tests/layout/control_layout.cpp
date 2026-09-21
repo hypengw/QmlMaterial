@@ -16,6 +16,7 @@
 #endif
 
 #include "qml_material/control/tool_tip.hpp"
+#include "qml_material/control/icon_spec.hpp"
 #include "qml_material/layout/layout_container.hpp"
 
 namespace
@@ -75,6 +76,17 @@ QQuickItem* itemWithAction(QQuickItem* root, QObject* action) {
         if (auto* match = itemWithAction(child, action)) {
             return match;
         }
+    }
+    return nullptr;
+}
+
+QQuickItem* itemWithIconView(QQuickItem* root) {
+    if (auto* icon = root->property("icon").value<qml_material::IconSpec*>();
+        icon && !icon->isEmpty()) {
+        return root;
+    }
+    for (auto* child : root->childItems()) {
+        if (auto* match = itemWithIconView(child)) return match;
     }
     return nullptr;
 }
@@ -304,13 +316,7 @@ private Q_SLOTS:
         QVERIFY(label);
         QCOMPARE(label->isVisible(), labelVisible);
 
-        QQuickItem* icon = nullptr;
-        for (auto* child : row->childItems()) {
-            if (! child->property("name").toString().isEmpty()) {
-                icon = child;
-                break;
-            }
-        }
+        auto* icon = itemWithIconView(row);
         QVERIFY(icon);
         QCOMPARE(icon->isVisible(), iconVisible);
     }
@@ -376,7 +382,7 @@ private Q_SLOTS:
             QVERIFY(icon);
             QVERIFY(! label->isVisible());
             QVERIFY(icon->isVisible());
-            QCOMPARE(icon->x(), expectedIconX);
+            QCOMPARE(icon->mapToItem(content, QPointF()).x(), expectedIconX);
         };
 
         verifyIconOnly(collapsed, 32.0, 36.0);
@@ -779,12 +785,9 @@ private Q_SLOTS:
         QVERIFY(! row->childItems().empty());
         auto* leading = row->childItems().front();
 
-        QQuickItem* icon   = nullptr;
+        QQuickItem* icon   = itemWithIconView(leading);
         QQuickItem* loader = nullptr;
         for (auto* child : leading->childItems()) {
-            if (! child->property("name").toString().isEmpty()) {
-                icon = child;
-            }
             if (child->property("active").isValid()) {
                 loader = child;
             }
