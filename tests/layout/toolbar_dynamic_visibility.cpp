@@ -1,11 +1,9 @@
 #include "qml_material/layout/toolbar_layout.hpp"
-#include "qml_material/util/loggingcategory.hpp"
 
 #include <QCoreApplication>
 #include <QElapsedTimer>
 #include <QEventLoop>
 #include <QGuiApplication>
-#include <QLoggingCategory>
 #include <QQmlComponent>
 #include <QQmlEngine>
 #include <QQuickItem>
@@ -16,8 +14,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <functional>
-
-Q_LOGGING_CATEGORY(qml_material_logcat, "qcm.material.test")
 
 namespace
 {

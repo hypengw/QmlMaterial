@@ -12,6 +12,7 @@
 #include <QQmlEngine>
 #include <memory>
 #include "qml_material/control/action.hpp"
+#include "qml_material/export.hpp"
 
 namespace qml_material
 {
@@ -22,7 +23,7 @@ class ToolBarLayoutPrivate;
 /**
  * Attached property for ToolBarLayout delegates.
  */
-class ToolBarLayoutAttached : public QObject
+class QML_MATERIAL_API ToolBarLayoutAttached : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(Action* action READ action CONSTANT FINAL)
@@ -39,7 +40,7 @@ private:
 /**
  * An item that creates delegates for actions and lays them out in a row.
  */
-class ToolBarLayout : public QQuickItem
+class QML_MATERIAL_API ToolBarLayout : public QQuickItem
 {
     Q_OBJECT
     QML_ELEMENT

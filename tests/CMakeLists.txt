@@ -122,14 +122,9 @@ target_link_libraries(qm_grab PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Qu
 set_target_properties(qm_grab PROPERTIES AUTOMOC ON)
 
 add_executable(toolbar_dynamic_visibility
-  layout/toolbar_dynamic_visibility.cpp
-  ${CMAKE_SOURCE_DIR}/src/layout/toolbar_layout.cpp
-  ${CMAKE_SOURCE_DIR}/src/layout/toolbar_layout_delegate.cpp
-  ${CMAKE_SOURCE_DIR}/src/layout/toolbar_layout_delegate.hpp
-  ${CMAKE_SOURCE_DIR}/include/qml_material/layout/toolbar_layout.hpp)
+  layout/toolbar_dynamic_visibility.cpp)
 target_include_directories(toolbar_dynamic_visibility PRIVATE
-  ${CMAKE_SOURCE_DIR}/include
-  ${CMAKE_SOURCE_DIR}/src/layout)
+  ${CMAKE_SOURCE_DIR}/include)
 target_compile_definitions(toolbar_dynamic_visibility PRIVATE
   TOOLBAR_DYNAMIC_QML_PATH="${CMAKE_CURRENT_SOURCE_DIR}/layout/toolbar_dynamic_visibility.qml")
 target_link_libraries(toolbar_dynamic_visibility PRIVATE
