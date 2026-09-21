@@ -55,6 +55,7 @@ T.Button {
 
             MD.Label {
                 text: control.text
+                color: control.mdState.textColor
                 verticalAlignment: Text.AlignVCenter
                 typescale: MD.Token.typescale.label_large
                 wrapMode: Text.NoWrap
