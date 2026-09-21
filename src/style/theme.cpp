@@ -24,7 +24,13 @@ struct GlobalTheme {
     PageContext  page_;
     PageContext* page { &page_ };
 };
-Q_GLOBAL_STATIC(GlobalTheme, theGlobalTheme)
+// The default objects below are handed to QML and bindings may still read them
+// while static destruction is running, which would turn every color into null.
+// Create them once and keep them for the process lifetime.
+GlobalTheme* theGlobalTheme() {
+    static GlobalTheme* const the = new GlobalTheme();
+    return the;
+}
 
 } // namespace
 
@@ -37,11 +43,11 @@ Theme* Theme::qmlAttachedProperties(QObject* object) { return new Theme(object);
 
 #define IMPL_ATTACH_PROP(_type_, _name_, _prop_, ...)                                      \
     Theme::AttachProp<_type_>& Theme::get_##_name_() { return _prop_; }                    \
-    _type_ Theme::_name_() const { return _prop_.value.value_or(theGlobalTheme->_name_); } \
+    _type_ Theme::_name_() const { return _prop_.value.value_or(theGlobalTheme()->_name_); } \
     void   Theme::set_##_name_(_type_ v) { setProp(_prop_, v); }                           \
     void   Theme::reset_##_name_() {                                                       \
         auto* attached = qobject_cast<Self*>(attachedParent());                            \
-        resetProp(_prop_, attached ? attached->_name_() : theGlobalTheme->_name_);         \
+        resetProp(_prop_, attached ? attached->_name_() : theGlobalTheme()->_name_);         \
     }
 
 IMPL_ATTACH_PROP(QColor, textColor, m_textColor)
