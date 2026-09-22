@@ -576,12 +576,8 @@ qt_add_qml_module(
   SOURCES
   ${SOURCES}
   RESOURCES
-  ${RESOURCES}
-  NO_GENERATE_PLUGIN_SOURCE
-  NO_PLUGIN_OPTIONAL)
+  ${RESOURCES})
 add_library("${LIBNAME}::${LIBNAME}" ALIAS ${LIBNAME})
-
-target_sources("${LIBNAME}plugin" PRIVATE src/plugin.cpp)
 
 target_compile_features(${LIBNAME} PUBLIC cxx_std_20)
 target_compile_definitions(${LIBNAME} PRIVATE QML_MATERIAL_EXPORT)

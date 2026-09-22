@@ -1,6 +1,18 @@
 #include "qml_material/util/corner.hpp"
 
+#include <QtCore/QCoreApplication>
+#include <QtCore/QVariantAnimation>
+
 using namespace qml_material;
+
+namespace
+{
+void registerCornersGroupInterpolator() {
+    qRegisterAnimationInterpolator<CornersGroup>(&CornersGroup::interpolated);
+}
+} // namespace
+
+Q_COREAPP_STARTUP_FUNCTION(registerCornersGroupInterpolator)
 
 CornersGroup::CornersGroup() noexcept: CornersGroup(0) {}
 CornersGroup::CornersGroup(qreal r) noexcept: CornersGroup(r, r, r, r) {}
