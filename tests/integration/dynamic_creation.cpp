@@ -432,6 +432,75 @@ private Q_SLOTS:
         QCOMPARE(popup->surfaceItem()->size(), modal ? QSizeF(640, 480) : QSizeF(500, 350));
     }
 
+    void tooltipOutsidePressDoesNotShieldModalPopup() {
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+
+            Item {
+                width: 640
+                height: 480
+                property alias popup: popup
+                property alias tooltip: tooltip
+
+                MD.PopupBase {
+                    id: popup
+                    x: 220
+                    y: 160
+                    width: 200
+                    height: 120
+                    modal: true
+                    dim: false
+                    collisionPolicy: MD.PopupBase.Unrestricted
+                    closePolicy: MD.PopupBase.CloseOnEscape | MD.PopupBase.CloseOnPressOutside
+                    enter: null
+                    exit: null
+
+                    Item {
+                        id: tipAnchor
+                        anchors.centerIn: parent
+                        width: 48
+                        height: 32
+
+                        MD.PlainToolTip {
+                            id: tooltip
+                            parent: tipAnchor
+                            text: "Tip"
+                            delay: 0
+                            timeout: -1
+                            enter: null
+                            exit: null
+                        }
+                    }
+                }
+            }
+        )",
+                          QUrl(QStringLiteral("qrc:/tests/tooltip-outside-modal-popup.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* root = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(root);
+        root->setParentItem(m_window.contentItem());
+
+        auto* popup =
+            qobject_cast<qml_material::Popup*>(qvariant_cast<QObject*>(object->property("popup")));
+        auto* tooltip = qobject_cast<qml_material::Popup*>(
+            qvariant_cast<QObject*>(object->property("tooltip")));
+        QVERIFY(popup);
+        QVERIFY(tooltip);
+
+        popup->open();
+        QTRY_VERIFY(popup->isOpened());
+        tooltip->open();
+        QTRY_VERIFY(tooltip->isOpened());
+
+        QTest::mouseClick(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(20, 20));
+        QTRY_VERIFY(! tooltip->isVisible());
+        QTRY_VERIFY(! popup->isVisible());
+    }
+
     void initTestCase() {
         m_engine.addImportPath(QCoreApplication::applicationDirPath() +
                                QStringLiteral("/../qml_modules"));

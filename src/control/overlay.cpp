@@ -280,25 +280,38 @@ bool OverlayManager::blocks(const QPointF& point) const {
 bool OverlayManager::press(const QPointF& point) {
     m_pressed          = true;
     m_pressOwner       = nullptr;
+    m_outside          = false;
+    m_outsideParent    = false;
     m_blocked          = blocks(point);
     const auto entries = m_entries;
     for (auto it = entries.crbegin(); it != entries.crend(); ++it) {
         auto popup = it->popup;
         if (! popup || ! popup->overlayContainsScenePoint(point)) continue;
-        m_pressOwner    = popup;
-        m_outside       = ! popup->containsScenePoint(point);
-        m_outsideParent = m_outside && ! popup->parentContainsScenePoint(point);
-        if (! m_outside) break;
+        const bool pointBlocked  = popup->blocksScenePoint(point);
+        const bool outside       = ! popup->containsScenePoint(point);
+        const bool outsideParent = outside && ! popup->parentContainsScenePoint(point);
+        m_pressOwner             = popup;
+        m_outside                = outside;
+        m_outsideParent          = outsideParent;
+        if (! outside) break;
         const auto policy = popup->closePolicy();
         if (! popup->closing() &&
             ((policy.testFlag(Popup::CloseOnPressOutside)) ||
-             (m_outsideParent && policy.testFlag(Popup::CloseOnPressOutsideParent)))) {
+             (outsideParent && policy.testFlag(Popup::CloseOnPressOutsideParent)))) {
             popup->closeFromInput();
-            break;
+            if (pointBlocked) break;
+            m_pressOwner    = nullptr;
+            m_outside       = false;
+            m_outsideParent = false;
+            continue;
         }
-        if (popup->modal() || policy.testFlag(Popup::CloseOnReleaseOutside) ||
-            policy.testFlag(Popup::CloseOnReleaseOutsideParent))
-            break;
+        const bool closesOnRelease =
+            ! popup->closing() && (policy.testFlag(Popup::CloseOnReleaseOutside) ||
+                                   policy.testFlag(Popup::CloseOnReleaseOutsideParent));
+        if (pointBlocked || closesOnRelease) break;
+        m_pressOwner    = nullptr;
+        m_outside       = false;
+        m_outsideParent = false;
     }
     return m_blocked;
 }
