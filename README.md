@@ -35,20 +35,13 @@ MD.Text {
 > [!NOTE]
 > Never import `Qcm.Material` without `as`, unless you know what you are doing.  
 
-### No QtQuick.Controls
-This library only use `QtQuick.Templates`.  
-No needs to import `QtQuick.Controls`, unless you need control from Quick Control Style.  
+### No QtQuick.Controls and QtQuick.Templates
+This library only use custom controls in cpp.    
+No needs to import `QtQuick.Controls` or `QtQuick.Templates`.  
 
 Some type annotations:  
 - not accept `Action`, use `MD.Action` instead
-- not accept Attached Properties/Signals form `QtQuick.Controls`, use `QtQuick.Templates as T`
-  ```qml
-    import QtQuick.Templates as T
-
-    T.Overlay.modal: ...
-    T.ScrollBar.vertical: ...
-    ...
-  ```
+- not accept Attached Properties/Signals form `QtQuick.Controls`, use `MD.XXX`
 
 ### Variation Icon
 CMake option: `QM_ICON_FONT_URL`  
