@@ -15,6 +15,7 @@
 #include "qml_material/control/popup_presenter.hpp"
 #include "qml_material/control/popup.hpp"
 #include "qml_material/control/action_group.hpp"
+#include "qml_material/control/application_window.hpp"
 #include "qml_material/control/button_group.hpp"
 #include "qml_material/control/tool_separator.hpp"
 #include "qml_material/util/pool.hpp"
@@ -499,6 +500,56 @@ private Q_SLOTS:
         QTest::mouseClick(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(20, 20));
         QTRY_VERIFY(! tooltip->isVisible());
         QTRY_VERIFY(! popup->isVisible());
+    }
+
+    void applicationWindowOwnsContent() {
+        QTest::failOnWarning(QRegularExpression(QStringLiteral(".*contentItem.*overrides.*")));
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+
+            MD.ApplicationWindow {
+                width: 320
+                height: 240
+                property alias contentChild: contentChild
+                property alias appBackground: appBackground
+                property alias appMenuBar: appMenuBar
+                property alias appHeader: appHeader
+                property alias appFooter: appFooter
+
+                background: Item { id: appBackground }
+                menuBar: Item { id: appMenuBar }
+                header: Item { id: appHeader }
+                footer: Item { id: appFooter }
+
+                Item {
+                    id: contentChild
+                    objectName: "contentChild"
+                    width: 16
+                    height: 16
+                }
+            }
+        )",
+                          QUrl(QStringLiteral("qrc:/tests/application-window-content.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* window = qobject_cast<qml_material::ApplicationWindow*>(object.get());
+        QVERIFY(window);
+
+        auto* contentChild = qvariant_cast<QQuickItem*>(object->property("contentChild"));
+        QVERIFY(contentChild);
+        QCOMPARE(contentChild->parentItem(), window->contentItem());
+        QCOMPARE(window->background(),
+                 qvariant_cast<QQuickItem*>(object->property("appBackground")));
+        QCOMPARE(window->menuBar(), qvariant_cast<QQuickItem*>(object->property("appMenuBar")));
+        QCOMPARE(window->header(), qvariant_cast<QQuickItem*>(object->property("appHeader")));
+        QCOMPARE(window->footer(), qvariant_cast<QQuickItem*>(object->property("appFooter")));
+        QCOMPARE(window->frameItem()->parentItem(),
+                 static_cast<QQuickWindow*>(window)->contentItem());
+        QCOMPARE(window->frameItem()->size(),
+                 static_cast<QQuickWindow*>(window)->contentItem()->size());
     }
 
     void initTestCase() {

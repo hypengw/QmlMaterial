@@ -109,6 +109,8 @@ set(SOURCES
     src/util/hct.cpp
     src/control/page_context.cpp
     src/control/color_picker.cpp
+    src/control/application_window.cpp
+    include/qml_material/control/application_window.hpp
     src/control/control.cpp
     src/control/slider.cpp
     src/control/scroll_indicator.cpp
