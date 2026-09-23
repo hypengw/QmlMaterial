@@ -1,4 +1,24 @@
 <releases>
+  <release version="0.4.0" date="2026-09-23">
+    <description>
+      <p>Added:</p>
+      <ul>
+        <li>Native control infrastructure that drops the Qt Quick Templates dependency.</li>
+        <li>Attached property propagation for the native control stack.</li>
+      </ul>
+      <p>Changed:</p>
+      <ul>
+        <li>Use the generated QML plugin for module registration.</li>
+        <li>Elide ComboBox display text and size its popup independently from the control.</li>
+        <li>Skip initial TextField floating label animations.</li>
+      </ul>
+      <p>Fixed:</p>
+      <ul>
+        <li>Keep default theme objects alive for the process lifetime.</li>
+        <li>Keep Dialog height independent of window height.</li>
+      </ul>
+    </description>
+  </release>
   <release version="0.3.0" date="2026-09-16">
     <description>
       <p>Added:</p>
