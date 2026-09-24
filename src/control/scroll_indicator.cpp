@@ -1,6 +1,6 @@
 #include "qml_material/control/scroll_indicator.hpp"
 #include "qml_material/util/qt.hpp"
-#include <QtQuick/private/qquickflickable_p.h>
+#include "scroll_viewport.hpp"
 #include <QQmlInfo>
 #include <algorithm>
 #include <cmath>
@@ -110,7 +110,8 @@ ScrollIndicatorAttached::ScrollIndicatorAttached(QObject* parent)
 ScrollIndicatorAttached::ScrollIndicatorAttached(QObject* target, QObject* parent,
                                                  bool bidirectional)
     : QObject(parent),
-      m_flickable(qobject_cast<QQuickFlickable*>(target)),
+      m_viewport(std::make_unique<ScrollViewport>(target)),
+      m_flickable(m_viewport->item()),
       m_bidirectional(bidirectional) {
     if (! m_flickable) {
         qmlWarning(target) << "Scroll indicator/bar must be attached to a Flickable";
@@ -124,11 +125,8 @@ ScrollIndicatorAttached::ScrollIndicatorAttached(QObject* target, QObject* paren
         layout(m_horizontal, true);
         layout(m_vertical, false);
     });
-    connect(m_flickable, &QQuickFlickable::movingHorizontallyChanged, this, [this]() {
-        activate(m_horizontal, true);
-    });
-    connect(m_flickable, &QQuickFlickable::movingVerticallyChanged, this, [this]() {
-        activate(m_vertical, false);
+    m_viewport->observeMoving(this, [this](bool horizontal) {
+        activate(horizontal ? m_horizontal : m_vertical, horizontal);
     });
 }
 
@@ -149,8 +147,7 @@ void ScrollIndicatorAttached::detach(Axis& axis) {
 
 void ScrollIndicatorAttached::activate(Axis& axis, bool horizontal) {
     if (axis.item && m_flickable)
-        axis.item->setMoving(horizontal ? m_flickable->isMovingHorizontally()
-                                        : m_flickable->isMovingVertically());
+        axis.item->setMoving(m_viewport->moving(horizontal));
 }
 
 void ScrollIndicatorAttached::syncHorizontal() { sync(m_horizontal, true); }
@@ -167,7 +164,7 @@ void ScrollIndicatorAttached::sync(Axis& axis, bool horizontal) {
     do {
         axis.syncPending    = false;
         auto       item     = axis.item;
-        auto       area     = m_flickable->property("visibleArea").value<QObject*>();
+        auto       area     = m_viewport->visibleArea();
         const auto size     = area->property(horizontal ? "widthRatio" : "heightRatio").toReal();
         const auto position = area->property(horizontal ? "xPosition" : "yPosition").toReal();
         item->setSize(size);
@@ -181,20 +178,17 @@ void ScrollIndicatorAttached::sync(Axis& axis, bool horizontal) {
 void ScrollIndicatorAttached::scroll(Axis& axis, bool horizontal) {
     QPointer<ScrollIndicatorAttached> guard(this);
     if (! axis.item || ! m_flickable || axis.syncing) return;
-    auto       area     = m_flickable->property("visibleArea").value<QObject*>();
+    auto       area     = m_viewport->visibleArea();
     const auto ratio    = area->property(horizontal ? "widthRatio" : "heightRatio").toReal();
     const auto position = area->property(horizontal ? "xPosition" : "yPosition").toReal();
     const auto viewport = horizontal ? m_flickable->width() : m_flickable->height();
     if (ratio <= 0 || viewport <= 0) return;
-    const auto content = horizontal ? m_flickable->contentX() : m_flickable->contentY();
-    const auto aligned = m_flickable->pixelAligned() ? std::round(content) : content;
+    const auto content = m_viewport->offset(horizontal);
+    const auto aligned = m_viewport->pixelAligned() ? std::round(content) : content;
     const auto target  = aligned + (axis.item->position() - position) * viewport / ratio;
     if (! std::isfinite(target) || qFuzzyCompare(target, content)) return;
     axis.syncing = true;
-    if (horizontal)
-        m_flickable->setContentX(target);
-    else
-        m_flickable->setContentY(target);
+    m_viewport->setOffset(horizontal, target);
     if (! guard) return;
     axis.syncing = false;
     sync(axis, horizontal);
@@ -248,7 +242,7 @@ void ScrollIndicatorAttached::attach(Axis& axis, ScrollIndicator* indicator, boo
     if (item) {
         item->m_attachment = this;
         // visibleArea owns margin/origin/overshoot normalization; do not reconstruct it here.
-        auto area = m_flickable->property("visibleArea").value<QObject*>();
+        auto area = m_viewport->visibleArea();
         if (horizontal) {
             axis.connections.append(
                 connect(area, SIGNAL(widthRatioChanged(qreal)), this, SLOT(syncHorizontal())));

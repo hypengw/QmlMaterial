@@ -8,13 +8,17 @@
 #include <QQmlListProperty>
 #include <QQuickItem>
 #include <QVector>
+#include <QPointerEvent>
+#include <memory>
+#include "qml_material/scrollable/scroll_motion.hpp"
+#include "qml_material/export.hpp"
 
 namespace qml_material
 {
 
 class Flickable;
 
-class FlickableVisibleArea : public QObject {
+class QML_MATERIAL_API FlickableVisibleArea : public QObject {
     Q_OBJECT
     QML_ANONYMOUS
 
@@ -46,9 +50,9 @@ private:
     qreal               m_heightRatio { 1 };
 };
 
-class Flickable : public QQuickItem {
+class QML_MATERIAL_API Flickable : public QQuickItem {
     Q_OBJECT
-    QML_NAMED_ELEMENT(Flickable2)
+    QML_NAMED_ELEMENT(Scrollable)
 
     Q_PROPERTY(
         qreal contentWidth READ contentWidth WRITE setContentWidth NOTIFY contentWidthChanged)
@@ -110,7 +114,7 @@ public:
     explicit Flickable(QQuickItem* parent = nullptr);
     ~Flickable() override;
 
-    QQmlListProperty<QObject> flickableData();
+    QQmlListProperty<QObject>    flickableData();
     QQmlListProperty<QQuickItem> flickableChildren();
 
     enum FlickableDirection
@@ -132,28 +136,28 @@ public:
     Q_ENUM(InputMaskMode)
 
     qreal contentWidth() const;
-    void setContentWidth(qreal value);
+    void  setContentWidth(qreal value);
 
     qreal contentHeight() const;
-    void setContentHeight(qreal value);
+    void  setContentHeight(qreal value);
 
-    qreal         contentX() const;
+    qreal        contentX() const;
     virtual void setContentX(qreal position);
 
-    qreal         contentY() const;
+    qreal        contentY() const;
     virtual void setContentY(qreal position);
 
     qreal topMargin() const;
-    void setTopMargin(qreal value);
+    void  setTopMargin(qreal value);
 
     qreal bottomMargin() const;
-    void setBottomMargin(qreal value);
+    void  setBottomMargin(qreal value);
 
     qreal leftMargin() const;
-    void setLeftMargin(qreal value);
+    void  setLeftMargin(qreal value);
 
     qreal rightMargin() const;
-    void setRightMargin(qreal value);
+    void  setRightMargin(qreal value);
 
     virtual qreal originY() const;
     virtual qreal originX() const;
@@ -168,14 +172,14 @@ public:
     bool isDraggingHorizontally() const;
     bool isDraggingVertically() const;
 
-    int pressDelay() const;
+    int  pressDelay() const;
     void setPressDelay(int delay);
 
     qreal maximumFlickVelocity() const;
-    void setMaximumFlickVelocity(qreal value);
+    void  setMaximumFlickVelocity(qreal value);
 
     qreal flickDeceleration() const;
-    void setFlickDeceleration(qreal value);
+    void  setFlickDeceleration(qreal value);
 
     bool isInteractive() const;
     void setInteractive(bool value);
@@ -191,7 +195,7 @@ public:
     QQuickItem* contentItem() const;
 
     FlickableDirection flickableDirection() const;
-    void setFlickableDirection(FlickableDirection direction);
+    void               setFlickableDirection(FlickableDirection direction);
 
     bool pixelAligned() const;
     void setPixelAligned(bool align);
@@ -200,20 +204,33 @@ public:
     void setSynchronousDrag(bool value);
 
     Qt::MouseButtons acceptedButtons() const;
-    void setAcceptedButtons(Qt::MouseButtons buttons);
+    void             setAcceptedButtons(Qt::MouseButtons buttons);
 
     InputMaskMode inputMaskMode() const;
-    void setInputMaskMode(InputMaskMode mode);
+    void          setInputMaskMode(InputMaskMode mode);
 
     QQuickItem* interactionItem() const;
-    void setInteractionItem(QQuickItem* item);
-    void resetInteractionItem();
+    void        setInteractionItem(QQuickItem* item);
+    void        resetInteractionItem();
 
     FlickableVisibleArea* visibleArea();
 
     Q_INVOKABLE void resizeContent(qreal width, qreal height, QPointF center);
     Q_INVOKABLE void flick(qreal xVelocity, qreal yVelocity);
     Q_INVOKABLE void cancelFlick();
+
+    enum class ScrollInput
+    {
+        Direct,
+        Smooth
+    };
+    struct ScrollConsumption {
+        QPointF consumed;
+        QPointF remaining;
+    };
+    // Positive deltas increase content offsets; smooth consumption reserves target distance.
+    ScrollConsumption consumeScroll(QPointF delta, ScrollInput input,
+                                    Qt::ScrollPhase phase = Qt::NoScrollPhase);
 
     Q_SIGNAL void contentWidthChanged();
     Q_SIGNAL void contentHeightChanged();
@@ -259,16 +276,23 @@ public:
     Q_SIGNAL void interactionItemChanged();
 
 protected:
-    auto childMouseEventFilter(QQuickItem* item, QEvent* event) -> bool override;
-    auto mousePressEvent(QMouseEvent* event) -> void override;
-    auto mouseMoveEvent(QMouseEvent* event) -> void override;
-    auto mouseReleaseEvent(QMouseEvent* event) -> void override;
-    auto touchEvent(QTouchEvent* event) -> void override;
-    auto wheelEvent(QWheelEvent* event) -> void override;
-    auto timerEvent(QTimerEvent* event) -> void override;
+    // Commit extent and anchor correction together without cancelling an in-range trajectory.
+    void         updateContentGeometry(QSizeF extent, QPointF anchorDelta = {});
+    virtual void scrollInputStarted();
+    virtual void scrollActivityCancelled();
+    void         setVerticalScrollTarget(qreal position);
+    auto         childMouseEventFilter(QQuickItem* item, QEvent* event) -> bool override;
+    auto         mousePressEvent(QMouseEvent* event) -> void override;
+    auto         mouseMoveEvent(QMouseEvent* event) -> void override;
+    auto         mouseReleaseEvent(QMouseEvent* event) -> void override;
+    auto         touchEvent(QTouchEvent* event) -> void override;
+    auto         wheelEvent(QWheelEvent* event) -> void override;
+    auto         timerEvent(QTimerEvent* event) -> void override;
+    auto         updatePolish() -> void override;
     auto geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry) -> void override;
     auto componentComplete() -> void override;
     auto mouseUngrabEvent() -> void override;
+    auto touchUngrabEvent() -> void override;
 
 protected:
     virtual auto minXExtent() const -> qreal;
@@ -290,13 +314,8 @@ private:
         VerticalAxis,
     };
 
-    enum MotionMode
-    {
-        NoMotion,
-        FlickMotion,
-    };
-
     struct AxisData {
+        qreal                         position { 0 };
         qreal                         viewSize { -1 };
         qreal                         startMargin { 0 };
         qreal                         endMargin { 0 };
@@ -307,18 +326,14 @@ private:
         qreal                         previousDragDelta { 0 };
         qreal                         velocity { 0 };
         qreal                         smoothVelocity { 0 };
-        qreal                         motionStart { 0 };
-        qreal                         motionTarget { 0 };
-        qreal                         motionVelocity { 0 };
-        qreal                         motionDuration { 0 };
-        qreal                         motionElapsed { 0 };
+        ScrollMotion                  motion;
         QVector<QPair<qint64, qreal>> velocityBuffer;
-        MotionMode                    motionMode { NoMotion };
         bool                          atEnd { false };
         bool                          atBeginning { true };
         bool                          moving { false };
         bool                          flicking { false };
         bool                          dragging { false };
+        bool                          platformScrolling { false };
 
         auto resetDrag() -> void;
         auto addVelocitySample(qint64 timestamp, qreal position, qreal maxVelocity) -> void;
@@ -338,6 +353,7 @@ private:
     auto axisData(Axis axis) const -> const AxisData&;
     auto axisPosition(Axis axis) const -> qreal;
     auto setAxisPosition(Axis axis, qreal position) -> void;
+    void setContentPosition(Axis axis, qreal position);
     auto minExtent(Axis axis) const -> qreal;
     auto maxExtent(Axis axis) const -> qreal;
     auto viewportSize(Axis axis) const -> qreal;
@@ -347,6 +363,7 @@ private:
     auto updateContentSize(Axis axis) -> void;
     auto updateBeginningEnd() -> void;
     auto updateVisibleArea() -> void;
+    void flushContentGeometry();
 
     auto setAxisMoving(Axis axis, bool value) -> void;
     auto setAxisDragging(Axis axis, bool value) -> void;
@@ -360,8 +377,10 @@ private:
 
     auto startAxisFlick(Axis axis, qreal velocity) -> void;
     auto stopAxisMotion(Axis axis) -> void;
-    auto ensureMotionTimer() -> void;
-    auto advanceAxis(Axis axis, qreal deltaSeconds) -> void;
+    auto requestMotionFrame() -> void;
+    auto attachMotionWindow(QQuickWindow* window) -> void;
+    void cancelScrollActivity();
+    auto advanceAxis(Axis axis, qreal now) -> void;
     auto fixup(Axis axis) -> void;
     auto isAxisAnimating(Axis axis) const -> bool;
 
@@ -369,6 +388,9 @@ private:
     auto handleMove(const QPointF& position, qint64 timestamp, Qt::MouseButtons buttons) -> void;
     auto handleRelease(const QPointF& position, qint64 timestamp) -> void;
     auto cancelInteraction() -> void;
+    bool captureDelayedPress(QQuickItem*, QPointerEvent*);
+    void clearDelayedPress();
+    void replayDelayedPress(QPointerEvent* release = nullptr);
     auto buttonsAccepted(const QSinglePointEvent* event) const -> bool;
     auto pointerAccepted(QQuickItem* receiver, QEvent* event) const -> bool;
     auto acceptsPoint(const QPointF& point) const -> bool;
@@ -376,31 +398,39 @@ private:
     auto ignorePointerEvent(QEvent* event) const -> void;
 
 private:
-    QQuickItem*           m_contentItem { nullptr };
-    QList<QObject*>       m_data;
-    AxisData              m_hData;
-    AxisData              m_vData;
-    FlickableVisibleArea* m_visibleArea { nullptr };
-    QPointer<QQuickItem>  m_interactionItem;
-    QBasicTimer           m_motionTimer;
-    QElapsedTimer         m_motionClock;
-    QBasicTimer           m_pressDelayTimer;
-    QPointF               m_pressPos;
-    QPointF               m_lastPos;
-    qint64                m_lastPosTime { -1 };
-    qint64                m_lastPressTime { -1 };
-    FlickableDirection    m_flickableDirection { AutoFlickDirection };
-    InputMaskMode         m_inputMaskMode { Viewport };
-    qreal                 m_deceleration { 5000 };
-    qreal                 m_wheelDeceleration { 15000 };
-    qreal                 m_maxVelocity { 2500 };
-    int                   m_pressDelay { 0 };
-    bool                  m_pressed { false };
-    bool                  m_stealMouse { false };
-    bool                  m_interactive { true };
-    bool                  m_pixelAligned { false };
-    bool                  m_syncDrag { false };
-    Qt::MouseButtons      m_acceptedButtons { Qt::LeftButton };
+    QQuickItem*             m_contentItem { nullptr };
+    quint64                 m_geometryRevision { 0 };
+    unsigned                m_geometryNotifications { 0 };
+    bool                    m_syncingGeometry { false };
+    QList<QObject*>         m_data;
+    AxisData                m_hData;
+    AxisData                m_vData;
+    FlickableVisibleArea*   m_visibleArea { nullptr };
+    QPointer<QQuickItem>    m_interactionItem;
+    QMetaObject::Connection m_frameConnection;
+    QMetaObject::Connection m_windowVisibilityConnection;
+    bool m_motionWindowAttached = false;
+    QElapsedTimer           m_motionClock;
+    QBasicTimer             m_pressDelayTimer;
+    std::unique_ptr<QPointerEvent> m_delayedPress;
+    QPointer<QQuickItem> m_delayedReceiver;
+    QPointer<QQuickWindow> m_delayedWindow;
+    bool m_replayingPress = false;
+    QPointF                 m_pressPos;
+    QPointF                 m_lastPos;
+    qint64                  m_lastPosTime { -1 };
+    qint64                  m_lastPressTime { -1 };
+    FlickableDirection      m_flickableDirection { AutoFlickDirection };
+    InputMaskMode           m_inputMaskMode { Viewport };
+    qreal                   m_deceleration { 5000 };
+    qreal                   m_maxVelocity { 2500 };
+    int                     m_pressDelay { 0 };
+    bool                    m_pressed { false };
+    bool                    m_stealMouse { false };
+    bool                    m_interactive { true };
+    bool                    m_pixelAligned { false };
+    bool                    m_syncDrag { false };
+    Qt::MouseButtons        m_acceptedButtons { Qt::LeftButton };
 };
 
 } // namespace qml_material

@@ -8,6 +8,63 @@ find_package(Qt6 REQUIRED COMPONENTS Test)
 
 enable_testing()
 
+add_executable(lazy_list integration/lazy_list.cpp
+  ${CMAKE_SOURCE_DIR}/src/model/item_model_source.cpp
+  ${CMAKE_SOURCE_DIR}/include/qml_material/model/item_model_source.hpp
+  ${CMAKE_SOURCE_DIR}/src/view/lazy_list.cpp
+  ${CMAKE_SOURCE_DIR}/src/view/delegate_recycler.cpp
+  ${CMAKE_SOURCE_DIR}/src/scrollable/flickable.cpp
+  ${CMAKE_SOURCE_DIR}/src/model/item_source.cpp
+  ${CMAKE_SOURCE_DIR}/src/model/lazy_row.cpp
+  ${CMAKE_SOURCE_DIR}/include/qml_material/view/lazy_list.hpp
+  ${CMAKE_SOURCE_DIR}/include/qml_material/scrollable/flickable.hpp
+  ${CMAKE_SOURCE_DIR}/include/qml_material/model/item_source.hpp
+  ${CMAKE_SOURCE_DIR}/include/qml_material/model/lazy_row.hpp)
+target_include_directories(lazy_list PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_compile_definitions(lazy_list PRIVATE QML_MATERIAL_STATIC_DEFINE)
+target_link_libraries(lazy_list PRIVATE Qt6::QuickPrivate Qt6::Qml Qt6::Test)
+set_target_properties(lazy_list PROPERTIES AUTOMOC ON)
+add_test(NAME lazy_list COMMAND lazy_list)
+set_tests_properties(lazy_list PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+add_executable(viewport_controller layout/viewport_controller.cpp)
+target_include_directories(viewport_controller PRIVATE ${CMAKE_SOURCE_DIR}/src/view ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(viewport_controller PRIVATE Qt6::Qml Qt6::Test)
+set_target_properties(viewport_controller PROPERTIES AUTOMOC ON)
+add_test(NAME viewport_controller COMMAND viewport_controller)
+
+add_executable(linear_layout layout/linear_layout.cpp)
+target_include_directories(linear_layout PRIVATE ${CMAKE_SOURCE_DIR}/src/view)
+target_link_libraries(linear_layout PRIVATE Qt6::Test)
+set_target_properties(linear_layout PROPERTIES AUTOMOC ON)
+add_test(NAME linear_layout COMMAND linear_layout)
+
+add_executable(scroll_motion integration/scroll_motion.cpp
+  ${CMAKE_SOURCE_DIR}/src/scrollable/flickable.cpp
+  ${CMAKE_SOURCE_DIR}/include/qml_material/scrollable/flickable.hpp)
+target_include_directories(scroll_motion PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_compile_definitions(scroll_motion PRIVATE QML_MATERIAL_STATIC_DEFINE)
+target_link_libraries(scroll_motion PRIVATE Qt6::QuickPrivate Qt6::Qml Qt6::Test)
+set_target_properties(scroll_motion PROPERTIES AUTOMOC ON)
+add_test(NAME scroll_motion COMMAND scroll_motion)
+set_tests_properties(scroll_motion PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+add_executable(lazy_data
+  integration/lazy_data.cpp
+  ${CMAKE_SOURCE_DIR}/src/model/item_source.cpp
+  ${CMAKE_SOURCE_DIR}/src/model/item_model_source.cpp
+  ${CMAKE_SOURCE_DIR}/src/model/lazy_row.cpp
+  ${CMAKE_SOURCE_DIR}/src/view/delegate_recycler.cpp
+  ${CMAKE_SOURCE_DIR}/include/qml_material/model/item_source.hpp
+  ${CMAKE_SOURCE_DIR}/include/qml_material/model/item_model_source.hpp
+  ${CMAKE_SOURCE_DIR}/include/qml_material/model/lazy_row.hpp)
+target_include_directories(lazy_data PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src/view)
+target_compile_definitions(lazy_data PRIVATE QML_MATERIAL_STATIC_DEFINE)
+target_link_libraries(lazy_data PRIVATE Qt6::Core Qt6::Gui Qt6::Quick Qt6::Qml Qt6::Test)
+set_target_properties(lazy_data PROPERTIES AUTOMOC ON)
+add_test(NAME lazy_data COMMAND lazy_data)
+set_tests_properties(lazy_data PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
 add_executable(icon_spec integration/icon_spec.cpp)
 target_link_libraries(icon_spec PRIVATE qml_material Qt6::Quick Qt6::Qml Qt6::Test)
 target_compile_definitions(icon_spec PRIVATE QM_QML_IMPORT_PATH="${QT_QML_OUTPUT_DIRECTORY}")
@@ -149,6 +206,14 @@ set_tests_properties(lite_layout PROPERTIES
   ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
 
 add_executable(control_layout layout/control_layout.cpp)
+add_executable(lazy_list_benchmark EXCLUDE_FROM_ALL benchmark/lazy_list.cpp)
+target_compile_definitions(lazy_list_benchmark PRIVATE QM_BENCHMARK_BUILD_TYPE="$<CONFIG>")
+target_link_libraries(lazy_list_benchmark PRIVATE qml_material Qt6::Quick Qt6::Qml)
+add_dependencies(lazy_list_benchmark qml_materialplugin qml_material_layoutsplugin)
+if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
+  target_link_libraries(lazy_list_benchmark PRIVATE qml_materialplugin qml_material_layoutsplugin)
+endif()
+qt_import_qml_plugins(lazy_list_benchmark)
 target_include_directories(control_layout PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(control_layout PRIVATE
   qml_material qml_material_layouts
@@ -214,8 +279,9 @@ set(VISUAL_SCENES button action_progress elevation shape ripple ripple_phases lo
     focus_button focus_iconbutton focus_fab focus_chip
     focus_switch focus_checkbox focus_radio
     datepicker colorpicker colorpicker_button
-    navigation_rail bottom_sheet flickable2 carousel table)
+    navigation_rail bottom_sheet scrollable carousel table)
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/out)
+
 foreach(scene ${VISUAL_SCENES})
   add_test(
     NAME visual_${scene}

@@ -6,14 +6,14 @@ Rectangle {
     height: 360
     color: MD.Token.color.surface
 
-    MD.Flickable2 {
+    MD.Scrollable {
         id: view
         anchors.centerIn: parent
         width: 320
         height: 220
         contentWidth: width
         contentHeight: contentColumn.implicitHeight
-        inputMaskMode: MD.Flickable2.ContentOnly
+        inputMaskMode: MD.Scrollable.ContentOnly
 
         Column {
             id: contentColumn
@@ -32,7 +32,7 @@ Rectangle {
 
                     MD.Label {
                         anchors.centerIn: parent
-                        text: "Flickable2 row " + (index + 1)
+                        text: "Scrollable row " + (index + 1)
                     }
                 }
             }

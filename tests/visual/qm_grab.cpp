@@ -124,7 +124,20 @@ int main(int argc, char *argv[]) {
 
   int exitCode = 0;
 
+  // Drive layout and rendering while asynchronous delegates settle before capture.
+  QTimer frames;
+  frames.setInterval(16);
+  QObject::connect(&frames, &QTimer::timeout, &app, [&]() {
+    rc.polishItems();
+    rc.beginFrame();
+    rc.sync();
+    rc.render();
+    rc.endFrame();
+  });
+  frames.start();
+
   QTimer::singleShot(delayMs, &app, [&]() {
+    frames.stop();
     rc.polishItems();
     rc.beginFrame();
     rc.sync();

@@ -196,8 +196,9 @@ set(SOURCES
     src/path/path_arc_wave.cpp
     include/qml_material/path/path_wave.hpp
     include/qml_material/path/path_arc_wave.hpp
-    src/flickable/flickable.cpp
-    include/qml_material/flickable/flickable.hpp
+    src/scrollable/flickable.cpp
+    include/qml_material/scrollable/flickable.hpp
+    include/qml_material/scrollable/scroll_motion.hpp
     src/input/wheel_handler.cpp
     include/qml_material/input/wheel_handler.hpp
     src/carousel/carousel_attached.cpp
@@ -211,6 +212,15 @@ set(SOURCES
     include/qml_material/carousel/carousel_strategy.hpp
     include/qml_material/carousel/carousel_view.hpp
     src/model/palette_model.cpp
+    src/model/item_source.cpp
+    include/qml_material/model/item_source.hpp
+    src/model/item_model_source.cpp
+    include/qml_material/model/item_model_source.hpp
+    src/model/lazy_row.cpp
+    include/qml_material/model/lazy_row.hpp
+    src/view/delegate_recycler.cpp
+    src/view/lazy_list.cpp
+    include/qml_material/view/lazy_list.hpp
     src/model/combo_box_model.cpp
     include/qml_material/model/combo_box_model.hpp
     src/model/calendar_month_model.cpp
@@ -362,18 +372,18 @@ set(QML_FILES
     qml/component/extra/FocusIndicator.qml
     qml/delegate/ListItem.qml
     qml/delegate/ListGridBaseDelegate.qml
-    qml/flickable/Flickable.qml
-    qml/flickable/VerticalFlickable.qml
-    qml/flickable/PageVerticalFlickable.qml
-    qml/flickable/PageVerticalListView.qml
-    qml/flickable/PageHorizontalListView.qml
-    qml/flickable/VerticalGridView.qml
-    qml/flickable/VerticalListView.qml
-    qml/flickable/HorizontalListView.qml
-    qml/flickable/FlickablePane.qml
-    qml/flickable/TableView.qml
-    qml/flickable/GridView.qml
-    qml/flickable/ListView.qml
+    qml/scrollable/Flickable.qml
+    qml/scrollable/VerticalFlickable.qml
+    qml/scrollable/PageVerticalFlickable.qml
+    qml/scrollable/PageVerticalListView.qml
+    qml/scrollable/PageHorizontalListView.qml
+    qml/scrollable/VerticalGridView.qml
+    qml/scrollable/VerticalListView.qml
+    qml/scrollable/HorizontalListView.qml
+    qml/scrollable/FlickablePane.qml
+    qml/scrollable/TableView.qml
+    qml/scrollable/GridView.qml
+    qml/scrollable/ListView.qml
     qml/motion/FadeInMotion.qml
     qml/motion/FadeOutMotion.qml
     qml/motion/FadeInThroughMotion.qml
@@ -434,13 +444,14 @@ set(QML_FILES
 set(RESOURCES assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2)
 
 set(QML_REG_INCLUDE_DIRS
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/view"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/anim"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/core"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/style"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/control"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/layout"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/path"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/flickable"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/scrollable"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/input"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/item"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/token"

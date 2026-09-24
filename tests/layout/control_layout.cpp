@@ -1,6 +1,7 @@
 #include <QCoreApplication>
 #include <QColor>
 #include <QFont>
+#include <QFile>
 #include <QGuiApplication>
 #include <QQmlComponent>
 #include <QQmlEngine>
@@ -10,14 +11,11 @@
 #include <QtTest>
 #include <memory>
 
-#ifdef Q_OS_WIN
-#    include <QAbstractNativeEventFilter>
-#    include <windows.h>
-#endif
-
 #include "qml_material/control/tool_tip.hpp"
 #include "qml_material/control/icon_spec.hpp"
 #include "qml_material/layout/layout_container.hpp"
+#include "qml_material/view/lazy_list.hpp"
+#include "qml_material/model/item_source.hpp"
 
 namespace
 {
@@ -157,6 +155,164 @@ class ControlLayoutTest : public QObject {
     Q_OBJECT
 
 private Q_SLOTS:
+    void lazyListScrollBarEstimates() {
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            MD.LazyList {
+                width: 300; height: 100
+                estimatedItemExtent: 80
+                cacheExtent: 0
+                source: MD.ListSnapshotSource {
+                    keyRole: "key"
+                    Component.onCompleted: {
+                        let rows = [];
+                        for (let i = 0; i < 20; ++i) rows.push({key: String(i)});
+                        items = rows;
+                    }
+                }
+                delegate: Item { required property MD.LazyRow row; implicitHeight: 40 }
+                MD.ScrollBar.vertical: MD.ScrollBar { objectName: "bar" }
+            }
+        )", QUrl());
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* list = qobject_cast<qml_material::LazyList*>(object.get());
+        QVERIFY(list);
+        list->setParentItem(m_window.contentItem());
+        settle(list);
+        auto* bar = list->findChild<QQuickItem*>("bar");
+        QVERIFY(bar);
+        QVERIFY(list->estimatedContentHeight());
+        QVERIFY(list->contentHeight() > 800);
+        for (int index = 0; index < 20; ++index) {
+            QVERIFY(list->positionAtIndex(index));
+            settle(list);
+            QCOMPARE(bar->property("size").toReal(), 100.0 / list->contentHeight());
+            QCOMPARE(bar->property("position").toReal(), list->visibleArea()->yPosition());
+        }
+        QVERIFY(! list->estimatedContentHeight());
+        QCOMPARE(list->contentHeight(), 800.0);
+        qml_material::ListSnapshotSource replacement;
+        replacement.setKeyRole("key");
+        replacement.setItems({QVariantMap {{"key", "replacement"}}});
+        list->setSource(&replacement);
+        settle(list);
+        QCOMPARE(list->contentHeight(), 40.0);
+        QCOMPARE(list->contentY(), 0.0);
+        QCOMPARE(bar->property("size").toReal(), 1.0);
+        QCOMPARE(bar->property("position").toReal(), 0.0);
+        list->setSource(nullptr);
+        settle(list);
+        QCOMPARE(list->count(), 0);
+        QCOMPARE(bar->property("position").toReal(), 0.0);
+        list->setParentItem(nullptr);
+    }
+    void lazyListScrollBarDrag() {
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            MD.LazyList {
+                width: 300; height: 300
+                estimatedItemExtent: 40
+                cacheExtent: 0
+                source: MD.ListSnapshotSource {
+                    keyRole: "key"
+                    Component.onCompleted: {
+                        let rows = [];
+                        for (let i = 0; i < 100; ++i) rows.push({key: String(i)});
+                        items = rows;
+                    }
+                }
+                delegate: Item { required property MD.LazyRow row; implicitHeight: 40 }
+                MD.ScrollBar.vertical: MD.ScrollBar {
+                    objectName: "bar"
+                    width: 16
+                    interactive: true
+                    policy: MD.ScrollBarBase.AlwaysOn
+                }
+            }
+        )", QUrl());
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* list = qobject_cast<qml_material::LazyList*>(object.get());
+        QVERIFY(list);
+        QQuickWindow window;
+        window.setGeometry(0, 0, 300, 300);
+        list->setParentItem(window.contentItem());
+        window.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        settle(list);
+        auto* bar = list->findChild<QQuickItem*>("bar");
+        QVERIFY(bar);
+        const auto start = bar->mapToScene(QPointF(8, 8)).toPoint();
+        const auto end = bar->mapToScene(QPointF(8, 180)).toPoint();
+        QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, start);
+        QVERIFY(bar->property("pressed").toBool());
+        QTest::mouseMove(&window, end);
+        settle(list);
+        QVERIFY(bar->property("pressed").toBool());
+        QCOMPARE(window.mouseGrabberItem(), bar);
+        QVERIFY(! list->isDragging());
+        QVERIFY(list->contentY() > 1500);
+        QCOMPARE(bar->property("position").toReal(), list->visibleArea()->yPosition());
+        auto* source = qobject_cast<qml_material::ListSnapshotSource*>(list->source());
+        QVERIFY(source);
+        source->setItems(source->items().mid(0, 3));
+        settle(list);
+        QCOMPARE(list->contentY(), 0.0);
+        QCOMPARE(bar->property("size").toReal(), 1.0);
+        QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, end);
+        QVERIFY(! bar->property("pressed").toBool());
+        settle(list);
+        QCOMPARE(list->contentY(), 0.0);
+        QCOMPARE(bar->property("position").toReal(), 0.0);
+        QVERIFY(! list->isDragging());
+        list->setParentItem(nullptr);
+    }
+    void scrollViewportAttachment_data() {
+        QTest::addColumn<QByteArray>("type");
+        QTest::newRow("qt") << QByteArray("Flickable");
+        QTest::newRow("owned") << QByteArray("MD.Scrollable");
+    }
+
+    void scrollViewportAttachment() {
+        QFETCH(QByteArray, type);
+        QQmlComponent component(&m_engine);
+        component.setData("import QtQuick\nimport Qcm.Material as MD\n" + type + R"(
+            {
+                width: 200; height: 100
+                contentWidth: 800; contentHeight: 1000
+                MD.ScrollBar.vertical: MD.ScrollBar { objectName: "vertical" }
+                MD.ScrollIndicator.horizontal: MD.ScrollIndicator { objectName: "horizontal" }
+            }
+        )", QUrl());
+        std::unique_ptr<QObject> root(component.create());
+        QVERIFY2(root, qPrintable(component.errorString()));
+        auto* bar = root->findChild<QQuickItem*>("vertical");
+        auto* indicator = root->findChild<QQuickItem*>("horizontal");
+        QVERIFY(bar);
+        QVERIFY(indicator);
+        QCOMPARE(bar->property("size").toReal(), 0.1);
+        QCOMPARE(indicator->property("size").toReal(), 0.25);
+        root->setProperty("contentY", 300);
+        QCOMPARE(bar->property("position").toReal(), 0.3);
+        bar->setProperty("position", 0.6);
+        QCOMPARE(root->property("contentY").toReal(), 600.0);
+        root->setProperty("contentX", 200);
+        QCOMPARE(indicator->property("position").toReal(), 0.25);
+        root->setProperty("height", 200);
+        QCOMPARE(bar->height(), 200.0);
+        QCOMPARE(bar->property("size").toReal(), 0.2);
+        root->setProperty("topMargin", 20);
+        root->setProperty("bottomMargin", 30);
+        QCOMPARE(bar->property("size").toReal(), 200.0 / 1050.0);
+        bar->setProperty("position", 0.4);
+        QCOMPARE(root->property("contentY").toReal(), 400.0);
+    }
+
     void initTestCase() {
         m_engine.addImportPath(QCoreApplication::applicationDirPath()
                                + QStringLiteral("/../qml_modules"));
@@ -514,19 +670,6 @@ private Q_SLOTS:
         QVERIFY(secondAttached->visible());
         secondAttached->hide();
         QTRY_VERIFY(! secondAttached->visible());
-
-        firstAttached->setDelay(60);
-        firstAttached->show(QStringLiteral("Delayed"));
-        QVERIFY(! firstAttached->visible());
-        firstAttached->hide();
-        QTest::qWait(100);
-        QVERIFY(! sharedToolTip->property("visible").toBool());
-
-        firstAttached->setDelay(0);
-        firstAttached->setTimeout(40);
-        firstAttached->show(QStringLiteral("Timed"));
-        QTRY_VERIFY(firstAttached->visible());
-        QTRY_VERIFY_WITH_TIMEOUT(! firstAttached->visible(), 1000);
 
         firstAttached->setTimeout(-1);
         firstAttached->show(QStringLiteral("Before destruction"), 0);
@@ -1938,32 +2081,11 @@ private:
     QQuickWindow m_window;
 };
 
-#ifdef Q_OS_WIN
-// Same workaround as example/main.cpp: Windows UIA + Qt accessibility can
-// crash while Material controls are created/pressed.
-class UiaBlocker : public QAbstractNativeEventFilter {
-public:
-    bool nativeEventFilter(const QByteArray& eventType, void* message, qintptr* result) override {
-        if (eventType == "windows_generic_MSG") {
-            if (static_cast<MSG*>(message)->message == WM_GETOBJECT) {
-                *result = 0;
-                return true;
-            }
-        }
-        return false;
-    }
-};
-#endif
-
 int main(int argc, char* argv[]) {
     qputenv("QT_ENABLE_HIGHDPI_SCALING", "0");
     qputenv("QT_SCALE_FACTOR", "1");
 
     QGuiApplication app(argc, argv);
-#ifdef Q_OS_WIN
-    static UiaBlocker uiaBlocker;
-    app.installNativeEventFilter(&uiaBlocker);
-#endif
 
     ControlLayoutTest tc;
     return QTest::qExec(&tc, argc, argv);

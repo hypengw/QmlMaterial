@@ -1,13 +1,13 @@
 #pragma once
 
 #include "qml_material/control/control.hpp"
-
-class QQuickFlickable;
+#include <memory>
 
 namespace qml_material
 {
 
 class ScrollIndicatorAttached;
+class ScrollViewport;
 
 /** @ingroup control */
 class QML_MATERIAL_API ScrollIndicator : public Control {
@@ -101,7 +101,8 @@ private:
     void                      scroll(Axis&, bool horizontal);
     Q_SLOT void               syncHorizontal();
     Q_SLOT void               syncVertical();
-    QPointer<QQuickFlickable> m_flickable;
+    std::unique_ptr<ScrollViewport> m_viewport;
+    QPointer<QQuickItem> m_flickable;
     bool                      m_bidirectional = false;
     Axis                      m_horizontal, m_vertical;
 };

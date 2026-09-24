@@ -123,16 +123,16 @@ MD.PopupBase {
         opacity: control._scrimOpacity
     }
 
-    MD.Flickable2 {
+    MD.Scrollable {
         id: m_sheet_flickable
         anchors.fill: parent
         clip: true
         contentWidth: width
         contentHeight: height + control._scrollRange
         topMargin: control._dragDownRange
-        flickableDirection: MD.Flickable2.VerticalFlick
+        flickableDirection: MD.Scrollable.VerticalFlick
         synchronousDrag: true
-        inputMaskMode: MD.Flickable2.CustomItem
+        inputMaskMode: MD.Scrollable.CustomItem
         interactionItem: m_panel
         interactive: control.opened && !control.closing
 
