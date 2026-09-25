@@ -1,23 +1,16 @@
 #include "qml_material/control/popup.hpp"
+#include "popup_surface.hpp"
 #include "qml_material/control/overlay.hpp"
 #include "qml_material/style/theme.hpp"
 #include "qml_material/util/qt.hpp"
 #include <QQuickWindow>
 #include <QGuiApplication>
 #include <QQmlInfo>
-#include <QWheelEvent>
 #include <QtQuick/private/qquicktransitionmanager_p_p.h>
 #include <algorithm>
 
 namespace qml_material
 {
-namespace
-{
-class PopupSurface final : public Panel {
-protected:
-    void wheelEvent(QWheelEvent* event) override { event->accept(); }
-};
-} // namespace
 class PopupMotion : public QQuickTransitionManager {
 public:
     explicit PopupMotion(Popup* popup): m_popup(popup) {}
@@ -35,7 +28,7 @@ private:
     QPointer<Popup> m_popup;
 };
 
-Popup::Popup(QObject* parent): Popup(new PopupSurface, parent) {}
+Popup::Popup(QObject* parent): Popup(new PopupSurface<Panel>(this), parent) {}
 Popup::Popup(Panel* surface, QObject* parent)
     : QObject(parent), m_surface(surface), m_motion(std::make_unique<PopupMotion>(this)) {
     m_surface->setParent(this);

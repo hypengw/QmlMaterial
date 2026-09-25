@@ -12,6 +12,8 @@
 #include <memory>
 
 #include "qml_material/control/tool_tip.hpp"
+#include "qml_material/control/popup.hpp"
+#include "qml_material/control/dialog.hpp"
 #include "qml_material/control/icon_spec.hpp"
 #include "qml_material/layout/layout_container.hpp"
 #include "qml_material/view/lazy_list.hpp"
@@ -271,6 +273,173 @@ private Q_SLOTS:
         QCOMPARE(bar->property("position").toReal(), 0.0);
         QVERIFY(! list->isDragging());
         list->setParentItem(nullptr);
+    }
+    void popupSurfaceRegion_data() {
+        QTest::addColumn<bool>("dialog");
+        QTest::newRow("popup") << false;
+        QTest::newRow("dialog") << true;
+    }
+    void popupSurfaceRegion() {
+        QFETCH(bool, dialog);
+        std::unique_ptr<qml_material::Popup> popup;
+        if (dialog)
+            popup = std::make_unique<qml_material::Dialog>();
+        else
+            popup = std::make_unique<qml_material::Popup>();
+        popup->setParentItem(m_window.contentItem());
+        popup->setWidth(400);
+        popup->setHeight(400);
+        static_cast<QQmlParserStatus*>(popup.get())->componentComplete();
+        popup->open();
+        auto* surface = popup->surfaceItem();
+        QVERIFY(surface->contains(QPointF(100, 100)));
+        QVERIFY(!surface->contains(QPointF(500, 500)));
+        QQuickItem container(surface);
+        container.setPosition(QPointF(30, 40));
+        container.setScale(2);
+        auto hit = std::make_unique<QQuickItem>(&container);
+        hit->setSize(QSizeF(50, 50));
+        hit->setPosition(QPointF(10, 20));
+        popup->setPopupItem(hit.get());
+        auto center = [&] { return hit->mapToItem(surface, QPointF(25, 25)); };
+        QVERIFY(surface->contains(center()));
+        QVERIFY(!surface->contains(QPointF(1, 1)));
+        auto oldCenter = center();
+        hit->setY(150);
+        QVERIFY(!surface->contains(oldCenter));
+        QVERIFY(surface->contains(center()));
+        hit->setVisible(false);
+        QVERIFY(!surface->contains(center()));
+        hit->setVisible(true);
+        QVERIFY(surface->contains(center()));
+        QQuickItem replacement(surface);
+        replacement.setSize(QSizeF(20, 20));
+        popup->setPopupItem(&replacement);
+        QVERIFY(surface->contains(QPointF(1, 1)));
+        QVERIFY(!surface->contains(center()));
+        popup->setPopupItem(hit.get());
+        hit.reset();
+        QCOMPARE(popup->popupItem(), surface);
+        QVERIFY(surface->contains(QPointF(100, 100)));
+        popup->close();
+    }
+    void bottomSheetInputRegion() {
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            Item {
+                width: 400; height: 400
+                property int clicks: 0
+                property int wheels: 0
+                property int sheetClicks: 0
+                MouseArea {
+                    objectName: "wallpapers"
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onClicked: parent.clicks++
+                    onWheel: parent.wheels++
+                }
+                MD.BottomSheet {
+                    objectName: "sheet"
+                    sheetType: MD.Enum.BottomSheetStandard
+                    animationDuration: 0
+                    Item {
+                        width: 400; height: 80
+                        MouseArea {
+                            width: 60; height: 60
+                            objectName: "sheetButton"
+                            onClicked: rootItem.sheetClicks++
+                        }
+                    }
+                }
+                id: rootItem
+            }
+        )", QUrl());
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* root = qobject_cast<QQuickItem*>(object.get());
+        root->setParentItem(m_window.contentItem());
+        auto* sheet = root->findChild<qml_material::Popup*>("sheet");
+        QVERIFY(sheet);
+        sheet->open();
+        QTRY_VERIFY(sheet->isOpened());
+        settle(root);
+        auto* wallpapers = root->findChild<QQuickItem*>("wallpapers");
+        QVERIFY(wallpapers);
+        QTest::mouseMove(&m_window, QPoint(100, 100));
+        QVERIFY(wallpapers->property("containsMouse").toBool());
+        QTest::mouseClick(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 100));
+        QCOMPARE(root->property("clicks").toInt(), 1);
+        auto wheel = [&](QPoint position) {
+            QWheelEvent event(position, m_window.mapToGlobal(position), {}, QPoint(0, -120),
+                              Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
+            QCoreApplication::sendEvent(&m_window, &event);
+        };
+        wheel(QPoint(100, 100));
+        QCOMPARE(root->property("wheels").toInt(), 1);
+        QTest::mouseClick(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 370));
+        wheel(QPoint(100, 370));
+        QCOMPARE(root->property("clicks").toInt(), 1);
+        QCOMPARE(root->property("wheels").toInt(), 1);
+        auto* button = root->findChild<QQuickItem*>("sheetButton");
+        QVERIFY(button);
+        const QPoint buttonPoint = button->mapToScene(QPointF(20, 20)).toPoint();
+        QTest::mouseClick(&m_window, Qt::LeftButton, Qt::NoModifier, buttonPoint);
+        QCOMPARE(root->property("sheetClicks").toInt(), 1);
+        QTest::mousePress(&m_window, Qt::LeftButton, Qt::NoModifier, buttonPoint);
+        QTest::mouseMove(&m_window, QPoint(100, 100));
+        QTest::mouseRelease(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 100));
+        QVERIFY(!button->property("pressed").toBool());
+        QCOMPARE(root->property("clicks").toInt(), 1);
+        auto* scroller = sheet->findChild<qml_material::Flickable*>();
+        QVERIFY(scroller);
+        const QPoint handlePoint = sheet->popupItem()->mapToScene(QPointF(200, 24)).toPoint();
+        QTest::mousePress(&m_window, Qt::LeftButton, Qt::NoModifier, handlePoint);
+        QTest::mouseMove(&m_window, handlePoint + QPoint(0, 40));
+        QTest::mouseMove(&m_window, handlePoint + QPoint(0, 80));
+        QVERIFY(scroller->isDragging());
+        QTest::mouseRelease(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 100));
+        QVERIFY(!scroller->isDragging());
+        QCOMPARE(root->property("clicks").toInt(), 1);
+        for (bool dim : {false, true}) {
+            sheet->setModal(true);
+            sheet->setDim(dim);
+            sheet->setClosePolicy(qml_material::Popup::NoAutoClose);
+            QTest::mouseClick(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 100));
+            wheel(QPoint(100, 100));
+            QCOMPARE(root->property("clicks").toInt(), 1);
+            QCOMPARE(root->property("wheels").toInt(), 1);
+        }
+        sheet->close();
+        QTRY_VERIFY(!sheet->isVisible());
+        QTest::mouseClick(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 100));
+        QCOMPARE(root->property("clicks").toInt(), 2);
+        sheet->setModal(false);
+        sheet->open();
+        QTRY_VERIFY(sheet->isOpened());
+        QTest::mouseClick(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 100));
+        QCOMPARE(root->property("clicks").toInt(), 3);
+        sheet->setClosePolicy(qml_material::Popup::CloseOnPressOutside);
+        QTest::mouseClick(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 100));
+        QTRY_VERIFY(!sheet->isVisible());
+        QCOMPARE(root->property("clicks").toInt(), 4);
+        qml_material::Popup blocker;
+        blocker.setParentItem(root);
+        blocker.setWidth(40);
+        blocker.setHeight(40);
+        blocker.setModal(true);
+        blocker.setDim(false);
+        blocker.setClosePolicy(qml_material::Popup::NoAutoClose);
+        static_cast<QQmlParserStatus*>(&blocker)->componentComplete();
+        blocker.open();
+        sheet->setClosePolicy(qml_material::Popup::NoAutoClose);
+        sheet->open();
+        QTRY_VERIFY(sheet->isOpened());
+        QTest::mouseClick(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 100));
+        QCOMPARE(root->property("clicks").toInt(), 4);
+        sheet->close();
+        blocker.close();
     }
     void scrollViewportAttachment_data() {
         QTest::addColumn<QByteArray>("type");

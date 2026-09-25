@@ -1,17 +1,10 @@
 #include "qml_material/control/dialog.hpp"
+#include "popup_surface.hpp"
 #include "qml_material/util/qt.hpp"
-#include <QWheelEvent>
 
 namespace qml_material
 {
-namespace
-{
-class DialogSurface final : public Page {
-protected:
-    void wheelEvent(QWheelEvent* event) override { event->accept(); }
-};
-} // namespace
-Dialog::Dialog(QObject* parent): Popup(new DialogSurface, parent) {
+Dialog::Dialog(QObject* parent): Popup(new PopupSurface<Page>(this), parent) {
     setFocus(true);
     connect(page(), &Page::titleChanged, this, &Dialog::titleChanged);
     connect(page(), &Page::headerChanged, this, &Dialog::headerChanged);
