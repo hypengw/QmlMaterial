@@ -352,6 +352,11 @@ protected:
     void componentComplete() override;
 
 private:
+    friend class OverlayManager;
+    void overlayPress(const QPointF&);
+    void overlayRelease(const QPointF&);
+    void cancelOverlayPress();
+    bool m_outsidePressed = false, m_outsideParentPressed = false;
     enum State
     {
         Closed,

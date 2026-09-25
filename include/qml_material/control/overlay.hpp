@@ -42,21 +42,23 @@ private:
     Drawer* dragCandidate(const QPointF&) const;
     bool    drawerPointer(QPointerEvent*, const QEventPoint&);
     void    cancelDrawerDrag();
+    void    cancelPress();
     struct Entry {
         QPointer<Popup>         popup;
         QPointer<QQuickItem>    dimmer;
+        QPointer<QQuickItem>    hoverBarrier;
         QPointer<QQmlComponent> component;
         QPointer<QQuickItem>    previousFocus;
         qreal                   opacity = 1;
     };
     QList<Entry>                    m_entries;
     QPointer<QQuickWindow>          m_window;
-    QPointer<Popup>                 m_pressOwner;
+    QList<QPointer<Popup>>         m_pressObservers;
     QList<QPointer<Drawer>>         m_drawers;
     QPointer<Drawer>                m_dragDrawer;
     QPointer<const QPointingDevice> m_dragDevice;
     int                             m_dragId = -1;
-    bool m_pressed = false, m_blocked = false, m_outside = false, m_outsideParent = false;
+    bool m_pressed = false, m_blocked = false;
     bool m_destroying = false;
     int  m_touchId    = -1;
 };

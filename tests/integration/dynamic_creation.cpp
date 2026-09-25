@@ -433,6 +433,209 @@ private Q_SLOTS:
         QCOMPARE(popup->surfaceItem()->size(), modal ? QSizeF(640, 480) : QSizeF(500, 350));
     }
 
+    void tooltipParentPressClosesModal_data() {
+        QTest::addColumn<bool>("releaseOutside");
+        QTest::newRow("inside-tooltip-parent") << false;
+        QTest::newRow("tooltip-awaits-release") << true;
+    }
+    void tooltipParentPressClosesModal() {
+        QFETCH(bool, releaseOutside);
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            Item {
+                width: 640; height: 480
+                property int clicks: 0
+                MouseArea { anchors.fill: parent; onClicked: parent.clicks++ }
+                Item {
+                    x: 10; y: 10; width: 80; height: 80
+                    MD.PlainToolTip {
+                        objectName: "tip"; text: "Tip"; delay: 0; timeout: -1
+                        enter: null; exit: null
+                    }
+                }
+                MD.PopupBase {
+                    objectName: "popup"
+                    x: 220; y: 160; width: 200; height: 120
+                    modal: true; dim: false
+                    enter: null; exit: null
+                }
+            }
+        )", QUrl());
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* root = qobject_cast<QQuickItem*>(object.get());
+        root->setParentItem(m_window.contentItem());
+        auto* popup = root->findChild<qml_material::Popup*>("popup");
+        auto* tip = root->findChild<qml_material::Popup*>("tip");
+        QVERIFY(popup && tip);
+        if (releaseOutside) tip->setClosePolicy(qml_material::Popup::CloseOnReleaseOutside);
+        popup->open();
+        tip->open();
+        QTRY_VERIFY(popup->isOpened() && tip->isOpened());
+        QSignalSpy closed(popup, &qml_material::Popup::closed);
+        QTest::mousePress(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(40, 60));
+        QCOMPARE(closed.size(), 1);
+        QVERIFY(tip->isVisible());
+        QTest::mouseRelease(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(40, 60));
+        QCOMPARE(root->property("clicks").toInt(), 0);
+        QCOMPARE(tip->isVisible(), !releaseOutside);
+    }
+
+    void popupPressReentry() {
+        qml_material::Popup popup;
+        popup.setParentItem(m_window.contentItem());
+        popup.setX(220);
+        popup.setY(160);
+        popup.setWidth(200);
+        popup.setHeight(120);
+        popup.setModal(true);
+        popup.setClosePolicy(qml_material::Popup::CloseOnPressOutside |
+                             qml_material::Popup::CloseOnReleaseOutside);
+        static_cast<QQmlParserStatus*>(&popup)->componentComplete();
+        popup.open();
+        QSignalSpy closed(&popup, &qml_material::Popup::closed);
+        const auto reopen = connect(&popup, &qml_material::Popup::closed, &popup, [&] {
+            popup.open();
+        });
+        QTest::mousePress(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(40, 60));
+        QCOMPARE(closed.size(), 1);
+        QVERIFY(popup.isOpened());
+        QTest::mouseRelease(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(40, 60));
+        QCOMPARE(closed.size(), 1);
+        QVERIFY(popup.isOpened());
+        disconnect(reopen);
+        popup.close();
+    }
+
+    void modalHover_data() {
+        QTest::addColumn<bool>("qt");
+        QTest::addColumn<bool>("dim");
+        QTest::addColumn<int>("delay");
+        for (bool qt : {false, true})
+            for (bool dim : {false, true})
+                for (int delay : {0, 250})
+                    QTest::newRow(qPrintable(QString("%1-dim%2-delay%3").arg(qt ? "qt" : "md").arg(dim).arg(delay)))
+                        << qt << dim << delay;
+    }
+    void modalHover() {
+        if (QGuiApplication::platformName() == "offscreen" || QGuiApplication::platformName() == "minimal")
+            QSKIP("Requires window-system hover delivery");
+        QFETCH(bool, qt);
+        QFETCH(bool, dim);
+        QFETCH(int, delay);
+        QQmlComponent component(&m_engine);
+        QByteArray source = R"(
+            import QtQuick
+            import QtQuick.Controls as QC
+            import Qcm.Material as MD
+            Item {
+                width: 640; height: 480
+                property bool tooltipVisible: button.TIP.visible
+                property bool innerTooltipVisible: inner.TIP.visible
+                MouseArea {
+                    objectName: "hoverArea"
+                    x: 120; y: 10; width: 60; height: 80
+                    hoverEnabled: true
+                }
+                Item {
+                    x: 180; y: 10; width: 60; height: 80
+                    HoverHandler { objectName: "hoverHandler" }
+                }
+                TYPE.Button {
+                    id: button; objectName: "button"
+                    x: 10; y: 10; width: 100; height: 80
+                    text: "Hover"; hoverEnabled: true
+                    TIP.visible: hovered
+                    TIP.text: "Tip"
+                    TIP.delay: DELAY
+                }
+                TYPE.Popup {
+                    objectName: "popup"
+                    x: 220; y: 160; width: 200; height: 120
+                    modal: true; dim: DIM
+                    enter: null; exit: null
+                    TYPE.Button {
+                        id: inner; objectName: "inner"
+                        width: 100; height: 60
+                        text: "Inside"; hoverEnabled: true
+                        TIP.visible: hovered
+                        TIP.text: "Inside tip"
+                        TIP.delay: 0
+                    }
+                }
+            }
+        )";
+        source.replace("TYPE", qt ? "QC" : "MD");
+        source.replace("TIP", qt ? "QC.ToolTip" : "MD.ToolTip");
+        source.replace("DELAY", QByteArray::number(delay));
+        source.replace("DIM", dim ? "true" : "false");
+        component.setData(source, QUrl());
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* root = qobject_cast<QQuickItem*>(object.get());
+        root->setParentItem(m_window.contentItem());
+        auto* button = root->findChild<QQuickItem*>("button");
+        auto* popup = root->findChild<QObject*>("popup");
+        QVERIFY(button && popup);
+        m_window.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&m_window));
+        QTest::mouseMove(&m_window, QPoint(150, 100));
+        QTest::mouseMove(&m_window, QPoint(50, 50));
+        QTRY_VERIFY(button->property("hovered").toBool());
+        if (delay == 0) QTRY_VERIFY(root->property("tooltipVisible").toBool());
+        QVERIFY(QMetaObject::invokeMethod(popup, "open"));
+        QTest::qWait(500);
+        qInfo() << "hover after modal" << button->property("hovered") << "tooltip" << root->property("tooltipVisible");
+        if (qt) {
+            if (dim) {
+                QVERIFY(!button->property("hovered").toBool());
+                QVERIFY(!root->property("tooltipVisible").toBool());
+            }
+            QVERIFY(QMetaObject::invokeMethod(popup, "close"));
+            m_window.hide();
+            return;
+        }
+        // Qt's dim=false behavior is a reference observation, not our chosen contract.
+        if (!qt || dim) {
+            QTRY_VERIFY(!button->property("hovered").toBool());
+            QTRY_VERIFY(!root->property("tooltipVisible").toBool());
+            QTest::mouseMove(&m_window, QPoint(150, 50));
+            QTest::qWait(50);
+            QVERIFY(!root->findChild<QObject*>("hoverArea")->property("containsMouse").toBool());
+            QTest::mouseMove(&m_window, QPoint(210, 50));
+            QTest::qWait(50);
+            QVERIFY(!root->findChild<QObject*>("hoverHandler")->property("hovered").toBool());
+        }
+        auto* inner = root->findChild<QQuickItem*>("inner");
+        QVERIFY(inner);
+        QTest::mouseMove(&m_window, inner->mapToScene(QPointF(30, 30)).toPoint());
+        QTRY_VERIFY(inner->property("hovered").toBool());
+        QTRY_VERIFY(root->property("innerTooltipVisible").toBool());
+        QTest::mouseMove(&m_window, QPoint(50, 50));
+        if (!qt || dim) {
+            QTest::qWait(300);
+            QTRY_VERIFY(!button->property("hovered").toBool());
+            QTRY_VERIFY(!root->property("tooltipVisible").toBool());
+        }
+        QVERIFY(QMetaObject::invokeMethod(popup, "close"));
+        QTRY_VERIFY(button->property("hovered").toBool());
+        popup->setProperty("modal", false);
+        QVERIFY(QMetaObject::invokeMethod(popup, "open"));
+        QTest::qWait(300);
+        QVERIFY(button->property("hovered").toBool());
+        popup->setProperty("modal", true);
+        QTRY_VERIFY(!button->property("hovered").toBool());
+        popup->setProperty("deferredCompletion", true);
+        QVERIFY(QMetaObject::invokeMethod(popup, "close"));
+        QTest::qWait(100);
+        QVERIFY(!button->property("hovered").toBool());
+        QVERIFY(QMetaObject::invokeMethod(popup, "completeExit"));
+        QTRY_VERIFY(button->property("hovered").toBool());
+        m_window.hide();
+    }
+
     void tooltipOutsidePressDoesNotShieldModalPopup() {
         QQmlComponent component(&m_engine);
         component.setData(R"(
