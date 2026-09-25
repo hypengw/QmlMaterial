@@ -1,4 +1,14 @@
 <releases>
+  <release version="0.4.1" date="2026-09-25">
+    <description>
+      <ul>
+        <li>Add LazyList and item source adapters.</li>
+        <li>Rename MD.Flickable2 to MD.Scrollable.</li>
+        <li>Improve scrolling and pointer handling.</li>
+        <li>Fix popup input regions and tooltip interactions.</li>
+      </ul>
+    </description>
+  </release>
   <release version="0.4.0" date="2026-09-23">
     <description>
       <p>Added:</p>
