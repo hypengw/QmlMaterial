@@ -1,5 +1,5 @@
 name: CI - Qt 6.8.3 multi-compiler build & tests
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
   format:
