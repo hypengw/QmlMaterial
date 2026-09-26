@@ -1,34 +1,46 @@
 #pragma once
 
-#include <QtCore/QPointer>
-#include <QtQml/QQmlEngine>
-#include <QtQuick/QQuickItem>
+#include <QPointer>
+#include <QQuickItem>
+#include <qqmlregistration.h>
+#include "qml_material/export.hpp"
 
 namespace qml_material
 {
-class ItemProxy : public QQuickItem {
+class QML_MATERIAL_API ItemProxy : public QQuickItem {
     Q_OBJECT
     QML_ELEMENT
 
-    Q_PROPERTY(QObject* item READ item WRITE setItem NOTIFY itemChanged FINAL)
-    Q_PROPERTY(bool visibleOnItem READ visibleOnItem WRITE setVisibleOnItem NOTIFY
-                   visibleOnItemChanged FINAL)
+    Q_PROPERTY(QQuickItem* target READ target WRITE setTarget NOTIFY targetChanged FINAL)
+    Q_PROPERTY(bool active READ active WRITE setActive NOTIFY activeChanged FINAL)
+    Q_PROPERTY(bool controlling READ controlling NOTIFY controllingChanged FINAL)
 public:
-    ItemProxy(QQuickItem* parent = nullptr);
-    ~ItemProxy();
+    explicit ItemProxy(QQuickItem* parent = nullptr);
+    ~ItemProxy() override;
+    QQuickItem*   target() const { return m_target; }
+    bool          active() const { return m_active; }
+    bool          controlling() const { return m_controlling; }
+    void          setTarget(QQuickItem*);
+    void          setActive(bool);
+    Q_SIGNAL void targetChanged();
+    Q_SIGNAL void activeChanged();
+    Q_SIGNAL void controllingChanged();
 
-    auto item() const -> QObject*;
-    auto visibleOnItem() const -> bool;
-
-    Q_SLOT void setItem(QObject*);
-    Q_SLOT void setVisibleOnItem(bool);
-
-    Q_SIGNAL void itemChanged();
-    Q_SIGNAL void visibleOnItemChanged();
+protected:
+    void geometryChange(const QRectF&, const QRectF&) override;
+    void componentComplete() override;
 
 private:
-    QPointer<QObject> m_item;
-    bool              m_visible_on_item;
+    void                           acquire();
+    void                           release();
+    void                           syncGeometry();
+    void                           syncImplicitSize();
+    QPointer<QQuickItem>           m_target;
+    QList<QMetaObject::Connection> m_connections;
+    quint64                        m_revision    = 0;
+    bool                           m_active      = false;
+    bool                           m_controlling = false;
+    bool                           m_destroying  = false;
 };
 
 } // namespace qml_material

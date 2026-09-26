@@ -22,6 +22,7 @@ set(QM_TEST_SOURCES
   layout/toolbar_dynamic_visibility.cpp
   layout/lite_layout.cpp
   layout/split_view.cpp
+  layout/item_proxy.cpp
   layout/control_layout.cpp
   integration/dynamic_creation.cpp
   integration/attached_property_propagation.cpp
@@ -75,7 +76,7 @@ file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/test_groups.inc" CONTENT "${QM
 set_tests_properties(lazy_list scroll_motion lazy_data icon_spec toolbar_dynamic_visibility
   PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 set_tests_properties(lite_layout control_layout dynamic_creation attached_property_propagation
-  page_layout PROPERTIES ENVIRONMENT
+  page_layout split_view item_proxy PROPERTIES ENVIRONMENT
   "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
 set_tests_properties(control_layout PROPERTIES ENVIRONMENT
   "QT_QPA_PLATFORM=offscreen;QT_ENABLE_HIGHDPI_SCALING=0;QT_SCALE_FACTOR=1;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")

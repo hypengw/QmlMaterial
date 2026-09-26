@@ -35,6 +35,14 @@ Resize resize(const QList<Pane>& panes, qreal available, int handleIndex, qreal 
     return { index, calculate(updated, available).panes[index].size };
 }
 
+bool resizable(const QList<Pane>& panes, qreal available, int handleIndex) {
+    const auto  extent = calculate(panes, available).extent;
+    const qreal delta  = std::max(finiteSize(available), extent) + 1;
+    const auto  low    = resize(panes, available, handleIndex, -delta);
+    const auto  high   = resize(panes, available, handleIndex, delta);
+    return low.index >= 0 && high.index >= 0 && ! qFuzzyCompare(1 + low.size, 1 + high.size);
+}
+
 Result calculate(const QList<Pane>& panes, qreal available) {
     Result result;
     result.panes.resize(panes.size());

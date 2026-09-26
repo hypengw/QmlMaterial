@@ -23,6 +23,10 @@ MD.ButtonBase {
 
     onClicked: m_dialog.open()
 
+    function dismissPopup() {
+        m_dialog.dismissImmediately();
+    }
+
     contentItem: Item {}
 
     background: Item {

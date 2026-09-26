@@ -113,6 +113,11 @@ public:
         connect(this, &QQuickItem::enabledChanged, this, [this] {
             if (! isEnabled()) cancel();
         });
+        auto* state = handleState(handle);
+        connect(state, &SplitHandleAttached::resizableChanged, this, [this, state] {
+            setEnabled(state->isResizable());
+        });
+        setEnabled(state->isResizable());
         size();
     }
     bool contains(const QPointF& point) const override {
@@ -192,10 +197,18 @@ void SplitHandleAttached::setHovered(bool value) {
     m_hovered = value;
     Q_EMIT hoveredChanged();
 }
+SplitHandleAttached* SplitHandleAttached::qmlAttachedProperties(QObject* object) {
+    return new SplitHandleAttached(object);
+}
 void SplitHandleAttached::setPressed(bool value) {
     if (m_pressed == value) return;
     m_pressed = value;
     Q_EMIT pressedChanged();
+}
+void SplitHandleAttached::setResizable(bool value) {
+    if (m_resizable == value) return;
+    m_resizable = value;
+    Q_EMIT resizableChanged();
 }
 bool     SplitView::isResizing() const { return bool(m_resize); }
 QVariant SplitView::saveState() const {
@@ -305,7 +318,8 @@ bool SplitView::beginResize(QQuickItem* handle, const QPointF& point) {
     const int   index     = m_handles.indexOf(handle);
     auto        panes     = layoutPanes(m_orientation);
     const qreal available = m_orientation == Qt::Horizontal ? availableWidth() : availableHeight();
-    const auto  resized   = split_layout::resize(panes, available, index, 0);
+    if (! split_layout::resizable(panes, available, index)) return false;
+    const auto resized = split_layout::resize(panes, available, index, 0);
     if (resized.index < 0) return false;
     const auto local = contentHost()->mapFromScene(point);
     m_resize         = std::make_unique<SplitResizeState>(
@@ -792,6 +806,13 @@ void SplitView::updatePolish() {
         if (! handle) continue;
         const auto& geometry = main.panes[i];
         handle->setVisible(geometry.handleVisible);
+        if (! valid()) break;
+        if (handle)
+            handleState(handle)->setResizable(
+                geometry.handleVisible &&
+                split_layout::resizable(horizontal ? widths : heights,
+                                        horizontal ? availableWidth() : availableHeight(),
+                                        i));
         if (! valid()) break;
         if (! handle || ! geometry.handleVisible) continue;
         handle->setSize(horizontal ? QSizeF(geometry.handleSize, available.height())

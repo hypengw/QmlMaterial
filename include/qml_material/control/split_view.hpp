@@ -98,23 +98,26 @@ class QML_MATERIAL_API SplitHandleAttached : public QObject {
     QML_ATTACHED(SplitHandleAttached)
     Q_PROPERTY(bool hovered READ isHovered NOTIFY hoveredChanged FINAL)
     Q_PROPERTY(bool pressed READ isPressed NOTIFY pressedChanged FINAL)
+    Q_PROPERTY(bool resizable READ isResizable NOTIFY resizableChanged FINAL)
 public:
     explicit SplitHandleAttached(QObject* parent): QObject(parent) {}
-    static SplitHandleAttached* qmlAttachedProperties(QObject* object) {
-        return new SplitHandleAttached(object);
-    }
-    bool          isHovered() const { return m_hovered; }
-    bool          isPressed() const { return m_pressed; }
-    Q_SIGNAL void hoveredChanged();
-    Q_SIGNAL void pressedChanged();
+    static SplitHandleAttached* qmlAttachedProperties(QObject* object);
+    bool                        isHovered() const { return m_hovered; }
+    bool                        isPressed() const { return m_pressed; }
+    bool                        isResizable() const { return m_resizable; }
+    Q_SIGNAL void               resizableChanged();
+    Q_SIGNAL void               hoveredChanged();
+    Q_SIGNAL void               pressedChanged();
 
 private:
     friend class SplitHandleInput;
     friend class SplitView;
     void setHovered(bool);
     void setPressed(bool);
-    bool m_hovered = false;
-    bool m_pressed = false;
+    void setResizable(bool);
+    bool m_resizable = false;
+    bool m_hovered   = false;
+    bool m_pressed   = false;
 };
 
 class QML_MATERIAL_API SplitViewAttached : public QObject {

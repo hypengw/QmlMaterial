@@ -16,6 +16,9 @@ MD.PopupBase {
     topMargin: 72
     property int animationDuration: 250
     readonly property real sheetWidth: _sheetWidth
+    property real preferredContentHeight: -1
+    readonly property real contentViewportWidth: _sheetWidth
+    readonly property real contentViewportHeight: Math.max(0, _visibleHeight - _handleTouchHeight)
     default property alias content: m_content.data
 
     property real _slideOffset: _visibleHeight
@@ -32,7 +35,8 @@ MD.PopupBase {
     readonly property real _sheetWidth: _useMaxWidth ? maxSheetWidth : _overlayWidth
     readonly property real _availableHeight: Math.max(0, _overlayHeight - topMargin)
     readonly property real _handleTouchHeight: showDragHandle ? 48 : 0
-    readonly property real _contentHeight: Math.max(0, m_content.childrenRect.height)
+    readonly property real _naturalContentHeight: Math.max(0, m_content.childrenRect.height)
+    readonly property real _contentHeight: preferredContentHeight >= 0 ? Math.min(preferredContentHeight, Math.max(0, _availableHeight - _handleTouchHeight)) : _naturalContentHeight
     readonly property real _sheetHeight: Math.max(_handleTouchHeight, _contentHeight + _handleTouchHeight)
     readonly property real _automaticLowHeight: Math.min(_sheetHeight, _availableHeight)
     readonly property real _requestedLowHeight: lowHeight > 0 ? lowHeight : _automaticLowHeight
@@ -59,6 +63,13 @@ MD.PopupBase {
 
     onAboutToShow: _startEnter()
     onAboutToHide: _startExit()
+    onClosed: {
+        m_sheet_motion.stop();
+        m_sheet_flickable.cancelFlick();
+        _dragDismissPending = false;
+        _scrimOpacity = 0;
+        _slideOffset = _visibleHeight;
+    }
 
     function _startEnter() {
         m_sheet_motion.stop();

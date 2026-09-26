@@ -299,7 +299,7 @@ public:
     Q_INVOKABLE void         completeEnter();
     Q_INVOKABLE void         completeExit();
     Q_INVOKABLE void         forceActiveFocus(Qt::FocusReason reason = Qt::OtherFocusReason);
-    virtual void             dismissImmediately();
+    Q_INVOKABLE virtual void dismissImmediately();
     void                     reposition();
     virtual void             updateDimmer(QQuickItem*, qreal opacity) const;
     bool                     containsScenePoint(const QPointF&) const;

@@ -107,6 +107,36 @@ private Q_SLOTS:
         polish(view.get());
         QCOMPARE(first->width(), 300);
     }
+    void fixedHandleDoesNotResize() {
+        auto view = create();
+        QVERIFY(view);
+        info(view->itemAt(0))->setFillWidth(true);
+        auto* second = info(view->itemAt(1));
+        second->setFillWidth(false);
+        second->setMinimumWidth(280);
+        second->setMaximumWidth(280);
+        second->setPreferredWidth(280);
+        polish(view.get());
+        auto* handle = view->handleItemAt(0);
+        QVERIFY(handle);
+        auto* state = qobject_cast<SplitHandleAttached*>(
+            qmlAttachedPropertiesObject<SplitHandleAttached>(handle, true));
+        QVERIFY(state);
+        QVERIFY(! state->isResizable());
+        const auto saved = view->saveState();
+        QTest::mousePress(&m_window,
+                          Qt::LeftButton,
+                          {},
+                          handle->mapToScene(handle->boundingRect().center()).toPoint());
+        QVERIFY(! view->isResizing());
+        QVERIFY(! state->isPressed());
+        QTest::mouseRelease(&m_window, Qt::LeftButton);
+        QCOMPARE(view->saveState(), saved);
+        QCOMPARE(view->itemAt(1)->width(), 280);
+        second->setMaximumWidth(500);
+        polish(view.get());
+        QVERIFY(state->isResizable());
+    }
     void initiallyCollapsedAndReentry() {
         auto view = create({}, false);
         QVERIFY(view);

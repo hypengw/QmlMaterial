@@ -13,6 +13,7 @@ MD.SplitViewBase {
     handle: MD.DragHandle {
         id: m_handle
         containmentMask: null
+        interactive: MD.SplitHandle.resizable
         opacity: control.handleOpacity
         pressed: MD.SplitHandle.pressed
         hovered: MD.SplitHandle.hovered

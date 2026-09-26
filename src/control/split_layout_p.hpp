@@ -43,4 +43,5 @@ struct Resize {
     qreal size  = 0;
 };
 Resize resize(const QList<Pane>& panes, qreal available, int handleIndex, qreal delta);
+bool   resizable(const QList<Pane>& panes, qreal available, int handleIndex);
 } // namespace qml_material::split_layout

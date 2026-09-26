@@ -6,6 +6,7 @@ Rectangle {
     property bool pressed: false
     property bool hovered: false
     property bool visualFocus: false
+    property bool interactive: true
 
     property int orientation: Qt.Vertical
     property int controlHeight: 0
@@ -23,13 +24,14 @@ Rectangle {
     }
 
     onHoveredChanged: {
-        if (hovered) {
+        if (hovered && interactive) {
             MD.Util.setCursor(root, Qt.OpenHandCursor);
         }
     }
     onPressedChanged: {
-        MD.Util.setCursor(root, pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor);
+        MD.Util.setCursor(root, !interactive ? Qt.ArrowCursor : pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor);
     }
+    onInteractiveChanged: MD.Util.setCursor(root, interactive && hovered ? Qt.OpenHandCursor : Qt.ArrowCursor)
 
     Binding {
         when: root.orientation === Qt.Horizontal
