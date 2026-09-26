@@ -309,8 +309,14 @@ MD.Scrollable {
         QTest::addColumn<QString>("gesture");
         QTest::addColumn<bool>("dismiss");
         for (bool nested : { false, true }) {
-            for (const auto& gesture :
-                 { "fast", "paused", "rest", "reverse", "distance", "cancel", "threshold" }) {
+            for (const auto& gesture : { "fast",
+                                         "paused",
+                                         "rest",
+                                         "reverse",
+                                         "unstable",
+                                         "distance",
+                                         "cancel",
+                                         "threshold" }) {
                 const auto name = QByteArray(nested ? "nested-" : "direct-") + gesture;
                 QTest::newRow(name.constData())
                     << nested << QString::fromLatin1(gesture)
@@ -378,7 +384,7 @@ Item {
             QCOMPARE(scroll->contentY(), -60);
         }
         QVERIFY(scroll->dragVelocity().y() < 0);
-        QCOMPARE(sheet->property("_scrimOpacity").toReal(), 0);
+        QCOMPARE(sheet->property("_scrimOpacity").toReal(), far || gesture == "threshold" ? 0 : 1);
         if (gesture == "rest") {
             QTRY_COMPARE(scroll->dragVelocity(), QPointF());
             QCOMPARE(sheet->property("_scrimOpacity").toReal(), 1);
@@ -389,7 +395,18 @@ Item {
             mouse(QEvent::MouseMove, moved, 1040);
             QVERIFY(scroll->dragVelocity().y() > 0);
             QVERIFY(-scroll->contentY() > sheet->property("dragDismissThreshold").toReal());
-            QCOMPARE(sheet->property("_scrimOpacity").toReal(), 1);
+            QCOMPARE(sheet->property("_scrimOpacity").toReal(), 0);
+        }
+        if (gesture == "unstable") {
+            ulong timestamp = 1040;
+            for (qreal distance : { 25, 35, 30 }) {
+                moved = start + QPointF(0, distance);
+                mouse(QEvent::MouseMove, moved, timestamp);
+                timestamp += 20;
+                QVERIFY(distance == 35 ? scroll->dragVelocity().y() < 0
+                                       : scroll->dragVelocity().y() > 0);
+                QCOMPARE(sheet->property("_scrimOpacity").toReal(), 1);
+            }
         }
         if (gesture == "cancel") {
             scroll->setInteractive(false);
@@ -397,12 +414,12 @@ Item {
         } else {
             const bool pause = gesture == "paused" || gesture == "rest" || gesture == "distance" ||
                                gesture == "threshold";
-            mouse(QEvent::MouseButtonRelease, moved, pause ? 1240 : 1060);
+            mouse(QEvent::MouseButtonRelease, moved, pause ? 1240 : 1100);
             QCOMPARE(released.size(), 1);
             const auto velocity = released.first().first().toPointF();
             if (pause)
                 QCOMPARE(velocity, QPointF());
-            else if (gesture == "reverse")
+            else if (gesture == "reverse" || gesture == "unstable")
                 QVERIFY(velocity.y() > 0);
             else
                 QVERIFY(velocity.y() < 0);
@@ -514,6 +531,11 @@ Item {
         QCOMPARE(sheet->property("_scrimOpacity").toReal(), 0);
         QVERIFY(sheet->modal());
         QVERIFY(sheet->dim());
+        mouse(QEvent::MouseMove, start + QPointF(0, 150), 1070);
+        QCOMPARE(scroll->contentY(), -100);
+        QVERIFY(scroll->dragVelocity().y() > 0);
+        QVERIFY(! dragScrim->isRunning());
+        QCOMPARE(sheet->property("_scrimOpacity").toReal(), 0);
         mouse(QEvent::MouseMove, start + QPointF(0, 70), 1080);
         QCOMPARE(scroll->contentY(), -20);
         QCOMPARE(list->contentY(), 0);

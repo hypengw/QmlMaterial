@@ -124,16 +124,20 @@ MD.PopupBase {
             control.completeExit();
     }
 
+    function _isPastDismissThreshold(position) {
+        return dismissOnDragDown && position < -_collapseDistance - 0.5 && -position - _collapseDistance >= Math.max(0, dragDismissThreshold);
+    }
+
     function _willDismissAt(position, velocity) {
         // Positive content velocity moves the sheet back up; reversal wins over distance.
         const projectedPosition = position + velocity * 0.1;
-        return dismissOnDragDown && velocity <= 0 && position < -_collapseDistance - 0.5 && -projectedPosition - _collapseDistance >= Math.max(0, dragDismissThreshold);
+        return velocity <= 0 && position < -_collapseDistance - 0.5 && _isPastDismissThreshold(projectedPosition);
     }
 
     function _updateDragScrim() {
         if (!control.opened || control.closing)
             return;
-        const target = _willDismissAt(m_sheet_flickable.contentY, m_sheet_flickable.dragVelocity.y) ? 0 : 1;
+        const target = _isPastDismissThreshold(m_sheet_flickable.contentY) ? 0 : 1;
         _animateDragScrim(target);
     }
 
@@ -166,6 +170,7 @@ MD.PopupBase {
         if (_willDismissAt(_dragReleasePosition, _dragReleaseVelocity)) {
             control.close();
         } else {
+            _animateDragScrim(1);
             m_drag_return.to = -_collapseDistance;
             m_drag_return.start();
         }
@@ -205,10 +210,6 @@ MD.PopupBase {
             control._updateDragScrim();
         }
         onContentYChanged: {
-            if (dragging)
-                control._updateDragScrim();
-        }
-        onDragVelocityChanged: {
             if (dragging)
                 control._updateDragScrim();
         }
