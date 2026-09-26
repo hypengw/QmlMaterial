@@ -88,15 +88,15 @@ MD.PopupBase {
             property: "scale"
             from: 0.9
             to: 1.0
-            easing.type: Easing.OutQuint
-            duration: 220
+            easing: MD.Token.easing.emphasized_decelerate
+            duration: MD.Token.duration.medium1
         }
         NumberAnimation {
             property: "opacity"
             from: 0.0
             to: 1.0
-            easing.type: Easing.OutCubic
-            duration: 150
+            easing: MD.Token.easing.standard
+            duration: MD.Token.duration.short3
         }
     }
 
@@ -106,15 +106,15 @@ MD.PopupBase {
             property: "scale"
             from: 1.0
             to: 0.9
-            easing.type: Easing.OutQuint
-            duration: 220
+            easing: MD.Token.easing.emphasized_accelerate
+            duration: MD.Token.duration.short3
         }
         NumberAnimation {
             property: "opacity"
             from: 1.0
             to: 0.0
-            easing.type: Easing.OutCubic
-            duration: 150
+            easing: MD.Token.easing.standard
+            duration: MD.Token.duration.short3
         }
     }
 
@@ -130,7 +130,8 @@ MD.PopupBase {
         color: MD.Util.transparent(MD.Token.color.scrim, 0.32)
         Behavior on opacity {
             NumberAnimation {
-                duration: 150
+                duration: MD.Token.duration.short3
+                easing: MD.Token.easing.linear
             }
         }
     }
@@ -139,7 +140,8 @@ MD.PopupBase {
         color: MD.Util.transparent(MD.Token.color.scrim, 0.32)
         Behavior on opacity {
             NumberAnimation {
-                duration: 150
+                duration: MD.Token.duration.short3
+                easing: MD.Token.easing.linear
             }
         }
     }

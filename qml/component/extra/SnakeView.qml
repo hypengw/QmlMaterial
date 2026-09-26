@@ -36,7 +36,8 @@ ListView {
             NumberAnimation {
                 property: "opacity"
                 to: 0
-                duration: 500
+                duration: MD.Token.duration.long2
+                easing: MD.Token.easing.linear
             }
         }
     }
@@ -46,15 +47,16 @@ ListView {
         ParallelAnimation {
             NumberAnimation {
                 properties: "height"
-                easing.type: Easing.InOutCubic
+                easing: MD.Token.easing.standard
                 from: 0
-                duration: 200
+                duration: MD.Token.duration.short4
             }
             NumberAnimation {
                 property: "opacity"
                 from: 0
                 to: 1
-                duration: 200
+                duration: MD.Token.duration.short4
+                easing: MD.Token.easing.linear
             }
         }
     }

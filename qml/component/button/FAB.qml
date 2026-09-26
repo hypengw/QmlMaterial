@@ -119,19 +119,23 @@ MD.ButtonBase {
                         target: control
                         from: control.x + 16
                         to: control.x
-                        duration: 200
+                        duration: MD.Token.duration.short4
+                        easing: MD.Token.easing.linear
                     }
                     YAnimator {
                         target: control
                         from: control.y + 16
                         to: control.y
-                        duration: 200
+                        duration: MD.Token.duration.short4
+                        easing: MD.Token.easing.linear
                     }
                     ScaleAnimator {
-                        duration: 200
+                        duration: MD.Token.duration.short4
+                        easing: MD.Token.easing.linear
                     }
                     OpacityAnimator {
-                        duration: 200
+                        duration: MD.Token.duration.short4
+                        easing: MD.Token.easing.linear
                     }
                 }
             },
@@ -142,19 +146,23 @@ MD.ButtonBase {
                         target: control
                         from: control.x
                         to: control.x + 16
-                        duration: 200
+                        duration: MD.Token.duration.short4
+                        easing: MD.Token.easing.linear
                     }
                     YAnimator {
                         target: control
                         from: control.y
                         to: control.y + 16
-                        duration: 200
+                        duration: MD.Token.duration.short4
+                        easing: MD.Token.easing.linear
                     }
                     ScaleAnimator {
-                        duration: 200
+                        duration: MD.Token.duration.short4
+                        easing: MD.Token.easing.linear
                     }
                     OpacityAnimator {
-                        duration: 200
+                        duration: MD.Token.duration.short4
+                        easing: MD.Token.easing.linear
                     }
                 }
             }

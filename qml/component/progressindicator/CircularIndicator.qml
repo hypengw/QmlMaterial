@@ -208,6 +208,7 @@ MD.ProgressBarBase {
         Behavior on opacity {
             NumberAnimation {
                 duration: MD.Token.duration.short2
+                easing: MD.Token.easing.linear
             }
         }
 

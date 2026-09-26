@@ -34,6 +34,7 @@ MD.RadioButtonBase {
             Behavior on fillFactor {
                 NumberAnimation {
                     duration: MD.Token.duration.short3
+                    easing: MD.Token.easing.linear
                 }
             }
         }

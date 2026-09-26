@@ -32,12 +32,14 @@ MD.SwitchBase {
 
         Behavior on color {
             ColorAnimation {
-                duration: 200
+                duration: MD.Token.duration.short4
+                easing: MD.Token.easing.linear
             }
         }
         Behavior on border.color {
             ColorAnimation {
-                duration: 200
+                duration: MD.Token.duration.short4
+                easing: MD.Token.easing.linear
             }
         }
 
@@ -66,19 +68,21 @@ MD.SwitchBase {
             Behavior on x {
                 enabled: !control.pressed
                 SmoothedAnimation {
-                    duration: 300
+                    duration: MD.Token.duration.medium2
                 }
             }
 
             Behavior on scale {
                 NumberAnimation {
-                    duration: 100
+                    duration: MD.Token.duration.short2
+                    easing: MD.Token.easing.linear
                 }
             }
 
             Behavior on color {
                 ColorAnimation {
-                    duration: 200
+                    duration: MD.Token.duration.short4
+                    easing: MD.Token.easing.linear
                 }
             }
 

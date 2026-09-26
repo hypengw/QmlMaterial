@@ -20,7 +20,8 @@ Item {
     property real _fill: fill ? 1 : 0
     Behavior on _fill {
         NumberAnimation {
-            duration: 150
+            duration: MD.Token.duration.short3
+            easing: MD.Token.easing.linear
         }
     }
 

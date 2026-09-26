@@ -78,6 +78,7 @@ Item {
         Behavior on opacity {
             NumberAnimation {
                 duration: MD.Token.duration.short2
+                easing: MD.Token.easing.linear
             }
         }
         Behavior on scale {
@@ -134,6 +135,7 @@ Item {
         Behavior on opacity {
             NumberAnimation {
                 duration: MD.Token.duration.short2
+                easing: MD.Token.easing.linear
             }
         }
     }

@@ -18,6 +18,7 @@ MD.MState {
     Behavior on corners {
         PropertyAnimation {
             duration: MD.Token.duration.short2
+            easing: MD.Token.easing.linear
         }
     }
 

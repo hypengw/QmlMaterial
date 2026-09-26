@@ -155,14 +155,14 @@ MD.MenuBase {
         NumberAnimation {
             property: "opacity"
             to: 0
-            easing: MD.Token.easing.emphasized_decelerate
-            duration: MD.Token.duration.medium2
+            easing: MD.Token.easing.emphasized_accelerate
+            duration: MD.Token.duration.short3
         }
         NumberAnimation {
             property: "scale"
             to: 0.8
-            easing: MD.Token.easing.emphasized_decelerate
-            duration: MD.Token.duration.medium2
+            easing: MD.Token.easing.emphasized_accelerate
+            duration: MD.Token.duration.short3
         }
     }
 
@@ -263,7 +263,8 @@ MD.MenuBase {
         color: MD.Util.transparent(MD.Token.color.scrim, 0.32)
         Behavior on opacity {
             NumberAnimation {
-                duration: 150
+                duration: MD.Token.duration.short3
+                easing: MD.Token.easing.linear
             }
         }
     }
@@ -272,7 +273,8 @@ MD.MenuBase {
         color: MD.Util.transparent(MD.Token.color.scrim, 0.32)
         Behavior on opacity {
             NumberAnimation {
-                duration: 150
+                duration: MD.Token.duration.short3
+                easing: MD.Token.easing.linear
             }
         }
     }

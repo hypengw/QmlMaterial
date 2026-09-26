@@ -44,6 +44,8 @@ MD.ScrollBarBase {
         Transition {
             to: "active"
             NumberAnimation {
+                duration: MD.Token.duration.medium1
+                easing: MD.Token.easing.linear
                 targets: [control.contentItem, control.background]
                 property: "opacity"
                 to: 1.0
@@ -61,6 +63,8 @@ MD.ScrollBarBase {
                     duration: 2450
                 }
                 NumberAnimation {
+                    duration: MD.Token.duration.medium1
+                    easing: MD.Token.easing.linear
                     targets: [control.contentItem, control.background]
                     property: "opacity"
                     to: 0.0

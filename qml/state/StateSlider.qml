@@ -27,6 +27,7 @@ MD.MState {
     Behavior on handleLineWidth {
         NumberAnimation {
             duration: MD.Token.duration.short2
+            easing: MD.Token.easing.linear
         }
     }
 

@@ -23,7 +23,8 @@ MD.PageIndicatorBase {
 
         Behavior on opacity {
             OpacityAnimator {
-                duration: 100
+                duration: MD.Token.duration.short2
+                easing: MD.Token.easing.linear
             }
         }
     }

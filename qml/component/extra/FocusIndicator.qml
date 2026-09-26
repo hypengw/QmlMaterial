@@ -33,7 +33,7 @@ Item {
     Behavior on opacity {
         NumberAnimation {
             duration: MD.Token.duration.short2
-            easing.type: MD.Token.easing.standard.type
+            easing: MD.Token.easing.standard
         }
     }
 

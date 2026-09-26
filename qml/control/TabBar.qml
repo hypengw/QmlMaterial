@@ -46,7 +46,8 @@ MD.TabBarBase {
             z: 2
             Behavior on x {
                 NumberAnimation {
-                    duration: 250
+                    duration: MD.Token.duration.medium1
+                    easing: MD.Token.easing.linear
                 }
             }
             Item {
@@ -58,7 +59,8 @@ MD.TabBarBase {
 
                 Behavior on width {
                     NumberAnimation {
-                        duration: 250
+                        duration: MD.Token.duration.medium1
+                        easing: MD.Token.easing.linear
                     }
                 }
                 Rectangle {

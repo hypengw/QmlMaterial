@@ -20,13 +20,13 @@ inline auto emphasized() noexcept -> QEasingCurve {
 
 inline auto emphasized_accelerate() noexcept -> QEasingCurve {
     auto out = QEasingCurve(QEasingCurve::BezierSpline);
-    out.addCubicBezierSegment({ 0.3, 0. }, { 0.8, 0.15 }, { 1., 1. });
+    out.addCubicBezierSegment({ 0.3, 0. }, { 0.8, 0.2 }, { 1., 1. });
     return out;
 }
 
 inline auto emphasized_decelerate() noexcept -> QEasingCurve {
     auto out = QEasingCurve(QEasingCurve::BezierSpline);
-    out.addCubicBezierSegment({ 0.05, 0.7 }, { 0.1, 1. }, { 1., 1. });
+    out.addCubicBezierSegment({ 0.1, 0.7 }, { 0.1, 1. }, { 1., 1. });
     return out;
 }
 

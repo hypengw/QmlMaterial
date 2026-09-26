@@ -28,7 +28,8 @@ MD.ButtonBase {
 
     Behavior on leftPadding {
         NumberAnimation {
-            duration: 50
+            duration: MD.Token.duration.short1
+            easing: MD.Token.easing.linear
         }
     }
 
@@ -62,12 +63,14 @@ MD.ButtonBase {
 
             Behavior on implicitWidth {
                 NumberAnimation {
-                    duration: 100
+                    duration: MD.Token.duration.short2
+                    easing: MD.Token.easing.linear
                 }
             }
             Behavior on opacity {
                 OpacityAnimator {
-                    duration: 100
+                    duration: MD.Token.duration.short2
+                    easing: MD.Token.easing.linear
                 }
             }
 

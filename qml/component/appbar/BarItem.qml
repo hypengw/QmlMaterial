@@ -72,7 +72,8 @@ MD.ButtonBase {
                 alwaysRunToEnd: true
                 from: 48
                 to: 64
-                duration: 100
+                duration: MD.Token.duration.short2
+                easing: MD.Token.easing.linear
                 running: control.checked
             }
 

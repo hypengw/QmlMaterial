@@ -31,7 +31,8 @@ MD.Shape {
             enabled: root.__completed && root.animationsEnabled
             NumberAnimation {
                 properties: "openX,openWidth"
-                duration: MD.Token.duration.medium3
+                duration: MD.Token.duration.medium4
+                easing: MD.Token.easing.emphasized
             }
         }
     ]

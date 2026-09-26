@@ -16,7 +16,7 @@ MD.PopupBase {
     property real maxSheetWidth: 640
     property real wideSideMargin: 56
     topMargin: 72
-    property int animationDuration: 250
+    property int animationDuration: MD.Token.duration.medium1
     readonly property real sheetWidth: _sheetWidth
     property real preferredContentHeight: -1
     readonly property real contentViewportWidth: _sheetWidth
@@ -85,13 +85,16 @@ MD.PopupBase {
     }
 
     function _startEnter() {
+        const continuing = m_sheet_motion.running;
         m_drag_return.stop();
         m_drag_scrim.stop();
         m_sheet_motion.stop();
         m_sheet_flickable.cancelFlick();
         m_sheet_flickable.contentY = 0;
-        _slideOffset = _visibleHeight;
-        _scrimOpacity = 0;
+        if (!continuing) {
+            _slideOffset = _visibleHeight;
+            _scrimOpacity = 0;
+        }
         _animateTo(0, 1);
     }
 
@@ -100,7 +103,7 @@ MD.PopupBase {
         m_drag_scrim.stop();
         m_sheet_motion.stop();
         m_sheet_flickable.cancelFlick();
-        _slideOffset = -m_sheet_flickable.contentY;
+        _slideOffset -= m_sheet_flickable.contentY;
         m_sheet_flickable.contentY = 0;
         _animateTo(_visibleHeight, 0);
     }
@@ -286,7 +289,7 @@ MD.PopupBase {
         target: m_sheet_flickable
         property: "contentY"
         duration: control.animationDuration
-        easing.type: Easing.OutCubic
+        easing: MD.Token.easing.emphasized_decelerate
     }
 
     NumberAnimation {
@@ -294,7 +297,7 @@ MD.PopupBase {
         target: control
         property: "_scrimOpacity"
         duration: control.animationDuration
-        easing.type: Easing.OutCubic
+        easing: MD.Token.easing.linear
     }
 
     ParallelAnimation {
@@ -307,7 +310,7 @@ MD.PopupBase {
             target: control
             property: "_slideOffset"
             duration: control.animationDuration
-            easing.type: Easing.OutCubic
+            easing: control.closing ? MD.Token.easing.emphasized_accelerate : MD.Token.easing.emphasized_decelerate
         }
 
         NumberAnimation {
@@ -315,7 +318,7 @@ MD.PopupBase {
             target: control
             property: "_scrimOpacity"
             duration: control.animationDuration
-            easing.type: Easing.OutCubic
+            easing: MD.Token.easing.linear
         }
     }
 }

@@ -68,12 +68,14 @@ Rectangle {
 
         Behavior on handleHeight {
             NumberAnimation {
-                duration: 100
+                duration: MD.Token.duration.short2
+                easing: MD.Token.easing.linear
             }
         }
         Behavior on handleWidth {
             NumberAnimation {
-                duration: 100
+                duration: MD.Token.duration.short2
+                easing: MD.Token.easing.linear
             }
         }
     }

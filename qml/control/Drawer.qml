@@ -44,7 +44,8 @@ MD.DrawerBase {
         color: MD.Util.transparent(MD.Token.color.scrim, 0.32)
         Behavior on opacity {
             NumberAnimation {
-                duration: 150
+                duration: MD.Token.duration.short3
+                easing: MD.Token.easing.linear
             }
         }
     }
@@ -53,7 +54,8 @@ MD.DrawerBase {
         color: MD.Util.transparent(MD.Token.color.scrim, 0.32)
         Behavior on opacity {
             NumberAnimation {
-                duration: 150
+                duration: MD.Token.duration.short3
+                easing: MD.Token.easing.linear
             }
         }
     }

@@ -1,4 +1,5 @@
 import QtQuick
+import Qcm.Material as MD
 
 Text {
     id: root
@@ -65,16 +66,16 @@ Text {
             enabled: root.__completed && root.animationsEnabled
             to: ''
             YAnimator {
-                duration: 300
-                easing.type: Easing.OutSine
+                duration: MD.Token.duration.medium4
+                easing: MD.Token.easing.emphasized
             }
         },
         Transition {
             enabled: root.__completed && root.animationsEnabled
             to: 'float'
             YAnimator {
-                duration: 300
-                easing.type: Easing.OutSine
+                duration: MD.Token.duration.medium4
+                easing: MD.Token.easing.emphasized
             }
         }
     ]

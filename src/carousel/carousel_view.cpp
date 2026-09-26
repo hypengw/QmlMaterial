@@ -1,4 +1,5 @@
 #include "qml_material/carousel/carousel_view.hpp"
+#include "qml_material/anim/interpolator.hpp"
 
 #include <QAbstractItemModel>
 #include <QJSValue>
@@ -1226,7 +1227,7 @@ void CarouselView::applySnapAnimation(qreal targetOffset) {
                                                                 : QByteArrayLiteral("contentY");
         auto*            anim = new QPropertyAnimation(flick, prop, this);
         anim->setDuration(CarouselEngineDefaults::snap_duration);
-        anim->setEasingCurve(QEasingCurve::OutCubic);
+        anim->setEasingCurve(anim::emphasized_decelerate());
         anim->setStartValue(current);
         anim->setEndValue(clamped_target);
         m_snap_anim = anim;

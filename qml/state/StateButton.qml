@@ -40,6 +40,7 @@ MD.MState {
     Behavior on corners {
         PropertyAnimation {
             duration: MD.Token.duration.short2
+            easing: MD.Token.easing.linear
         }
     }
 
@@ -198,10 +199,12 @@ MD.MState {
             }
             ColorAnimation {
                 duration: MD.Token.duration.short2
+                easing: MD.Token.easing.linear
             }
             NumberAnimation {
                 property: "stateLayerOpacity"
                 duration: MD.Token.duration.short2
+                easing: MD.Token.easing.linear
             }
         },
         Transition {
@@ -214,10 +217,12 @@ MD.MState {
             }
             ColorAnimation {
                 duration: MD.Token.duration.short1
+                easing: MD.Token.easing.linear
             }
             NumberAnimation {
                 property: "stateLayerOpacity"
                 duration: MD.Token.duration.short1
+                easing: MD.Token.easing.linear
             }
         },
         Transition {
@@ -230,18 +235,22 @@ MD.MState {
             }
             ColorAnimation {
                 duration: MD.Token.duration.short4
+                easing: MD.Token.easing.linear
             }
             NumberAnimation {
                 property: "stateLayerOpacity"
                 duration: MD.Token.duration.short4
+                easing: MD.Token.easing.linear
             }
             NumberAnimation {
                 property: "contentOpacity"
                 duration: MD.Token.duration.short4
+                easing: MD.Token.easing.linear
             }
             NumberAnimation {
                 property: "backgroundOpacity"
                 duration: MD.Token.duration.short4
+                easing: MD.Token.easing.linear
             }
         }
     ]

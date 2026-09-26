@@ -2,6 +2,7 @@
 
 #include <QVector>
 #include <Qt>
+#include "qml_material/token/duration.hpp"
 
 namespace qml_material
 {
@@ -22,7 +23,7 @@ struct CarouselEngineDefaults {
     static constexpr qreal min_peek_px                = 16;
     static constexpr qreal parallax_ratio             = 0.35;
     static constexpr qreal parallax_ratio_uncontained = 0.5;
-    static constexpr int   snap_duration              = 400;
+    static constexpr int   snap_duration              = int(token::Duration {}.medium4);
     static constexpr qreal min_item_aspect            = 9.0 / 16.0;
     static constexpr qreal max_item_aspect            = 16.0 / 9.0;
 };
