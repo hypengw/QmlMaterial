@@ -13,7 +13,6 @@ qt_add_resources(
   Example.qml
   Typography.qml
   About.qml
-  assets/icon-colors.svg
   assets/carousel/abstract-amber-wide.jpg
   assets/carousel/abstract-coral-landscape.jpg
   assets/carousel/abstract-indigo-portrait.jpg

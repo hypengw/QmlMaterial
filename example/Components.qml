@@ -165,49 +165,6 @@ MD.Page {
                         }
 
                         ComponentCard {
-                            title: 'Icon descriptions'
-
-                            MD.Action {
-                                id: m_shared_icon_action
-                                text: 'Favorite'
-                                icon.name: MD.Token.icon.favorite
-                                icon.color: MD.MProp.color.primary
-                            }
-
-                            RowLayout {
-                                Layout.alignment: Qt.AlignHCenter
-                                spacing: 12
-                                MD.Button {
-                                    action: m_shared_icon_action
-                                    mdState.size: MD.Enum.XS
-                                }
-                                MD.IconButton {
-                                    action: m_shared_icon_action
-                                    mdState.size: MD.Enum.M
-                                    icon.fill: true
-                                }
-                                MD.IconButton {
-                                    action: m_shared_icon_action
-                                    mdState.size: MD.Enum.S
-                                }
-                            }
-                            RowLayout {
-                                Layout.alignment: Qt.AlignHCenter
-                                spacing: 12
-                                MD.Button {
-                                    text: 'Original'
-                                    icon.source: 'assets/icon-colors.svg'
-                                    icon.color: 'transparent'
-                                }
-                                MD.Button {
-                                    text: 'Tinted'
-                                    icon.source: 'assets/icon-colors.svg'
-                                    icon.color: MD.MProp.color.primary
-                                }
-                            }
-                        }
-
-                        ComponentCard {
                             title: 'Segmented buttons'
 
                             MD.SegmentedButtonGroup {

@@ -8,9 +8,12 @@ TableView {
 
     property int radius: MD.Token.shape.corner.extra_large
     property bool hasHeader: false
-    readonly property real effectiveRadius: {
-        const _contentSize = contentWidth + contentHeight;
-        let out = radius;
+    readonly property real effectiveRadius: Math.min(radius, _cellRadiusLimit)
+    property real _cellRadiusLimit: Infinity
+
+    // rowHeight()/columnWidth() become valid after layout, without notifying bindings.
+    function updateCellRadiusLimit() {
+        let out = Infinity;
         if (rows > 0) {
             const lastRowHeight = rowHeight(rows - 1);
             if (lastRowHeight > 0)
@@ -29,8 +32,10 @@ TableView {
             if (lastColumnWidth > 0)
                 out = Math.min(out, lastColumnWidth / 2);
         }
-        return out;
+        _cellRadiusLimit = out;
     }
+    onLayoutChanged: updateCellRadiusLimit()
+    onHasHeaderChanged: updateCellRadiusLimit()
     property MD.corners corners: hasHeader ? MD.Util.corners(0, 0, effectiveRadius, effectiveRadius) : MD.Util.corners(effectiveRadius)
     property color outlineColor: MD.Token.color.outline_variant
     property int outlineWidth: 1
