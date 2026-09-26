@@ -6,7 +6,6 @@ MD.MState {
 
     required property MD.TabButtonBase item
     property int type
-   
 
     property color baseTextColor: root.type == MD.Enum.PrimaryTab ? (root.item.checked ? root.ctx.color.primary : root.ctx.color.on_surface) : (root.item.checked ? root.ctx.color.on_surface : root.ctx.color.on_surface_variant)
     elevation: MD.Token.elevation.level0

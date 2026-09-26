@@ -51,11 +51,16 @@ MD.MState {
     property int corner: MD.Token.shape.corner.extra_small
 
     state: {
-        if (!item.enabled) return "disabled";
-        if (!item.acceptableInput && item.hovered) return "errorHover";
-        if (!item.acceptableInput) return "error";
-        if (item.focus) return "focus";
-        if (item.hovered) return "hovered";
+        if (!item.enabled)
+            return "disabled";
+        if (!item.acceptableInput && item.hovered)
+            return "errorHover";
+        if (!item.acceptableInput)
+            return "error";
+        if (item.focus)
+            return "focus";
+        if (item.hovered)
+            return "hovered";
         return "";
     }
 

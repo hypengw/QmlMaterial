@@ -251,23 +251,44 @@ MD.Page {
                             MD.SegmentedButtonGroup {
                                 Layout.alignment: Qt.AlignHCenter
                                 size: MD.Enum.XS
-                                MD.SegmentedButton { text: 'XS' }
-                                MD.SegmentedButton { text: 'XS'; checked: true }
-                                MD.SegmentedButton { text: 'XS' }
+                                MD.SegmentedButton {
+                                    text: 'XS'
+                                }
+                                MD.SegmentedButton {
+                                    text: 'XS'
+                                    checked: true
+                                }
+                                MD.SegmentedButton {
+                                    text: 'XS'
+                                }
                             }
                             MD.SegmentedButtonGroup {
                                 Layout.alignment: Qt.AlignHCenter
                                 size: MD.Enum.S
-                                MD.SegmentedButton { text: 'S' }
-                                MD.SegmentedButton { text: 'S'; checked: true }
-                                MD.SegmentedButton { text: 'S' }
+                                MD.SegmentedButton {
+                                    text: 'S'
+                                }
+                                MD.SegmentedButton {
+                                    text: 'S'
+                                    checked: true
+                                }
+                                MD.SegmentedButton {
+                                    text: 'S'
+                                }
                             }
                             MD.SegmentedButtonGroup {
                                 Layout.alignment: Qt.AlignHCenter
                                 size: MD.Enum.M
-                                MD.SegmentedButton { text: 'M' }
-                                MD.SegmentedButton { text: 'M'; checked: true }
-                                MD.SegmentedButton { text: 'M' }
+                                MD.SegmentedButton {
+                                    text: 'M'
+                                }
+                                MD.SegmentedButton {
+                                    text: 'M'
+                                    checked: true
+                                }
+                                MD.SegmentedButton {
+                                    text: 'M'
+                                }
                             }
                         }
 
@@ -455,22 +476,31 @@ MD.Page {
                                 MD.IconButton {
                                     mdState.type: MD.Enum.IBtStandard
                                     icon.name: MD.Token.icon.notifications
-                                    MD.Badge { dot: true }
+                                    MD.Badge {
+                                        dot: true
+                                    }
                                 }
                                 MD.IconButton {
                                     mdState.type: MD.Enum.IBtFilled
                                     icon.name: MD.Token.icon.notifications
-                                    MD.Badge { count: 9 }
+                                    MD.Badge {
+                                        count: 9
+                                    }
                                 }
                                 MD.IconButton {
                                     mdState.type: MD.Enum.IBtOutlined
                                     icon.name: MD.Token.icon.notifications
-                                    MD.Badge { count: 128; maxCount: 99 }
+                                    MD.Badge {
+                                        count: 128
+                                        maxCount: 99
+                                    }
                                 }
                                 MD.IconButton {
                                     mdState.type: MD.Enum.IBtStandard
                                     icon.name: MD.Token.icon.notifications
-                                    MD.Badge { text: "alarm"}
+                                    MD.Badge {
+                                        text: "alarm"
+                                    }
                                 }
                             }
                         }
@@ -584,49 +614,28 @@ MD.Page {
                                     Layout.fillWidth: true
                                     mdState.type: MD.Enum.BtText
                                     text: 'Single line'
-                                    onClicked: m_snake.show(
-                                        "Single-line snackbar with action",
-                                        6000,
-                                        0,
-                                        m_snake_action,
-                                        344)
+                                    onClicked: m_snake.show("Single-line snackbar with action", 6000, 0, m_snake_action, 344)
                                 }
 
                                 MD.Button {
                                     Layout.fillWidth: true
                                     mdState.type: MD.Enum.BtText
                                     text: 'Two lines'
-                                    onClicked: m_snake.show(
-                                        "Two-line snackbar with action",
-                                        6000,
-                                        0,
-                                        m_snake_action,
-                                        280)
+                                    onClicked: m_snake.show("Two-line snackbar with action", 6000, 0, m_snake_action, 280)
                                 }
 
                                 MD.Button {
                                     Layout.fillWidth: true
                                     mdState.type: MD.Enum.BtText
                                     text: 'Longer action'
-                                    onClicked: m_snake.show(
-                                        "Two-line snackbar\nwith longer action",
-                                        6000,
-                                        0,
-                                        m_snake_longer_action,
-                                        344,
-                                        true)
+                                    onClicked: m_snake.show("Two-line snackbar\nwith longer action", 6000, 0, m_snake_longer_action, 344, true)
                                 }
 
                                 MD.Button {
                                     Layout.fillWidth: true
                                     mdState.type: MD.Enum.BtText
                                     text: 'Details'
-                                    onClicked: m_snake.show(
-                                        "Import completed with additional details. 128 records were processed, 124 were added, three duplicates were skipped, and one record needs manual review before it can be published.",
-                                        6000,
-                                        0,
-                                        m_snake_action,
-                                        420)
+                                    onClicked: m_snake.show("Import completed with additional details. 128 records were processed, 124 were added, three duplicates were skipped, and one record needs manual review before it can be published.", 6000, 0, m_snake_action, 420)
                                 }
                             }
                         }
@@ -1764,7 +1773,9 @@ MD.Page {
                                     Layout.alignment: Qt.AlignHCenter
                                     Layout.preferredWidth: 200
                                     value: m_date_picker.selectedDate
-                                    onModified: function (d) { m_date_picker.selectedDate = d; }
+                                    onModified: function (d) {
+                                        m_date_picker.selectedDate = d;
+                                    }
                                 }
                                 MD.Divider {
                                     Layout.fillWidth: true
@@ -1785,7 +1796,9 @@ MD.Page {
                                     Layout.alignment: Qt.AlignHCenter
                                     Layout.preferredWidth: 120
                                     color: m_color_picker.color
-                                    onAccepted: function (c) { m_color_picker.color = c; }
+                                    onAccepted: function (c) {
+                                        m_color_picker.color = c;
+                                    }
                                 }
                                 MD.Divider {
                                     Layout.fillWidth: true
@@ -1805,15 +1818,34 @@ MD.Page {
                                 TableModel {
                                     id: m_table_model
 
-                                    TableModelColumn { display: "component" }
-                                    TableModelColumn { display: "usage" }
+                                    TableModelColumn {
+                                        display: "component"
+                                    }
+                                    TableModelColumn {
+                                        display: "usage"
+                                    }
 
                                     rows: [
-                                        { component: "Buttons", usage: "Primary and secondary actions" },
-                                        { component: "Bottom sheets", usage: "Modal and persistent surfaces" },
-                                        { component: "Navigation", usage: "Destination switching" },
-                                        { component: "Text inputs", usage: "Form controls" },
-                                        { component: "Tables", usage: "Structured data" }
+                                        {
+                                            component: "Buttons",
+                                            usage: "Primary and secondary actions"
+                                        },
+                                        {
+                                            component: "Bottom sheets",
+                                            usage: "Modal and persistent surfaces"
+                                        },
+                                        {
+                                            component: "Navigation",
+                                            usage: "Destination switching"
+                                        },
+                                        {
+                                            component: "Text inputs",
+                                            usage: "Form controls"
+                                        },
+                                        {
+                                            component: "Tables",
+                                            usage: "Structured data"
+                                        }
                                     ]
                                 }
 
@@ -1846,10 +1878,10 @@ MD.Page {
                                         hasHeader: true
                                         model: m_table_model
                                         selectionBehavior: TableView.SelectionDisabled
-                                        columnWidthProvider: function(column) {
+                                        columnWidthProvider: function (column) {
                                             return [200, 360][column] ?? 120;
                                         }
-                                        rowHeightProvider: function() {
+                                        rowHeightProvider: function () {
                                             return 44;
                                         }
                                     }
@@ -1932,12 +1964,7 @@ MD.Page {
             }
 
             Repeater {
-                model: [
-                    [MD.Token.icon.folder, 'Project files'],
-                    [MD.Token.icon.schedule, 'Recent activity'],
-                    [MD.Token.icon.notifications, 'Notifications'],
-                    [MD.Token.icon.settings, 'Sheet settings']
-                ]
+                model: [[MD.Token.icon.folder, 'Project files'], [MD.Token.icon.schedule, 'Recent activity'], [MD.Token.icon.notifications, 'Notifications'], [MD.Token.icon.settings, 'Sheet settings']]
 
                 RowLayout {
                     required property var modelData

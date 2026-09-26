@@ -6,9 +6,7 @@ MD.ButtonBase {
     id: control
 
     readonly property MD.SegmentedButtonGroup segmentedGroup: MD.ContainerBase.container as MD.SegmentedButtonGroup
-    property int position: !segmentedGroup || segmentedGroup.count === 1 ? MD.Enum.PosSingle
-        : MD.ContainerBase.index === 0 ? MD.Enum.PosFirst
-        : MD.ContainerBase.index === segmentedGroup.count - 1 ? MD.Enum.PosLast : MD.Enum.PosMiddle
+    property int position: !segmentedGroup || segmentedGroup.count === 1 ? MD.Enum.PosSingle : MD.ContainerBase.index === 0 ? MD.Enum.PosFirst : MD.ContainerBase.index === segmentedGroup.count - 1 ? MD.Enum.PosLast : MD.Enum.PosMiddle
     property int size: segmentedGroup?.size ?? MD.Enum.S
     property alias mdState: m_state
 
@@ -90,7 +88,7 @@ MD.ButtonBase {
 
         border.width: control.mdState.outlineWidth
         border.color: control.mdState.outlineColor
-        
+
         MD.Ripple {
             anchors.fill: parent
             corners: parent.corners

@@ -23,7 +23,7 @@ MD.ControlBase {
     property alias text: m_button.text
     property alias icon: m_button.icon
     property alias menu: m_indicator.menu
-    signal clicked()
+    signal clicked
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)

@@ -4,7 +4,6 @@ import Qcm.Material as MD
 MD.MState {
     id: root
     required property MD.ButtonBase item
-   
 
     stateLayerColor: "transparent"
     textColor: {

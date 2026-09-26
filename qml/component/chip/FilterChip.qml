@@ -27,7 +27,9 @@ MD.ButtonBase {
     spacing: 8
 
     Behavior on leftPadding {
-        NumberAnimation { duration: 50 }
+        NumberAnimation {
+            duration: 50
+        }
     }
 
     icon.width: 18
@@ -59,10 +61,14 @@ MD.ButtonBase {
             visible: implicitWidth > 0
 
             Behavior on implicitWidth {
-                NumberAnimation { duration: 100 }
+                NumberAnimation {
+                    duration: 100
+                }
             }
             Behavior on opacity {
-                OpacityAnimator { duration: 100 }
+                OpacityAnimator {
+                    duration: 100
+                }
             }
 
             Lite.Row {
@@ -125,5 +131,4 @@ MD.ButtonBase {
             active: control.visualFocus
         }
     }
-
 }

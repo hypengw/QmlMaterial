@@ -21,7 +21,7 @@ MD.HorizontalHeaderViewBase {
     // TableView won't bother loading any delegates at all.
     implicitHeight: Math.max(1, contentHeight)
 
-    delegate: MD.HorizontalHeaderViewDelegate { }
+    delegate: MD.HorizontalHeaderViewDelegate {}
 
     MD.Rectangle {
         objectName: "headerOutline"

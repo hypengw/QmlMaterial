@@ -30,10 +30,10 @@ Item {
     readonly property bool _wrapMode: contentHolder.children.length > 0
     readonly property Item _autoTarget: {
         if (root.target)
-            return root.target
+            return root.target;
         if (root._wrapMode)
-            return contentHolder.children[0]
-        return root.parent
+            return contentHolder.children[0];
+        return root.parent;
     }
 
     implicitWidth: _wrapMode ? contentHolder.implicitWidth : (_autoTarget ? _autoTarget.implicitWidth : 0)
@@ -54,12 +54,12 @@ Item {
     readonly property string _labelText: {
         if (count >= 0) {
             if (count === 0 && !showZero)
-                return ""
+                return "";
             if (count > maxCount)
-                return String(maxCount) + "+"
-            return String(count)
+                return String(maxCount) + "+";
+            return String(count);
         }
-        return text
+        return text;
     }
 
     property bool dot: false
@@ -80,36 +80,33 @@ Item {
         antialiasing: true
 
         readonly property bool dotMode: root._showDot
-        width: dotMode
-               ? MD.Token.badge.def.small_diameter
-               : Math.max(MD.Token.badge.def.large_min_width,
-                          labelMetrics.width + 2 * MD.Token.badge.def.large_horizontal_padding)
+        width: dotMode ? MD.Token.badge.def.small_diameter : Math.max(MD.Token.badge.def.large_min_width, labelMetrics.width + 2 * MD.Token.badge.def.large_horizontal_padding)
         height: dotMode ? width : MD.Token.badge.def.large_height
         radius: height / 2
 
         x: {
-            const pw = root.width
-            const w = badge.width
-            let base = 0
+            const pw = root.width;
+            const w = badge.width;
+            let base = 0;
             if (root.alignment & Qt.AlignHCenter)
-                base = (pw - w) / 2
+                base = (pw - w) / 2;
             else if (root.alignment & Qt.AlignRight)
-                base = pw - w
+                base = pw - w;
             else
-                base = 0
-            return base + root.offset.x
+                base = 0;
+            return base + root.offset.x;
         }
         y: {
-            const ph = root.height
-            const h = badge.height
-            let base = 0
+            const ph = root.height;
+            const h = badge.height;
+            let base = 0;
             if (root.alignment & Qt.AlignVCenter)
-                base = (ph - h) / 2
+                base = (ph - h) / 2;
             else if (root.alignment & Qt.AlignBottom)
-                base = ph - h
+                base = ph - h;
             else
-                base = 0
-            return base + root.offset.y
+                base = 0;
+            return base + root.offset.y;
         }
 
         MD.Text {
@@ -124,4 +121,3 @@ Item {
         }
     }
 }
-

@@ -7,5 +7,4 @@ import QtQuick
 //
 // Currently routed to: RippleSkia (Material You "realistic" ripple)
 // To use the classic variant instead, replace `RippleSkia` with `RippleShape`.
-RippleSkia {
-}
+RippleSkia {}

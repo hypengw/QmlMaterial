@@ -26,12 +26,8 @@ MD.TextFieldEmbed {
     topInset: clip ? m_placeholder.largestHeight / 2 : 0
     bottomInset: 0
 
-    leftPadding: leading.visible
-        ? mdState.horizontalPadding + mdState.spacing + leading.implicitWidth
-        : mdState.horizontalPadding
-    rightPadding: trailing.visible
-        ? mdState.horizontalPadding + mdState.spacing + trailing.implicitWidth
-        : mdState.horizontalPadding
+    leftPadding: leading.visible ? mdState.horizontalPadding + mdState.spacing + leading.implicitWidth : mdState.horizontalPadding
+    rightPadding: trailing.visible ? mdState.horizontalPadding + mdState.spacing + trailing.implicitWidth : mdState.horizontalPadding
 
     bottomPadding: {
         if (mdState.type === MD.Enum.TextFieldFilled)
@@ -65,9 +61,7 @@ MD.TextFieldEmbed {
 
         filled: control.type === MD.Enum.TextFieldFilled
         controlHasText: control.length > 0
-        cutoutColor: control.type === MD.Enum.TextFieldFilled
-                     ? control.mdState.backgroundColor
-                     : "transparent"
+        cutoutColor: control.type === MD.Enum.TextFieldFilled ? control.mdState.backgroundColor : "transparent"
         //controlImplicitBackgroundHeight: control.implicitBackgroundHeight
     }
 

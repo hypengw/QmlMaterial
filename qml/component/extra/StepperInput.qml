@@ -27,8 +27,10 @@ Rectangle {
     function _commit(v) {
         if (wrap && from !== to) {
             const span = to - from;
-            while (v < from) v += span;
-            while (v > to) v -= span;
+            while (v < from)
+                v += span;
+            while (v > to)
+                v -= span;
         } else {
             v = Math.max(from, Math.min(to, v));
         }
@@ -57,8 +59,10 @@ Rectangle {
         }
         onEditingFinished: {
             const v = parseFloat(m_input.text);
-            if (!isNaN(v)) root._commit(v);
-            else m_input.text = root._format(root.value);
+            if (!isNaN(v))
+                root._commit(v);
+            else
+                m_input.text = root._format(root.value);
         }
 
         MD.Text {
@@ -81,6 +85,8 @@ Rectangle {
         to: root.to
         step: root.step
         wrap: root.wrap
-        onStepped: function (v) { root._commit(v); }
+        onStepped: function (v) {
+            root._commit(v);
+        }
     }
 }

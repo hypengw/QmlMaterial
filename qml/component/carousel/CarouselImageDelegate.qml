@@ -10,7 +10,7 @@ MD.CarouselItem {
     property string source: ''
     property string title: ''
 
-    signal aspectRatioChanged()
+    signal aspectRatioChanged
 
     readonly property real itemAspectRatio: {
         if (m_image.status === Image.Ready && m_image.sourceSize.height > 0) {

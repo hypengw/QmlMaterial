@@ -25,7 +25,8 @@ Item {
 
     function _angleFromXY(x, y) {
         let a = Math.atan2(root._cy - y, x - root._cx) * 180 / Math.PI;
-        if (a < 0) a += 360;
+        if (a < 0)
+            a += 360;
         return a;
     }
     function _distFromCenter(x, y) {
@@ -46,15 +47,22 @@ Item {
             startY: root._cy
 
             PathAngleArc {
-                centerX: root._cx; centerY: root._cy
-                radiusX: root._outerR; radiusY: root._outerR
+                centerX: root._cx
+                centerY: root._cy
+                radiusX: root._outerR
+                radiusY: root._outerR
                 startAngle: 0
                 sweepAngle: 360
             }
-            PathMove { x: root._cx + root._innerR; y: root._cy }
+            PathMove {
+                x: root._cx + root._innerR
+                y: root._cy
+            }
             PathAngleArc {
-                centerX: root._cx; centerY: root._cy
-                radiusX: root._innerR; radiusY: root._innerR
+                centerX: root._cx
+                centerY: root._cy
+                radiusX: root._innerR
+                radiusY: root._innerR
                 startAngle: 0
                 sweepAngle: 360
             }
@@ -63,13 +71,34 @@ Item {
                 centerX: root._cx
                 centerY: root._cy
                 angle: 0
-                GradientStop { position: 0.0000; color: "#ff0000" }
-                GradientStop { position: 0.1667; color: "#ffff00" }
-                GradientStop { position: 0.3333; color: "#00ff00" }
-                GradientStop { position: 0.5000; color: "#00ffff" }
-                GradientStop { position: 0.6667; color: "#0000ff" }
-                GradientStop { position: 0.8333; color: "#ff00ff" }
-                GradientStop { position: 1.0000; color: "#ff0000" }
+                GradientStop {
+                    position: 0.0000
+                    color: "#ff0000"
+                }
+                GradientStop {
+                    position: 0.1667
+                    color: "#ffff00"
+                }
+                GradientStop {
+                    position: 0.3333
+                    color: "#00ff00"
+                }
+                GradientStop {
+                    position: 0.5000
+                    color: "#00ffff"
+                }
+                GradientStop {
+                    position: 0.6667
+                    color: "#0000ff"
+                }
+                GradientStop {
+                    position: 0.8333
+                    color: "#ff00ff"
+                }
+                GradientStop {
+                    position: 1.0000
+                    color: "#ff0000"
+                }
             }
         }
     }
@@ -101,7 +130,9 @@ Item {
         hue: root.hue
         saturation: root.saturation
         value: root.value
-        onUserSvChanged: function (s, v) { root.userSvChanged(s, v); }
+        onUserSvChanged: function (s, v) {
+            root.userSvChanged(s, v);
+        }
     }
 
     MouseArea {
@@ -122,7 +153,8 @@ Item {
             }
         }
         onPositionChanged: function (e) {
-            if (!m_ringArea.dragging) return;
+            if (!m_ringArea.dragging)
+                return;
             const a = root._angleFromXY(e.x, e.y);
             root.userHueChanged(a / 360);
         }

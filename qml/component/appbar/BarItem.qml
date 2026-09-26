@@ -94,5 +94,4 @@ MD.ButtonBase {
             color: control.mdState.stateLayerColor
         }
     }
-
 }

@@ -92,13 +92,7 @@ Rectangle {
                     spacing: 24
 
                     Repeater {
-                        model: [
-                            "Alejandro",
-                            "Oli Ortega",
-                            "Carmen",
-                            "Ana Russo",
-                            "Marty Reyes"
-                        ]
+                        model: ["Alejandro", "Oli Ortega", "Carmen", "Ana Russo", "Marty Reyes"]
 
                         ColumnLayout {
                             required property string modelData

@@ -38,8 +38,7 @@ Item {
             id: blur_comp
             MD.BlurMaskImpl {
                 sigma: Math.max(root.elevation * 1.2, 0.5)
-                color: Qt.rgba(root.color.r, root.color.g, root.color.b,
-                               root.color.a * 0.35)
+                color: Qt.rgba(root.color.r, root.color.g, root.color.b, root.color.a * 0.35)
                 corners: root.corners
                 style: MD.BlurMaskImpl.Outer
             }

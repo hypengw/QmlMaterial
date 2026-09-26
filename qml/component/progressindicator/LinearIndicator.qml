@@ -47,10 +47,8 @@ MD.ProgressBarBase {
     property real waveAmplitude: 3
     property int waveCycleDuration: 1200
 
-    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
-                            implicitContentWidth + leftPadding + rightPadding)
-    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
-                             implicitContentHeight + topPadding + bottomPadding)
+    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
+    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
     padding: 0
     clip: false
@@ -83,7 +81,10 @@ MD.ProgressBarBase {
     FrameAnimation {
         running: control.animationState !== LinearIndicator.Stopped
         property real _startMs: 0
-        onRunningChanged: { if (running) _startMs = Date.now(); }
+        onRunningChanged: {
+            if (running)
+                _startMs = Date.now();
+        }
         onTriggered: {
             const d = m_updator.duration;
             if (d > 0)
@@ -96,7 +97,12 @@ MD.ProgressBarBase {
         running: control.animationState === LinearIndicator.Completing
         property real _startMs: 0
         property real _from: 0
-        onRunningChanged: { if (running) { _startMs = Date.now(); _from = m_updator.progress; } }
+        onRunningChanged: {
+            if (running) {
+                _startMs = Date.now();
+                _from = m_updator.progress;
+            }
+        }
         onTriggered: {
             const d = m_updator.completeEndDuration;
             const t = d > 0 ? Math.min(1, (Date.now() - _startMs) / d) : 1;
@@ -112,9 +118,7 @@ MD.ProgressBarBase {
         to: 1
         duration: control.waveCycleDuration
         easing.type: Easing.Linear
-        running: control.wavy && control.enabled
-                 && (control.indeterminate
-                     || (control.value < control.to && control.value > control.from))
+        running: control.wavy && control.enabled && (control.indeterminate || (control.value < control.to && control.value > control.from))
     }
     property real __phase: 0
 
@@ -140,8 +144,7 @@ MD.ProgressBarBase {
     // Determinate completes when position reaches the maximum — drains per M3
     // spec (active bar shrinks right-to-left), then the residual track height
     // collapses to 0.
-    readonly property bool __complete: ! control.indeterminate
-                                        && control.position >= 1
+    readonly property bool __complete: !control.indeterminate && control.position >= 1
 
     // Composite phase: 0 = pre-complete, 1 = fully gone.
     // First 2/3 = drain active right-to-left; last 1/3 = shrink track height.
@@ -152,26 +155,24 @@ MD.ProgressBarBase {
             easing.type: Easing.OutCubic
         }
     }
-    readonly property real __drainAmount:
-        Math.min(1, control.__completionFraction / 0.67)
-    readonly property real __heightAmount:
-        Math.max(0, (control.__completionFraction - 0.67) / 0.33)
+    readonly property real __drainAmount: Math.min(1, control.__completionFraction / 0.67)
+    readonly property real __heightAmount: Math.max(0, (control.__completionFraction - 0.67) / 0.33)
 
     // Determinate synthesizes a single JS-object indicator. End drains on
     // complete; the inactive after-segment naturally vanishes when the height
     // collapses (see __heightAmount usage below).
-    readonly property var __activeIndicators:
-        control.indeterminate
-            ? m_updator.activeIndicators
-            : [{ startFraction: 0,
-                 endFraction: control.__displayedPosition * (1 - control.__drainAmount),
-                 color: control.color,
-                 gapSize: 4 }]
+    readonly property var __activeIndicators: control.indeterminate ? m_updator.activeIndicators : [
+        {
+            startFraction: 0,
+            endFraction: control.__displayedPosition * (1 - control.__drainAmount),
+            color: control.color,
+            gapSize: 4
+        }
+    ]
 
     // Indeterminate uses opacity-based hide-fade. Determinate stays visible —
     // the drain animation handles the disappearance.
-    readonly property bool __visible:
-        ! control.indeterminate || control.animationState !== LinearIndicator.Stopped
+    readonly property bool __visible: !control.indeterminate || control.animationState !== LinearIndicator.Stopped
 
     Component {
         id: c_flat_shape
@@ -200,7 +201,9 @@ MD.ProgressBarBase {
 
         opacity: control.__visible ? 1 : 0
         Behavior on opacity {
-            NumberAnimation { duration: MD.Token.duration.short2 }
+            NumberAnimation {
+                duration: MD.Token.duration.short2
+            }
         }
 
         MD.Loader {
@@ -217,7 +220,7 @@ MD.ProgressBarBase {
             height: 4 * (1 - control.__heightAmount)
             radius: 2
             color: control.stopIndicatorColor
-            visible: ! control.indeterminate
+            visible: !control.indeterminate
             opacity: 1 - control.__drainAmount
         }
     }

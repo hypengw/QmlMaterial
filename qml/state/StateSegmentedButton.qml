@@ -9,12 +9,17 @@ MD.MState {
 
     readonly property MD.SegmentedButtonSizeItem sizeToken: {
         switch (root.size) {
-        case MD.Enum.XS: return MD.Token.segmented_button.xsmall;
-        case MD.Enum.M:  return MD.Token.segmented_button.medium;
-        case MD.Enum.L:  return MD.Token.segmented_button.large;
-        case MD.Enum.XL: return MD.Token.segmented_button.xlarge;
+        case MD.Enum.XS:
+            return MD.Token.segmented_button.xsmall;
+        case MD.Enum.M:
+            return MD.Token.segmented_button.medium;
+        case MD.Enum.L:
+            return MD.Token.segmented_button.large;
+        case MD.Enum.XL:
+            return MD.Token.segmented_button.xlarge;
         case MD.Enum.S:
-        default:         return MD.Token.segmented_button.small;
+        default:
+            return MD.Token.segmented_button.small;
         }
     }
 
@@ -26,12 +31,16 @@ MD.MState {
     readonly property real outlineWidth: sizeToken.outline_width
     readonly property MD.typescale typescale: {
         switch (root.size) {
-        case MD.Enum.M:  return MD.Token.typescale.title_medium;
-        case MD.Enum.L:  return MD.Token.typescale.headline_small;
-        case MD.Enum.XL: return MD.Token.typescale.headline_large;
+        case MD.Enum.M:
+            return MD.Token.typescale.title_medium;
+        case MD.Enum.L:
+            return MD.Token.typescale.headline_small;
+        case MD.Enum.XL:
+            return MD.Token.typescale.headline_large;
         case MD.Enum.XS:
         case MD.Enum.S:
-        default:         return MD.Token.typescale.label_large;
+        default:
+            return MD.Token.typescale.label_large;
         }
     }
 
@@ -40,13 +49,11 @@ MD.MState {
     property MD.corners corners: {
         switch (root.position) {
         case MD.Enum.PosFirst:
-            return root.item.mirrored ? MD.Util.corners(0, root.cornerRadius, 0, root.cornerRadius)
-                : MD.Util.corners(root.cornerRadius, 0, root.cornerRadius, 0);
+            return root.item.mirrored ? MD.Util.corners(0, root.cornerRadius, 0, root.cornerRadius) : MD.Util.corners(root.cornerRadius, 0, root.cornerRadius, 0);
         case MD.Enum.PosMiddle:
             return MD.Util.corners(0);
         case MD.Enum.PosLast:
-            return root.item.mirrored ? MD.Util.corners(root.cornerRadius, 0, root.cornerRadius, 0)
-                : MD.Util.corners(0, root.cornerRadius, 0, root.cornerRadius);
+            return root.item.mirrored ? MD.Util.corners(root.cornerRadius, 0, root.cornerRadius, 0) : MD.Util.corners(0, root.cornerRadius, 0, root.cornerRadius);
         case MD.Enum.PosSingle:
         default:
             return MD.Util.corners(root.cornerRadius);

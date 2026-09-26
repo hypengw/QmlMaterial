@@ -25,9 +25,7 @@ Rectangle {
                 anchors.fill: parent
                 color: "transparent"
                 // index 0..4 → adjacent (TL+BL), index 5..9 → diagonal (TL+BR)
-                corners: (index < 5)
-                    ? MD.Util.corners(20, 0, 20, 0)
-                    : MD.Util.corners(20, 0, 0, 20)
+                corners: (index < 5) ? MD.Util.corners(20, 0, 20, 0) : MD.Util.corners(20, 0, 0, 20)
 
                 MD.Elevation {
                     anchors.fill: parent

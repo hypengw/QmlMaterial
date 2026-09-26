@@ -39,11 +39,16 @@ MD.MState {
     property real labelOpacity: 1.0
 
     state: {
-        if (!item.enabled) return "disabled";
-        if (!item.acceptableInput && item.hovered) return "errorHover";
-        if (!item.acceptableInput) return "error";
-        if (item.visualFocus) return "focus";
-        if (item.hovered) return "hovered";
+        if (!item.enabled)
+            return "disabled";
+        if (!item.acceptableInput && item.hovered)
+            return "errorHover";
+        if (!item.acceptableInput)
+            return "error";
+        if (item.visualFocus)
+            return "focus";
+        if (item.hovered)
+            return "hovered";
         return "";
     }
 

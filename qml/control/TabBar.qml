@@ -21,9 +21,9 @@ MD.TabBarBase {
         boundsBehavior: Flickable.StopAtBounds
         function revealCurrent() {
             const item = control.currentItem;
-            if (!item) return;
-            const target = item.x < contentX ? item.x
-                : item.x + item.width > contentX + width ? item.x + item.width - width : contentX;
+            if (!item)
+                return;
+            const target = item.x < contentX ? item.x : item.x + item.width > contentX + width ? item.x + item.width - width : contentX;
             contentX = Math.max(0, Math.min(Math.max(0, contentWidth - width), target));
         }
         onContentWidthChanged: Qt.callLater(revealCurrent)
@@ -34,7 +34,9 @@ MD.TabBarBase {
         }
         Connections {
             target: control
-            function onCurrentItemChanged() { Qt.callLater(m_view.revealCurrent); }
+            function onCurrentItemChanged() {
+                Qt.callLater(m_view.revealCurrent);
+            }
         }
         Item {
             x: control.currentItem?.x ?? 0
@@ -42,7 +44,11 @@ MD.TabBarBase {
             height: m_view.height
             visible: control.currentItem !== null
             z: 2
-            Behavior on x { NumberAnimation { duration: 250 } }
+            Behavior on x {
+                NumberAnimation {
+                    duration: 250
+                }
+            }
             Item {
                 x: control.type == MD.Enum.PrimaryTab ? (parent.width - width) / 2 : 0
                 y: control.position === MD.TabBar.Footer ? 0 : parent.height - height
@@ -63,7 +69,6 @@ MD.TabBarBase {
                 }
             }
         }
-
     }
 
     background: MD.Rectangle {

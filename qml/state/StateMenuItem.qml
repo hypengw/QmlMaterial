@@ -5,7 +5,6 @@ MD.MState {
     id: root
     required property MD.ButtonBase item
     property bool selected: false
-   
 
     elevation: MD.Token.elevation.level2
     textColor: root.ctx.color.on_surface

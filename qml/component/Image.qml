@@ -42,7 +42,6 @@ Item {
         elevation: root.elevation
         corners: root.corners
         opacity: root.status === Image.Ready && root.paintedHeight > 0 ? 1 : 0
-
     }
 
     Image {

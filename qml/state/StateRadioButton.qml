@@ -4,7 +4,6 @@ import Qcm.Material as MD
 MD.MState {
     id: root
     required property MD.RadioButtonBase item
-   
 
     property color iconColor: item.checked ? ctx.color.primary : ctx.color.on_surface_variant
     textColor: ctx.color.on_surface

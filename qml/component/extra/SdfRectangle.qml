@@ -3,7 +3,7 @@ import Qcm.Material as MD
 
 Item {
     id: root
-    property int radius 
+    property int radius
     property MD.corners corners: MD.Util.corners(radius)
     property alias color: inner.color
 

@@ -5,7 +5,6 @@ MD.MState {
     id: root
 
     required property MD.SliderBase item
-   
 
     elevation: MD.Token.elevation.level0
     textColor: root.ctx.color.on_primary

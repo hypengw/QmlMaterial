@@ -5,7 +5,10 @@ import Qcm.Material as MD
 MD.ControlBase {
     id: control
 
-    enum SelectionMode { Single, Range }
+    enum SelectionMode {
+        Single,
+        Range
+    }
 
     property int selectionMode: DatePicker.SelectionMode.Single
     property date selectedDate: new Date()
@@ -15,36 +18,43 @@ MD.ControlBase {
     property var maxDate
     property int year: control.selectedDate.getFullYear()
     property int month: control.selectedDate.getMonth()
-    property string supportingText: control.selectionMode === DatePicker.SelectionMode.Range
-        ? "Select date range" : "Select date"
+    property string supportingText: control.selectionMode === DatePicker.SelectionMode.Range ? "Select date range" : "Select date"
     property bool showHeader: true
 
     implicitWidth: 360
     implicitHeight: contentItem.implicitHeight + topPadding + bottomPadding
 
-
     function _sameDay(a, b) {
-        if (!a || !b) return false;
-        return a.getFullYear() === b.getFullYear()
-            && a.getMonth() === b.getMonth()
-            && a.getDate() === b.getDate();
+        if (!a || !b)
+            return false;
+        return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
     }
     function _inRange(d) {
-        if (control.selectionMode !== DatePicker.SelectionMode.Range) return false;
-        if (!control.rangeStart || !control.rangeEnd) return false;
+        if (control.selectionMode !== DatePicker.SelectionMode.Range)
+            return false;
+        if (!control.rangeStart || !control.rangeEnd)
+            return false;
         const t = d.getTime();
         return t > control.rangeStart.getTime() && t < control.rangeEnd.getTime();
     }
     function _dayEnabled(d) {
-        if (control.minDate && d.getTime() < control.minDate.getTime()) return false;
-        if (control.maxDate && d.getTime() > control.maxDate.getTime()) return false;
+        if (control.minDate && d.getTime() < control.minDate.getTime())
+            return false;
+        if (control.maxDate && d.getTime() > control.maxDate.getTime())
+            return false;
         return true;
     }
     function _shiftMonth(delta) {
         let m = control.month + delta;
         let y = control.year;
-        while (m < 0) { m += 12; y -= 1; }
-        while (m > 11) { m -= 12; y += 1; }
+        while (m < 0) {
+            m += 12;
+            y -= 1;
+        }
+        while (m > 11) {
+            m -= 12;
+            y += 1;
+        }
         control.month = m;
         control.year = y;
     }
@@ -63,7 +73,8 @@ MD.ControlBase {
         }
     }
     function _fmtHeadline(d, withWeekday) {
-        if (!d) return "—";
+        if (!d)
+            return "—";
         return Qt.formatDate(d, withWeekday ? "ddd, MMM d" : "MMM d");
     }
     function _monthTitle() {
@@ -105,9 +116,7 @@ MD.ControlBase {
                 anchors.bottomMargin: 16
                 typescale: MD.Token.typescale.headline_medium
                 color: MD.MProp.color.on_surface
-                text: control.selectionMode === DatePicker.SelectionMode.Single
-                    ? control._fmtHeadline(control.selectedDate, true)
-                    : (control._fmtHeadline(control.rangeStart, false) + "  –  " + control._fmtHeadline(control.rangeEnd, false))
+                text: control.selectionMode === DatePicker.SelectionMode.Single ? control._fmtHeadline(control.selectedDate, true) : (control._fmtHeadline(control.rangeStart, false) + "  –  " + control._fmtHeadline(control.rangeEnd, false))
             }
             Rectangle {
                 anchors.bottom: parent.bottom
@@ -188,10 +197,7 @@ MD.ControlBase {
                 required property int index
                 required property var model
                 readonly property bool inMonth: model.month === control.month
-                readonly property bool selected: control.selectionMode === DatePicker.SelectionMode.Single
-                    ? control._sameDay(model.date, control.selectedDate)
-                    : (control._sameDay(model.date, control.rangeStart)
-                        || control._sameDay(model.date, control.rangeEnd))
+                readonly property bool selected: control.selectionMode === DatePicker.SelectionMode.Single ? control._sameDay(model.date, control.selectedDate) : (control._sameDay(model.date, control.rangeStart) || control._sameDay(model.date, control.rangeEnd))
                 readonly property bool inRange: control._inRange(model.date)
                 readonly property bool today: model.today
                 readonly property bool dayEnabled: control._dayEnabled(model.date)
@@ -219,13 +225,7 @@ MD.ControlBase {
                     text: parent.model.day
                     typescale: MD.Token.typescale.body_large
                     opacity: parent.inMonth ? 1 : 0.5
-                    color: !parent.dayEnabled
-                            ? MD.Util.transparent(MD.MProp.color.on_surface, 0.38)
-                            : parent.selected
-                                ? MD.MProp.color.on_primary
-                                : parent.today
-                                    ? MD.MProp.color.primary
-                                    : MD.MProp.color.on_surface
+                    color: !parent.dayEnabled ? MD.Util.transparent(MD.MProp.color.on_surface, 0.38) : parent.selected ? MD.MProp.color.on_primary : parent.today ? MD.MProp.color.primary : MD.MProp.color.on_surface
                 }
             }
             contentItem: Grid {
@@ -250,12 +250,13 @@ MD.ControlBase {
                     return cell ? cell.index : -1;
                 }
                 onPressed: tracking = true
-                onReleased: function(mouse) {
+                onReleased: function (mouse) {
                     const index = tracking ? indexAt(mouse.x, mouse.y) : -1;
                     tracking = false;
                     if (index >= 0) {
                         const date = m_calendar.dateAt(index);
-                        if (control._dayEnabled(date)) control._selectDay(date);
+                        if (control._dayEnabled(date))
+                            control._selectDay(date);
                     }
                 }
                 onCanceled: {

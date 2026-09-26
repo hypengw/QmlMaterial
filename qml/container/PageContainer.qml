@@ -119,8 +119,7 @@ MD.PageStack {
             }
 
             root.completeTransition();
-            const request = m_pool.request(page_url, props, is_cache ? key : null,
-                                           MD.Pool.AsynchronousIfNested);
+            const request = m_pool.request(page_url, props, is_cache ? key : null, MD.Pool.AsynchronousIfNested);
             root.pendingRequest = request;
         } finally {
             d.changing = false;

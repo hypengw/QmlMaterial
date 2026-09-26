@@ -152,15 +152,42 @@ MD.Page {
                                 columns: 3
                                 Repeater {
                                     model: [
-                                        { name: 'Red', color: '#F44336' },
-                                        { name: 'Pink', color: '#E91E63' },
-                                        { name: 'Purple', color: '#9C27B0' },
-                                        { name: 'Indigo', color: '#3F51B5' },
-                                        { name: 'Teal', color: '#009688' },
-                                        { name: 'LightGreen', color: '#8BC34A' },
-                                        { name: 'Yellow', color: '#FFEB3B' },
-                                        { name: 'Amber', color: '#FFC107' },
-                                        { name: 'Orange', color: '#FF9800' }
+                                        {
+                                            name: 'Red',
+                                            color: '#F44336'
+                                        },
+                                        {
+                                            name: 'Pink',
+                                            color: '#E91E63'
+                                        },
+                                        {
+                                            name: 'Purple',
+                                            color: '#9C27B0'
+                                        },
+                                        {
+                                            name: 'Indigo',
+                                            color: '#3F51B5'
+                                        },
+                                        {
+                                            name: 'Teal',
+                                            color: '#009688'
+                                        },
+                                        {
+                                            name: 'LightGreen',
+                                            color: '#8BC34A'
+                                        },
+                                        {
+                                            name: 'Yellow',
+                                            color: '#FFEB3B'
+                                        },
+                                        {
+                                            name: 'Amber',
+                                            color: '#FFC107'
+                                        },
+                                        {
+                                            name: 'Orange',
+                                            color: '#FF9800'
+                                        }
                                     ]
                                     MD.ColorRadio {
                                         size: 28

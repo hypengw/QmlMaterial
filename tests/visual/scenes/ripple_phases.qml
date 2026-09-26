@@ -46,7 +46,7 @@ Rectangle {
                     debugEnabled: true
                     debugProgress: cell.progressVal
                     debugPhase: 4.0 + cell.index * 0.7
-                    debugTouchX: cell.width  * 0.30
+                    debugTouchX: cell.width * 0.30
                     debugTouchY: cell.height * 0.45
                     debugOpacity: 0.85
                     debugBackOpacity: 0.12  // state-layer tint, like a real press

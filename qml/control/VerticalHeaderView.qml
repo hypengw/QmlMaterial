@@ -9,5 +9,5 @@ MD.VerticalHeaderViewBase {
     implicitWidth: Math.max(1, contentWidth)
     implicitHeight: syncView ? syncView.height : 0
 
-    delegate: MD.VerticalHeaderViewDelegate { }
+    delegate: MD.VerticalHeaderViewDelegate {}
 }

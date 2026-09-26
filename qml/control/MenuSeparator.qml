@@ -1,4 +1,3 @@
-
 import Qcm.Material as MD
 
 /** @ingroup control */

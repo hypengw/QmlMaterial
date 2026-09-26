@@ -40,42 +40,84 @@ Item {
             fillColor: root._hueColor
             strokeColor: root._hueColor
             strokeWidth: 1
-            startX: root._vhx; startY: root._vhy
-            PathLine { x: root._vwx; y: root._vwy }
-            PathLine { x: root._vkx; y: root._vky }
-            PathLine { x: root._vhx; y: root._vhy }
+            startX: root._vhx
+            startY: root._vhy
+            PathLine {
+                x: root._vwx
+                y: root._vwy
+            }
+            PathLine {
+                x: root._vkx
+                y: root._vky
+            }
+            PathLine {
+                x: root._vhx
+                y: root._vhy
+            }
         }
         ShapePath {
             strokeColor: "transparent"
             strokeWidth: 0
-            startX: root._vhx; startY: root._vhy
+            startX: root._vhx
+            startY: root._vhy
             fillGradient: LinearGradient {
                 x1: (root._vhx + root._vkx) / 2
                 y1: (root._vhy + root._vky) / 2
                 x2: root._vwx
                 y2: root._vwy
-                GradientStop { position: 0.0; color: "#00ffffff" }
-                GradientStop { position: 1.0; color: "#ffffffff" }
+                GradientStop {
+                    position: 0.0
+                    color: "#00ffffff"
+                }
+                GradientStop {
+                    position: 1.0
+                    color: "#ffffffff"
+                }
             }
-            PathLine { x: root._vwx; y: root._vwy }
-            PathLine { x: root._vkx; y: root._vky }
-            PathLine { x: root._vhx; y: root._vhy }
+            PathLine {
+                x: root._vwx
+                y: root._vwy
+            }
+            PathLine {
+                x: root._vkx
+                y: root._vky
+            }
+            PathLine {
+                x: root._vhx
+                y: root._vhy
+            }
         }
         ShapePath {
             strokeColor: "transparent"
             strokeWidth: 0
-            startX: root._vhx; startY: root._vhy
+            startX: root._vhx
+            startY: root._vhy
             fillGradient: LinearGradient {
                 x1: (root._vhx + root._vwx) / 2
                 y1: (root._vhy + root._vwy) / 2
                 x2: root._vkx
                 y2: root._vky
-                GradientStop { position: 0.0; color: "#00000000" }
-                GradientStop { position: 1.0; color: "#ff000000" }
+                GradientStop {
+                    position: 0.0
+                    color: "#00000000"
+                }
+                GradientStop {
+                    position: 1.0
+                    color: "#ff000000"
+                }
             }
-            PathLine { x: root._vwx; y: root._vwy }
-            PathLine { x: root._vkx; y: root._vky }
-            PathLine { x: root._vhx; y: root._vhy }
+            PathLine {
+                x: root._vwx
+                y: root._vwy
+            }
+            PathLine {
+                x: root._vkx
+                y: root._vky
+            }
+            PathLine {
+                x: root._vhx
+                y: root._vhy
+            }
         }
     }
 
@@ -92,7 +134,8 @@ Item {
         const d20 = v2x * v0x + v2y * v0y;
         const d21 = v2x * v1x + v2y * v1y;
         const denom = d00 * d11 - d01 * d01;
-        if (Math.abs(denom) < 1e-9) return null;
+        if (Math.abs(denom) < 1e-9)
+            return null;
         const beta = (d11 * d20 - d01 * d21) / denom;
         const gamma = (d00 * d21 - d01 * d20) / denom;
         const alpha = 1 - beta - gamma;
@@ -100,11 +143,15 @@ Item {
         const b = MD.Util.clamp(beta, 0, 1);
         const g = MD.Util.clamp(gamma, 0, 1);
         const sum = a + b + g;
-        if (sum < 1e-9) return null;
+        if (sum < 1e-9)
+            return null;
         const an = a / sum, gn = g / sum;
         const v = 1 - gn;
         const s = v < 1e-6 ? 0 : an / v;
-        return { s: MD.Util.clamp(s, 0, 1), v: MD.Util.clamp(v, 0, 1) };
+        return {
+            s: MD.Util.clamp(s, 0, 1),
+            v: MD.Util.clamp(v, 0, 1)
+        };
     }
     function _isInside(x, y) {
         const ax = root._vhx, ay = root._vhy;
@@ -119,7 +166,8 @@ Item {
         const d20 = v2x * v0x + v2y * v0y;
         const d21 = v2x * v1x + v2y * v1y;
         const denom = d00 * d11 - d01 * d01;
-        if (Math.abs(denom) < 1e-9) return false;
+        if (Math.abs(denom) < 1e-9)
+            return false;
         const beta = (d11 * d20 - d01 * d21) / denom;
         const gamma = (d00 * d21 - d01 * d20) / denom;
         const alpha = 1 - beta - gamma;
@@ -135,7 +183,8 @@ Item {
         readonly property real _py: _alpha * root._vhy + _beta * root._vwy + _gamma * root._vky
         x: _px - width / 2
         y: _py - height / 2
-        width: 14; height: 14
+        width: 14
+        height: 14
         radius: 7
         color: "transparent"
         border.color: "white"
@@ -158,16 +207,19 @@ Item {
             if (root._isInside(e.x, e.y)) {
                 dragging = true;
                 const sv = root._toSV(e.x, e.y);
-                if (sv) root.userSvChanged(sv.s, sv.v);
+                if (sv)
+                    root.userSvChanged(sv.s, sv.v);
                 e.accepted = true;
             } else {
                 e.accepted = false;
             }
         }
         onPositionChanged: function (e) {
-            if (!dragging) return;
+            if (!dragging)
+                return;
             const sv = root._toSV(e.x, e.y);
-            if (sv) root.userSvChanged(sv.s, sv.v);
+            if (sv)
+                root.userSvChanged(sv.s, sv.v);
         }
         onReleased: dragging = false
         onCanceled: dragging = false

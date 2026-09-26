@@ -55,5 +55,4 @@ MD.ButtonBase {
         stateOpacity: control.mdState.stateLayerOpacity
         color: control.mdState.stateLayerColor
     }
-
 }

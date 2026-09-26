@@ -37,9 +37,7 @@ MD.PopupBase {
     readonly property real _automaticLowHeight: Math.min(_sheetHeight, _availableHeight)
     readonly property real _requestedLowHeight: lowHeight > 0 ? lowHeight : _automaticLowHeight
     readonly property real _visibleHeight: Math.min(_sheetHeight, _availableHeight, Math.max(_handleTouchHeight, _requestedLowHeight))
-    readonly property real _collapsedHeight: collapsedHeight > 0
-        ? Math.min(_visibleHeight, collapsedHeight)
-        : _visibleHeight
+    readonly property real _collapsedHeight: collapsedHeight > 0 ? Math.min(_visibleHeight, collapsedHeight) : _visibleHeight
     readonly property real _collapseDistance: Math.max(0, _visibleHeight - _collapsedHeight)
     readonly property real _dismissDistance: dismissOnDragDown ? Math.max(1, _collapsedHeight) : 0
     readonly property real _dragDownRange: _collapseDistance + _dismissDistance
@@ -99,10 +97,7 @@ MD.PopupBase {
     }
 
     function _finishDrag() {
-        if (!dismissOnDragDown
-                || !control.opened
-                || control.closing
-                || m_sheet_flickable.contentY >= -control._collapseDistance - 0.5)
+        if (!dismissOnDragDown || !control.opened || control.closing || m_sheet_flickable.contentY >= -control._collapseDistance - 0.5)
             return;
         _dragDismissPending = true;
         Qt.callLater(control._closeAfterDrag);

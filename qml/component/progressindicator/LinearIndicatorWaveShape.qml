@@ -92,9 +92,7 @@ MD.Shape {
             required property int index
             property var cur: root.indicators[index]
             property var next: root.indicators[(index + 1) % Math.max(root.indicators.length, 1)]
-            line: cur && next
-                  ? root.drawLine(cur.endFraction, next.startFraction, cur.gapSize / 2)
-                  : Qt.point(0, 0)
+            line: cur && next ? root.drawLine(cur.endFraction, next.startFraction, cur.gapSize / 2) : Qt.point(0, 0)
             strokeColor: root.trackColor
         }
         onObjectAdded: (idx, obj) => root.data.push(obj)
@@ -105,9 +103,7 @@ MD.Shape {
         model: root.indicators
         delegate: WavePath {
             required property var modelData
-            line: modelData
-                  ? root.drawLine(modelData.startFraction, modelData.endFraction, modelData.gapSize / 2)
-                  : Qt.point(0, 0)
+            line: modelData ? root.drawLine(modelData.startFraction, modelData.endFraction, modelData.gapSize / 2) : Qt.point(0, 0)
             strokeColor: modelData ? modelData.color : root.trackColor
         }
         onObjectAdded: (idx, obj) => root.data.push(obj)

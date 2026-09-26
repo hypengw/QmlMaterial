@@ -20,8 +20,10 @@ Item {
         if (root.wrap) {
             if (root.from > -Infinity && root.to < Infinity) {
                 const span = root.to - root.from;
-                while (v < root.from) v += span;
-                while (v > root.to) v -= span;
+                while (v < root.from)
+                    v += span;
+                while (v > root.to)
+                    v -= span;
             }
             return v;
         }
@@ -42,17 +44,14 @@ Item {
             height: parent.height / 2
             Rectangle {
                 anchors.fill: parent
-                color: m_up.pressed
-                    ? MD.Util.transparent(MD.MProp.color.on_surface, 0.12)
-                    : m_up.containsMouse
-                        ? MD.Util.transparent(MD.MProp.color.on_surface, 0.08)
-                        : "transparent"
+                color: m_up.pressed ? MD.Util.transparent(MD.MProp.color.on_surface, 0.12) : m_up.containsMouse ? MD.Util.transparent(MD.MProp.color.on_surface, 0.08) : "transparent"
                 radius: 4
             }
             Canvas {
                 id: m_upIcon
                 anchors.centerIn: parent
-                width: 10; height: 6
+                width: 10
+                height: 6
                 onPaint: {
                     const ctx = getContext("2d");
                     ctx.reset();
@@ -66,7 +65,9 @@ Item {
                 }
                 Connections {
                     target: MD.MProp.color
-                    function onSchemeChanged() { m_upIcon.requestPaint(); }
+                    function onSchemeChanged() {
+                        m_upIcon.requestPaint();
+                    }
                 }
             }
             MouseArea {
@@ -82,8 +83,14 @@ Item {
                     onTriggered: root.stepBy(root.step)
                 }
                 onPressed: m_upDelay.start()
-                onReleased: { m_upDelay.stop(); m_upTimer.stop(); }
-                onCanceled: { m_upDelay.stop(); m_upTimer.stop(); }
+                onReleased: {
+                    m_upDelay.stop();
+                    m_upTimer.stop();
+                }
+                onCanceled: {
+                    m_upDelay.stop();
+                    m_upTimer.stop();
+                }
                 Timer {
                     id: m_upDelay
                     interval: 350
@@ -96,17 +103,14 @@ Item {
             height: parent.height / 2
             Rectangle {
                 anchors.fill: parent
-                color: m_down.pressed
-                    ? MD.Util.transparent(MD.MProp.color.on_surface, 0.12)
-                    : m_down.containsMouse
-                        ? MD.Util.transparent(MD.MProp.color.on_surface, 0.08)
-                        : "transparent"
+                color: m_down.pressed ? MD.Util.transparent(MD.MProp.color.on_surface, 0.12) : m_down.containsMouse ? MD.Util.transparent(MD.MProp.color.on_surface, 0.08) : "transparent"
                 radius: 4
             }
             Canvas {
                 id: m_downIcon
                 anchors.centerIn: parent
-                width: 10; height: 6
+                width: 10
+                height: 6
                 onPaint: {
                     const ctx = getContext("2d");
                     ctx.reset();
@@ -120,7 +124,9 @@ Item {
                 }
                 Connections {
                     target: MD.MProp.color
-                    function onSchemeChanged() { m_downIcon.requestPaint(); }
+                    function onSchemeChanged() {
+                        m_downIcon.requestPaint();
+                    }
                 }
             }
             MouseArea {
@@ -136,8 +142,14 @@ Item {
                     onTriggered: root.stepBy(-root.step)
                 }
                 onPressed: m_downDelay.start()
-                onReleased: { m_downDelay.stop(); m_downTimer.stop(); }
-                onCanceled: { m_downDelay.stop(); m_downTimer.stop(); }
+                onReleased: {
+                    m_downDelay.stop();
+                    m_downTimer.stop();
+                }
+                onCanceled: {
+                    m_downDelay.stop();
+                    m_downTimer.stop();
+                }
                 Timer {
                     id: m_downDelay
                     interval: 350

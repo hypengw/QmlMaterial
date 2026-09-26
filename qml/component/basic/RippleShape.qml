@@ -16,11 +16,7 @@ Item {
     property alias corners: m_back.corners
     property alias radius: m_back.radius
     readonly property real _maxCorner: Math.min(root.width, root.height) * 0.5
-    readonly property MD.corners _shapeCorners: MD.Util.corners(
-        root._clampCorner(m_back.corners.topLeft),
-        root._clampCorner(m_back.corners.topRight),
-        root._clampCorner(m_back.corners.bottomLeft),
-        root._clampCorner(m_back.corners.bottomRight))
+    readonly property MD.corners _shapeCorners: MD.Util.corners(root._clampCorner(m_back.corners.topLeft), root._clampCorner(m_back.corners.topRight), root._clampCorner(m_back.corners.bottomLeft), root._clampCorner(m_back.corners.bottomRight))
 
     function _clampCorner(value) {
         return Math.min(Math.max(value, 0), root._maxCorner);

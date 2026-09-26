@@ -3,7 +3,7 @@ import Qcm.Material as MD
 
 MD.MState {
     id: root
-   
+
     required property MD.ToolBarBase item
     property int type: MD.Enum.AppBarCenterAligned
     property bool showBackground: false

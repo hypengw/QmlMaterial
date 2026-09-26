@@ -6,7 +6,7 @@ MD.MState {
     id: root
 
     required property MD.ButtonBase item
-   
+
     property bool elevated: false
     property int borderWidth: 0
     property color leadingIconColor: item.checked ? ctx.color.on_secondary_container : ctx.color.primary

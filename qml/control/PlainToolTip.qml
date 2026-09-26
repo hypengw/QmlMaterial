@@ -18,10 +18,8 @@ MD.ToolTipPopupBase {
     property MD.typescale typescale: MD.Token.typescale.body_small
     property int radius: MD.Token.shape.corner.extra_small
 
-    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
-                            implicitContentWidth + leftPadding + rightPadding)
-    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
-                             implicitContentHeight + topPadding + bottomPadding)
+    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
+    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
     x: parent ? (parent.width - implicitWidth) / 2 : 0
     y: -implicitHeight - 4

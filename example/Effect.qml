@@ -88,13 +88,34 @@ MD.Page {
 
                             Repeater {
                                 model: [
-                                    { name: 'none',        r: MD.Token.shape.corner.none },
-                                    { name: 'xs',          r: MD.Token.shape.corner.extra_small },
-                                    { name: 'small',       r: MD.Token.shape.corner.small },
-                                    { name: 'medium',      r: MD.Token.shape.corner.medium },
-                                    { name: 'large',       r: MD.Token.shape.corner.large },
-                                    { name: 'xl',          r: MD.Token.shape.corner.extra_large },
-                                    { name: 'full',        r: -1 }
+                                    {
+                                        name: 'none',
+                                        r: MD.Token.shape.corner.none
+                                    },
+                                    {
+                                        name: 'xs',
+                                        r: MD.Token.shape.corner.extra_small
+                                    },
+                                    {
+                                        name: 'small',
+                                        r: MD.Token.shape.corner.small
+                                    },
+                                    {
+                                        name: 'medium',
+                                        r: MD.Token.shape.corner.medium
+                                    },
+                                    {
+                                        name: 'large',
+                                        r: MD.Token.shape.corner.large
+                                    },
+                                    {
+                                        name: 'xl',
+                                        r: MD.Token.shape.corner.extra_large
+                                    },
+                                    {
+                                        name: 'full',
+                                        r: -1
+                                    }
                                 ]
 
                                 ColumnLayout {
@@ -106,9 +127,7 @@ MD.Page {
                                         color: MD.MProp.color.primary
                                         implicitWidth: 80
                                         implicitHeight: 56
-                                        radius: scale_cell.modelData.r < 0
-                                                ? height / 2
-                                                : scale_cell.modelData.r
+                                        radius: scale_cell.modelData.r < 0 ? height / 2 : scale_cell.modelData.r
                                     }
                                     MD.Text {
                                         Layout.alignment: Qt.AlignHCenter
@@ -144,10 +163,22 @@ MD.Page {
 
                             Repeater {
                                 model: [
-                                    { name: 'top',      c: MD.Util.corners(m_slider_radius.value, m_slider_radius.value, 0, 0) },
-                                    { name: 'left',     c: MD.Util.corners(m_slider_radius.value, 0, m_slider_radius.value, 0) },
-                                    { name: 'right',    c: MD.Util.corners(0, m_slider_radius.value, 0, m_slider_radius.value) },
-                                    { name: 'diagonal', c: MD.Util.corners(m_slider_radius.value, 0, 0, m_slider_radius.value) }
+                                    {
+                                        name: 'top',
+                                        c: MD.Util.corners(m_slider_radius.value, m_slider_radius.value, 0, 0)
+                                    },
+                                    {
+                                        name: 'left',
+                                        c: MD.Util.corners(m_slider_radius.value, 0, m_slider_radius.value, 0)
+                                    },
+                                    {
+                                        name: 'right',
+                                        c: MD.Util.corners(0, m_slider_radius.value, 0, m_slider_radius.value)
+                                    },
+                                    {
+                                        name: 'diagonal',
+                                        c: MD.Util.corners(m_slider_radius.value, 0, 0, m_slider_radius.value)
+                                    }
                                 ]
 
                                 ColumnLayout {
@@ -284,8 +315,7 @@ MD.Page {
                             RippleCell {
                                 label: 'Top'
                                 useSkia: false
-                                cellCorners: MD.Util.corners(m_slider_radius.value,
-                                                             m_slider_radius.value, 0, 0)
+                                cellCorners: MD.Util.corners(m_slider_radius.value, m_slider_radius.value, 0, 0)
                             }
                         }
                     }
@@ -325,8 +355,7 @@ MD.Page {
                             RippleCell {
                                 label: 'Top'
                                 useSkia: true
-                                cellCorners: MD.Util.corners(m_slider_radius.value,
-                                                             m_slider_radius.value, 0, 0)
+                                cellCorners: MD.Util.corners(m_slider_radius.value, m_slider_radius.value, 0, 0)
                             }
                         }
                     }

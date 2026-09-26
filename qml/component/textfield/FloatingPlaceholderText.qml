@@ -55,8 +55,7 @@ Text {
             name: 'float'
             when: root.controlFocus || root.controlHasText
             PropertyChanges {
-                root.y: root.filled ? root.verticalPadding : -Math.round(root.largestHeight
-                                                                         * root.targetScale / 2.0)
+                root.y: root.filled ? root.verticalPadding : -Math.round(root.largestHeight * root.targetScale / 2.0)
             }
         }
     ]

@@ -12,7 +12,6 @@ MD.MState {
     outlineColor: root.ctx.color.outline
 
     required property MD.ButtonBase item
-   
 
     property real placeholderOpacity: 1.0
 

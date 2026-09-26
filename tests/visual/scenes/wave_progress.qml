@@ -16,9 +16,25 @@ Rectangle {
             text: "linear · determinate (default flat / wavy)"
             typescale: MD.Token.typescale.title_small
         }
-        MD.LinearIndicator { Layout.fillWidth: true; indeterminate: false; value: 0.25 }
-        MD.LinearIndicator { Layout.fillWidth: true; indeterminate: false; value: 0.5; wavy: true; __phase: 0.25 }
-        MD.LinearIndicator { Layout.fillWidth: true; indeterminate: false; value: 0.85; wavy: true; __phase: 0.5 }
+        MD.LinearIndicator {
+            Layout.fillWidth: true
+            indeterminate: false
+            value: 0.25
+        }
+        MD.LinearIndicator {
+            Layout.fillWidth: true
+            indeterminate: false
+            value: 0.5
+            wavy: true
+            __phase: 0.25
+        }
+        MD.LinearIndicator {
+            Layout.fillWidth: true
+            indeterminate: false
+            value: 0.85
+            wavy: true
+            __phase: 0.5
+        }
 
         MD.Text {
             text: "linear · indeterminate (default flat / wavy)"
@@ -41,7 +57,9 @@ Rectangle {
             type: MD.LinearIndicator.Contiguous
         }
 
-        Item { Layout.preferredHeight: 8 }
+        Item {
+            Layout.preferredHeight: 8
+        }
 
         MD.Text {
             text: "circular · determinate (flat / wavy) and indeterminate"
@@ -59,7 +77,9 @@ Rectangle {
             }
             MD.CircularIndicator {
                 indeterminate: false
-                value: 0.6; wavy: true; __phase: 0.3
+                value: 0.6
+                wavy: true
+                __phase: 0.3
                 inactiveColor: MD.MProp.color.secondary_container
             }
             MD.CircularIndicator {

@@ -12,15 +12,34 @@ Rectangle {
     TableModel {
         id: tableModel
 
-        TableModelColumn { display: "component" }
-        TableModelColumn { display: "usage" }
+        TableModelColumn {
+            display: "component"
+        }
+        TableModelColumn {
+            display: "usage"
+        }
 
         rows: [
-            { component: "Buttons", usage: "Primary and secondary actions" },
-            { component: "Bottom sheets", usage: "Modal and persistent surfaces" },
-            { component: "Navigation", usage: "Destination switching" },
-            { component: "Text inputs", usage: "Form controls" },
-            { component: "Tables", usage: "Structured data" }
+            {
+                component: "Buttons",
+                usage: "Primary and secondary actions"
+            },
+            {
+                component: "Bottom sheets",
+                usage: "Modal and persistent surfaces"
+            },
+            {
+                component: "Navigation",
+                usage: "Destination switching"
+            },
+            {
+                component: "Text inputs",
+                usage: "Form controls"
+            },
+            {
+                component: "Tables",
+                usage: "Structured data"
+            }
         ]
     }
 
@@ -51,10 +70,10 @@ Rectangle {
             hasHeader: true
             model: tableModel
             selectionBehavior: TableView.SelectionDisabled
-            columnWidthProvider: function(column) {
+            columnWidthProvider: function (column) {
                 return [200, 360][column] ?? 120;
             }
-            rowHeightProvider: function() {
+            rowHeightProvider: function () {
                 return 44;
             }
         }

@@ -78,8 +78,7 @@ MD.ButtonBase {
         const materialAction = control.action as MD.Action;
         return materialAction?.tooltip || control.text || "";
     }
-    MD.ToolTip.visible: control.iconStyle === MD.Enum.IconOnly && control.hovered
-                        && !control.pressed && MD.ToolTip.text.length > 0
+    MD.ToolTip.visible: control.iconStyle === MD.Enum.IconOnly && control.hovered && !control.pressed && MD.ToolTip.text.length > 0
 
     contentItem: Item {
         id: m_content

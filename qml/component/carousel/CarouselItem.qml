@@ -145,5 +145,5 @@ Item {
         corners: root.effectiveCorners
     }
 
-    signal clicked()
+    signal clicked
 }

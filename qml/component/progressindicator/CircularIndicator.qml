@@ -52,10 +52,8 @@ MD.ProgressBarBase {
     // Angular gap between active and inactive arcs (degrees) in determinate mode.
     property real gapAngle: 8
 
-    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
-                            implicitContentWidth + leftPadding + rightPadding)
-    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
-                             implicitContentHeight + topPadding + bottomPadding)
+    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
+    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
     padding: strokeWidth
     clip: false
@@ -76,16 +74,17 @@ MD.ProgressBarBase {
         id: m_updator
         // Wavy variant defaults to Retreat (M3 expressive); flat keeps Advance.
         // User can override via `type:` (alias breaks this binding).
-        indeterminateAnimationType: control.wavy
-            ? MD.CircularIndicatorUpdator.Reteat
-            : MD.CircularIndicatorUpdator.Advance
+        indeterminateAnimationType: control.wavy ? MD.CircularIndicatorUpdator.Reteat : MD.CircularIndicatorUpdator.Advance
     }
 
     // Wall-clock driven progress — see comment in original CircularIndicator.
     FrameAnimation {
         running: control.animationState !== CircularIndicator.Stopped
         property real _startMs: 0
-        onRunningChanged: { if (running) _startMs = Date.now(); }
+        onRunningChanged: {
+            if (running)
+                _startMs = Date.now();
+        }
         onTriggered: {
             const d = m_updator.duration;
             if (d > 0)
@@ -97,7 +96,10 @@ MD.ProgressBarBase {
         id: m_complete_end_anim
         running: control.animationState === CircularIndicator.Completing
         property real _startMs: 0
-        onRunningChanged: { if (running) _startMs = Date.now(); }
+        onRunningChanged: {
+            if (running)
+                _startMs = Date.now();
+        }
         onTriggered: {
             const d = m_updator.completeEndDuration;
             const t = d > 0 ? Math.min(1, (Date.now() - _startMs) / d) : 1;
@@ -113,9 +115,7 @@ MD.ProgressBarBase {
         to: 1
         duration: control.waveCycleDuration
         easing.type: Easing.Linear
-        running: control.wavy && control.enabled
-                 && (control.indeterminate
-                     || (control.value < control.to && control.value > control.from))
+        running: control.wavy && control.enabled && (control.indeterminate || (control.value < control.to && control.value > control.from))
     }
     property real __phase: 0
 
@@ -141,8 +141,7 @@ MD.ProgressBarBase {
     // Determinate completes when position reaches the maximum — drains per M3
     // spec (active sweep shrinks back to 0). The only animation in determinate
     // mode.
-    readonly property bool __complete: ! control.indeterminate
-                                        && control.position >= 1
+    readonly property bool __complete: !control.indeterminate && control.position >= 1
 
     // 0 = full active, 1 = fully drained.
     property real __completionFraction: control.__complete ? 1 : 0
@@ -157,27 +156,18 @@ MD.ProgressBarBase {
     // against the inactive backdrop. Both active and inactive scale by
     // (1 - completionFraction) so the whole ring drains together on complete,
     // anchored at startAngle.
-    readonly property real __detActiveSweep:
-        Math.max(0, control.__displayedPosition * 360 - control.gapAngle * 2)
-            * (1 - control.__completionFraction)
-    readonly property real __detInactiveSweep:
-        Math.max(0, 360 * (1 - control.__displayedPosition))
-            * (1 - control.__completionFraction)
+    readonly property real __detActiveSweep: Math.max(0, control.__displayedPosition * 360 - control.gapAngle * 2) * (1 - control.__completionFraction)
+    readonly property real __detInactiveSweep: Math.max(0, 360 * (1 - control.__displayedPosition)) * (1 - control.__completionFraction)
 
-    readonly property real __activeStart:
-        control.indeterminate ? m_updator.startFraction * 360 : control.startAngle
-    readonly property real __activeEnd:
-        control.indeterminate ? m_updator.endFraction * 360 : (control.startAngle + __detActiveSweep)
+    readonly property real __activeStart: control.indeterminate ? m_updator.startFraction * 360 : control.startAngle
+    readonly property real __activeEnd: control.indeterminate ? m_updator.endFraction * 360 : (control.startAngle + __detActiveSweep)
 
-    readonly property real __inactiveStart:
-        control.indeterminate ? 0 : (control.startAngle + __detActiveSweep + control.gapAngle)
-    readonly property real __inactiveSweep:
-        control.indeterminate ? 360 : __detInactiveSweep
+    readonly property real __inactiveStart: control.indeterminate ? 0 : (control.startAngle + __detActiveSweep + control.gapAngle)
+    readonly property real __inactiveSweep: control.indeterminate ? 360 : __detInactiveSweep
 
     // Indeterminate uses opacity-based hide-fade. Determinate stays visible —
     // the drain animation handles the disappearance.
-    readonly property bool __visible:
-        ! control.indeterminate || control.animationState !== CircularIndicator.Stopped
+    readonly property bool __visible: !control.indeterminate || control.animationState !== CircularIndicator.Stopped
 
     Component {
         id: c_flat_shape
@@ -216,7 +206,9 @@ MD.ProgressBarBase {
 
         opacity: control.__visible ? 1 : 0
         Behavior on opacity {
-            NumberAnimation { duration: MD.Token.duration.short2 }
+            NumberAnimation {
+                duration: MD.Token.duration.short2
+            }
         }
 
         MD.Loader {

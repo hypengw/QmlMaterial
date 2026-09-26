@@ -38,7 +38,7 @@ TableView {
     property int lastHoveredRow: -1
     signal cellHovered(int row, int column)
 
-    delegate: MD.TableViewDelegate { }
+    delegate: MD.TableViewDelegate {}
 
     clip: true
     synchronousDrag: true

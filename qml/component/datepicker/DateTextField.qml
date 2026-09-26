@@ -22,11 +22,14 @@ MD.TextField {
     function _parse(s) {
         const norm = s.replace(/\//g, "-");
         const m = norm.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-        if (!m) return null;
+        if (!m)
+            return null;
         const y = parseInt(m[1]), mo = parseInt(m[2]) - 1, da = parseInt(m[3]);
-        if (mo < 0 || mo > 11 || da < 1 || da > 31) return null;
+        if (mo < 0 || mo > 11 || da < 1 || da > 31)
+            return null;
         const d = new Date(y, mo, da);
-        if (d.getFullYear() !== y || d.getMonth() !== mo || d.getDate() !== da) return null;
+        if (d.getFullYear() !== y || d.getMonth() !== mo || d.getDate() !== da)
+            return null;
         return d;
     }
     onEditingFinished: {

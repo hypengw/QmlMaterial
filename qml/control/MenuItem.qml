@@ -9,7 +9,7 @@ MD.ButtonBase {
     property MD.MenuBase menu: null
     property MD.MenuBase subMenu: null
     property Item arrow
-    signal triggered()
+    signal triggered
     onClicked: {
         if (subMenu) {
             if (menu) {

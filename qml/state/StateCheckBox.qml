@@ -5,7 +5,6 @@ MD.MState {
     id: root
     required property MD.CheckBoxBase item
     property bool error: false
-   
 
     outlineColor: {
         if (root.error) {

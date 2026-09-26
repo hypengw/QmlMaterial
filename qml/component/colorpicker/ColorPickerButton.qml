@@ -15,7 +15,10 @@ MD.ButtonBase {
     implicitHeight: 32
 
     padding: 0
-    leftInset: 0; rightInset: 0; topInset: 0; bottomInset: 0
+    leftInset: 0
+    rightInset: 0
+    topInset: 0
+    bottomInset: 0
     hoverEnabled: enabled
 
     onClicked: m_dialog.open()

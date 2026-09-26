@@ -17,10 +17,7 @@ Rectangle {
     height: 280
     color: "#101218"
 
-    readonly property var labels: [
-        "SOFT_BURST", "COOKIE_9", "PENTAGON", "PILL",
-        "SUNNY", "COOKIE_4", "OVAL"
-    ]
+    readonly property var labels: ["SOFT_BURST", "COOKIE_9", "PENTAGON", "PILL", "SUNNY", "COOKIE_4", "OVAL"]
     readonly property int columns: 4
     readonly property int cellSize: 110
     readonly property int cellPad: 8

@@ -12,14 +12,14 @@ Item {
     property MD.corners corners: MD.Util.corners(0)
     property color outerColor: MD.MProp.color.secondary
     property color innerColor: MD.MProp.color.on_secondary
-    property bool  active: false
+    property bool active: false
     // When true, draw inside the parent (for clipped carousel viewports).
-    property bool  inset: false
+    property bool inset: false
 
     readonly property real _outer: MD.Token.state.focus_ring.outer_stroke_width
     readonly property real _inner: MD.Token.state.focus_ring.inner_stroke_width
     readonly property real _inset: MD.Token.state.focus_ring.inner_stroke_inset
-    readonly property real _gap:   MD.Token.state.focus_ring.outer_offset
+    readonly property real _gap: MD.Token.state.focus_ring.outer_offset
 
     readonly property real _outerR: root._gap + root._outer / 2
     readonly property real _innerR: root._gap + root._inset + root._inner / 2
@@ -45,11 +45,7 @@ Item {
         antialiasing: true
         border.width: root._inner
         border.color: root.innerColor
-        corners: MD.Util.corners(
-            Math.max(0, root.corners.topLeft     + root._cornerAdjust),
-            Math.max(0, root.corners.topRight    + root._cornerAdjust),
-            Math.max(0, root.corners.bottomLeft  + root._cornerAdjust),
-            Math.max(0, root.corners.bottomRight + root._cornerAdjust))
+        corners: MD.Util.corners(Math.max(0, root.corners.topLeft + root._cornerAdjust), Math.max(0, root.corners.topRight + root._cornerAdjust), Math.max(0, root.corners.bottomLeft + root._cornerAdjust), Math.max(0, root.corners.bottomRight + root._cornerAdjust))
     }
 
     MD.Rectangle {
@@ -58,10 +54,6 @@ Item {
         antialiasing: true
         border.width: root._outer
         border.color: root.outerColor
-        corners: MD.Util.corners(
-            Math.max(0, root.corners.topLeft     + root._cornerAdjust),
-            Math.max(0, root.corners.topRight    + root._cornerAdjust),
-            Math.max(0, root.corners.bottomLeft  + root._cornerAdjust),
-            Math.max(0, root.corners.bottomRight + root._cornerAdjust))
+        corners: MD.Util.corners(Math.max(0, root.corners.topLeft + root._cornerAdjust), Math.max(0, root.corners.topRight + root._cornerAdjust), Math.max(0, root.corners.bottomLeft + root._cornerAdjust), Math.max(0, root.corners.bottomRight + root._cornerAdjust))
     }
 }

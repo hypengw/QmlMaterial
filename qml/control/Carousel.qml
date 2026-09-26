@@ -21,14 +21,9 @@ MD.ControlBase {
     property real minSmallItemWidth: MD.Token.carousel.small_item_min
     property real maxSmallItemWidth: MD.Token.carousel.small_item_max
     property bool reduceMotion: false
-    property bool clipContainer: layout === MD.Enum.CarouselUncontained
-                                 || layout === MD.Enum.CarouselUncontainedMultiAspect
-                                 || layout === MD.Enum.CarouselHero
-                                 || layout === MD.Enum.CarouselHeroCenter ? false : true
+    property bool clipContainer: layout === MD.Enum.CarouselUncontained || layout === MD.Enum.CarouselUncontainedMultiAspect || layout === MD.Enum.CarouselHero || layout === MD.Enum.CarouselHeroCenter ? false : true
     readonly property real contentPaddingEndValue: {
-        if (layout === MD.Enum.CarouselUncontained
-                || layout === MD.Enum.CarouselUncontainedMultiAspect
-                || layout === MD.Enum.CarouselFullScreen) {
+        if (layout === MD.Enum.CarouselUncontained || layout === MD.Enum.CarouselUncontainedMultiAspect || layout === MD.Enum.CarouselFullScreen) {
             return 0;
         }
         return control.contentPadding;
@@ -42,18 +37,11 @@ MD.ControlBase {
     readonly property bool wheelRequiresShift: control.layout !== MD.Enum.CarouselFullScreen
 
     readonly property bool hasChromeRow: control.showPageIndicator || control.showNavigationButtons
-    readonly property real chromeOverhead: control.hasChromeRow
-        ? control.chromeRowHeight + control.chromeRowSpacing
-        : 0
+    readonly property real chromeOverhead: control.hasChromeRow ? control.chromeRowHeight + control.chromeRowSpacing : 0
     readonly property real chromeRowHeight: MD.Token.carousel.chrome_row_height
     readonly property real chromeRowSpacing: MD.Token.carousel.chrome_row_spacing
-    readonly property real tokenViewportHeight: control.layout === MD.Enum.CarouselFullScreen
-        ? MD.Token.carousel.default_item_extent
-        : control.minimumViewportHeight
-    readonly property real viewportHeight: control.orientation === Qt.Vertical
-        ? Math.max(0, control.height - control.chromeOverhead)
-        : Math.max(control.tokenViewportHeight,
-                   Math.max(0, control.height - control.chromeOverhead))
+    readonly property real tokenViewportHeight: control.layout === MD.Enum.CarouselFullScreen ? MD.Token.carousel.default_item_extent : control.minimumViewportHeight
+    readonly property real viewportHeight: control.orientation === Qt.Vertical ? Math.max(0, control.height - control.chromeOverhead) : Math.max(control.tokenViewportHeight, Math.max(0, control.height - control.chromeOverhead))
 
     signal clicked(int index)
     signal indexChanged(int index)
@@ -74,12 +62,8 @@ MD.ControlBase {
         }
     }
 
-    implicitWidth: orientation === Qt.Horizontal
-        ? MD.Token.carousel.default_width
-        : MD.Token.carousel.default_height_vertical
-    implicitHeight: orientation === Qt.Vertical
-        ? MD.Token.carousel.default_height_vertical
-        : (tokenViewportHeight + chromeOverhead)
+    implicitWidth: orientation === Qt.Horizontal ? MD.Token.carousel.default_width : MD.Token.carousel.default_height_vertical
+    implicitHeight: orientation === Qt.Vertical ? MD.Token.carousel.default_height_vertical : (tokenViewportHeight + chromeOverhead)
 
     focusPolicy: Qt.NoFocus
 
@@ -87,8 +71,7 @@ MD.ControlBase {
     Accessible.name: control.header.length > 0 ? control.header : 'Carousel'
 
     Binding on reduceMotion {
-        when: typeof Qt.styleHints !== 'undefined'
-              && typeof Qt.styleHints.prefersReducedMotion === 'boolean'
+        when: typeof Qt.styleHints !== 'undefined' && typeof Qt.styleHints.prefersReducedMotion === 'boolean'
         value: Qt.styleHints.prefersReducedMotion
     }
 
@@ -121,7 +104,6 @@ MD.ControlBase {
 
             onClicked: index => control.clicked(index)
             onCurrentIndexChanged: control.indexChanged(m_view.currentIndex)
-
         }
 
         RowLayout {
@@ -132,9 +114,7 @@ MD.ControlBase {
 
             MD.StandardIconButton {
                 visible: control.showNavigationButtons && m_view.count > 1
-                icon.name: control.orientation === Qt.Horizontal
-                    ? MD.Token.icon.chevron_left
-                    : MD.Token.icon.expand_less
+                icon.name: control.orientation === Qt.Horizontal ? MD.Token.icon.chevron_left : MD.Token.icon.expand_less
                 enabled: m_view.currentIndex > 0
                 onClicked: {
                     m_view.claimInteractionFocus();
@@ -151,9 +131,7 @@ MD.ControlBase {
 
             MD.StandardIconButton {
                 visible: control.showNavigationButtons && m_view.count > 1
-                icon.name: control.orientation === Qt.Horizontal
-                    ? MD.Token.icon.chevron_right
-                    : MD.Token.icon.expand_more
+                icon.name: control.orientation === Qt.Horizontal ? MD.Token.icon.chevron_right : MD.Token.icon.expand_more
                 enabled: m_view.currentIndex < m_view.count - 1
                 onClicked: {
                     m_view.claimInteractionFocus();
@@ -177,9 +155,7 @@ MD.ControlBase {
                 return;
             }
 
-            let delta = Math.abs(wheel.angleDelta.y) >= Math.abs(wheel.angleDelta.x)
-                    ? wheel.angleDelta.y
-                    : wheel.angleDelta.x;
+            let delta = Math.abs(wheel.angleDelta.y) >= Math.abs(wheel.angleDelta.x) ? wheel.angleDelta.y : wheel.angleDelta.x;
             if (wheel.inverted) {
                 delta = -delta;
             }

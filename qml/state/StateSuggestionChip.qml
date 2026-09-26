@@ -5,7 +5,6 @@ MD.MState {
     id: root
 
     required property MD.ButtonBase item
-   
 
     property bool elevated: false
     property color iconColor: ctx.color.primary

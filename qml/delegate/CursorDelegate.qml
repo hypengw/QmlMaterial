@@ -6,15 +6,15 @@ Rectangle {
 
     color: MD.Token.color.primary
     width: 2
-    visible: parent && parent.activeFocus
-        && !parent.readOnly && parent.selectionStart === parent.selectionEnd
+    visible: parent && parent.activeFocus && !parent.readOnly && parent.selectionStart === parent.selectionEnd
 
     Connections {
         target: cursor.parent
         function onCursorPositionChanged() {
             // keep a moving cursor visible
             cursor.opacity = 1;
-            if (cursor.visible && timer.interval > 0) timer.restart();
+            if (cursor.visible && timer.interval > 0)
+                timer.restart();
         }
     }
 

@@ -52,8 +52,7 @@ Item {
                     y: Math.floor(index / m_checkerGrid._cols) * 6
                     width: 6
                     height: 6
-                    color: ((index % m_checkerGrid._cols) + Math.floor(index / m_checkerGrid._cols)) % 2 === 0
-                        ? "#cccccc" : "#ffffff"
+                    color: ((index % m_checkerGrid._cols) + Math.floor(index / m_checkerGrid._cols)) % 2 === 0 ? "#cccccc" : "#ffffff"
                 }
             }
         }
@@ -67,15 +66,37 @@ Item {
         ShapePath {
             strokeColor: "transparent"
             strokeWidth: 0
-            startX: 0; startY: 0
-            PathLine { x: root.width; y: 0 }
-            PathLine { x: root.width; y: root.height }
-            PathLine { x: 0; y: root.height }
-            PathLine { x: 0; y: 0 }
+            startX: 0
+            startY: 0
+            PathLine {
+                x: root.width
+                y: 0
+            }
+            PathLine {
+                x: root.width
+                y: root.height
+            }
+            PathLine {
+                x: 0
+                y: root.height
+            }
+            PathLine {
+                x: 0
+                y: 0
+            }
             fillGradient: LinearGradient {
-                x1: 0; y1: 0; x2: root.width; y2: 0
-                GradientStop { position: 0; color: root.colorFrom }
-                GradientStop { position: 1; color: root.colorTo }
+                x1: 0
+                y1: 0
+                x2: root.width
+                y2: 0
+                GradientStop {
+                    position: 0
+                    color: root.colorFrom
+                }
+                GradientStop {
+                    position: 1
+                    color: root.colorTo
+                }
             }
         }
     }
@@ -102,7 +123,12 @@ Item {
     MouseArea {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
-        onPressed: function (e) { root.moved(root._fromX(e.x)); }
-        onPositionChanged: function (e) { if (pressed) root.moved(root._fromX(e.x)); }
+        onPressed: function (e) {
+            root.moved(root._fromX(e.x));
+        }
+        onPositionChanged: function (e) {
+            if (pressed)
+                root.moved(root._fromX(e.x));
+        }
     }
 }

@@ -24,10 +24,8 @@ MD.ToolTipPopupBase {
     property string subhead
     property Item actionItem: null
 
-    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
-                            implicitContentWidth + leftPadding + rightPadding)
-    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
-                             implicitContentHeight + topPadding + bottomPadding)
+    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
+    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
     x: parent ? (parent.width - implicitWidth) / 2 : 0
     y: -implicitHeight - 4
@@ -77,10 +75,8 @@ MD.ToolTipPopupBase {
     }
 
     contentItem: Item {
-        implicitWidth: Math.max(m_subhead.implicitWidth, m_text.implicitWidth,
-                                m_action_holder.implicitWidth)
-        implicitHeight: m_text.y + m_text.implicitHeight
-                        + (m_action_holder.visible ? 8 + m_action_holder.implicitHeight : 0)
+        implicitWidth: Math.max(m_subhead.implicitWidth, m_text.implicitWidth, m_action_holder.implicitWidth)
+        implicitHeight: m_text.y + m_text.implicitHeight + (m_action_holder.visible ? 8 + m_action_holder.implicitHeight : 0)
 
         MD.Text {
             id: m_subhead

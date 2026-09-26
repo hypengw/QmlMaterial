@@ -70,7 +70,9 @@ MD.ButtonBase {
                     anchors.centerIn: parent
 
                     implicitBackgroundSize: 0
-                    contentItem: MD.IconView { icon: control.icon }
+                    contentItem: MD.IconView {
+                        icon: control.icon
+                    }
                     action: control.action
                 }
             }

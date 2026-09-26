@@ -16,4 +16,3 @@ Transition {
         easing.type: Easing.InOutCubic
     }
 }
-

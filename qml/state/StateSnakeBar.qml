@@ -16,12 +16,18 @@ MD.MState {
     property real iconStateLayerOpacity: 0.0
 
     state: {
-        if (item.actionControl.hovered) return "hovered:action";
-        if (item.actionControl.visualFocus) return "focus:action";
-        if (item.actionControl.down) return "pressed:action";
-        if (item.iconControl.hovered) return "hovered:icon";
-        if (item.iconControl.visualFocus) return "focus:icon";
-        if (item.iconControl.down) return "pressed:icon";
+        if (item.actionControl.hovered)
+            return "hovered:action";
+        if (item.actionControl.visualFocus)
+            return "focus:action";
+        if (item.actionControl.down)
+            return "pressed:action";
+        if (item.iconControl.hovered)
+            return "hovered:icon";
+        if (item.iconControl.visualFocus)
+            return "focus:icon";
+        if (item.iconControl.down)
+            return "pressed:icon";
         return "";
     }
 

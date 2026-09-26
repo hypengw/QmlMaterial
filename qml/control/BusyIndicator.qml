@@ -54,7 +54,10 @@ MD.BusyIndicatorBase {
             id: morphAnim
             running: control.running && !showDelayTimer.running
             property real _startMs: 0
-            onRunningChanged: { if (running) _startMs = Date.now(); }
+            onRunningChanged: {
+                if (running)
+                    _startMs = Date.now();
+            }
             onTriggered: {
                 const period = updator.shapeCount * updator.msPerShape;
                 if (period > 0) {

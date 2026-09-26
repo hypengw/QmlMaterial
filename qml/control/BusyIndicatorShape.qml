@@ -8,20 +8,20 @@ import Qcm.Material as MD
 MD.Shape {
     id: root
 
-    property color     color:  MD.MProp.color.primary
-    property alias     points: polyline.path
+    property color color: MD.MProp.color.primary
+    property alias points: polyline.path
 
     // Prefer the GPU rasteriser; fall back to software only when unavailable.
     preferredRendererType: Shape.CurveRenderer
 
     // The item lives in normalised space; its visual size is determined by the
     // Scale transform applied by the parent, not by width/height in pixels.
-    width:  0
+    width: 0
     height: 0
 
     ShapePath {
         id: shapePath
-        fillColor:   root.color
+        fillColor: root.color
         strokeColor: "transparent"
         strokeWidth: 0
 

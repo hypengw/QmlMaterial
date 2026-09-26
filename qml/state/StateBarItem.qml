@@ -5,7 +5,6 @@ MD.MState {
     id: root
 
     required property MD.ButtonBase item
-   
 
     elevation: MD.Token.elevation.level0
     textColor: root.item.checked ? root.ctx.color.on_surface : root.ctx.color.on_surface_variant

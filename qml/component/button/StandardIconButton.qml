@@ -67,5 +67,4 @@ MD.ButtonBase {
             active: control.visualFocus
         }
     }
-
 }

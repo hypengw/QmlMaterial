@@ -18,7 +18,9 @@ MD.MenuBase {
     property list<Item> __entryOwnedItems
 
     function insertAction(index: int, action: MD.Action) {
-        const item = delegate.createObject(contentItem, { action });
+        const item = delegate.createObject(contentItem, {
+            action
+        });
         insertItem(index, item);
         __ownedItems.push(item);
     }
@@ -27,7 +29,8 @@ MD.MenuBase {
     }
     function insertMenu(index: int, menu: MD.MenuBase) {
         const item = delegate.createObject(contentItem, {
-            text: Qt.binding(() => menu.title), subMenu: menu
+            text: Qt.binding(() => menu.title),
+            subMenu: menu
         });
         insertItem(index, item);
         __ownedItems.push(item);
@@ -46,7 +49,8 @@ MD.MenuBase {
     }
     function __removeEntry(item: Item) {
         takeItem(indexOf(item));
-        if (item instanceof MD.MenuItem) item.menu = null;
+        if (item instanceof MD.MenuItem)
+            item.menu = null;
         const entryIndex = __entryItems.indexOf(item);
         if (entryIndex >= 0)
             __entryItems.splice(entryIndex, 1);
@@ -80,10 +84,13 @@ MD.MenuBase {
         for (const entry of entries) {
             let item = null;
             if (entry instanceof MD.Action)
-                item = delegate.createObject(contentItem, { action: entry });
+                item = delegate.createObject(contentItem, {
+                    action: entry
+                });
             else if (entry instanceof MD.MenuBase)
                 item = delegate.createObject(contentItem, {
-                    text: Qt.binding(() => entry.title), subMenu: entry
+                    text: Qt.binding(() => entry.title),
+                    subMenu: entry
                 });
             else if (entry instanceof Item)
                 item = entry;
@@ -112,8 +119,7 @@ MD.MenuBase {
     }
 
     implicitWidth: {
-        const preferredWidth = Math.max(implicitBackgroundWidth + leftInset + rightInset,
-                                        implicitContentWidth + leftPadding + rightPadding);
+        const preferredWidth = Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding);
         return maximumWidth > 0 ? Math.min(preferredWidth, maximumWidth) : preferredWidth;
     }
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)

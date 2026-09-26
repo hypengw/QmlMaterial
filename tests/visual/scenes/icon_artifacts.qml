@@ -10,9 +10,18 @@ Rectangle {
     color: MD.Token.color.surface
 
     readonly property var artifactIcons: [
-        { label: "content_copy", name: MD.Token.icon.content_copy },
-        { label: "delete", name: MD.Token.icon.delete },
-        { label: "videocam", name: MD.Token.icon.videocam }
+        {
+            label: "content_copy",
+            name: MD.Token.icon.content_copy
+        },
+        {
+            label: "delete",
+            name: MD.Token.icon.delete
+        },
+        {
+            label: "videocam",
+            name: MD.Token.icon.videocam
+        }
     ]
     readonly property var iconSizes: [18, 20, 24]
     readonly property var parentScales: [0.3, 0.5, 1.5, 2, 3]
@@ -148,8 +157,7 @@ Rectangle {
                 delegate: MD.Text {
                     required property int index
                     required property real modelData
-                    x: scaleGrid.labelWidth + index * scaleGrid.cellWidth
-                       + (scaleGrid.cellWidth - width) / 2
+                    x: scaleGrid.labelWidth + index * scaleGrid.cellWidth + (scaleGrid.cellWidth - width) / 2
                     text: modelData + "×"
                     typescale: MD.Token.typescale.label_small
                 }
@@ -176,8 +184,7 @@ Rectangle {
                         delegate: Item {
                             required property int index
                             required property real modelData
-                            x: scaleGrid.labelWidth + index * scaleGrid.cellWidth
-                               + (scaleGrid.cellWidth - width) / 2
+                            x: scaleGrid.labelWidth + index * scaleGrid.cellWidth + (scaleGrid.cellWidth - width) / 2
                             anchors.verticalCenter: parent.verticalCenter
                             width: 20
                             height: 20

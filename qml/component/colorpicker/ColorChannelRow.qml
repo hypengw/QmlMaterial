@@ -6,7 +6,15 @@ import Qcm.Material as MD
 RowLayout {
     id: root
 
-    enum Channel { Hue, Saturation, Value, Red, Green, Blue, Alpha }
+    enum Channel {
+        Hue,
+        Saturation,
+        Value,
+        Red,
+        Green,
+        Blue,
+        Alpha
+    }
 
     property int channel: ColorChannelRow.Channel.Hue
     property color contextColor: "black"
@@ -20,7 +28,9 @@ RowLayout {
 
     spacing: 8
 
-    function _hsvHue(c) { return c.hsvHue >= 0 ? c.hsvHue : 0; }
+    function _hsvHue(c) {
+        return c.hsvHue >= 0 ? c.hsvHue : 0;
+    }
     function _colorFrom() {
         const c = root.contextColor;
         switch (root.channel) {
@@ -80,7 +90,9 @@ RowLayout {
         to: root.to
         step: root.step
         wrap: root.channel === ColorChannelRow.Channel.Hue
-        onMoved: function (v) { root.moved(v); }
+        onMoved: function (v) {
+            root.moved(v);
+        }
     }
 
     Component {
@@ -89,7 +101,9 @@ RowLayout {
             value: root.value
             from: root.from
             to: root.to
-            onMoved: function (v) { root.moved(v); }
+            onMoved: function (v) {
+                root.moved(v);
+            }
         }
     }
     Component {
@@ -106,7 +120,9 @@ RowLayout {
                     return Qt.rgba(root.contextColor.r, root.contextColor.g, root.contextColor.b, root.value / (root.to - root.from));
                 return root._colorTo();
             }
-            onMoved: function (v) { root.moved(v); }
+            onMoved: function (v) {
+                root.moved(v);
+            }
         }
     }
 }

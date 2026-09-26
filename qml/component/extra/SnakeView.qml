@@ -21,7 +21,8 @@ ListView {
         snake.flag = flag;
         snake.maximumWidth = maximumWidth;
         snake.actionOnNewLine = actionOnNewLine;
-        if(action) snake.action = action;
+        if (action)
+            snake.action = action;
         m_snake.showSnake(snake);
     }
 
@@ -65,10 +66,7 @@ ListView {
     delegate: Item {
         id: dg_bar
         anchors.horizontalCenter: parent ? parent.horizontalCenter : undefined
-        width: Math.min(Math.max(implicitWidth, 200),
-                        model.maximumWidth > 0
-                            ? Math.min(model.maximumWidth, ListView.view.width)
-                            : ListView.view.width)
+        width: Math.min(Math.max(implicitWidth, 200), model.maximumWidth > 0 ? Math.min(model.maximumWidth, ListView.view.width) : ListView.view.width)
         implicitWidth: children[0].implicitWidth
         implicitHeight: children[0].implicitHeight
         height: implicitHeight

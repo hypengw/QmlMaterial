@@ -17,23 +17,7 @@ MD.Page {
             spacing: 16
 
             Repeater {
-                model: [
-                    'display_large',
-                    'display_medium',
-                    'display_small',
-                    'headline_large',
-                    'headline_medium',
-                    'headline_small',
-                    'title_large',
-                    'title_medium',
-                    'title_small',
-                    'label_large',
-                    'label_medium',
-                    'label_small',
-                    'body_large',
-                    'body_medium',
-                    'body_small',
-                ]
+                model: ['display_large', 'display_medium', 'display_small', 'headline_large', 'headline_medium', 'headline_small', 'title_large', 'title_medium', 'title_small', 'label_large', 'label_medium', 'label_small', 'body_large', 'body_medium', 'body_small',]
                 MD.Text {
                     required property string modelData
                     typescale: MD.Token.typescale[modelData]

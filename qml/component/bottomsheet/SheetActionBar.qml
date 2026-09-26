@@ -72,9 +72,7 @@ MD.ControlBase {
                         wrapMode: Text.NoWrap
                         maximumLineCount: 1
                         elide: Text.ElideNone
-                        color: m_button.enabled
-                            ? (m_button.checked ? MD.MProp.color.on_primary_container : MD.MProp.color.on_surface)
-                            : m_button.contentColor
+                        color: m_button.enabled ? (m_button.checked ? MD.MProp.color.on_primary_container : MD.MProp.color.on_surface) : m_button.contentColor
                     }
                 }
             }

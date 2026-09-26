@@ -29,37 +29,33 @@ Item {
     property real debugTouchY: -1
     property real debugOpacity: 0.12      // shader visibility while debug
     property real debugBackOpacity: 0.12  // state-layer tint while debug
-                                          // (set < 0 to leave m_back at stateOpacity)
+    // (set < 0 to leave m_back at stateOpacity)
 
     implicitWidth: 100
     implicitHeight: 100
     clip: false
 
     // ---- Constants ported from rippleshadergm.cpp ----
-    readonly property int  _animDuration: 1500
-    readonly property int  _noiseAnimDuration: 7000
+    readonly property int _animDuration: 1500
+    readonly property int _noiseAnimDuration: 7000
     // MAX_NOISE_PHASE = NOISE_ANIMATION_DURATION / 214
     readonly property real _maxNoisePhase: _noiseAnimDuration / 214.0
     readonly property real _scale: 1.5
-    readonly property real _piRotateRight:  Math.PI *  0.0078125
-    readonly property real _piRotateLeft:   Math.PI * -0.0078125
+    readonly property real _piRotateRight: Math.PI * 0.0078125
+    readonly property real _piRotateLeft: Math.PI * -0.0078125
 
     // ---- Internal animated state ----
     property real _progress: 0
     property real _phase: 0
     property real _runtimeOpacity: 0
 
-    readonly property real _shaderOpacity:  debugEnabled ? debugOpacity  : _runtimeOpacity
+    readonly property real _shaderOpacity: debugEnabled ? debugOpacity : _runtimeOpacity
     readonly property real _activeProgress: debugEnabled ? debugProgress : _progress
-    readonly property real _activePhase:    debugEnabled ? debugPhase    : _phase
-    readonly property real _activeTouchX:   (debugEnabled && debugTouchX >= 0) ? debugTouchX : pressX
-    readonly property real _activeTouchY:   (debugEnabled && debugTouchY >= 0) ? debugTouchY : pressY
+    readonly property real _activePhase: debugEnabled ? debugPhase : _phase
+    readonly property real _activeTouchX: (debugEnabled && debugTouchX >= 0) ? debugTouchX : pressX
+    readonly property real _activeTouchY: (debugEnabled && debugTouchY >= 0) ? debugTouchY : pressY
     readonly property real _maxCorner: Math.min(root.width, root.height) * 0.5
-    readonly property vector4d _shaderCorners: Qt.vector4d(
-        root._clampCorner(root.corners.bottomRight),
-        root._clampCorner(root.corners.topRight),
-        root._clampCorner(root.corners.bottomLeft),
-        root._clampCorner(root.corners.topLeft))
+    readonly property vector4d _shaderCorners: Qt.vector4d(root._clampCorner(root.corners.bottomRight), root._clampCorner(root.corners.topRight), root._clampCorner(root.corners.bottomLeft), root._clampCorner(root.corners.topLeft))
 
     function _clampCorner(value) {
         return Math.min(Math.max(value, 0), root._maxCorner);
@@ -71,12 +67,7 @@ Item {
     readonly property real _maxRadius: {
         const tx = _activeTouchX, ty = _activeTouchY;
         const w = Math.max(width, 1), h = Math.max(height, 1);
-        return Math.max(
-            Math.hypot(tx,     ty),
-            Math.hypot(w - tx, ty),
-            Math.hypot(tx,     h - ty),
-            Math.hypot(w - tx, h - ty)
-        );
+        return Math.max(Math.hypot(tx, ty), Math.hypot(w - tx, ty), Math.hypot(tx, h - ty), Math.hypot(w - tx, h - ty));
     }
 
     // The "state layer": uniform tint covering the whole shape. This is what
@@ -87,9 +78,7 @@ Item {
         id: m_back
         anchors.fill: parent
         color: "transparent"
-        opacity: (root.debugEnabled && root.debugBackOpacity >= 0)
-                 ? root.debugBackOpacity
-                 : root.stateOpacity
+        opacity: (root.debugEnabled && root.debugBackOpacity >= 0) ? root.debugBackOpacity : root.stateOpacity
     }
 
     ShaderEffect {
@@ -105,27 +94,19 @@ Item {
         property real in_progress: root._activeProgress
         property real in_maxRadius: root._maxRadius
         // resolutionScale: pixel-to-uv (uv ∈ [0,1])
-        property vector2d in_resolutionScale: Qt.vector2d(1.0 / Math.max(root.width,  1),
-                                                          1.0 / Math.max(root.height, 1))
+        property vector2d in_resolutionScale: Qt.vector2d(1.0 / Math.max(root.width, 1), 1.0 / Math.max(root.height, 1))
         // noiseScale: ~2.1px sparkle grid in uv space (matches rippleshadergm.cpp)
-        property vector2d in_noiseScale: Qt.vector2d(2.1 / Math.max(root.width,  1),
-                                                     2.1 / Math.max(root.height, 1))
+        property vector2d in_noiseScale: Qt.vector2d(2.1 / Math.max(root.width, 1), 2.1 / Math.max(root.height, 1))
         property real in_hasMask: 1.0
         property real in_noisePhase: _ph
         property real in_turbulencePhase: _ph * 1000.0
 
-        property vector2d in_tCircle1: Qt.vector2d(root._scale * 0.5 + (_ph *  0.01   * Math.cos(root._scale * 0.55)),
-                                                   root._scale * 0.5 + (_ph *  0.01   * Math.sin(root._scale * 0.55)))
-        property vector2d in_tCircle2: Qt.vector2d(root._scale * 0.2 + (_ph * -0.0066 * Math.cos(root._scale * 0.45)),
-                                                   root._scale * 0.2 + (_ph * -0.0066 * Math.sin(root._scale * 0.45)))
-        property vector2d in_tCircle3: Qt.vector2d(root._scale       + (_ph * -0.0066 * Math.cos(root._scale * 0.35)),
-                                                   root._scale       + (_ph * -0.0066 * Math.sin(root._scale * 0.35)))
-        property vector2d in_tRotation1: Qt.vector2d(Math.cos(_ph * root._piRotateRight + 1.7  * Math.PI),
-                                                     Math.sin(_ph * root._piRotateRight + 1.7  * Math.PI))
-        property vector2d in_tRotation2: Qt.vector2d(Math.cos(_ph * root._piRotateLeft  + 2.0  * Math.PI),
-                                                     Math.sin(_ph * root._piRotateLeft  + 2.0  * Math.PI))
-        property vector2d in_tRotation3: Qt.vector2d(Math.cos(_ph * root._piRotateRight + 2.75 * Math.PI),
-                                                     Math.sin(_ph * root._piRotateRight + 2.75 * Math.PI))
+        property vector2d in_tCircle1: Qt.vector2d(root._scale * 0.5 + (_ph * 0.01 * Math.cos(root._scale * 0.55)), root._scale * 0.5 + (_ph * 0.01 * Math.sin(root._scale * 0.55)))
+        property vector2d in_tCircle2: Qt.vector2d(root._scale * 0.2 + (_ph * -0.0066 * Math.cos(root._scale * 0.45)), root._scale * 0.2 + (_ph * -0.0066 * Math.sin(root._scale * 0.45)))
+        property vector2d in_tCircle3: Qt.vector2d(root._scale + (_ph * -0.0066 * Math.cos(root._scale * 0.35)), root._scale + (_ph * -0.0066 * Math.sin(root._scale * 0.35)))
+        property vector2d in_tRotation1: Qt.vector2d(Math.cos(_ph * root._piRotateRight + 1.7 * Math.PI), Math.sin(_ph * root._piRotateRight + 1.7 * Math.PI))
+        property vector2d in_tRotation2: Qt.vector2d(Math.cos(_ph * root._piRotateLeft + 2.0 * Math.PI), Math.sin(_ph * root._piRotateLeft + 2.0 * Math.PI))
+        property vector2d in_tRotation3: Qt.vector2d(Math.cos(_ph * root._piRotateRight + 2.75 * Math.PI), Math.sin(_ph * root._piRotateRight + 2.75 * Math.PI))
 
         property color in_color: root.color
         property color in_sparkleColor: Qt.rgba(1, 1, 1, 0.5)

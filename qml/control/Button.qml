@@ -71,7 +71,6 @@ MD.ButtonBase {
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
 
-
         border.width: control.mdState.type == MD.Enum.BtOutlined ? 1 : 0
         border.color: control.enabled ? control.mdState.ctx.color.outline : control.mdState.ctx.color.on_surface
         elevation: control.mdState.elevation

@@ -44,8 +44,10 @@ MD.ComboBoxBase {
     }
     popupVisible: popup ? popup.visible : false
     popupActiveFocus: popup ? popup.activeFocus : false
-    onPopupOpenRequested: if (popup) popup.open()
-    onPopupCloseRequested: if (popup) popup.close()
+    onPopupOpenRequested: if (popup)
+        popup.open()
+    onPopupCloseRequested: if (popup)
+        popup.close()
     property MD.StateComboBox mdState: MD.StateComboBox {
         item: control
     }
@@ -163,9 +165,7 @@ MD.ComboBoxBase {
         id: popupMenu
         parent: control
         y: control.editable ? control.height - 5 : 0
-        height: control.popupMaximumHeight > 0
-            ? Math.min(implicitHeight, control.popupMaximumHeight)
-            : implicitHeight
+        height: control.popupMaximumHeight > 0 ? Math.min(implicitHeight, control.popupMaximumHeight) : implicitHeight
         maximumWidth: control.popupMaximumWidth
         transformOrigin: Item.Top
         modal: false

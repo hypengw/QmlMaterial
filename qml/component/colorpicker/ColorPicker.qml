@@ -44,28 +44,51 @@ MD.ControlBase {
         m_state.a = c.a;
     }
 
-    function setHue(h)        { m_state.h = h; _emit(); }
-    function setSaturation(s) { m_state.s = s; _emit(); }
-    function setValue_(v)     { m_state.v = v; _emit(); }
-    function setSV(s, v)      { m_state.s = s; m_state.v = v; _emit(); }
-    function setAlpha(a)      { m_state.a = a; _emit(); }
+    function setHue(h) {
+        m_state.h = h;
+        _emit();
+    }
+    function setSaturation(s) {
+        m_state.s = s;
+        _emit();
+    }
+    function setValue_(v) {
+        m_state.v = v;
+        _emit();
+    }
+    function setSV(s, v) {
+        m_state.s = s;
+        m_state.v = v;
+        _emit();
+    }
+    function setAlpha(a) {
+        m_state.a = a;
+        _emit();
+    }
     function setR(r) {
         const c = Qt.rgba(r, control.color.g, control.color.b, m_state.a);
-        _writeFromColor(c); _emit();
+        _writeFromColor(c);
+        _emit();
     }
     function setG(g) {
         const c = Qt.rgba(control.color.r, g, control.color.b, m_state.a);
-        _writeFromColor(c); _emit();
+        _writeFromColor(c);
+        _emit();
     }
     function setB(b) {
         const c = Qt.rgba(control.color.r, control.color.g, b, m_state.a);
-        _writeFromColor(c); _emit();
+        _writeFromColor(c);
+        _emit();
     }
-    function setColor(c) { _writeFromColor(c); _emit(); }
+    function setColor(c) {
+        _writeFromColor(c);
+        _emit();
+    }
 
     Component.onCompleted: _writeFromColor(control.color)
     onColorChanged: {
-        if (m_guard.internal) return;
+        if (m_guard.internal)
+            return;
         _writeFromColor(control.color);
     }
 
@@ -89,8 +112,12 @@ MD.ControlBase {
             hue: m_state.h
             saturation: m_state.s
             value: m_state.v
-            onUserHueChanged: function (h) { control.setHue(h); }
-            onUserSvChanged: function (s, v) { control.setSV(s, v); }
+            onUserHueChanged: function (h) {
+                control.setHue(h);
+            }
+            onUserSvChanged: function (s, v) {
+                control.setSV(s, v);
+            }
         }
 
         // Chip + Segmented mode toggle on the same row.
@@ -110,7 +137,9 @@ MD.ControlBase {
                     border.color: MD.Util.transparent(MD.MProp.color.on_surface, 0.2)
                 }
             }
-            Item { Layout.fillWidth: true }
+            Item {
+                Layout.fillWidth: true
+            }
             MD.SegmentedButtonGroup {
                 Layout.alignment: Qt.AlignVCenter
                 size: MD.Enum.XS
@@ -137,30 +166,42 @@ MD.ControlBase {
                 visible: control._mode === 0
                 channel: MD.ColorChannelRow.Channel.Hue
                 contextColor: control.color
-                from: 0; to: 360; step: 1
+                from: 0
+                to: 360
+                step: 1
                 value: Math.round(m_state.h * 360)
                 label: "H"
-                onMoved: function (v) { control.setHue(v / 360); }
+                onMoved: function (v) {
+                    control.setHue(v / 360);
+                }
             }
             MD.ColorChannelRow {
                 Layout.fillWidth: true
                 visible: control._mode === 0
                 channel: MD.ColorChannelRow.Channel.Saturation
                 contextColor: control.color
-                from: 0; to: 100; step: 1
+                from: 0
+                to: 100
+                step: 1
                 value: Math.round(m_state.s * 100)
                 label: "S"
-                onMoved: function (v) { control.setSaturation(v / 100); }
+                onMoved: function (v) {
+                    control.setSaturation(v / 100);
+                }
             }
             MD.ColorChannelRow {
                 Layout.fillWidth: true
                 visible: control._mode === 0
                 channel: MD.ColorChannelRow.Channel.Value
                 contextColor: control.color
-                from: 0; to: 100; step: 1
+                from: 0
+                to: 100
+                step: 1
                 value: Math.round(m_state.v * 100)
                 label: "V"
-                onMoved: function (v) { control.setValue_(v / 100); }
+                onMoved: function (v) {
+                    control.setValue_(v / 100);
+                }
             }
 
             MD.ColorChannelRow {
@@ -168,30 +209,42 @@ MD.ControlBase {
                 visible: control._mode === 1
                 channel: MD.ColorChannelRow.Channel.Red
                 contextColor: control.color
-                from: 0; to: 255; step: 1
+                from: 0
+                to: 255
+                step: 1
                 value: Math.round(control.color.r * 255)
                 label: "R"
-                onMoved: function (v) { control.setR(v / 255); }
+                onMoved: function (v) {
+                    control.setR(v / 255);
+                }
             }
             MD.ColorChannelRow {
                 Layout.fillWidth: true
                 visible: control._mode === 1
                 channel: MD.ColorChannelRow.Channel.Green
                 contextColor: control.color
-                from: 0; to: 255; step: 1
+                from: 0
+                to: 255
+                step: 1
                 value: Math.round(control.color.g * 255)
                 label: "G"
-                onMoved: function (v) { control.setG(v / 255); }
+                onMoved: function (v) {
+                    control.setG(v / 255);
+                }
             }
             MD.ColorChannelRow {
                 Layout.fillWidth: true
                 visible: control._mode === 1
                 channel: MD.ColorChannelRow.Channel.Blue
                 contextColor: control.color
-                from: 0; to: 255; step: 1
+                from: 0
+                to: 255
+                step: 1
                 value: Math.round(control.color.b * 255)
                 label: "B"
-                onMoved: function (v) { control.setB(v / 255); }
+                onMoved: function (v) {
+                    control.setB(v / 255);
+                }
             }
 
             MD.ColorChannelRow {
@@ -199,10 +252,14 @@ MD.ControlBase {
                 visible: control.showAlpha
                 channel: MD.ColorChannelRow.Channel.Alpha
                 contextColor: control.color
-                from: 0; to: 255; step: 1
+                from: 0
+                to: 255
+                step: 1
                 value: Math.round(m_state.a * 255)
                 label: "A"
-                onMoved: function (v) { control.setAlpha(v / 255); }
+                onMoved: function (v) {
+                    control.setAlpha(v / 255);
+                }
             }
         }
     }

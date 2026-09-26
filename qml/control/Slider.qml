@@ -67,9 +67,7 @@ MD.SliderBase {
     property int maxVisibleStops: 20
 
     readonly property bool __showStopIndicators: control.tickVisibilityMode !== MD.Enum.SliderTickNone
-    readonly property bool __showContinuousEndCaps: control.__showStopIndicators
-            && !control.__isDiscrete
-            && control.tickVisibilityMode === MD.Enum.SliderTickAll
+    readonly property bool __showContinuousEndCaps: control.__showStopIndicators && !control.__isDiscrete && control.tickVisibilityMode === MD.Enum.SliderTickAll
 
     readonly property int __dotCount: {
         if (!control.__isDiscrete || !control.__showStopIndicators)
@@ -97,19 +95,14 @@ MD.SliderBase {
             return MD.Token.slider.active_track_height_xsmall;
         }
     }
-    readonly property real __inactiveTrackThickness:
-        control.__activeTrackThickness
+    readonly property real __inactiveTrackThickness: control.__activeTrackThickness
     readonly property real __stopSize: MD.Token.slider.stop_indicator_size
     readonly property real __insideCorner: MD.Token.slider.track_inside_corner
     readonly property real __outerCorner: control.__activeTrackThickness / 2
 
-    readonly property bool __hasInsetIcon: control.insetIcon.length > 0
-            && control.sliderSize >= MD.Enum.SliderSizeMedium
+    readonly property bool __hasInsetIcon: control.insetIcon.length > 0 && control.sliderSize >= MD.Enum.SliderSizeMedium
 
-    readonly property string __resolvedInsetIcon:
-        control.insetIconAtMin.length > 0 && control.value <= control.from + Number.EPSILON
-            ? control.insetIconAtMin
-            : control.insetIcon
+    readonly property string __resolvedInsetIcon: control.insetIconAtMin.length > 0 && control.value <= control.from + Number.EPSILON ? control.insetIconAtMin : control.insetIcon
 
     readonly property real handleCenter: {
         const trackLength = control.horizontal ? control.availableWidth : control.availableHeight;
@@ -118,23 +111,17 @@ MD.SliderBase {
         return control.visualPosition * (trackLength - handleSize) + handleSize / 2 + paddingOffset;
     }
 
-    readonly property real __horizontalActiveTrackLength:
-        control.handleCenter - control.leftPadding - control.__trackGapSize
+    readonly property real __horizontalActiveTrackLength: control.handleCenter - control.leftPadding - control.__trackGapSize
 
-    readonly property real __inactiveTopLength:
-        control.handleCenter - control.__trackGapSize - control.topPadding
+    readonly property real __inactiveTopLength: control.handleCenter - control.__trackGapSize - control.topPadding
 
     readonly property real __insetIconDivider: control.handleCenter + control.__trackGapSize
 
     readonly property real __insetIconPad: MD.Token.slider.inset_icon_padding
 
-    readonly property bool __insetIconOnActiveTrack:
-        control.horizontal
-            && control.__horizontalActiveTrackLength
-                    >= control.insetIconSize + 2 * control.__insetIconPad
+    readonly property bool __insetIconOnActiveTrack: control.horizontal && control.__horizontalActiveTrackLength >= control.insetIconSize + 2 * control.__insetIconPad
 
-    readonly property bool __verticalInsetIconFitsAtTop:
-        control.__inactiveTopLength >= control.insetIconSize + 2 * control.__insetIconPad
+    readonly property bool __verticalInsetIconFitsAtTop: control.__inactiveTopLength >= control.insetIconSize + 2 * control.__insetIconPad
 
     readonly property real __insetIconX: {
         if (control.horizontal) {
@@ -158,17 +145,13 @@ MD.SliderBase {
 
     readonly property color __insetIconColor: {
         if (control.horizontal) {
-            return control.__insetIconOnActiveTrack
-                    ? control.insetIconActiveColor
-                    : control.insetIconInactiveColor;
+            return control.__insetIconOnActiveTrack ? control.insetIconActiveColor : control.insetIconInactiveColor;
         }
         if (!control.__verticalInsetIconFitsAtTop) {
             return control.insetIconActiveColor;
         }
         const iconCenterY = control.__insetIconPad + control.insetIconSize / 2;
-        return iconCenterY >= control.__insetIconDivider
-                ? control.insetIconActiveColor
-                : control.insetIconInactiveColor;
+        return iconCenterY >= control.__insetIconDivider ? control.insetIconActiveColor : control.insetIconInactiveColor;
     }
 
     handle: MD.SliderHandle {
@@ -198,12 +181,8 @@ MD.SliderBase {
     background: Item {
         id: bgItem
         opacity: control.mdState.backgroundOpacity
-        implicitWidth: control.horizontal
-            ? 200
-            : Math.max(control.mdState.handleHeight, control.__activeTrackThickness)
-        implicitHeight: control.horizontal
-            ? Math.max(control.mdState.handleHeight, control.__activeTrackThickness)
-            : 200
+        implicitWidth: control.horizontal ? 200 : Math.max(control.mdState.handleHeight, control.__activeTrackThickness)
+        implicitHeight: control.horizontal ? Math.max(control.mdState.handleHeight, control.__activeTrackThickness) : 200
 
         readonly property real gapSize: control.__trackGapSize
 
@@ -237,11 +216,9 @@ MD.SliderBase {
             corners: {
                 const r = control.__inactiveTrackThickness / 2;
                 if (control.horizontal) {
-                    return MD.Util.corners(control.__insideCorner, r,
-                                           control.__insideCorner, r);
+                    return MD.Util.corners(control.__insideCorner, r, control.__insideCorner, r);
                 }
-                return MD.Util.corners(r, r,
-                                       control.__insideCorner, control.__insideCorner);
+                return MD.Util.corners(r, r, control.__insideCorner, control.__insideCorner);
             }
             color: control.mdState.trackInactiveColor
             visible: width > 0 && height > 0
@@ -275,11 +252,9 @@ MD.SliderBase {
             }
             corners: {
                 if (control.horizontal) {
-                    return MD.Util.corners(control.__outerCorner, control.__insideCorner,
-                                           control.__outerCorner, control.__insideCorner);
+                    return MD.Util.corners(control.__outerCorner, control.__insideCorner, control.__outerCorner, control.__insideCorner);
                 }
-                return MD.Util.corners(control.__insideCorner, control.__insideCorner,
-                                       control.__outerCorner, control.__outerCorner);
+                return MD.Util.corners(control.__insideCorner, control.__insideCorner, control.__outerCorner, control.__outerCorner);
             }
             color: control.mdState.trackColor
             visible: width > 0 && height > 0
@@ -303,9 +278,7 @@ MD.SliderBase {
             scale: {
                 const centerPos = control.handleCenter;
                 const handleHalfWidth = control.mdState.handleWidth / 2;
-                const distToStart = control.horizontal
-                        ? centerPos - control.leftPadding
-                        : (bgItem.height - centerPos - control.bottomPadding);
+                const distToStart = control.horizontal ? centerPos - control.leftPadding : (bgItem.height - centerPos - control.bottomPadding);
                 const clearDistance = distToStart - handleHalfWidth - 2;
                 return Math.min(Math.max(clearDistance / 2, 0), 1);
             }
@@ -336,9 +309,7 @@ MD.SliderBase {
             scale: {
                 const centerPos = control.handleCenter;
                 const handleHalfWidth = control.mdState.handleWidth / 2;
-                const distToEnd = control.horizontal
-                        ? (bgItem.width - centerPos - control.rightPadding)
-                        : centerPos;
+                const distToEnd = control.horizontal ? (bgItem.width - centerPos - control.rightPadding) : centerPos;
                 const clearDistance = distToEnd - handleHalfWidth - 2;
                 return Math.min(Math.max(clearDistance / 2, 0), 1);
             }

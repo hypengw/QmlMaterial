@@ -96,5 +96,4 @@ MD.SliderBase {
             }
         }
     }
-
 }

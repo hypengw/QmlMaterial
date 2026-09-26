@@ -7,7 +7,6 @@ MD.MState {
     required property MD.ButtonBase item
     property int type: MD.Enum.CardElevated
     property int radius: 12
-   
 
     elevation: {
         switch (root.type) {

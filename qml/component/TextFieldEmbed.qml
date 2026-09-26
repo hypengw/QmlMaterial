@@ -19,8 +19,7 @@ MD.TextFieldBase {
         restoreMode: Binding.RestoreNone
     }
 
-    cursorDelegate: MD.CursorDelegate {
-    }
+    cursorDelegate: MD.CursorDelegate {}
     selectionColor: MD.Token.color.primary
     selectedTextColor: MD.Token.color.getOn(selectionColor)
 

@@ -20,7 +20,7 @@ MD.Page {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 48
                     color: {
-                        return MD.Token.color[modelData]
+                        return MD.Token.color[modelData];
                     }
 
                     MD.Text {
@@ -67,14 +67,13 @@ MD.Page {
                 model: ['error', 'on_error', 'error_container', 'on_error_container']
             }
             ColorGroup {
-                model: ['surface_dim', 'surface', 'surface_bright', 'surface_container_lowest', 'surface_container_low', 'surface_container', 'surface_container_high', 'surface_container_highest', 'on_surface', 'on_surface_variant' ]
+                model: ['surface_dim', 'surface', 'surface_bright', 'surface_container_lowest', 'surface_container_low', 'surface_container', 'surface_container_high', 'surface_container_highest', 'on_surface', 'on_surface_variant']
             }
             ColorGroup {
                 model: ['outline', 'shadow', 'inverse_surface', 'inverse_on_surface', 'inverse_primary']
             }
             ColorGroup {
-                model: ['neutral_10', 'neutral_20', 'neutral_30', 'neutral_40', 'neutral_50',
-                        'neutral_60', 'neutral_70', 'neutral_80', 'neutral_90', ]
+                model: ['neutral_10', 'neutral_20', 'neutral_30', 'neutral_40', 'neutral_50', 'neutral_60', 'neutral_70', 'neutral_80', 'neutral_90',]
             }
         }
     }

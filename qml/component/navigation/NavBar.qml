@@ -4,6 +4,4 @@ import Qcm.Material as MD
 
 ColumnLayout {
     id: root
-
-    
 }
