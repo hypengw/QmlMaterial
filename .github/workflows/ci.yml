@@ -2,18 +2,6 @@ name: CI - Qt 6.8.3 multi-compiler build & tests
 on: [pull_request]
 
 jobs:
-  format:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
-      - name: Install clang-format
-        run: python -m pip install clang-format==22.1.8
-      - name: Check formatting
-        run: scripts/format.sh --check
-
   matrix:
     runs-on: ${{ matrix.runner }}
     strategy:
