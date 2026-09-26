@@ -67,8 +67,9 @@ struct SplitPaneState {
     QPointer<SplitPaneHost>     host;
     SplitTransitionTarget       target;
     SplitMotion                 motion;
-    quint64                     generation = 0;
-    bool                        pending    = false;
+    quint64                     generation        = 0;
+    bool                        pending           = false;
+    bool                        collapsedVisually = false;
     std::optional<qreal>        expandedSize;
 };
 
@@ -524,7 +525,8 @@ void SplitView::setCollapseTransition(QQuickTransition* value) {
 void SplitView::changeExpanded(QQuickItem* item) {
     const auto state = m_panes.value(item);
     if (! state || ! state->info) return;
-    const auto generation = ++state->generation;
+    const auto generation    = ++state->generation;
+    state->collapsedVisually = ! state->info->isExpanded() && state->target.progress() <= 0;
     if (! state->info->isTransitioning()) state->expandedSize.reset();
     state->motion.cancel();
     state->pending = false;
@@ -625,7 +627,10 @@ void SplitView::itemAdded(QQuickItem* item) {
     state->info               = attached(item);
     state->host               = new SplitPaneHost;
     state->target.setProgress(state->info->isExpanded() ? 1 : 0);
-    state->target.changed = [guard = QPointer<SplitView>(this)] {
+    state->target.changed = [guard = QPointer<SplitView>(this), weak = std::weak_ptr(state)] {
+        if (auto current = weak.lock(); current && current->info && ! current->info->isExpanded() &&
+                                        current->target.progress() <= 0)
+            current->collapsedVisually = true;
         if (guard) guard->requestLayout();
     };
     m_panes.insert(item, state);
@@ -732,7 +737,7 @@ void SplitView::updatePolish() {
     bool         transitioning = false;
     for (auto item : snapshot) {
         const auto state = m_panes.value(item);
-        progress.append(state ? state->target.progress() : 1);
+        progress.append(state ? (state->collapsedVisually ? 0 : state->target.progress()) : 1);
         const auto size = normal.panes[expandedSizes.size()].size;
         if (state && state->info && state->info->isTransitioning()) {
             if (! state->expandedSize) state->expandedSize = size;
@@ -765,7 +770,17 @@ void SplitView::updatePolish() {
         if (! item) continue;
         const auto state = m_panes.value(item);
         if (! state || ! state->host || ! state->info) continue;
-        const auto&  geometry = main.panes[i];
+        const auto& geometry = main.panes[i];
+        const qreal minimum =
+            horizontal ? state->info->minimumWidth() : state->info->minimumHeight();
+        const qreal itemExtent =
+            state->info->isTransitioning() ? std::max(geometry.size, minimum) : geometry.size;
+        bool hasFollowingPane = false;
+        for (int next = i + 1; next < main.panes.size(); ++next)
+            hasFollowingPane |= main.panes[next].visible;
+        // Keep the edge facing the neighbouring pane attached to the moving divider.
+        const qreal itemPosition =
+            geometry.position + (hasFollowingPane ? geometry.size - itemExtent : 0);
         const QRectF bounds(horizontal ? QPointF(geometry.position, 0)
                                        : QPointF(0, geometry.position),
                             horizontal ? QSizeF(geometry.size, available.height())
@@ -792,12 +807,11 @@ void SplitView::updatePolish() {
         if (! guard) return;
         m_updating_hosts = false;
         if (! valid() || ! item) break;
-        item->setSize(horizontal ? QSizeF(geometry.size, available.height())
-                                 : QSizeF(available.width(), geometry.size));
+        item->setSize(horizontal ? QSizeF(itemExtent, available.height())
+                                 : QSizeF(available.width(), itemExtent));
         if (! valid()) break;
         if (item)
-            item->setPosition(horizontal ? QPointF(geometry.position, 0)
-                                         : QPointF(0, geometry.position));
+            item->setPosition(horizontal ? QPointF(itemPosition, 0) : QPointF(0, itemPosition));
     }
     if (! guard) return;
     const auto handles = m_handles;

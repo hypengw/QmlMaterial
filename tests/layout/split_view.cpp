@@ -256,12 +256,14 @@ collapseTransition: Transition {
         polish(view.get());
         auto* middle = view->itemAt(1);
         info(middle)->setExpanded(false);
-        QTRY_COMPARE(middle->width(), 166);
+        QTRY_COMPARE(middle->parentItem()->clipRect().width(), 166);
+        QCOMPARE(middle->width(), 200);
         view->setCollapseTransition(nullptr);
         info(view->itemAt(2))->setExpanded(false);
         polish(view.get());
         polish(view.get());
-        QCOMPARE(middle->width(), 166);
+        QCOMPARE(middle->parentItem()->clipRect().width(), 166);
+        QCOMPARE(middle->width(), 200);
     }
     void destructionDuringCompletion() {
         auto view = create();
@@ -274,6 +276,175 @@ collapseTransition: Transition {
         state->setExpanded(false);
         view->ensurePolished();
         QVERIFY(! view);
+    }
+    void constrainedDisclosure_data() {
+        QTest::addColumn<int>("orientation");
+        QTest::addColumn<bool>("opening");
+        QTest::addColumn<qreal>("progress");
+        for (auto orientation : { Qt::Horizontal, Qt::Vertical })
+            for (bool opening : { false, true })
+                for (qreal progress : { 0.0, 0.25, 0.5, 0.75 })
+                    QTest::addRow("%d-%d-%.2f", int(orientation), opening, progress)
+                        << int(orientation) << opening << progress;
+    }
+    void constrainedDisclosure() {
+        QFETCH(int, orientation);
+        QFETCH(bool, opening);
+        QFETCH(qreal, progress);
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+import QtQuick
+import Qcm.Material as MD
+MD.SplitView {
+    id: root
+    width: 800; height: 600
+    property bool disclosed: true
+    property bool present: true
+    property real sample: 0
+    expandTransition: Transition {
+        NumberAnimation { property: "progress"; from: root.sample; to: root.sample; duration: 100000 }
+    }
+    collapseTransition: Transition {
+        NumberAnimation { property: "progress"; from: root.sample; to: root.sample; duration: 100000 }
+    }
+    Rectangle {
+        MD.SplitViewBase.minimumWidth: root.width / 2
+        MD.SplitViewBase.minimumHeight: root.height / 2
+        MD.SplitViewBase.preferredWidth: root.width * 5 / 6
+        MD.SplitViewBase.preferredHeight: root.height * 5 / 9
+        readonly property bool constrainSize: root.disclosed && !detail.MD.SplitViewBase.transitioning
+        MD.SplitViewBase.maximumWidth: constrainSize ? root.width * 5 / 6 : root.width
+        MD.SplitViewBase.maximumHeight: constrainSize ? root.height * 5 / 9 : root.height
+    }
+    Rectangle {
+        id: detail
+        visible: root.present
+        MD.SplitViewBase.minimumWidth: 320
+        MD.SplitViewBase.minimumHeight: 160
+        MD.SplitViewBase.fillWidth: true
+        MD.SplitViewBase.fillHeight: true
+        MD.SplitViewBase.expanded: root.disclosed
+    }
+})",
+                          QUrl());
+        std::unique_ptr<SplitView> view(qobject_cast<SplitView*>(
+            component.createWithInitialProperties({ { "orientation", orientation },
+                                                    { "disclosed", ! opening },
+                                                    { "present", ! opening },
+                                                    { "sample", progress } })));
+        QVERIFY2(view, qPrintable(component.errorString()));
+        view->setParentItem(m_window.contentItem());
+        polish(view.get());
+        view->setProperty("present", true);
+        view->setProperty("disclosed", opening);
+        auto* detail = view->itemAt(1);
+        auto  edge   = [&] {
+            view->ensurePolished();
+            const auto bounds = detail->parentItem()->clipRect();
+            return orientation == Qt::Horizontal ? bounds.right() : bounds.bottom();
+        };
+        const qreal available = orientation == Qt::Horizontal ? view->width() : view->height();
+        auto*       handle    = view->handleItemAt(0);
+        QVERIFY(handle);
+        const qreal expandedSize =
+            orientation == Qt::Horizontal ? 320 : available * 4 / 9 - handle->implicitHeight();
+        auto extent = [&] {
+            view->ensurePolished();
+            const auto bounds = detail->parentItem()->clipRect();
+            return orientation == Qt::Horizontal ? bounds.width() : bounds.height();
+        };
+        QTRY_VERIFY(qAbs(extent() - expandedSize * progress) < 0.01);
+        QTRY_VERIFY(qAbs(edge() - available) < 0.01);
+        QVERIFY(info(detail)->isTransitioning());
+        QCOMPARE(orientation == Qt::Horizontal ? detail->width() : detail->height(),
+                 std::max(expandedSize * progress, orientation == Qt::Horizontal ? 320.0 : 160.0));
+        QVERIFY(detail->parentItem()->clip());
+        QCOMPARE(orientation == Qt::Horizontal ? detail->x() : detail->y(), available - extent());
+        view->setProperty("disclosed", ! opening);
+        QTRY_VERIFY(qAbs(extent() - expandedSize * progress) < 0.01);
+        QTRY_VERIFY(qAbs(edge() - available) < 0.01);
+    }
+    void leadingPaneClipsAtMinimum_data() {
+        QTest::addColumn<int>("orientation");
+        QTest::newRow("horizontal") << int(Qt::Horizontal);
+        QTest::newRow("vertical") << int(Qt::Vertical);
+    }
+    void leadingPaneClipsAtMinimum() {
+        QFETCH(int, orientation);
+        auto view = create(R"(
+collapseTransition: Transition {
+    NumberAnimation { property: "progress"; from: 0.25; to: 0.25; duration: 100000 }
+}
+)");
+        QVERIFY(view);
+        view->setOrientation(Qt::Orientation(orientation));
+        auto* first = view->itemAt(0);
+        auto* state = info(first);
+        state->setMinimumWidth(200);
+        state->setMinimumHeight(160);
+        polish(view.get());
+        const bool  horizontal = orientation == Qt::Horizontal;
+        const qreal initial    = horizontal ? first->width() : first->height();
+        state->setExpanded(false);
+        auto bounds = [&] {
+            view->ensurePolished();
+            return first->parentItem()->clipRect();
+        };
+        QTRY_VERIFY(qAbs((horizontal ? bounds().width() : bounds().height()) - initial * 0.25) <
+                    0.01);
+        QCOMPARE(horizontal ? first->width() : first->height(), horizontal ? 200.0 : 160.0);
+        QCOMPARE(horizontal ? first->x() + first->width() : first->y() + first->height(),
+                 initial * 0.25);
+        QVERIFY(first->parentItem()->clip());
+        QVERIFY(! first->parentItem()->contains(horizontal ? QPointF(-1, 10) : QPointF(10, -1)));
+        const auto* last = view->itemAt(1);
+        QCOMPARE(horizontal ? last->x() + last->width() : last->y() + last->height(),
+                 horizontal ? view->width() : view->height());
+    }
+    void collapseReboundStaysHidden_data() {
+        QTest::addColumn<int>("orientation");
+        QTest::newRow("horizontal") << int(Qt::Horizontal);
+        QTest::newRow("vertical") << int(Qt::Vertical);
+    }
+    void collapseReboundStaysHidden() {
+        QFETCH(int, orientation);
+        auto view = create(R"(
+property bool rebounded: false
+collapseTransition: Transition {
+    SequentialAnimation {
+        NumberAnimation { property: "progress"; to: -0.1; duration: 0 }
+        NumberAnimation { property: "progress"; to: 0.1; duration: 0 }
+        ScriptAction { script: root.rebounded = true }
+        PauseAnimation { duration: 100000 }
+    }
+}
+expandTransition: Transition {
+    NumberAnimation { property: "progress"; from: 0.5; to: 0.5; duration: 100000 }
+}
+)");
+        QVERIFY(view);
+        view->setOrientation(Qt::Orientation(orientation));
+        polish(view.get());
+        auto*      detail = view->itemAt(1);
+        auto*      state  = info(detail);
+        QSignalSpy closed(state, &SplitViewAttached::collapsedCompleted);
+        state->setExpanded(false);
+        QTRY_VERIFY(view->property("rebounded").toBool());
+        polish(view.get());
+        QVERIFY(state->isTransitioning());
+        QCOMPARE(closed.count(), 0);
+        QVERIFY(! view->handleItemAt(0)->isVisible());
+        const bool horizontal = orientation == Qt::Horizontal;
+        const auto bounds     = detail->parentItem()->clipRect();
+        QCOMPARE(horizontal ? bounds.width() : bounds.height(), 0.0);
+        QCOMPARE(horizontal ? view->itemAt(0)->width() : view->itemAt(0)->height(),
+                 horizontal ? view->width() : view->height());
+        state->setExpanded(true);
+        QTRY_VERIFY(view->handleItemAt(0)->isVisible());
+        polish(view.get());
+        const auto reopened = detail->parentItem()->clipRect();
+        QVERIFY((horizontal ? reopened.width() : reopened.height()) > 0);
+        QCOMPARE(closed.count(), 0);
     }
     void springCompletes_data() {
         QTest::addColumn<int>("orientation");
