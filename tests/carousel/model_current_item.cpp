@@ -60,9 +60,8 @@ auto fail(const char* message) -> int
 
 } // namespace
 
-int main(int argc, char* argv[])
+int run_model_current_item(int argc, char** argv)
 {
-    QGuiApplication app(argc, argv);
 
     StringModel  model;
     CarouselView view;

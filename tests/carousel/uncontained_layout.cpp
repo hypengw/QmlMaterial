@@ -51,9 +51,8 @@ auto nearEqual(qreal a, qreal b, qreal eps = 1.0) -> bool
 
 } // namespace
 
-int main(int argc, char* argv[])
+int run_uncontained_layout(int argc, char** argv)
 {
-    QCoreApplication app(argc, argv);
 
     const auto uncontained = CarouselStrategy::compute(makeUncontainedInput(0));
     if (uncontained.items.isEmpty()) {

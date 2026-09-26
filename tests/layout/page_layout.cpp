@@ -381,8 +381,7 @@ private Q_SLOTS:
     }
 };
 
-int main(int argc, char** argv) {
-    QGuiApplication app(argc, argv);
+int run_page_layout(int argc, char** argv) {
     PageLayoutTest  test;
     return QTest::qExec(&test, argc, argv);
 }

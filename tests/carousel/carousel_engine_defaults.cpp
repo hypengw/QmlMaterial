@@ -21,7 +21,7 @@ static_assert(CarouselEngineDefaults::snap_duration == TokenCarouselLiterals::sn
 static_assert(CarouselEngineDefaults::min_item_aspect == TokenCarouselLiterals::min_item_aspect);
 static_assert(CarouselEngineDefaults::max_item_aspect == TokenCarouselLiterals::max_item_aspect);
 
-int main()
+int run_carousel_engine_defaults(int argc, char** argv)
 {
     return 0;
 }

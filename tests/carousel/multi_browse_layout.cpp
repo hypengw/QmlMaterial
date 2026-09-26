@@ -51,9 +51,8 @@ auto fail(const char* msg) -> int
 
 } // namespace
 
-int main(int argc, char* argv[])
+int run_multi_browse_layout(int argc, char** argv)
 {
-    QCoreApplication app(argc, argv);
 
     for (int width = 1; width <= 200; ++width) {
         auto input = makeInput(0);

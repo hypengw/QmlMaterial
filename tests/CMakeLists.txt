@@ -1,211 +1,90 @@
-if(NOT TARGET Qt6::Quick)
-  find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick Qml)
-endif()
-if(NOT TARGET Qt6::GuiPrivate)
-  find_package(Qt6 REQUIRED COMPONENTS GuiPrivate)
-endif()
-find_package(Qt6 REQUIRED COMPONENTS Test)
-
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick Qml Test GuiPrivate QuickPrivate)
 enable_testing()
 
-add_executable(lazy_list integration/lazy_list.cpp
-  ${CMAKE_SOURCE_DIR}/src/model/item_model_source.cpp
-  ${CMAKE_SOURCE_DIR}/include/qml_material/model/item_model_source.hpp
-  ${CMAKE_SOURCE_DIR}/src/view/lazy_list.cpp
-  ${CMAKE_SOURCE_DIR}/src/view/delegate_recycler.cpp
-  ${CMAKE_SOURCE_DIR}/src/scrollable/flickable.cpp
-  ${CMAKE_SOURCE_DIR}/src/model/item_source.cpp
-  ${CMAKE_SOURCE_DIR}/src/model/lazy_row.cpp
-  ${CMAKE_SOURCE_DIR}/include/qml_material/view/lazy_list.hpp
-  ${CMAKE_SOURCE_DIR}/include/qml_material/scrollable/flickable.hpp
-  ${CMAKE_SOURCE_DIR}/include/qml_material/model/item_source.hpp
-  ${CMAKE_SOURCE_DIR}/include/qml_material/model/lazy_row.hpp)
-target_include_directories(lazy_list PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_compile_definitions(lazy_list PRIVATE QML_MATERIAL_STATIC_DEFINE)
-target_link_libraries(lazy_list PRIVATE Qt6::QuickPrivate Qt6::Qml Qt6::Test)
-set_target_properties(lazy_list PROPERTIES AUTOMOC ON)
-add_test(NAME lazy_list COMMAND lazy_list)
-set_tests_properties(lazy_list PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
-
-add_executable(viewport_controller layout/viewport_controller.cpp)
-target_include_directories(viewport_controller PRIVATE ${CMAKE_SOURCE_DIR}/src/view ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(viewport_controller PRIVATE Qt6::Qml Qt6::Test)
-set_target_properties(viewport_controller PROPERTIES AUTOMOC ON)
-add_test(NAME viewport_controller COMMAND viewport_controller)
-
-add_executable(linear_layout layout/linear_layout.cpp)
-target_include_directories(linear_layout PRIVATE ${CMAKE_SOURCE_DIR}/src/view)
-target_link_libraries(linear_layout PRIVATE Qt6::Test)
-set_target_properties(linear_layout PROPERTIES AUTOMOC ON)
-add_test(NAME linear_layout COMMAND linear_layout)
-
-add_executable(scroll_motion integration/scroll_motion.cpp
-  ${CMAKE_SOURCE_DIR}/src/scrollable/flickable.cpp
-  ${CMAKE_SOURCE_DIR}/include/qml_material/scrollable/flickable.hpp)
-target_include_directories(scroll_motion PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_compile_definitions(scroll_motion PRIVATE QML_MATERIAL_STATIC_DEFINE)
-target_link_libraries(scroll_motion PRIVATE Qt6::QuickPrivate Qt6::Qml Qt6::Test)
-set_target_properties(scroll_motion PROPERTIES AUTOMOC ON)
-add_test(NAME scroll_motion COMMAND scroll_motion)
-set_tests_properties(scroll_motion PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
-
-add_executable(lazy_data
+set(QM_TEST_SOURCES
+  integration/lazy_list.cpp
+  layout/viewport_controller.cpp
+  layout/linear_layout.cpp
+  integration/scroll_motion.cpp
   integration/lazy_data.cpp
-  ${CMAKE_SOURCE_DIR}/src/model/item_source.cpp
-  ${CMAKE_SOURCE_DIR}/src/model/item_model_source.cpp
-  ${CMAKE_SOURCE_DIR}/src/model/lazy_row.cpp
-  ${CMAKE_SOURCE_DIR}/src/view/delegate_recycler.cpp
-  ${CMAKE_SOURCE_DIR}/include/qml_material/model/item_source.hpp
-  ${CMAKE_SOURCE_DIR}/include/qml_material/model/item_model_source.hpp
-  ${CMAKE_SOURCE_DIR}/include/qml_material/model/lazy_row.hpp)
-target_include_directories(lazy_data PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src/view)
-target_compile_definitions(lazy_data PRIVATE QML_MATERIAL_STATIC_DEFINE)
-target_link_libraries(lazy_data PRIVATE Qt6::Core Qt6::Gui Qt6::Quick Qt6::Qml Qt6::Test)
-set_target_properties(lazy_data PROPERTIES AUTOMOC ON)
-add_test(NAME lazy_data COMMAND lazy_data)
-set_tests_properties(lazy_data PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
-
-add_executable(icon_spec integration/icon_spec.cpp)
-target_link_libraries(icon_spec PRIVATE qml_material Qt6::Quick Qt6::Qml Qt6::Test)
-target_compile_definitions(icon_spec PRIVATE QM_QML_IMPORT_PATH="${QT_QML_OUTPUT_DIRECTORY}")
-target_compile_definitions(icon_spec PRIVATE QM_ICON_TEST_QML="${CMAKE_CURRENT_SOURCE_DIR}/integration/icon_spec.qml")
-add_dependencies(icon_spec qml_materialplugin)
-if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
-  target_link_libraries(icon_spec PRIVATE qml_materialplugin)
-endif()
-set_target_properties(icon_spec PROPERTIES AUTOMOC ON)
-qt_import_qml_plugins(icon_spec)
-add_test(NAME icon_spec COMMAND icon_spec)
-set_tests_properties(icon_spec PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
-
-add_executable(hero_center_end carousel/hero_center_end.cpp
-  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_strategies.cpp
-  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_keylines.cpp
-  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_scroll_strategy.cpp)
-target_include_directories(hero_center_end PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(hero_center_end PRIVATE Qt6::Core)
-add_test(NAME hero_center_end COMMAND hero_center_end)
-
-add_executable(fullscreen_layout carousel/fullscreen_layout.cpp
-  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_strategies.cpp
-  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_keylines.cpp
-  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_scroll_strategy.cpp)
-target_include_directories(fullscreen_layout PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(fullscreen_layout PRIVATE Qt6::Core)
-add_test(NAME fullscreen_layout COMMAND fullscreen_layout)
-
-add_executable(multi_browse_layout carousel/multi_browse_layout.cpp
-  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_strategies.cpp
-  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_keylines.cpp
-  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_scroll_strategy.cpp)
-target_include_directories(multi_browse_layout PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(multi_browse_layout PRIVATE Qt6::Core)
-add_test(NAME multi_browse_layout COMMAND multi_browse_layout)
-
-add_executable(uncontained_layout carousel/uncontained_layout.cpp
-  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_strategies.cpp
-  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_keylines.cpp
-  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_scroll_strategy.cpp)
-target_include_directories(uncontained_layout PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(uncontained_layout PRIVATE Qt6::Core)
-add_test(NAME uncontained_layout COMMAND uncontained_layout)
-
-add_executable(hero_start_layout carousel/hero_start_layout.cpp
-  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_strategies.cpp
-  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_keylines.cpp
-  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_scroll_strategy.cpp)
-target_include_directories(hero_start_layout PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(hero_start_layout PRIVATE Qt6::Core)
-add_test(NAME hero_start_layout COMMAND hero_start_layout)
-
-add_executable(carousel_engine_defaults carousel/carousel_engine_defaults.cpp)
-target_include_directories(carousel_engine_defaults PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(carousel_engine_defaults PRIVATE Qt6::Core)
-add_test(NAME carousel_engine_defaults COMMAND carousel_engine_defaults)
-
-add_executable(appstream_release_model model/appstream_release_model.cpp)
-target_link_libraries(appstream_release_model PRIVATE qml_material Qt6::Core Qt6::Test)
-set_target_properties(appstream_release_model PROPERTIES AUTOMOC ON)
-add_test(NAME appstream_release_model COMMAND appstream_release_model)
-
-set(CAROUSEL_ENGINE_SOURCES
-  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_view.cpp
-  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_attached.cpp
-  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_strategies.cpp
-  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_keylines.cpp
-  ${CMAKE_SOURCE_DIR}/src/carousel/carousel_scroll_strategy.cpp)
-set(CAROUSEL_ENGINE_HEADERS
-  ${CMAKE_SOURCE_DIR}/include/qml_material/carousel/carousel_view.hpp
-  ${CMAKE_SOURCE_DIR}/include/qml_material/carousel/carousel_attached.hpp)
-
-add_executable(set_current_index_sync
+  integration/icon_spec.cpp
+  carousel/hero_center_end.cpp
+  carousel/fullscreen_layout.cpp
+  carousel/multi_browse_layout.cpp
+  carousel/uncontained_layout.cpp
+  carousel/hero_start_layout.cpp
+  carousel/carousel_engine_defaults.cpp
+  model/appstream_release_model.cpp
   carousel/set_current_index_sync.cpp
-  ${CAROUSEL_ENGINE_SOURCES}
-  ${CAROUSEL_ENGINE_HEADERS})
-target_include_directories(set_current_index_sync PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(set_current_index_sync PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Qml Qt6::Quick Qt6::QuickPrivate)
-set_target_properties(set_current_index_sync PROPERTIES AUTOMOC ON)
-add_test(NAME set_current_index_sync COMMAND set_current_index_sync)
-
-add_executable(model_shrink
   carousel/model_shrink.cpp
-  ${CAROUSEL_ENGINE_SOURCES}
-  ${CAROUSEL_ENGINE_HEADERS})
-target_include_directories(model_shrink PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(model_shrink PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Qml Qt6::Quick Qt6::QuickPrivate)
-set_target_properties(model_shrink PROPERTIES AUTOMOC ON)
-add_test(NAME model_shrink COMMAND model_shrink)
-
-add_executable(model_data_changed
   carousel/model_data_changed.cpp
-  ${CAROUSEL_ENGINE_SOURCES}
-  ${CAROUSEL_ENGINE_HEADERS})
-target_include_directories(model_data_changed PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(model_data_changed PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Qml Qt6::Quick Qt6::QuickPrivate)
-set_target_properties(model_data_changed PROPERTIES AUTOMOC ON)
-add_test(NAME model_data_changed COMMAND model_data_changed)
-
-add_executable(model_current_item
   carousel/model_current_item.cpp
-  ${CAROUSEL_ENGINE_SOURCES}
-  ${CAROUSEL_ENGINE_HEADERS})
-target_include_directories(model_current_item PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(model_current_item PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Qml Qt6::Quick Qt6::QuickPrivate)
-set_target_properties(model_current_item PROPERTIES AUTOMOC ON)
-add_test(NAME model_current_item COMMAND model_current_item)
+  layout/toolbar_dynamic_visibility.cpp
+  layout/lite_layout.cpp
+  layout/control_layout.cpp
+  integration/dynamic_creation.cpp
+  integration/attached_property_propagation.cpp
+  layout/page_layout.cpp)
+
+add_executable(qm_tests main.cpp ${QM_TEST_SOURCES})
+set_target_properties(qm_tests PROPERTIES AUTOMOC ON)
+target_include_directories(qm_tests PRIVATE
+  ${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/src/view)
+target_link_libraries(qm_tests PRIVATE qml_material qml_material_layouts material_color
+  Qt6::Test Qt6::QuickPrivate Qt6::GuiPrivate)
+target_compile_definitions(qm_tests PRIVATE
+  QM_QML_IMPORT_PATH="${QT_QML_OUTPUT_DIRECTORY}"
+  QM_ICON_TEST_QML="${CMAKE_CURRENT_SOURCE_DIR}/integration/icon_spec.qml"
+  TOOLBAR_DYNAMIC_QML_PATH="${CMAKE_CURRENT_SOURCE_DIR}/layout/toolbar_dynamic_visibility.qml")
+add_dependencies(qm_tests qml_materialplugin qml_material_layoutsplugin)
+if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
+  target_link_libraries(qm_tests PRIVATE qml_materialplugin qml_material_layoutsplugin)
+else()
+  # These internal implementations are not exported by the shared library.
+  target_sources(qm_tests PRIVATE
+    ${PROJECT_SOURCE_DIR}/src/carousel/carousel_view.cpp
+    ${PROJECT_SOURCE_DIR}/src/carousel/carousel_attached.cpp
+    ${PROJECT_SOURCE_DIR}/src/carousel/carousel_strategies.cpp
+    ${PROJECT_SOURCE_DIR}/src/carousel/carousel_keylines.cpp
+    ${PROJECT_SOURCE_DIR}/src/carousel/carousel_scroll_strategy.cpp
+    ${PROJECT_SOURCE_DIR}/include/qml_material/carousel/carousel_view.hpp
+    ${PROJECT_SOURCE_DIR}/include/qml_material/carousel/carousel_attached.hpp
+    ${PROJECT_SOURCE_DIR}/src/view/delegate_recycler.cpp)
+endif()
+qt_import_qml_plugins(qm_tests)
+
+set(QM_APPLESS_TESTS viewport_controller linear_layout carousel_engine_defaults)
+set(QM_CORE_TESTS hero_center_end fullscreen_layout multi_browse_layout
+  uncontained_layout hero_start_layout appstream_release_model)
+set(QM_TEST_GROUPS "")
+foreach(source IN LISTS QM_TEST_SOURCES)
+  get_filename_component(group "${source}" NAME_WE)
+  if(group IN_LIST QM_APPLESS_TESTS)
+    set(application None)
+  elseif(group IN_LIST QM_CORE_TESTS)
+    set(application Core)
+  else()
+    set(application Gui)
+  endif()
+  string(APPEND QM_TEST_GROUPS "QM_TEST_GROUP(${group}, ${application})\n")
+  add_test(NAME ${group} COMMAND qm_tests ${group})
+endforeach()
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/test_groups.inc" CONTENT "${QM_TEST_GROUPS}")
+
+set_tests_properties(lazy_list scroll_motion lazy_data icon_spec toolbar_dynamic_visibility
+  PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+set_tests_properties(lite_layout control_layout dynamic_creation attached_property_propagation
+  page_layout PROPERTIES ENVIRONMENT
+  "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
+set_tests_properties(control_layout PROPERTIES ENVIRONMENT
+  "QT_QPA_PLATFORM=offscreen;QT_ENABLE_HIGHDPI_SCALING=0;QT_SCALE_FACTOR=1;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
+set_tests_properties(control_layout dynamic_creation attached_property_propagation
+  PROPERTIES RUN_SERIAL ON)
 
 add_executable(qm_grab visual/qm_grab.cpp)
 target_link_libraries(qm_grab PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Quick Qt6::Qml)
 set_target_properties(qm_grab PROPERTIES AUTOMOC ON)
 
-add_executable(toolbar_dynamic_visibility
-  layout/toolbar_dynamic_visibility.cpp)
-target_include_directories(toolbar_dynamic_visibility PRIVATE
-  ${CMAKE_SOURCE_DIR}/include)
-target_compile_definitions(toolbar_dynamic_visibility PRIVATE
-  TOOLBAR_DYNAMIC_QML_PATH="${CMAKE_CURRENT_SOURCE_DIR}/layout/toolbar_dynamic_visibility.qml")
-target_link_libraries(toolbar_dynamic_visibility PRIVATE
-  qml_material Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick)
-set_target_properties(toolbar_dynamic_visibility PROPERTIES AUTOMOC ON)
-add_test(NAME toolbar_dynamic_visibility COMMAND toolbar_dynamic_visibility)
-set_tests_properties(toolbar_dynamic_visibility PROPERTIES
-  ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
-
-add_executable(lite_layout layout/lite_layout.cpp)
-target_include_directories(lite_layout PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(lite_layout PRIVATE
-  qml_material_layouts Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::Test)
-add_dependencies(lite_layout qml_material_layoutsplugin)
-if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
-  target_link_libraries(lite_layout PRIVATE qml_material_layoutsplugin)
-endif()
-set_target_properties(lite_layout PROPERTIES AUTOMOC ON)
-qt_import_qml_plugins(lite_layout)
-add_test(NAME lite_layout COMMAND lite_layout)
-set_tests_properties(lite_layout PROPERTIES
-  ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
-
-add_executable(control_layout layout/control_layout.cpp)
 add_executable(lazy_list_benchmark EXCLUDE_FROM_ALL benchmark/lazy_list.cpp)
 target_compile_definitions(lazy_list_benchmark PRIVATE QM_BENCHMARK_BUILD_TYPE="$<CONFIG>")
 target_link_libraries(lazy_list_benchmark PRIVATE qml_material Qt6::Quick Qt6::Qml)
@@ -214,65 +93,6 @@ if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
   target_link_libraries(lazy_list_benchmark PRIVATE qml_materialplugin qml_material_layoutsplugin)
 endif()
 qt_import_qml_plugins(lazy_list_benchmark)
-target_include_directories(control_layout PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(control_layout PRIVATE
-  qml_material qml_material_layouts
-  Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::Test)
-add_dependencies(control_layout qml_materialplugin qml_material_layoutsplugin)
-if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
-  target_link_libraries(control_layout PRIVATE
-    qml_materialplugin qml_material_layoutsplugin)
-endif()
-set_target_properties(control_layout PROPERTIES AUTOMOC ON)
-qt_import_qml_plugins(control_layout)
-add_test(NAME control_layout COMMAND control_layout)
-set_tests_properties(control_layout PROPERTIES
-  RUN_SERIAL ON
-  ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_ENABLE_HIGHDPI_SCALING=0;QT_SCALE_FACTOR=1;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
-
-add_executable(dynamic_creation integration/dynamic_creation.cpp)
-target_include_directories(dynamic_creation PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(dynamic_creation PRIVATE
-  qml_material qml_material_layouts
-  Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::Test)
-add_dependencies(dynamic_creation qml_materialplugin qml_material_layoutsplugin)
-if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
-  target_link_libraries(dynamic_creation PRIVATE
-    qml_materialplugin qml_material_layoutsplugin)
-endif()
-set_target_properties(dynamic_creation PROPERTIES AUTOMOC ON)
-qt_import_qml_plugins(dynamic_creation)
-add_test(NAME dynamic_creation COMMAND dynamic_creation)
-set_tests_properties(dynamic_creation PROPERTIES
-  RUN_SERIAL ON
-  ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
-
-add_executable(attached_property_propagation integration/attached_property_propagation.cpp)
-target_include_directories(attached_property_propagation PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(attached_property_propagation PRIVATE
-  qml_material material_color Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::Test)
-add_dependencies(attached_property_propagation qml_materialplugin)
-if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
-  target_link_libraries(attached_property_propagation PRIVATE qml_materialplugin)
-endif()
-set_target_properties(attached_property_propagation PROPERTIES AUTOMOC ON)
-qt_import_qml_plugins(attached_property_propagation)
-add_test(NAME attached_property_propagation COMMAND attached_property_propagation)
-set_tests_properties(attached_property_propagation PROPERTIES
-  RUN_SERIAL ON
-  ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
-
-add_executable(page_layout layout/page_layout.cpp)
-target_include_directories(page_layout PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(page_layout PRIVATE qml_material qml_material_layouts Qt6::Test Qt6::Quick)
-add_dependencies(page_layout qml_materialplugin qml_material_layoutsplugin)
-if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
-  target_link_libraries(page_layout PRIVATE qml_materialplugin qml_material_layoutsplugin)
-endif()
-set_target_properties(page_layout PROPERTIES AUTOMOC ON)
-qt_import_qml_plugins(page_layout)
-add_test(NAME page_layout COMMAND page_layout)
-set_tests_properties(page_layout PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
 
 set(VISUAL_SCENES button action_progress elevation shape ripple ripple_phases loading_indicator_shapes tooltip wave_progress snackbar
     icon_artifacts icon_spec

@@ -72,9 +72,8 @@ auto expectedSnapOffset(int index, int count) -> qreal
 
 } // namespace
 
-int main(int argc, char* argv[])
+int run_set_current_index_sync(int argc, char** argv)
 {
-    QGuiApplication app(argc, argv);
 
     QQmlEngine engine;
     QQuickWindow window;

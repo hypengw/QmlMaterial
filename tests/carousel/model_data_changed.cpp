@@ -109,9 +109,8 @@ auto findDelegateItem(CarouselView* view, int index) -> QQuickItem*
 
 } // namespace
 
-int main(int argc, char* argv[])
+int run_model_data_changed(int argc, char** argv)
 {
-    QGuiApplication app(argc, argv);
 
     QQmlEngine engine;
     QQuickWindow window;

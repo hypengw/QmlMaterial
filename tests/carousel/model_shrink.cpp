@@ -65,9 +65,8 @@ auto expectedSnapOffset(int index, int count) -> qreal
 
 } // namespace
 
-int main(int argc, char* argv[])
+int run_model_shrink(int argc, char** argv)
 {
-    QGuiApplication app(argc, argv);
 
     QQmlEngine engine;
     QQuickWindow window;

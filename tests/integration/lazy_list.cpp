@@ -1005,5 +1005,10 @@ private slots:
     }
 };
 
-QTEST_MAIN(LazyListTest)
+int run_lazy_list(int argc, char** argv) {
+    QCoreApplication::setAttribute(Qt::AA_Use96Dpi, true);
+    LazyListTest test;
+    QTEST_SET_MAIN_SOURCE_PATH
+    return QTest::qExec(&test, argc, argv);
+}
 #include "lazy_list.moc"

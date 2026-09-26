@@ -1590,6 +1590,11 @@ private:
     QQuickWindow             m_window;
 };
 
-QTEST_MAIN(DynamicCreationTest)
+int run_dynamic_creation(int argc, char** argv) {
+    QCoreApplication::setAttribute(Qt::AA_Use96Dpi, true);
+    DynamicCreationTest test;
+    QTEST_SET_MAIN_SOURCE_PATH
+    return QTest::qExec(&test, argc, argv);
+}
 
 #include "dynamic_creation.moc"

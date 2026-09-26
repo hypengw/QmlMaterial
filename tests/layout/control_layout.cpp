@@ -2250,12 +2250,7 @@ private:
     QQuickWindow m_window;
 };
 
-int main(int argc, char* argv[]) {
-    qputenv("QT_ENABLE_HIGHDPI_SCALING", "0");
-    qputenv("QT_SCALE_FACTOR", "1");
-
-    QGuiApplication app(argc, argv);
-
+int run_control_layout(int argc, char** argv) {
     ControlLayoutTest tc;
     return QTest::qExec(&tc, argc, argv);
 }

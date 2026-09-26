@@ -94,6 +94,11 @@ private Q_SLOTS:
     }
 };
 
-QTEST_GUILESS_MAIN(AppStreamReleaseModelTest)
+int run_appstream_release_model(int argc, char** argv) {
+    QCoreApplication::setAttribute(Qt::AA_Use96Dpi, true);
+    AppStreamReleaseModelTest test;
+    QTEST_SET_MAIN_SOURCE_PATH
+    return QTest::qExec(&test, argc, argv);
+}
 
 #include "appstream_release_model.moc"

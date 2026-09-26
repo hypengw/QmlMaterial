@@ -867,6 +867,11 @@ private:
     QString    m_error;
 };
 
-QTEST_MAIN(LiteLayoutTest)
+int run_lite_layout(int argc, char** argv) {
+    QCoreApplication::setAttribute(Qt::AA_Use96Dpi, true);
+    LiteLayoutTest test;
+    QTEST_SET_MAIN_SOURCE_PATH
+    return QTest::qExec(&test, argc, argv);
+}
 
 #include "lite_layout.moc"

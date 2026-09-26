@@ -39,8 +39,7 @@ auto fail(const char* message) -> int {
 
 } // namespace
 
-int main(int argc, char* argv[]) {
-    QGuiApplication app(argc, argv);
+int run_toolbar_dynamic_visibility(int argc, char** argv) {
     qmlRegisterType<qml_material::Action>("QmlMaterialTest", 1, 0, "Action");
     qmlRegisterType<qml_material::ToolBarLayout>("QmlMaterialTest", 1, 0, "ToolBarLayout");
 

@@ -441,6 +441,11 @@ private Q_SLOTS:
     }
 };
 
-QTEST_MAIN(AttachedPropertyPropagationTest)
+int run_attached_property_propagation(int argc, char** argv) {
+    QCoreApplication::setAttribute(Qt::AA_Use96Dpi, true);
+    AttachedPropertyPropagationTest test;
+    QTEST_SET_MAIN_SOURCE_PATH
+    return QTest::qExec(&test, argc, argv);
+}
 
 #include "attached_property_propagation.moc"

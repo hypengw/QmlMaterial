@@ -369,5 +369,10 @@ private slots:
     }
 };
 
-QTEST_MAIN(ScrollMotionTest)
+int run_scroll_motion(int argc, char** argv) {
+    QCoreApplication::setAttribute(Qt::AA_Use96Dpi, true);
+    ScrollMotionTest test;
+    QTEST_SET_MAIN_SOURCE_PATH
+    return QTest::qExec(&test, argc, argv);
+}
 #include "scroll_motion.moc"

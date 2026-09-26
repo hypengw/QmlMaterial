@@ -104,5 +104,9 @@ private slots:
     }
 };
 
-QTEST_APPLESS_MAIN(ViewportControllerTest)
+int run_viewport_controller(int argc, char** argv) {
+    ViewportControllerTest test;
+    QTEST_SET_MAIN_SOURCE_PATH
+    return QTest::qExec(&test, argc, argv);
+}
 #include "viewport_controller.moc"

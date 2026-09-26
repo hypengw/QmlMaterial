@@ -88,5 +88,9 @@ private slots:
     }
 };
 
-QTEST_APPLESS_MAIN(LinearLayoutTest)
+int run_linear_layout(int argc, char** argv) {
+    LinearLayoutTest test;
+    QTEST_SET_MAIN_SOURCE_PATH
+    return QTest::qExec(&test, argc, argv);
+}
 #include "linear_layout.moc"

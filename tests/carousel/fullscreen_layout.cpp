@@ -40,9 +40,8 @@ auto nearEqual(qreal a, qreal b, qreal eps = 1.0) -> bool
 
 } // namespace
 
-int main(int argc, char* argv[])
+int run_fullscreen_layout(int argc, char** argv)
 {
-    QCoreApplication app(argc, argv);
 
     constexpr int count = 10;
 
