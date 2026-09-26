@@ -48,7 +48,7 @@ QPolygonF radialNormalize(const QPolygonF& poly, qreal cx = 0, qreal cy = 0) {
         maxDist = std::max(maxDist, std::hypot(p.x() - cx, p.y() - cy));
     }
     const qreal scale = (maxDist > 0) ? (1.0 / maxDist) : 1.0;
-    QPolygonF out;
+    QPolygonF   out;
     out.reserve(poly.size());
     for (const auto& p : poly) {
         out.append({ (p.x() - cx) * scale, (p.y() - cy) * scale });
@@ -65,13 +65,13 @@ QPolygonF radialNormalize(const QPolygonF& poly, qreal cx = 0, qreal cy = 0) {
 // large radius borrow space from a neighbour with small/zero radius.
 // Each rounded corner is a cubic-Bézier approximation of the circular arc.
 struct CornerVertex {
-    QPointF v;       // cartesian on input; transient (angle, dist) inside repeatAround
+    QPointF v; // cartesian on input; transient (angle, dist) inside repeatAround
     qreal   radius;
 };
 
 QPainterPath buildRoundedPath(const QList<CornerVertex>& verts) {
     QPainterPath path;
-    const int M = verts.size();
+    const int    M = verts.size();
     if (M < 3) return path;
 
     QList<QPointF> dir(M);
@@ -89,9 +89,9 @@ QPainterPath buildRoundedPath(const QList<CornerVertex>& verts) {
     for (int i = 0; i < M; ++i) {
         const QPointF& vin  = dir[(i + M - 1) % M];
         const QPointF& vout = dir[i];
-        const qreal cosb = std::clamp(-(vin.x() * vout.x() + vin.y() * vout.y()), -1.0, 1.0);
-        const qreal b    = std::acos(cosb);
-        beta[i]          = b;
+        const qreal    cosb = std::clamp(-(vin.x() * vout.x() + vin.y() * vout.y()), -1.0, 1.0);
+        const qreal    b    = std::acos(cosb);
+        beta[i]             = b;
         if (b > 1e-9 && verts[i].radius > 0) {
             desired[i] = verts[i].radius / std::tan(b * 0.5);
         }
@@ -115,8 +115,10 @@ QPainterPath buildRoundedPath(const QList<CornerVertex>& verts) {
         const qreal    d    = cut[i];
         const QPointF  s    = p1 - vin * d;
         const QPointF  e    = p1 + vout * d;
-        if (i == 0) path.moveTo(s);
-        else path.lineTo(s);
+        if (i == 0)
+            path.moveTo(s);
+        else
+            path.lineTo(s);
         if (d > 0 && beta[i] < M_PI - 1e-6) {
             // Arc spans α = π − β. Cubic-Bézier control distance from each
             // tangent point along its tangent: c = (2/3)·(1 − tan²(α/4))·d.
@@ -178,10 +180,10 @@ QList<CornerVertex> repeatAround(QList<CornerVertex> tmpl, int repeat, qreal cx,
             for (int j = 0; j < tmpl.size(); ++j) {
                 const int idx = reverse ? tmpl.size() - 1 - j : j;
                 if (idx == 0 && reverse) continue; // matches MDC's `idx > 0 || !reverse`
-                const auto& tp    = tmpl[idx];
-                const qreal angle = spanPerRepeat * i +
-                                    (reverse ? spanPerRepeat - tp.v.x() + 2.0 * tmpl[0].v.x()
-                                             : tp.v.x());
+                const auto& tp = tmpl[idx];
+                const qreal angle =
+                    spanPerRepeat * i +
+                    (reverse ? spanPerRepeat - tp.v.x() + 2.0 * tmpl[0].v.x() : tp.v.x());
                 out.append({ QPointF(angle, tp.v.y()), tp.radius });
             }
         }
@@ -259,9 +261,13 @@ LoadingIndicatorUpdator::LoadingIndicatorUpdator(QObject* parent)
     // tests/scenes/loading_indicator_shapes.qml for visual comparison.
 
     // SOFT_BURST: MDC customPolygon — 2 anchors × 10 spokes, no mirror.
-    m_predefined_shapes.append(buildCustomPolygon(
-        { { QPointF(0.193, 0.277), 0.053 }, { QPointF(0.176, 0.055), 0.053 } },
-        /* repeat */ 10, /* cx */ 0.5, /* cy */ 0.5, /* mirror */ false, N));
+    m_predefined_shapes.append(
+        buildCustomPolygon({ { QPointF(0.193, 0.277), 0.053 }, { QPointF(0.176, 0.055), 0.053 } },
+                           /* repeat */ 10,
+                           /* cx */ 0.5,
+                           /* cy */ 0.5,
+                           /* mirror */ false,
+                           N));
 
     // COOKIE_9: MDC = star(9, 1, 0.8, rounding=0.5), rotated -90°.
     m_predefined_shapes.append(buildStarPolygon(9, 1.0, 0.8, 0.5, -M_PI / 2.0, N));
@@ -271,19 +277,26 @@ LoadingIndicatorUpdator::LoadingIndicatorUpdator(QObject* parent)
     m_predefined_shapes.append(buildRegularPolygon(5, 1.0, 0.172, -M_PI / 2.0, N));
 
     // PILL: MDC customPolygon — 3 anchors × 2, mirrored.
-    m_predefined_shapes.append(buildCustomPolygon(
-        { { QPointF(0.961, 0.039), 0.426 },
-          { QPointF(1.001, 0.428), 0.0 },
-          { QPointF(1.000, 0.609), 1.0 } },
-        /* repeat */ 2, /* cx */ 0.5, /* cy */ 0.5, /* mirror */ true, N));
+    m_predefined_shapes.append(buildCustomPolygon({ { QPointF(0.961, 0.039), 0.426 },
+                                                    { QPointF(1.001, 0.428), 0.0 },
+                                                    { QPointF(1.000, 0.609), 1.0 } },
+                                                  /* repeat */ 2,
+                                                  /* cx */ 0.5,
+                                                  /* cy */ 0.5,
+                                                  /* mirror */ true,
+                                                  N));
 
     // SUNNY: MDC = star(8, 1, 0.8, rounding=0.15).
     m_predefined_shapes.append(buildStarPolygon(8, 1.0, 0.8, 0.15, 0.0, N));
 
     // COOKIE_4: MDC customPolygon — 2 anchors × 4 spokes, no mirror.
-    m_predefined_shapes.append(buildCustomPolygon(
-        { { QPointF(1.237, 1.236), 0.258 }, { QPointF(0.500, 0.918), 0.233 } },
-        /* repeat */ 4, /* cx */ 0.5, /* cy */ 0.5, /* mirror */ false, N));
+    m_predefined_shapes.append(
+        buildCustomPolygon({ { QPointF(1.237, 1.236), 0.258 }, { QPointF(0.500, 0.918), 0.233 } },
+                           /* repeat */ 4,
+                           /* cx */ 0.5,
+                           /* cy */ 0.5,
+                           /* mirror */ false,
+                           N));
 
     { // OVAL: MDC = circle scaled to scaleY = 0.64, then rotated -45°
       // (an ellipse tilted toward the upper-right).
@@ -295,7 +308,7 @@ LoadingIndicatorUpdator::LoadingIndicatorUpdator(QObject* parent)
         for (auto& pt : poly) {
             const qreal x = pt.x();
             const qreal y = pt.y();
-            pt           = { x * kCos - y * kSin, x * kSin + y * kCos };
+            pt            = { x * kCos - y * kSin, x * kSin + y * kCos };
         }
         m_predefined_shapes.append(radialNormalize(poly));
     }
@@ -372,9 +385,9 @@ void LoadingIndicatorUpdator::updateInternal() noexcept {
         const QColor& c1 = m_colors[idx1];
         const QColor& c2 = m_colors[idx2];
         m_color          = QColor::fromRgbF(qBound(0.0, c1.redF() * inv + c2.redF() * t, 1.0),
-                                   qBound(0.0, c1.greenF() * inv + c2.greenF() * t, 1.0),
-                                   qBound(0.0, c1.blueF() * inv + c2.blueF() * t, 1.0),
-                                   qBound(0.0, c1.alphaF() * inv + c2.alphaF() * t, 1.0));
+                                            qBound(0.0, c1.greenF() * inv + c2.greenF() * t, 1.0),
+                                            qBound(0.0, c1.blueF() * inv + c2.blueF() * t, 1.0),
+                                            qBound(0.0, c1.alphaF() * inv + c2.alphaF() * t, 1.0));
     }
 }
 

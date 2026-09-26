@@ -157,7 +157,7 @@ int main(int argc, char** argv) {
     std::sort(samples.begin(), samples.end());
     const auto finalRss = residentKiB();
     engine.collectGarbage();
-    const auto collectedRss = residentKiB();
+    const auto  collectedRss = residentKiB();
     QJsonObject result { { "view", args[1] },
                          { "heights", args[2] },
                          { "qt", qVersion() },

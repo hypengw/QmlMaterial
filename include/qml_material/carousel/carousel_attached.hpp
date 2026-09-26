@@ -9,8 +9,7 @@ namespace qml_material
 /**
  * @brief Attached properties exposed on carousel delegates.
  */
-class CarouselAttached : public QObject
-{
+class CarouselAttached : public QObject {
     Q_OBJECT
     QML_ANONYMOUS
     Q_PROPERTY(qreal itemWidth READ itemWidth NOTIFY geometryChanged FINAL)
@@ -56,17 +55,17 @@ public:
     Q_SIGNAL void focusRingChanged();
 
 private:
-    qreal m_width           = 0;
-    qreal m_height          = 0;
-    qreal m_mask_start      = 0;
-    qreal m_mask_end        = 0;
-    qreal m_parallax_shift  = 0;
-    int   m_size_class      = 2;
-    int   m_index           = -1;
-    int   m_carousel_count  = 0;
-    int   m_orientation     = static_cast<int>(Qt::Horizontal);
-    int   m_current_index   = 0;
-    bool  m_is_active       = false;
+    qreal m_width                 = 0;
+    qreal m_height                = 0;
+    qreal m_mask_start            = 0;
+    qreal m_mask_end              = 0;
+    qreal m_parallax_shift        = 0;
+    int   m_size_class            = 2;
+    int   m_index                 = -1;
+    int   m_carousel_count        = 0;
+    int   m_orientation           = static_cast<int>(Qt::Horizontal);
+    int   m_current_index         = 0;
+    bool  m_is_active             = false;
     bool  m_focus_ring_suppressed = true;
     bool  m_tab_focus_engaged     = false;
     bool  m_focus_ring_inset      = false;

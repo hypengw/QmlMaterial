@@ -140,8 +140,7 @@ void PathArcWave::addToPath(QPainterPath& path, const QQuickPathData&) {
         // cy - r*sin(angle))
         const qreal angle = -(start_rad + (arc_pos / m_radius) * dir);
         const qreal r     = m_radius + signed_v * amp;
-        return QPointF(m_center_x + r * std::cos(angle),
-                       m_center_y - r * std::sin(angle));
+        return QPointF(m_center_x + r * std::cos(angle), m_center_y - r * std::sin(angle));
     };
     auto tan_at = [&](qreal pixel_arc, qreal /*signed_v*/) -> QPointF {
         const qreal arc_pos = pixel_arc - phase_off;
@@ -150,13 +149,15 @@ void PathArcWave::addToPath(QPainterPath& path, const QQuickPathData&) {
         return QPointF(std::sin(angle) * dir, std::cos(angle) * dir);
     };
 
-    const int cycle_count =
-        std::max(1, static_cast<int>(std::ceil(arc_len / wl)) + 1);
+    const int cycle_count = std::max(1, static_cast<int>(std::ceil(arc_len / wl)) + 1);
 
-    bool started = false;
-    auto emit_with_truncation =
-        [&](const QPointF& a_pos, const QPointF& a_tan, qreal arc_a,
-            const QPointF& b_pos, const QPointF& b_tan, qreal arc_b) {
+    bool started              = false;
+    auto emit_with_truncation = [&](const QPointF& a_pos,
+                                    const QPointF& a_tan,
+                                    qreal          arc_a,
+                                    const QPointF& b_pos,
+                                    const QPointF& b_tan,
+                                    qreal          arc_b) {
         if (arc_b < 0.0 || arc_a > arc_len) return false;
 
         Cubic cubic { a_pos, a_pos + a_tan * ctrl_len, b_pos - b_tan * ctrl_len, b_pos };
@@ -185,13 +186,19 @@ void PathArcWave::addToPath(QPainterPath& path, const QQuickPathData&) {
         const qreal a    = base - phase_off;
         const qreal b    = base + half_wl - phase_off;
         const qreal c    = base + wl - phase_off;
-        if (emit_with_truncation(pos_at(base, 1.0), tan_at(base, 1.0), a,
+        if (emit_with_truncation(pos_at(base, 1.0),
+                                 tan_at(base, 1.0),
+                                 a,
                                  pos_at(base + half_wl, -1.0),
-                                 tan_at(base + half_wl, -1.0), b))
+                                 tan_at(base + half_wl, -1.0),
+                                 b))
             return;
         if (emit_with_truncation(pos_at(base + half_wl, -1.0),
-                                 tan_at(base + half_wl, -1.0), b,
-                                 pos_at(base + wl, 1.0), tan_at(base + wl, 1.0), c))
+                                 tan_at(base + half_wl, -1.0),
+                                 b,
+                                 pos_at(base + wl, 1.0),
+                                 tan_at(base + wl, 1.0),
+                                 c))
             return;
     }
 }

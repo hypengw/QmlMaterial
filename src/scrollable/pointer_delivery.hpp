@@ -18,10 +18,10 @@ inline void send(QQuickItem* owner, QQuickWindow* window, QPointerEvent* event) 
     auto* agent = QQuickItemPrivate::get(owner)->deliveryAgent();
     if (! agent) return;
     QPointer<QQuickDeliveryAgent> guard(agent);
-    auto* state = QQuickItemPrivate::get(owner)->deliveryAgentPrivate();
-    const bool filtering = state->allowChildEventFiltering;
-    state->allowChildEventFiltering = false;
+    auto*                         state     = QQuickItemPrivate::get(owner)->deliveryAgentPrivate();
+    const bool                    filtering = state->allowChildEventFiltering;
+    state->allowChildEventFiltering         = false;
     QCoreApplication::sendEvent(window, event);
     if (guard) state->allowChildEventFiltering = filtering;
 }
-}
+} // namespace qml_material::pointer_delivery

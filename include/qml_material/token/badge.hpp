@@ -2,7 +2,8 @@
 
 #include <QtQml/qqml.h>
 
-namespace qml_material::token {
+namespace qml_material::token
+{
 
 struct BadgeSizeItem {
     Q_GADGET
@@ -33,8 +34,7 @@ struct BadgeSize {
     Q_PROPERTY(qml_material::token::BadgeSizeItem def MEMBER def CONSTANT FINAL)
 
 public:
-    BadgeSizeItem def{ 6.0, 16.0, 16.0, 4.0, 4.0, -4.0 };
+    BadgeSizeItem def { 6.0, 16.0, 16.0, 4.0, 4.0, -4.0 };
 };
 
 } // namespace qml_material::token
-

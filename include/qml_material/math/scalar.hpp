@@ -8,9 +8,9 @@ namespace qml_material::math
 
 using scalar = float;
 
-inline constexpr scalar k_scalar_one    = 1.0f;
-inline constexpr scalar k_nearly_zero   = k_scalar_one / (1 << 12);
-inline constexpr scalar k_float_sqrt2   = 1.41421356f;
+inline constexpr scalar k_scalar_one  = 1.0f;
+inline constexpr scalar k_nearly_zero = k_scalar_one / (1 << 12);
+inline constexpr scalar k_float_sqrt2 = 1.41421356f;
 
 template<class T>
 [[nodiscard]] constexpr const T& pin(const T& x, const T& lo, const T& hi) {

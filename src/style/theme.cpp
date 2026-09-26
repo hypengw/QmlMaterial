@@ -41,12 +41,12 @@ Theme::~Theme() {}
 
 Theme* Theme::qmlAttachedProperties(QObject* object) { return new Theme(object); }
 
-#define IMPL_ATTACH_PROP(_type_, _name_, _prop_, ...)                                      \
-    Theme::AttachProp<_type_>& Theme::get_##_name_() { return _prop_; }                    \
+#define IMPL_ATTACH_PROP(_type_, _name_, _prop_, ...)                                        \
+    Theme::AttachProp<_type_>& Theme::get_##_name_() { return _prop_; }                      \
     _type_ Theme::_name_() const { return _prop_.value.value_or(theGlobalTheme()->_name_); } \
-    void   Theme::set_##_name_(_type_ v) { setProp(_prop_, v); }                           \
-    void   Theme::reset_##_name_() {                                                       \
-        auto* attached = qobject_cast<Self*>(attachedParent());                            \
+    void   Theme::set_##_name_(_type_ v) { setProp(_prop_, v); }                             \
+    void   Theme::reset_##_name_() {                                                         \
+        auto* attached = qobject_cast<Self*>(attachedParent());                              \
         resetProp(_prop_, attached ? attached->_name_() : theGlobalTheme()->_name_);         \
     }
 

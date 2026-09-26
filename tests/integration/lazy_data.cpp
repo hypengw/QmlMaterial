@@ -92,7 +92,7 @@ private Q_SLOTS:
         QCOMPARE(pooled.size(), 1);
     }
     void pooledChildInputState() {
-        QQmlEngine engine;
+        QQmlEngine   engine;
         QQuickWindow window;
         window.setGeometry(0, 0, 200, 200);
         QQmlComponent component(&engine);
@@ -113,22 +113,23 @@ private Q_SLOTS:
                     }
                 }
             }
-        )", QUrl());
+        )",
+                          QUrl());
         QVERIFY2(component.isReady(), qPrintable(component.errorString()));
         ListSnapshotSource source;
-        source.setItems({1, 2});
+        source.setItems({ 1, 2 });
         DelegateRecycler recycler(&engine);
-        auto* item = recycler.acquire(&component, source.snapshot(), 0);
+        auto*            item = recycler.acquire(&component, source.snapshot(), 0);
         QVERIFY(item);
         recycler.attach(item, window.contentItem());
-        recycler.layout(item, {0, 0, 100, 80});
+        recycler.layout(item, { 0, 0, 100, 80 });
         window.show();
         QVERIFY(QTest::qWaitForWindowExposed(&window));
-        auto* mouse = item->findChild<QQuickItem*>("mouse");
+        auto* mouse  = item->findChild<QQuickItem*>("mouse");
         auto* editor = item->findChild<QQuickItem*>("editor");
         QVERIFY(mouse);
         QVERIFY(editor);
-        QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, {20, 20});
+        QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, { 20, 20 });
         QVERIFY(mouse->property("pressed").toBool());
         QVERIFY(editor->hasActiveFocus());
         QCOMPARE(window.mouseGrabberItem(), mouse);
@@ -143,7 +144,7 @@ private Q_SLOTS:
         recycler.attach(reused, window.contentItem());
         QVERIFY(! editor->hasActiveFocus());
         QVERIFY(! mouse->property("pressed").toBool());
-        QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, {20, 20});
+        QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, { 20, 20 });
         QCOMPARE(item->property("cancellations").toInt(), 1);
     }
     void snapshotsAndInvalidKeys() {

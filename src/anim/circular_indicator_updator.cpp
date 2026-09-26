@@ -118,16 +118,16 @@ void CircularIndicatorUpdator::updateRetreat(double progress) noexcept {
     // Extra rotation for the faster spinning.
     float spinRotation = 0;
     for (int spinDelay : DELAY_SPINS_IN_MS) {
-        spinRotation +=
-            m_curve.valueForProgress(anim::get_fraction_in_range(playtime, spinDelay, DURATION_SPIN_IN_MS)) *
-            SPIN_ROTATION_DEGREES;
+        spinRotation += m_curve.valueForProgress(
+                            anim::get_fraction_in_range(playtime, spinDelay, DURATION_SPIN_IN_MS)) *
+                        SPIN_ROTATION_DEGREES;
     }
     m_rotation_degree = constantRotation + spinRotation;
     // Grow active indicator.
     float fraction = m_curve.valueForProgress(
         anim::get_fraction_in_range(playtime, DELAY_GROW_ACTIVE_IN_MS, DURATION_GROW_ACTIVE_IN_MS));
-    fraction -= m_curve.valueForProgress(
-        anim::get_fraction_in_range(playtime, DELAY_SHRINK_ACTIVE_IN_MS, DURATION_SHRINK_ACTIVE_IN_MS));
+    fraction -= m_curve.valueForProgress(anim::get_fraction_in_range(
+        playtime, DELAY_SHRINK_ACTIVE_IN_MS, DURATION_SHRINK_ACTIVE_IN_MS));
     m_start_fraction = START_FRACTION;
     m_end_fraction   = std::lerp(END_FRACTION_RANGE[0], END_FRACTION_RANGE[1], fraction);
 

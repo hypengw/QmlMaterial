@@ -13,10 +13,10 @@ namespace
 inline QPointF position_for_curve(const QQuickPathData& data, const QPointF& prev) {
     QQuickCurve* curve  = data.curves.at(data.index);
     bool         is_end = data.index == data.curves.size() - 1;
-    return QPointF(curve->hasRelativeX() ? prev.x() + curve->relativeX()
+    return QPointF(curve->hasRelativeX()         ? prev.x() + curve->relativeX()
                    : (! is_end || curve->hasX()) ? curve->x()
                                                  : data.endPoint.x(),
-                   curve->hasRelativeY() ? prev.y() + curve->relativeY()
+                   curve->hasRelativeY()         ? prev.y() + curve->relativeY()
                    : (! is_end || curve->hasY()) ? curve->y()
                                                  : data.endPoint.y());
 }
@@ -115,15 +115,19 @@ void PathWave::addToPath(QPainterPath& path, const QQuickPathData& data) {
         const qreal arc_pos = pixel_arc - phase_off;
         return logical_start + axis * arc_pos + normal * (signed_v * amp);
     };
-    auto tan_at = [&](qreal /*pixel_arc*/, qreal /*signed_v*/) -> QPointF { return axis; };
+    auto tan_at = [&](qreal /*pixel_arc*/, qreal /*signed_v*/) -> QPointF {
+        return axis;
+    };
 
-    const int cycle_count =
-        std::max(1, static_cast<int>(std::ceil(length / wl)) + 1);
+    const int cycle_count = std::max(1, static_cast<int>(std::ceil(length / wl)) + 1);
 
-    bool started = false;
-    auto emit_with_truncation =
-        [&](const QPointF& a_pos, const QPointF& a_tan, qreal arc_a,
-            const QPointF& b_pos, const QPointF& b_tan, qreal arc_b) {
+    bool started              = false;
+    auto emit_with_truncation = [&](const QPointF& a_pos,
+                                    const QPointF& a_tan,
+                                    qreal          arc_a,
+                                    const QPointF& b_pos,
+                                    const QPointF& b_tan,
+                                    qreal          arc_b) {
         if (arc_b < 0.0 || arc_a > length) return false;
 
         Cubic cubic { a_pos, a_pos + a_tan * ctrl_len, b_pos - b_tan * ctrl_len, b_pos };
@@ -144,7 +148,7 @@ void PathWave::addToPath(QPainterPath& path, const QQuickPathData& data) {
             started = true;
         }
         path.cubicTo(cubic.p1, cubic.p2, cubic.p3);
-        return arc_b > length;  // we've crossed the end — caller should stop
+        return arc_b > length; // we've crossed the end — caller should stop
     };
 
     for (int i = 0; i < cycle_count; ++i) {
@@ -153,14 +157,20 @@ void PathWave::addToPath(QPainterPath& path, const QQuickPathData& data) {
         const qreal b    = base + half_wl - phase_off;
         const qreal c    = base + wl - phase_off;
         // peak (+amp) → trough (−amp)
-        if (emit_with_truncation(pos_at(base, 1.0), tan_at(base, 1.0), a,
+        if (emit_with_truncation(pos_at(base, 1.0),
+                                 tan_at(base, 1.0),
+                                 a,
                                  pos_at(base + half_wl, -1.0),
-                                 tan_at(base + half_wl, -1.0), b))
+                                 tan_at(base + half_wl, -1.0),
+                                 b))
             return;
         // trough (−amp) → peak (+amp)
         if (emit_with_truncation(pos_at(base + half_wl, -1.0),
-                                 tan_at(base + half_wl, -1.0), b,
-                                 pos_at(base + wl, 1.0), tan_at(base + wl, 1.0), c))
+                                 tan_at(base + half_wl, -1.0),
+                                 b,
+                                 pos_at(base + wl, 1.0),
+                                 tan_at(base + wl, 1.0),
+                                 c))
             return;
     }
 }

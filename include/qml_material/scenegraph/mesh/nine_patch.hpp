@@ -54,11 +54,11 @@ void build_nine_patch(Vertex* v, QVector2D size, QVector4D radius, CornerFillFn 
     // Edge and center cells: stitched by copying corner vertices.
     // See ASCII diagram in docs; vertex indices hand-verified against the pre-refactor
     // src/scenegraph/geometry.cpp::update_rectangle_geometry.
-    quad(v + u * 4, v[5],         v[u + 0],     v[4],         v[u + 2]);     // Top
+    quad(v + u * 4, v[5], v[u + 0], v[4], v[u + 2]);                         // Top
     quad(v + u * 5, v[u * 2 + 1], v[u * 3 + 0], v[u * 2 + 4], v[u * 3 + 2]); // Bottom
-    quad(v + u * 6, v[3],         v[4],         v[u * 2 + 0], v[u * 2 + 1]); // Left
-    quad(v + u * 7, v[u + 2],     v[u + 4],     v[u * 3 + 0], v[u * 3 + 1]); // Right
-    quad(v + u * 8, v[4],         v[u + 2],     v[u * 2 + 1], v[u * 3 + 0]); // Center
+    quad(v + u * 6, v[3], v[4], v[u * 2 + 0], v[u * 2 + 1]);                 // Left
+    quad(v + u * 7, v[u + 2], v[u + 4], v[u * 3 + 0], v[u * 3 + 1]);         // Right
+    quad(v + u * 8, v[4], v[u + 2], v[u * 2 + 1], v[u * 3 + 0]);             // Center
 }
 
 } // namespace qml_material::sg::mesh

@@ -12,8 +12,7 @@ namespace
 
 constexpr int kSizeLarge = 2;
 
-auto makeInput(int count, qreal scroll, qreal viewport = 480) -> CarouselLayoutInput
-{
+auto makeInput(int count, qreal scroll, qreal viewport = 480) -> CarouselLayoutInput {
     CarouselLayoutInput in;
     in.layout                = CarouselLayoutId::Hero;
     in.viewport_size         = viewport;
@@ -30,8 +29,7 @@ auto makeInput(int count, qreal scroll, qreal viewport = 480) -> CarouselLayoutI
     return in;
 }
 
-auto findItem(const CarouselLayoutOutput& out, int index) -> const CarouselItemGeometry*
-{
+auto findItem(const CarouselLayoutOutput& out, int index) -> const CarouselItemGeometry* {
     for (const auto& g : out.items) {
         if (g.index == index) {
             return &g;
@@ -40,17 +38,14 @@ auto findItem(const CarouselLayoutOutput& out, int index) -> const CarouselItemG
     return nullptr;
 }
 
-auto fail(const char* msg) -> int
-{
+auto fail(const char* msg) -> int {
     std::fprintf(stderr, "FAIL: %s\n", msg);
     return EXIT_FAILURE;
 }
 
 } // namespace
 
-int run_hero_start_layout(int argc, char** argv)
-{
-
+int run_hero_start_layout(int argc, char** argv) {
     constexpr int count = 10;
     const auto    start = CarouselStrategy::compute(makeInput(count, 0));
 
@@ -63,10 +58,10 @@ int run_hero_start_layout(int argc, char** argv)
 
     const auto* item0 = findItem(start, 0);
     const auto* item1 = findItem(start, 1);
-    if (!item0 || item0->size_class != kSizeLarge) {
+    if (! item0 || item0->size_class != kSizeLarge) {
         return fail("start layout item0 should be large");
     }
-    if (!item1 || item1->size >= item0->size) {
+    if (! item1 || item1->size >= item0->size) {
         return fail("start layout item1 should be smaller than focal");
     }
 

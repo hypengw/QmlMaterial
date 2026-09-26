@@ -15,17 +15,17 @@ using namespace qml_material;
 
 class InputLazyList : public LazyList {
 public:
-    using LazyList::LazyList;
-    using Flickable::mousePressEvent;
     using Flickable::mouseMoveEvent;
+    using Flickable::mousePressEvent;
     using Flickable::mouseReleaseEvent;
+    using LazyList::LazyList;
 };
 
 class DelegateCallback : public QObject {
     Q_OBJECT
 public:
     std::function<void()> callback;
-    Q_INVOKABLE void fire() {
+    Q_INVOKABLE void      fire() {
         auto action = std::exchange(callback, {});
         if (action) action();
     }
@@ -34,11 +34,11 @@ public:
 class MutableRows : public QAbstractListModel {
 public:
     QStringList keys;
-    int rowCount(const QModelIndex& parent = {}) const override {
+    int         rowCount(const QModelIndex& parent = {}) const override {
         return parent.isValid() ? 0 : keys.size();
     }
-    QHash<int, QByteArray> roleNames() const override { return {{Qt::UserRole, "id"}}; }
-    QVariant data(const QModelIndex& index, int role) const override {
+    QHash<int, QByteArray> roleNames() const override { return { { Qt::UserRole, "id" } }; }
+    QVariant               data(const QModelIndex& index, int role) const override {
         if (! index.isValid() || index.row() >= keys.size() || role != Qt::UserRole) return {};
         return keys[index.row()];
     }
@@ -140,11 +140,13 @@ class LazyListTest : public QObject {
     }
 private slots:
     void modelStructuralAnchors() {
-        QQmlEngine engine;
+        QQmlEngine          engine;
         QQuickRenderControl render;
-        QQuickWindow window(&render);
-        QQmlComponent delegate(&engine);
-        delegate.setData("import QtQuick\nimport Test 1.0\nItem { required property LazyRow row; implicitHeight: 48 }", QUrl());
+        QQuickWindow        window(&render);
+        QQmlComponent       delegate(&engine);
+        delegate.setData("import QtQuick\nimport Test 1.0\nItem { required property LazyRow row; "
+                         "implicitHeight: 48 }",
+                         QUrl());
         QVERIFY(delegate.isReady());
         MutableRows model;
         model.reset(1000);
@@ -153,7 +155,7 @@ private slots:
         source.setModel(&model);
         LazyList view(window.contentItem());
         QQmlEngine::setContextForObject(&view, engine.rootContext());
-        view.setSize({300, 200});
+        view.setSize({ 300, 200 });
         view.setSource(&source);
         view.setDelegate(&delegate);
         frames(render);
@@ -180,7 +182,7 @@ private slots:
         QCOMPARE(view.firstVisibleIndex(), 20);
         QCOMPARE(source.indexOfKey("500"), 20);
         QCOMPARE(screenPosition("500"), -7.0);
-        const auto successor = model.keys[21];
+        const auto  successor         = model.keys[21];
         const qreal successorPosition = screenPosition(successor);
         QCOMPARE(successorPosition, 41.0);
         model.remove(20);
@@ -206,19 +208,20 @@ private slots:
     }
     void updatesDuringMotion() {
         QFETCH(bool, prepend);
-        QQmlEngine engine;
+        QQmlEngine          engine;
         QQuickRenderControl render;
-        QQuickWindow window(&render);
-        QQmlComponent delegate(&engine);
+        QQuickWindow        window(&render);
+        QQmlComponent       delegate(&engine);
         delegate.setData("import QtQuick\nimport Test 1.0\nItem { required property LazyRow row; "
-                         "property real extraHeight: 0; implicitHeight: 48 + extraHeight }", QUrl());
+                         "property real extraHeight: 0; implicitHeight: 48 + extraHeight }",
+                         QUrl());
         QVERIFY2(delegate.isReady(), qPrintable(delegate.errorString()));
         ListSnapshotSource source;
         source.setKeyRole("id");
         source.setItems(rows(1000));
         InputLazyList view(window.contentItem());
         QQmlEngine::setContextForObject(&view, engine.rootContext());
-        view.setSize({300, 200});
+        view.setSize({ 300, 200 });
         view.setCacheExtent(150);
         view.setSynchronousDrag(true);
         view.setSource(&source);
@@ -227,15 +230,20 @@ private slots:
         QVERIFY(view.positionAtKey("500"));
         frames(render);
         const auto mouse = [&](QEvent::Type type, int y, ulong time) {
-            const bool moving = type == QEvent::MouseMove;
-            QMouseEvent event(type, QPointF(100, y), QPointF(100, y),
+            const bool  moving = type == QEvent::MouseMove;
+            QMouseEvent event(type,
+                              QPointF(100, y),
+                              QPointF(100, y),
                               moving ? Qt::NoButton : Qt::LeftButton,
                               type == QEvent::MouseButtonRelease ? Qt::NoButton : Qt::LeftButton,
                               Qt::NoModifier);
             event.setTimestamp(time);
-            if (type == QEvent::MouseButtonPress) view.mousePressEvent(&event);
-            else if (moving) view.mouseMoveEvent(&event);
-            else view.mouseReleaseEvent(&event);
+            if (type == QEvent::MouseButtonPress)
+                view.mousePressEvent(&event);
+            else if (moving)
+                view.mouseMoveEvent(&event);
+            else
+                view.mouseReleaseEvent(&event);
         };
         mouse(QEvent::MouseButtonPress, 180, 1000);
         mouse(QEvent::MouseMove, 130, 1050);
@@ -251,14 +259,14 @@ private slots:
             return nullptr;
         };
         const QString anchorKey = "501";
-        auto* anchor = itemFor(anchorKey);
+        auto*         anchor    = itemFor(anchorKey);
         QVERIFY(anchor);
         const qreal screenY = anchor->mapToItem(&view, QPointF()).y();
-        const qreal offset = view.contentY();
+        const qreal offset  = view.contentY();
         if (prepend) {
             auto data = source.items();
             for (int i = 0; i < 100; ++i)
-                data.prepend(QVariantMap{{"id", QStringLiteral("new%1").arg(i)}});
+                data.prepend(QVariantMap { { "id", QStringLiteral("new%1").arg(i) } });
             source.setItems(data);
         } else {
             auto* previous = itemFor("500");
@@ -281,23 +289,24 @@ private slots:
         QVERIFY(view.errorString().isEmpty());
     }
     void windowDestruction() {
-        QQmlEngine engine;
+        QQmlEngine          engine;
         QQuickRenderControl render;
-        auto window = std::make_unique<QQuickWindow>(&render);
-        QQmlComponent delegate(&engine);
+        auto                window = std::make_unique<QQuickWindow>(&render);
+        QQmlComponent       delegate(&engine);
         delegate.setData("import QtQuick\nimport Test 1.0\nItem { required property LazyRow row; "
-                         "implicitHeight: 40 }", QUrl());
+                         "implicitHeight: 40 }",
+                         QUrl());
         ListSnapshotSource source;
         source.setKeyRole("id");
         source.setItems(rows(1000));
         QPointer<LazyList> view = new LazyList(window->contentItem());
         QQmlEngine::setContextForObject(view, engine.rootContext());
-        view->setSize({300, 200});
+        view->setSize({ 300, 200 });
         view->setSource(&source);
         view->setDelegate(&delegate);
         frames(render);
         QList<QPointer<QObject>> objects;
-        const auto track = [&] {
+        const auto               track = [&] {
             for (auto* host : view->contentItem()->childItems()) {
                 objects.append(host);
                 for (auto* item : host->childItems()) {
@@ -323,19 +332,19 @@ private slots:
     void delegateReentry_data() {
         QTest::addColumn<int>("event");
         QTest::addColumn<int>("mutation");
-        const QStringList events {"create", "bind", "pool", "reuse"};
+        const QStringList events { "create", "bind", "pool", "reuse" };
         for (int event = 0; event < events.size(); ++event)
             for (int mutation = 0; mutation < 3; ++mutation)
-                QTest::newRow(qPrintable(QString("%1-%2").arg(events[event])
-                                        .arg(mutation))) << event << mutation;
+                QTest::newRow(qPrintable(QString("%1-%2").arg(events[event]).arg(mutation)))
+                    << event << mutation;
     }
     void delegateReentry() {
         QFETCH(int, event);
         QFETCH(int, mutation);
-        QQmlEngine engine;
+        QQmlEngine          engine;
         QQuickRenderControl render;
-        QQuickWindow window(&render);
-        DelegateCallback hook;
+        QQuickWindow        window(&render);
+        DelegateCallback    hook;
         engine.rootContext()->setContextProperty("callback", &hook);
         engine.rootContext()->setContextProperty("callbackEvent", event);
         QQmlComponent delegate(&engine), replacementDelegate(&engine);
@@ -353,31 +362,36 @@ private slots:
                     function onReused() { if (callbackEvent === 3) callback.fire() }
                 }
             }
-        )", QUrl());
+        )",
+                         QUrl());
         replacementDelegate.setData("import QtQuick\nimport Test 1.0\nItem { "
-                                    "required property LazyRow row; implicitHeight: 80 }", QUrl());
+                                    "required property LazyRow row; implicitHeight: 80 }",
+                                    QUrl());
         QVERIFY2(delegate.isReady(), qPrintable(delegate.errorString()));
         ListSnapshotSource source, replacement;
         source.setKeyRole("id");
         source.setItems(rows(100));
         replacement.setKeyRole("id");
-        replacement.setItems({QVariantMap{{"id", "replacement"}, {"height", 80}}});
+        replacement.setItems({ QVariantMap { { "id", "replacement" }, { "height", 80 } } });
         QPointer<LazyList> view = new LazyList(window.contentItem());
         QQmlEngine::setContextForObject(view, engine.rootContext());
-        view->setSize({300, 200});
+        view->setSize({ 300, 200 });
         view->setSource(&source);
         view->setDelegate(&delegate);
         if (event > 0) frames(render);
-        int calls = 0;
+        int calls     = 0;
         hook.callback = [&] {
             ++calls;
-            if (mutation == 0) view->setSource(&replacement);
-            else if (mutation == 1) view->setDelegate(&replacementDelegate);
-            else delete view.data();
+            if (mutation == 0)
+                view->setSource(&replacement);
+            else if (mutation == 1)
+                view->setDelegate(&replacementDelegate);
+            else
+                delete view.data();
         };
         if (event == 1) {
             auto changed = source.items();
-            changed[0] = QVariantMap{{"id", "0"}, {"height", 90}};
+            changed[0]   = QVariantMap { { "id", "0" }, { "height", 90 } };
             source.setItems(changed);
         }
         if (event >= 2) view->setContentY(2000);
@@ -488,9 +502,9 @@ private slots:
         frames(render);
         QCOMPARE(view.firstVisibleIndex(), 50000);
         QVERIFY(view.liveCount() < 30);
-        const int   first  = view.firstVisibleIndex();
-        const qreal offset = view.contentY();
-        const auto anchorPosition = [&] {
+        const int   first          = view.firstVisibleIndex();
+        const qreal offset         = view.contentY();
+        const auto  anchorPosition = [&] {
             for (auto* host : view.contentItem()->childItems()) {
                 for (auto* item : host->childItems()) {
                     const auto* row = item->property("row").value<LazyRow*>();
@@ -502,9 +516,10 @@ private slots:
         };
         const qreal screenY = anchorPosition();
         QVERIFY(std::isfinite(screenY));
-        auto        data   = source.items();
+        auto data = source.items();
         for (int i = 0; i < 100; ++i)
-            data.prepend(QVariantMap { { "id", QStringLiteral("new%1").arg(i) }, { "height", 40 } });
+            data.prepend(
+                QVariantMap { { "id", QStringLiteral("new%1").arg(i) }, { "height", 40 } });
         source.setItems(data);
         frames(render);
         QCOMPARE(view.firstVisibleIndex(), first + 100);
@@ -517,10 +532,10 @@ private slots:
         QCOMPARE(view.contentHeight(), 0.0);
     }
     void dynamicDelegateMeasurement() {
-        QQmlEngine engine;
+        QQmlEngine          engine;
         QQuickRenderControl render;
-        QQuickWindow window(&render);
-        QQmlComponent delegate(&engine);
+        QQuickWindow        window(&render);
+        QQmlComponent       delegate(&engine);
         delegate.setData(R"(
             import QtQuick
             import Test 1.0
@@ -536,14 +551,15 @@ private slots:
                     text: "Row " + row.key + " " + "Variable length text. ".repeat(8)
                 }
             }
-        )", QUrl());
+        )",
+                         QUrl());
         QVERIFY2(delegate.isReady(), qPrintable(delegate.errorString()));
         ListSnapshotSource source;
         source.setKeyRole("id");
         source.setItems(rows(1000));
         LazyList view(window.contentItem());
         QQmlEngine::setContextForObject(&view, engine.rootContext());
-        view.setSize({300, 200});
+        view.setSize({ 300, 200 });
         view.setCacheExtent(500);
         view.setSource(&source);
         view.setDelegate(&delegate);
@@ -559,14 +575,14 @@ private slots:
             }
             return nullptr;
         };
-        auto* anchor = itemFor("500");
+        auto*                anchor   = itemFor("500");
         QPointer<QQuickItem> previous = itemFor("499");
         QVERIFY(anchor);
         QVERIFY(previous);
-        const qreal screenY = anchor->mapToItem(&view, QPointF()).y();
+        const qreal screenY        = anchor->mapToItem(&view, QPointF()).y();
         const qreal originalHeight = anchor->height();
-        const qreal oldOffset = view.contentY();
-        const auto revision = source.revision();
+        const qreal oldOffset      = view.contentY();
+        const auto  revision       = source.revision();
         QTimer::singleShot(0, previous, [previous] {
             if (previous) previous->setProperty("imageHeight", 120);
         });
@@ -605,18 +621,20 @@ private slots:
     }
     void invalidHeight() {
         QFETCH(double, extent);
-        QQmlEngine engine;
+        QQmlEngine          engine;
         QQuickRenderControl render;
-        QQuickWindow window(&render);
-        QQmlComponent delegate(&engine);
-        delegate.setData("import QtQuick\nimport Test 1.0\nItem { required property LazyRow row; height: row.value.height }", QUrl());
+        QQuickWindow        window(&render);
+        QQmlComponent       delegate(&engine);
+        delegate.setData("import QtQuick\nimport Test 1.0\nItem { required property LazyRow row; "
+                         "height: row.value.height }",
+                         QUrl());
         QVERIFY(delegate.isReady());
         ListSnapshotSource source;
         source.setKeyRole("id");
-        source.setItems({QVariantMap {{"id", "invalid"}, {"height", extent}}});
+        source.setItems({ QVariantMap { { "id", "invalid" }, { "height", extent } } });
         LazyList view(window.contentItem());
         QQmlEngine::setContextForObject(&view, engine.rootContext());
-        view.setSize({300, 200});
+        view.setSize({ 300, 200 });
         view.setSource(&source);
         view.setDelegate(&delegate);
         frames(render);
@@ -659,28 +677,30 @@ private slots:
         QVERIFY(! view.errorString().isEmpty());
     }
     void zeroHeightRecovery() {
-        QQmlEngine engine;
+        QQmlEngine          engine;
         QQuickRenderControl render;
-        QQuickWindow window(&render);
-        QQmlComponent delegate(&engine);
-        delegate.setData("import QtQuick\nimport Test 1.0\nItem { required property LazyRow row; height: 0 }", QUrl());
+        QQuickWindow        window(&render);
+        QQmlComponent       delegate(&engine);
+        delegate.setData(
+            "import QtQuick\nimport Test 1.0\nItem { required property LazyRow row; height: 0 }",
+            QUrl());
         QVERIFY(delegate.isReady());
         ListSnapshotSource source;
         source.setKeyRole("id");
         source.setItems(rows(10000));
         LazyList view(window.contentItem());
         QQmlEngine::setContextForObject(&view, engine.rootContext());
-        view.setSize({300, 200});
+        view.setSize({ 300, 200 });
         view.setSource(&source);
         view.setDelegate(&delegate);
         frames(render, 100);
         QVERIFY(! view.errorString().isEmpty());
         QQuickItem* recovered = nullptr;
-        QString key;
+        QString     key;
         for (auto* host : view.contentItem()->childItems()) {
             if (host->childItems().isEmpty()) continue;
             recovered = host->childItems().first();
-            key = recovered->property("row").value<LazyRow*>()->key();
+            key       = recovered->property("row").value<LazyRow*>()->key();
             break;
         }
         QVERIFY(recovered);
@@ -738,20 +758,22 @@ private slots:
         QCOMPARE(replacement.requests, 4);
     }
     void paginationAfterMeasurement() {
-        QQmlEngine engine;
+        QQmlEngine          engine;
         QQuickRenderControl render;
-        QQuickWindow window(&render);
+        QQuickWindow        window(&render);
         engine.rootContext()->setContextProperty("rowHeight", 40);
         QQmlComponent delegate(&engine);
-        delegate.setData("import QtQuick\nimport Test 1.0\nItem { required property LazyRow row; implicitHeight: rowHeight }", QUrl());
+        delegate.setData("import QtQuick\nimport Test 1.0\nItem { required property LazyRow row; "
+                         "implicitHeight: rowHeight }",
+                         QUrl());
         QVERIFY(delegate.isReady());
-        PagedRows model;
+        PagedRows       model;
         ItemModelSource source;
         source.setKeyRole("id");
         source.setModel(&model);
         LazyList view(window.contentItem());
         QQmlEngine::setContextForObject(&view, engine.rootContext());
-        view.setSize({300, 200});
+        view.setSize({ 300, 200 });
         view.setCacheExtent(0);
         view.setSource(&source);
         view.setDelegate(&delegate);
@@ -767,21 +789,22 @@ private slots:
         QCOMPARE(model.requests, 6);
     }
     void asynchronousPagination() {
-        QQmlEngine engine;
+        QQmlEngine          engine;
         QQuickRenderControl render;
-        QQuickWindow window(&render);
-        QQmlComponent delegate(&engine);
+        QQuickWindow        window(&render);
+        QQmlComponent       delegate(&engine);
         delegate.setData("import QtQuick\nimport Test 1.0\nItem { required property LazyRow row; "
-                         "implicitHeight: 40 }", QUrl());
-        AsyncRows model;
+                         "implicitHeight: 40 }",
+                         QUrl());
+        AsyncRows       model;
         ItemModelSource source;
         source.setKeyRole("id");
         source.setModel(&model);
-        const auto readiness = connect(&model, &AsyncRows::readyChanged, &source,
-                                       &ItemModelSource::notifyFetchStateChanged);
+        const auto readiness = connect(
+            &model, &AsyncRows::readyChanged, &source, &ItemModelSource::notifyFetchStateChanged);
         LazyList view(window.contentItem());
         QQmlEngine::setContextForObject(&view, engine.rootContext());
-        view.setSize({300, 200});
+        view.setSize({ 300, 200 });
         view.setCacheExtent(0);
         view.setSource(&source);
         view.setDelegate(&delegate);
@@ -801,7 +824,9 @@ private slots:
         disconnect(readiness);
         AsyncRows replacement;
         source.setModel(&replacement);
-        connect(&replacement, &AsyncRows::readyChanged, &source,
+        connect(&replacement,
+                &AsyncRows::readyChanged,
+                &source,
                 &ItemModelSource::notifyFetchStateChanged);
         frames(render);
         QCOMPARE(replacement.requests, 1);
@@ -894,15 +919,14 @@ private slots:
     }
     void dependencyCancellationReentry() {
         ListSnapshotSource original, requested, replacement;
-        for (auto* source : {&original, &requested, &replacement}) {
+        for (auto* source : { &original, &requested, &replacement }) {
             source->setKeyRole("id");
             source->setItems(rows(2));
         }
         LazyList view;
         view.setSource(&original);
         QVERIFY(view.positionAtKey("1"));
-        connect(&view, &LazyList::positioningFinished, &view,
-                [&](const QString&, bool success) {
+        connect(&view, &LazyList::positioningFinished, &view, [&](const QString&, bool success) {
             QVERIFY(! success);
             QCOMPARE(view.source(), &requested);
             view.setSource(&replacement);
@@ -914,26 +938,28 @@ private slots:
         QPointer<LazyList> disposable = new LazyList;
         disposable->setSource(&original);
         QVERIFY(disposable->positionAtKey("1"));
-        connect(disposable, &LazyList::positioningFinished, disposable,
-                [disposable] { delete disposable.data(); });
+        connect(disposable, &LazyList::positioningFinished, disposable, [disposable] {
+            delete disposable.data();
+        });
         disposable->setSource(nullptr);
         QVERIFY(disposable.isNull());
     }
     void positioningDependencies() {
         QFETCH(bool, sourceChange);
         QFETCH(bool, destroy);
-        QQmlEngine engine;
+        QQmlEngine          engine;
         QQuickRenderControl render;
-        QQuickWindow window(&render);
-        auto delegate = std::make_unique<QQmlComponent>(&engine);
+        QQuickWindow        window(&render);
+        auto                delegate = std::make_unique<QQmlComponent>(&engine);
         delegate->setData("import QtQuick\nimport Test 1.0\nItem { required property LazyRow row; "
-                          "implicitHeight: 40 }", QUrl());
+                          "implicitHeight: 40 }",
+                          QUrl());
         auto source = std::make_unique<ListSnapshotSource>();
         source->setKeyRole("id");
         source->setItems(rows(1000));
         LazyList view(window.contentItem());
         QQmlEngine::setContextForObject(&view, engine.rootContext());
-        view.setSize({300, 200});
+        view.setSize({ 300, 200 });
         view.setSource(source.get());
         view.setDelegate(delegate.get());
         frames(render);
@@ -942,11 +968,15 @@ private slots:
         frames(render, 2);
         QVERIFY(view.isMoving());
         if (sourceChange) {
-            if (destroy) source.reset();
-            else view.setSource(nullptr);
+            if (destroy)
+                source.reset();
+            else
+                view.setSource(nullptr);
         } else {
-            if (destroy) delegate.reset();
-            else view.setDelegate(nullptr);
+            if (destroy)
+                delegate.reset();
+            else
+                view.setDelegate(nullptr);
         }
         QVERIFY(! view.positioning());
         QVERIFY(! view.isMoving());
@@ -958,20 +988,21 @@ private slots:
     }
     void positioningLifecycle() {
         QFETCH(int, change);
-        QQmlEngine engine;
+        QQmlEngine          engine;
         QQuickRenderControl render;
-        QQuickWindow window(&render);
+        QQuickWindow        window(&render);
         QQuickRenderControl otherRender;
-        QQuickWindow otherWindow(&otherRender);
-        QQmlComponent delegate(&engine);
+        QQuickWindow        otherWindow(&otherRender);
+        QQmlComponent       delegate(&engine);
         delegate.setData("import QtQuick\nimport Test 1.0\nItem { required property LazyRow row; "
-                         "implicitHeight: 40 }", QUrl());
+                         "implicitHeight: 40 }",
+                         QUrl());
         ListSnapshotSource source;
         source.setKeyRole("id");
         source.setItems(rows(1000));
         LazyList view(window.contentItem());
         QQmlEngine::setContextForObject(&view, engine.rootContext());
-        view.setSize({300, 200});
+        view.setSize({ 300, 200 });
         view.setSource(&source);
         view.setDelegate(&delegate);
         if (change == 4) window.setVisible(true);

@@ -15,13 +15,13 @@ class LoadingIndicatorUpdator : public QObject {
     QML_ELEMENT
 
     // ── Animated outputs ────────────────────────────────────────────────────
-    Q_PROPERTY(QPolygonF currentShape  READ currentShape  NOTIFY updated      FINAL)
-    Q_PROPERTY(double    rotation      READ rotation      NOTIFY updated      FINAL)
-    Q_PROPERTY(QColor    color         READ color         NOTIFY updated      FINAL)
-    Q_PROPERTY(double    morphFraction READ morphFraction NOTIFY updated      FINAL)
+    Q_PROPERTY(QPolygonF currentShape READ currentShape NOTIFY updated FINAL)
+    Q_PROPERTY(double rotation READ rotation NOTIFY updated FINAL)
+    Q_PROPERTY(QColor color READ color NOTIFY updated FINAL)
+    Q_PROPERTY(double morphFraction READ morphFraction NOTIFY updated FINAL)
 
     // ── Driver input ────────────────────────────────────────────────────────
-    Q_PROPERTY(double    progress      READ progress  WRITE setProgress NOTIFY updated FINAL)
+    Q_PROPERTY(double progress READ progress WRITE setProgress NOTIFY updated FINAL)
 
     // ── Configuration ───────────────────────────────────────────────────────
     Q_PROPERTY(QList<QColor> colors READ colors WRITE setColors NOTIFY colorsChanged FINAL)
@@ -34,9 +34,9 @@ public:
     explicit LoadingIndicatorUpdator(QObject* parent = nullptr);
 
     // Animated outputs
-    auto currentShape()  const noexcept -> QPolygonF;
-    auto rotation()      const noexcept -> double;
-    auto color()         const noexcept -> QColor;
+    auto currentShape() const noexcept -> QPolygonF;
+    auto rotation() const noexcept -> double;
+    auto color() const noexcept -> QColor;
     auto morphFraction() const noexcept -> double;
 
     // Driver
@@ -49,7 +49,7 @@ public:
 
     // Constants
     static int shapeCount() { return SHAPE_COUNT; }
-    static int msPerShape()  { return MS_PER_SHAPE; }
+    static int msPerShape() { return MS_PER_SHAPE; }
 
     Q_SIGNAL void updated();
     Q_SIGNAL void colorsChanged();
@@ -57,8 +57,7 @@ public:
 private:
     void updateInternal() noexcept;
 
-    auto interpolateShapes(const QPolygonF& s1, const QPolygonF& s2,
-                           double t) const -> QPolygonF;
+    auto interpolateShapes(const QPolygonF& s1, const QPolygonF& s2, double t) const -> QPolygonF;
 
     // State
     double        m_progress;
@@ -72,9 +71,9 @@ private:
     QList<QPolygonF> m_aligned_shapes;    // s[i] rotated to best match s[i-1]
 
     // Constants
-    static constexpr int SHAPE_COUNT       = 7;
-    static constexpr int SAMPLE_COUNT      = 192; // points per shape
-    static constexpr int MS_PER_SHAPE      = 650;
+    static constexpr int SHAPE_COUNT  = 7;
+    static constexpr int SAMPLE_COUNT = 192; // points per shape
+    static constexpr int MS_PER_SHAPE = 650;
 };
 
 } // namespace qml_material

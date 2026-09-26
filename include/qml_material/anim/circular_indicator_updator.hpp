@@ -19,7 +19,8 @@ class CircularIndicatorUpdator : public QObject {
     Q_PROPERTY(double completeEndProgress READ completeEndProgress WRITE updateCompleteEndProgress
                    NOTIFY updated FINAL)
     Q_PROPERTY(double duration READ duration NOTIFY indeterminateAnimationTypeChanged FINAL)
-    Q_PROPERTY(double completeEndDuration READ completeEndDuration NOTIFY indeterminateAnimationTypeChanged FINAL)
+    Q_PROPERTY(double completeEndDuration READ completeEndDuration NOTIFY
+                   indeterminateAnimationTypeChanged FINAL)
     Q_PROPERTY(
         IndeterminateAnimationType indeterminateAnimationType READ indeterminateAnimationType WRITE
             setIndeterminateAnimationType NOTIFY indeterminateAnimationTypeChanged FINAL)

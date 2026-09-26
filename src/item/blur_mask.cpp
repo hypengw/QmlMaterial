@@ -27,11 +27,10 @@ public:
     void update(QQuickItem* item) {
         auto* mat = static_cast<BlurMaskMaterial*>(material());
 
-        const float    new_sigma     = static_cast<float>(sigma);
+        const float     new_sigma = static_cast<float>(sigma);
         const QVector2D new_rect_size { (float)rect.width(), (float)rect.height() };
 
-        const bool material_changed = mat->sigma != new_sigma ||
-                                      mat->rect_size != new_rect_size ||
+        const bool material_changed = mat->sigma != new_sigma || mat->rect_size != new_rect_size ||
                                       mat->radius != radius || mat->style != style;
         const bool geometry_changed = material_changed || color != m_last_color;
 
@@ -63,13 +62,13 @@ private:
 };
 } // namespace sg
 
-BlurMask::BlurMask(QQuickItem* parent) : QQuickItem(parent) {
+BlurMask::BlurMask(QQuickItem* parent): QQuickItem(parent) {
     setFlag(QQuickItem::ItemHasContents, true);
-    connect(this, &BlurMask::sigmaChanged,   this, &BlurMask::update);
-    connect(this, &BlurMask::radiusChanged,  this, &BlurMask::update);
-    connect(this, &BlurMask::colorChanged,   this, &BlurMask::update);
+    connect(this, &BlurMask::sigmaChanged, this, &BlurMask::update);
+    connect(this, &BlurMask::radiusChanged, this, &BlurMask::update);
+    connect(this, &BlurMask::colorChanged, this, &BlurMask::update);
     connect(this, &BlurMask::cornersChanged, this, &BlurMask::update);
-    connect(this, &BlurMask::styleChanged,   this, &BlurMask::update);
+    connect(this, &BlurMask::styleChanged, this, &BlurMask::update);
 }
 
 BlurMask::~BlurMask() = default;
@@ -115,16 +114,16 @@ QSGNode* BlurMask::updatePaintNode(QSGNode* node, QQuickItem::UpdatePaintNodeDat
         return nullptr;
     }
     auto* n = static_cast<sg::BlurMaskNode*>(node);
-    if (!n) {
+    if (! n) {
         n = new sg::BlurMaskNode {};
         n->init(this);
     }
-    n->rect   = boundingRect();
-    n->color  = m_color;
-    n->sigma  = m_sigma;
-    n->style  = static_cast<sg::BlurStyle>(m_style);
+    n->rect  = boundingRect();
+    n->color = m_color;
+    n->sigma = m_sigma;
+    n->style = static_cast<sg::BlurStyle>(m_style);
     {
-        auto        vec   = m_corners.toVector4D();
+        auto vec          = m_corners.toVector4D();
         vec[0]            = std::exchange(vec[3], vec[0]);
         const float max_r = std::min<float>(n->rect.width(), n->rect.height()) * 0.5f;
         for (int i = 0; i < 4; ++i) vec[i] = std::clamp(vec[i], 0.0f, max_r);

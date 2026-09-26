@@ -16,39 +16,38 @@
 namespace qml_material
 {
 
-class ToolBarDelegateIncubator : public QQmlIncubator
-{
+class ToolBarDelegateIncubator : public QQmlIncubator {
 public:
-    ToolBarDelegateIncubator(QQmlComponent *component, QQmlContext *context);
+    ToolBarDelegateIncubator(QQmlComponent* component, QQmlContext* context);
 
-    void setStateCallback(std::function<void(QQuickItem *)> callback);
-    void setCompletedCallback(std::function<void(ToolBarDelegateIncubator *)> callback);
+    void setStateCallback(std::function<void(QQuickItem*)> callback);
+    void setCompletedCallback(std::function<void(ToolBarDelegateIncubator*)> callback);
 
     void create();
 
     bool isFinished();
 
 private:
-    void setInitialState(QObject *object) override;
+    void setInitialState(QObject* object) override;
     void statusChanged(QQmlIncubator::Status status) override;
 
-    QQmlComponent *m_component;
-    QQmlContext *m_context;
-    std::function<void(QQuickItem *)> m_stateCallback;
-    std::function<void(ToolBarDelegateIncubator *)> m_completedCallback;
-    bool m_finished = false;
+    QQmlComponent*                                 m_component;
+    QQmlContext*                                   m_context;
+    std::function<void(QQuickItem*)>               m_stateCallback;
+    std::function<void(ToolBarDelegateIncubator*)> m_completedCallback;
+    bool                                           m_finished = false;
 };
 
-class ToolBarLayoutDelegate : public QObject
-{
+class ToolBarLayoutDelegate : public QObject {
     Q_OBJECT
 public:
-    ToolBarLayoutDelegate(ToolBarLayout *parent);
+    ToolBarLayoutDelegate(ToolBarLayout* parent);
     ~ToolBarLayoutDelegate() override;
 
     Action* action() const;
-    void setAction(Action* action);
-    void createItems(QQmlComponent *fullComponent, QQmlComponent *iconComponent, std::function<void(QQuickItem *)> callback);
+    void    setAction(Action* action);
+    void    createItems(QQmlComponent* fullComponent, QQmlComponent* iconComponent,
+                        std::function<void(QQuickItem*)> callback);
 
     bool isReady() const;
     bool isActionVisible() const;
@@ -78,8 +77,7 @@ public:
 private:
     Q_SLOT void actionVisibleChanged();
     Q_SLOT void displayHintChanged();
-    inline void ensureItemVisibility()
-    {
+    inline void ensureItemVisibility() {
         if (m_full) {
             m_full->setVisible(m_fullVisible);
         }
@@ -90,18 +88,18 @@ private:
     void cleanupIncubators();
     void triggerRelayout();
 
-    ToolBarLayout *m_parent = nullptr;
-    Action* m_action = nullptr;
-    QQuickItem *m_full = nullptr;
-    QQuickItem *m_icon = nullptr;
-    ToolBarDelegateIncubator *m_fullIncubator = nullptr;
-    ToolBarDelegateIncubator *m_iconIncubator = nullptr;
+    ToolBarLayout*            m_parent        = nullptr;
+    Action*                   m_action        = nullptr;
+    QQuickItem*               m_full          = nullptr;
+    QQuickItem*               m_icon          = nullptr;
+    ToolBarDelegateIncubator* m_fullIncubator = nullptr;
+    ToolBarDelegateIncubator* m_iconIncubator = nullptr;
 
-    ToolBarLayout::DisplayHints m_displayHint = ToolBarLayout::NoPreference;
-    bool m_ready = false;
-    bool m_actionVisible = true;
-    bool m_fullVisible = false;
-    bool m_iconVisible = false;
+    ToolBarLayout::DisplayHints m_displayHint   = ToolBarLayout::NoPreference;
+    bool                        m_ready         = false;
+    bool                        m_actionVisible = true;
+    bool                        m_fullVisible   = false;
+    bool                        m_iconVisible   = false;
 };
 
 } // namespace qml_material

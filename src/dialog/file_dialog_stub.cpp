@@ -16,7 +16,9 @@ public:
     using FileDialogBackend::FileDialogBackend;
     void open(const PortalRequest&) override {
         qCWarning(LcStub) << "FileDialog: no portal backend on this platform";
-        QTimer::singleShot(0, this, [this] { Q_EMIT rejected(); });
+        QTimer::singleShot(0, this, [this] {
+            Q_EMIT rejected();
+        });
     }
     void close() override {}
 };

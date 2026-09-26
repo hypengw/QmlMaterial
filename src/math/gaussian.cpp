@@ -19,8 +19,7 @@ void fill_unit_cdf_profile(std::span<std::uint8_t> out) {
     for (int i = 0; i < n; ++i) {
         const float u = (static_cast<float>(i) + 0.5f) / static_cast<float>(n) * 6.0f - 3.0f;
         const float v = gaussian_cdf(u);
-        out[i]        = static_cast<std::uint8_t>(
-            std::max(0, std::min(255, round_to_int(v * 255.0f))));
+        out[i] = static_cast<std::uint8_t>(std::max(0, std::min(255, round_to_int(v * 255.0f))));
     }
 }
 
@@ -68,7 +67,7 @@ void fill_rrect_corner_blur(std::span<std::uint8_t> out, scalar sigma, scalar ra
     // the desired window [-margin, r].
     const int Mx0 = -margin;
     const int Mx1 = r_i + margin;
-    const int Mw  = Mx1 - Mx0;     // = r_i + 2*margin
+    const int Mw  = Mx1 - Mx0; // = r_i + 2*margin
     const int My0 = Mx0;
     const int Mh  = Mw;
 
@@ -118,7 +117,7 @@ void fill_rrect_corner_blur(std::span<std::uint8_t> out, scalar sigma, scalar ra
     // (i, j) itself — NOT (i + margin, j + margin) — since mask index 0 is
     // already at grid position -margin + 0.5.
     for (int j = 0; j < N; ++j) {
-        const int  mj  = j;
+        const int     mj  = j;
         std::uint8_t* row = out.data() + static_cast<std::size_t>(j) * N;
         for (int i = 0; i < N; ++i) {
             const int mi  = i;
@@ -127,8 +126,7 @@ void fill_rrect_corner_blur(std::span<std::uint8_t> out, scalar sigma, scalar ra
                 const int jj = std::clamp(mj + k, 0, Mh - 1);
                 acc += tmp[static_cast<std::size_t>(jj) * Mw + mi] * kernel[k + margin];
             }
-            row[i] = static_cast<std::uint8_t>(
-                std::clamp(round_to_int(acc * 255.0f), 0, 255));
+            row[i] = static_cast<std::uint8_t>(std::clamp(round_to_int(acc * 255.0f), 0, 255));
         }
     }
 }

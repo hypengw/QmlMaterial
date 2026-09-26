@@ -39,7 +39,8 @@ public:
     };
     Q_ENUM(BusyState)
 
-    enum class ButtonSize {
+    enum class ButtonSize
+    {
         XS = 0,
         S,
         M,
@@ -186,13 +187,13 @@ public:
         BottomSheetStandard   ///< Standard bottom sheet
     };
     Q_ENUM(BottomSheetType)
-        enum class CarouselLayout
+    enum class CarouselLayout
     {
-        CarouselUncontained = 0, ///< Items scroll to container edge
-        CarouselMultiBrowse,     ///< Large, medium, and small items
-        CarouselHero,            ///< Start-aligned hero
-        CarouselHeroCenter,      ///< Center-aligned hero
-        CarouselFullScreen,      ///< One edge-to-edge item
+        CarouselUncontained = 0,        ///< Items scroll to container edge
+        CarouselMultiBrowse,            ///< Large, medium, and small items
+        CarouselHero,                   ///< Start-aligned hero
+        CarouselHeroCenter,             ///< Center-aligned hero
+        CarouselFullScreen,             ///< One edge-to-edge item
         CarouselUncontainedMultiAspect, ///< Uncontained with per-item aspect widths
     };
     Q_ENUM(CarouselLayout)
@@ -209,8 +210,8 @@ public:
     {
         SliderLabelFloating = 0, ///< Show value indicator while interacting
         SliderLabelVisible,      ///< Always show value indicator
-        SliderLabelGone,           ///< Never show value indicator
-        SliderLabelWithinBounds,   ///< Show within track bounds while interacting
+        SliderLabelGone,         ///< Never show value indicator
+        SliderLabelWithinBounds, ///< Show within track bounds while interacting
     };
     Q_ENUM(SliderLabelBehavior)
 

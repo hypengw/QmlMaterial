@@ -110,8 +110,8 @@ public:
     QQuickItem* target() const;
     void        setTarget(QQuickItem* target);
 
-    auto active() const -> bool;
-    void setActive(bool);
+    auto  active() const -> bool;
+    void  setActive(bool);
     qreal verticalStepSize() const;
     void  setVerticalStepSize(qreal stepSize);
     void  resetVerticalStepSize();
@@ -181,7 +181,7 @@ private:
 
     QPointer<QQuickItem> m_target;
 
-    bool m_active;
+    bool                    m_active;
     QMetaObject::Connection m_verticalChangedConnection;
     QMetaObject::Connection m_horizontalChangedConnection;
 
@@ -191,15 +191,15 @@ private:
     bool  m_explicitVStepSize    = false;
     bool  m_explicitHStepSize    = false;
     bool  m_wheelScrolling       = false;
-    constexpr static qreal m_wheelScrollingDuration = 400;
-    bool                   m_filterMouseEvents      = false;
-    bool                   m_keyNavigationEnabled   = false;
-    bool                   m_blockTargetWheel       = true;
-    bool                   m_scrollFlickableTarget  = true;
+    constexpr static qreal                 m_wheelScrollingDuration           = 400;
+    bool                                   m_filterMouseEvents                = false;
+    bool                                   m_keyNavigationEnabled             = false;
+    bool                                   m_blockTargetWheel                 = true;
+    bool                                   m_scrollFlickableTarget            = true;
     constexpr static Qt::KeyboardModifiers m_defaultHorizontalScrollModifiers = Qt::AltModifier;
     constexpr static Qt::KeyboardModifiers m_defaultPageScrollModifiers =
         Qt::ControlModifier | Qt::ShiftModifier;
-    Qt::KeyboardModifiers m_pageScrollModifiers        = m_defaultPageScrollModifiers;
+    Qt::KeyboardModifiers m_pageScrollModifiers       = m_defaultPageScrollModifiers;
     Qt::KeyboardModifiers m_horizontalScrollModifiers = m_defaultHorizontalScrollModifiers;
     QTimer                m_wheelScrollingTimer;
     KirigamiWheelEvent    m_kirigamiWheelEvent;

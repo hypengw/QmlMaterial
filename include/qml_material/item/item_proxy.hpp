@@ -11,7 +11,8 @@ class ItemProxy : public QQuickItem {
     QML_ELEMENT
 
     Q_PROPERTY(QObject* item READ item WRITE setItem NOTIFY itemChanged FINAL)
-    Q_PROPERTY(bool visibleOnItem READ visibleOnItem WRITE setVisibleOnItem NOTIFY visibleOnItemChanged FINAL)
+    Q_PROPERTY(bool visibleOnItem READ visibleOnItem WRITE setVisibleOnItem NOTIFY
+                   visibleOnItemChanged FINAL)
 public:
     ItemProxy(QQuickItem* parent = nullptr);
     ~ItemProxy();
@@ -27,7 +28,7 @@ public:
 
 private:
     QPointer<QObject> m_item;
-    bool m_visible_on_item;
+    bool              m_visible_on_item;
 };
 
 } // namespace qml_material

@@ -208,10 +208,10 @@ public:
     void  setBaselineOffset(qreal value);
     void  resetBaselineOffset();
 
-    bool hoverEnabled() const;
+    bool                hoverEnabled() const;
     std::optional<bool> effectiveHoverEnabled() const override { return hoverEnabled(); }
-    void setHoverEnabled(bool value);
-    void resetHoverEnabled();
+    void                setHoverEnabled(bool value);
+    void                resetHoverEnabled();
 
     bool hovered() const;
 

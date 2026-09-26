@@ -18,7 +18,8 @@ class BlurMask : public QQuickItem {
     QML_NAMED_ELEMENT(BlurMaskImpl)
 
 public:
-    enum Style {
+    enum Style
+    {
         Normal = 0,
         Solid  = 1,
         Outer  = 2,

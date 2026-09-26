@@ -5,8 +5,7 @@
 namespace qml_material
 {
 
-auto CarouselStrategy::compute(const CarouselLayoutInput& input) -> CarouselLayoutOutput
-{
+auto CarouselStrategy::compute(const CarouselLayoutInput& input) -> CarouselLayoutOutput {
     if (input.count <= 0 || input.viewport_size <= 0) {
         return {};
     }

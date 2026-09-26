@@ -26,10 +26,11 @@ public:
         return m_popup && m_popup->blocksScenePoint(scenePoint) &&
                m_popup->overlayContainsScenePoint(scenePoint);
     }
+
 private:
     QPointer<Popup> m_popup;
 };
-}
+} // namespace
 OverlayManager* OverlayManager::get(QQuickWindow* window) {
     if (! window || QQuickWindowPrivate::get(window)->inDestructor) return nullptr;
     if (auto existing = window->property(overlayKey).value<QObject*>())
@@ -148,7 +149,7 @@ bool OverlayManager::drawerPointer(QPointerEvent* event, const QEventPoint& poin
         setKeepMouseGrab(true);
         setKeepTouchGrab(true);
         cancelPress();
-        m_touchId             = -1;
+        m_touchId = -1;
     } else if (event->exclusiveGrabber(point) != this) {
         cancelDrawerDrag();
         return false;
@@ -277,7 +278,7 @@ void OverlayManager::refresh() {
             });
             if (it == m_entries.end()) continue;
             if (popup->modal()) {
-                if (!it->hoverBarrier) it->hoverBarrier = new ModalHoverBarrier(popup, this);
+                if (! it->hoverBarrier) it->hoverBarrier = new ModalHoverBarrier(popup, this);
                 it->hoverBarrier->setSize(size());
                 it->hoverBarrier->setZ(rank++);
             } else {
@@ -318,20 +319,20 @@ bool OverlayManager::press(const QPointF& point) {
     for (auto it = entries.crbegin(); it != entries.crend(); ++it) {
         auto popup = it->popup;
         if (! popup || ! popup->isVisible() || ! popup->overlayContainsScenePoint(point)) continue;
-        const bool pointBlocked  = popup->blocksScenePoint(point);
-        const bool outside       = ! popup->containsScenePoint(point);
+        const bool pointBlocked = popup->blocksScenePoint(point);
+        const bool outside      = ! popup->containsScenePoint(point);
         m_pressObservers.append(popup);
         popup->overlayPress(point);
-        if (!outside || pointBlocked) break;
+        if (! outside || pointBlocked) break;
     }
     return m_blocked;
 }
 bool OverlayManager::release(const QPointF& point) {
     if (! m_pressed) return blocks(point);
     const auto observers = std::exchange(m_pressObservers, {});
-    const bool blocked = m_blocked;
-    m_pressed          = false;
-    m_blocked          = false;
+    const bool blocked   = m_blocked;
+    m_pressed            = false;
+    m_blocked            = false;
     for (const auto& popup : observers)
         if (popup) popup->overlayRelease(point);
     return blocked;
@@ -367,7 +368,7 @@ bool OverlayManager::eventFilter(QObject* watched, QEvent* event) {
     case QEvent::Hide: {
         cancelDrawerDrag();
         cancelPress();
-        m_touchId = -1;
+        m_touchId          = -1;
         const auto entries = m_entries;
         for (const auto& entry : entries)
             if (entry.popup) entry.popup->dismissImmediately();
@@ -380,9 +381,7 @@ bool OverlayManager::eventFilter(QObject* watched, QEvent* event) {
     case QEvent::MouseButtonRelease:
         blocked = release(static_cast<QMouseEvent*>(event)->position());
         break;
-    case QEvent::MouseMove:
-        blocked = m_pressed && m_blocked;
-        break;
+    case QEvent::MouseMove: blocked = m_pressed && m_blocked; break;
     case QEvent::Wheel: blocked = blocks(static_cast<QWheelEvent*>(event)->position()); break;
     case QEvent::TouchBegin:
     case QEvent::TouchUpdate:
@@ -403,9 +402,9 @@ bool OverlayManager::eventFilter(QObject* watched, QEvent* event) {
     }
     case QEvent::TouchCancel:
         cancelDrawerDrag();
-        blocked   = m_blocked;
+        blocked = m_blocked;
         cancelPress();
-        m_touchId             = -1;
+        m_touchId = -1;
         break;
     case QEvent::KeyPress: {
         auto key = static_cast<QKeyEvent*>(event);

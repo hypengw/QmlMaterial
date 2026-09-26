@@ -20,7 +20,8 @@ using scalar = float;
 
 class ShadowCircularRRectOp {
 public:
-    enum RRectType {
+    enum RRectType
+    {
         kFill_RRectType,       ///< Normal shadow filling the entire interior.
         kStroke_RRectType,     ///< Hollow shadow for outlined shapes.
         kOverstroke_RRectType, ///< Optimized for large blurs where the umbra is tiny.

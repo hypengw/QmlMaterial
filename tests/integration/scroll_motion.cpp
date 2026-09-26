@@ -22,16 +22,17 @@ private slots:
     void directPositionReplacesInput_data() {
         QTest::addColumn<bool>("horizontal");
         QTest::addColumn<bool>("drag");
-        for (bool horizontal : {false, true}) {
+        for (bool horizontal : { false, true }) {
             QTest::newRow(horizontal ? "horizontal-drag" : "vertical-drag") << horizontal << true;
-            QTest::newRow(horizontal ? "horizontal-platform" : "vertical-platform") << horizontal << false;
+            QTest::newRow(horizontal ? "horizontal-platform" : "vertical-platform")
+                << horizontal << false;
         }
     }
     void directPositionReplacesInput() {
         QFETCH(bool, horizontal);
         QFETCH(bool, drag);
         GeometryFlickable item;
-        item.setSize({100, 100});
+        item.setSize({ 100, 100 });
         item.setContentWidth(2000);
         item.setContentHeight(2000);
         item.setFlickableDirection(Flickable::HorizontalAndVerticalFlick);
@@ -39,60 +40,78 @@ private slots:
         const QPointF start(90, 90);
         const QPointF moved = horizontal ? QPointF(40, 90) : QPointF(90, 40);
         if (drag) {
-            QMouseEvent press(QEvent::MouseButtonPress, start, start, Qt::LeftButton,
-                              Qt::LeftButton, Qt::NoModifier);
+            QMouseEvent press(QEvent::MouseButtonPress,
+                              start,
+                              start,
+                              Qt::LeftButton,
+                              Qt::LeftButton,
+                              Qt::NoModifier);
             item.mousePressEvent(&press);
-            QMouseEvent move(QEvent::MouseMove, moved, moved, Qt::NoButton,
-                             Qt::LeftButton, Qt::NoModifier);
+            QMouseEvent move(
+                QEvent::MouseMove, moved, moved, Qt::NoButton, Qt::LeftButton, Qt::NoModifier);
             item.mouseMoveEvent(&move);
             QVERIFY(item.isDragging());
         } else {
             item.consumeScroll(horizontal ? QPointF(50, 0) : QPointF(0, 50),
-                               Flickable::ScrollInput::Direct, Qt::ScrollMomentum);
+                               Flickable::ScrollInput::Direct,
+                               Qt::ScrollMomentum);
         }
         QVERIFY(item.isMoving());
-        if (horizontal) item.setContentX(300);
-        else item.setContentY(300);
+        if (horizontal)
+            item.setContentX(300);
+        else
+            item.setContentY(300);
         QVERIFY(! item.isMoving());
         QVERIFY(! item.isDragging());
         QVERIFY(! item.keepMouseGrab());
         QVERIFY(! item.keepTouchGrab());
-        QMouseEvent stale(QEvent::MouseMove, moved, moved, Qt::NoButton,
-                          Qt::LeftButton, Qt::NoModifier);
+        QMouseEvent stale(
+            QEvent::MouseMove, moved, moved, Qt::NoButton, Qt::LeftButton, Qt::NoModifier);
         item.mouseMoveEvent(&stale);
         QCOMPARE(horizontal ? item.contentX() : item.contentY(), 300.0);
         QCOMPARE(horizontal ? item.horizontalVelocity() : item.verticalVelocity(), 0.0);
     }
     void scrollReplacesDrag() {
         GeometryFlickable item;
-        item.setSize({100, 100});
+        item.setSize({ 100, 100 });
         item.setContentHeight(2000);
         item.setFlickableDirection(Flickable::VerticalFlick);
         item.setSynchronousDrag(true);
-        QMouseEvent press(QEvent::MouseButtonPress, QPointF(50, 90), QPointF(50, 90),
-                          Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+        QMouseEvent press(QEvent::MouseButtonPress,
+                          QPointF(50, 90),
+                          QPointF(50, 90),
+                          Qt::LeftButton,
+                          Qt::LeftButton,
+                          Qt::NoModifier);
         item.mousePressEvent(&press);
-        QMouseEvent move(QEvent::MouseMove, QPointF(50, 40), QPointF(50, 40),
-                         Qt::NoButton, Qt::LeftButton, Qt::NoModifier);
+        QMouseEvent move(QEvent::MouseMove,
+                         QPointF(50, 40),
+                         QPointF(50, 40),
+                         Qt::NoButton,
+                         Qt::LeftButton,
+                         Qt::NoModifier);
         item.mouseMoveEvent(&move);
         QVERIFY(item.isDragging());
-        const auto consumed = item.consumeScroll({0, 20}, Flickable::ScrollInput::Direct,
-                                                 Qt::ScrollBegin);
+        const auto consumed =
+            item.consumeScroll({ 0, 20 }, Flickable::ScrollInput::Direct, Qt::ScrollBegin);
         QCOMPARE(consumed.consumed.y(), 20.0);
         QCOMPARE(item.contentY(), 70.0);
         QVERIFY(! item.isDragging());
         QVERIFY(! item.keepMouseGrab());
         item.consumeScroll({}, Flickable::ScrollInput::Direct, Qt::ScrollEnd);
         QVERIFY(! item.isMoving());
-        QMouseEvent staleMove(QEvent::MouseMove, QPointF(50, 10), QPointF(50, 10),
-                              Qt::NoButton, Qt::LeftButton, Qt::NoModifier);
+        QMouseEvent staleMove(QEvent::MouseMove,
+                              QPointF(50, 10),
+                              QPointF(50, 10),
+                              Qt::NoButton,
+                              Qt::LeftButton,
+                              Qt::NoModifier);
         item.mouseMoveEvent(&staleMove);
         QCOMPARE(item.contentY(), 70.0);
     }
     void samplingCadence_data() {
         QTest::addColumn<int>("hz");
-        for (int hz : {60, 90, 120, 144})
-            QTest::newRow(qPrintable(QString::number(hz))) << hz;
+        for (int hz : { 60, 90, 120, 144 }) QTest::newRow(qPrintable(QString::number(hz))) << hz;
     }
     void samplingCadence() {
         QFETCH(int, hz);
@@ -101,7 +120,7 @@ private slots:
         for (int frame = 0; frame < hz * 2; ++frame) {
             const double now = double(frame) / hz;
             if (now > 0.2 && now < 0.6) continue;
-            const auto sample = motion.sample(now);
+            const auto   sample  = motion.sample(now);
             const double elapsed = std::min(1.0, now);
             QCOMPARE(sample.position, 10 + 1000 * elapsed - 500 * elapsed * elapsed);
             QCOMPARE(sample.velocity, 1000 - 1000 * elapsed);
@@ -123,7 +142,7 @@ private slots:
         QQuickWindow window;
         window.setGeometry(0, 0, 200, 200);
         Flickable item(window.contentItem());
-        item.setSize({200, 200});
+        item.setSize({ 200, 200 });
         item.setContentHeight(2000);
         item.setFlickableDirection(Flickable::VerticalFlick);
         item.setFlickDeceleration(5000);
@@ -146,14 +165,14 @@ private slots:
     void touchTermination() {
         QFETCH(int, termination);
         GeometryFlickable item;
-        item.setSize({100, 100});
+        item.setSize({ 100, 100 });
         item.setContentHeight(1000);
         item.setFlickableDirection(Flickable::VerticalFlick);
         item.setSynchronousDrag(true);
-        auto* device = QTest::createTouchDevice();
-        const auto touch = [&](QEvent::Type type, QEventPoint::State state, int y, ulong time) {
+        auto*      device = QTest::createTouchDevice();
+        const auto touch  = [&](QEvent::Type type, QEventPoint::State state, int y, ulong time) {
             QEventPoint point(0, state, QPointF(50, y), QPointF(50, y));
-            QTouchEvent event(type, device, Qt::NoModifier, {point});
+            QTouchEvent event(type, device, Qt::NoModifier, { point });
             event.setTimestamp(time);
             item.touchEvent(&event);
         };
@@ -344,8 +363,12 @@ private slots:
                          Qt::NoModifier);
         item.mouseMoveEvent(&next);
         QCOMPARE(item.contentY(), 260.0);
-        QMouseEvent outside(QEvent::MouseMove, QPointF(50, -10), QPointF(50, -10),
-                            Qt::NoButton, Qt::LeftButton, Qt::NoModifier);
+        QMouseEvent outside(QEvent::MouseMove,
+                            QPointF(50, -10),
+                            QPointF(50, -10),
+                            Qt::NoButton,
+                            Qt::LeftButton,
+                            Qt::NoModifier);
         item.mouseMoveEvent(&outside);
         QCOMPARE(item.contentY(), 300.0);
     }

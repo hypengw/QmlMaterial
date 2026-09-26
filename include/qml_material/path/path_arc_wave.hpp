@@ -20,10 +20,13 @@ class QML_MATERIAL_API PathArcWave : public QQuickCurve {
     Q_PROPERTY(qreal centerX READ center_x WRITE set_center_x NOTIFY centerXChanged FINAL)
     Q_PROPERTY(qreal centerY READ center_y WRITE set_center_y NOTIFY centerYChanged FINAL)
     Q_PROPERTY(qreal radius READ radius WRITE set_radius NOTIFY radiusChanged FINAL)
-    Q_PROPERTY(qreal startAngle READ start_angle WRITE set_start_angle NOTIFY startAngleChanged FINAL)
-    Q_PROPERTY(qreal sweepAngle READ sweep_angle WRITE set_sweep_angle NOTIFY sweepAngleChanged FINAL)
+    Q_PROPERTY(
+        qreal startAngle READ start_angle WRITE set_start_angle NOTIFY startAngleChanged FINAL)
+    Q_PROPERTY(
+        qreal sweepAngle READ sweep_angle WRITE set_sweep_angle NOTIFY sweepAngleChanged FINAL)
     Q_PROPERTY(qreal amplitude READ amplitude WRITE set_amplitude NOTIFY amplitudeChanged FINAL)
-    Q_PROPERTY(qreal waveLength READ wave_length WRITE set_wave_length NOTIFY waveLengthChanged FINAL)
+    Q_PROPERTY(
+        qreal waveLength READ wave_length WRITE set_wave_length NOTIFY waveLengthChanged FINAL)
     Q_PROPERTY(qreal phase READ phase WRITE set_phase NOTIFY phaseChanged FINAL)
     Q_PROPERTY(qreal smoothness READ smoothness WRITE set_smoothness NOTIFY smoothnessChanged FINAL)
     QML_NAMED_ELEMENT(PathArcWave)

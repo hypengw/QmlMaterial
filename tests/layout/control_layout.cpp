@@ -82,7 +82,7 @@ QQuickItem* itemWithAction(QQuickItem* root, QObject* action) {
 
 QQuickItem* itemWithIconView(QQuickItem* root) {
     if (auto* icon = root->property("icon").value<qml_material::IconSpec*>();
-        icon && !icon->isEmpty()) {
+        icon && ! icon->isEmpty()) {
         return root;
     }
     for (auto* child : root->childItems()) {
@@ -177,7 +177,8 @@ private Q_SLOTS:
                 delegate: Item { required property MD.LazyRow row; implicitHeight: 40 }
                 MD.ScrollBar.vertical: MD.ScrollBar { objectName: "bar" }
             }
-        )", QUrl());
+        )",
+                          QUrl());
         std::unique_ptr<QObject> object(component.create());
         QVERIFY2(object, qPrintable(component.errorString()));
         auto* list = qobject_cast<qml_material::LazyList*>(object.get());
@@ -198,7 +199,7 @@ private Q_SLOTS:
         QCOMPARE(list->contentHeight(), 800.0);
         qml_material::ListSnapshotSource replacement;
         replacement.setKeyRole("key");
-        replacement.setItems({QVariantMap {{"key", "replacement"}}});
+        replacement.setItems({ QVariantMap { { "key", "replacement" } } });
         list->setSource(&replacement);
         settle(list);
         QCOMPARE(list->contentHeight(), 40.0);
@@ -236,7 +237,8 @@ private Q_SLOTS:
                     policy: MD.ScrollBarBase.AlwaysOn
                 }
             }
-        )", QUrl());
+        )",
+                          QUrl());
         std::unique_ptr<QObject> object(component.create());
         QVERIFY2(object, qPrintable(component.errorString()));
         auto* list = qobject_cast<qml_material::LazyList*>(object.get());
@@ -250,7 +252,7 @@ private Q_SLOTS:
         auto* bar = list->findChild<QQuickItem*>("bar");
         QVERIFY(bar);
         const auto start = bar->mapToScene(QPointF(8, 8)).toPoint();
-        const auto end = bar->mapToScene(QPointF(8, 180)).toPoint();
+        const auto end   = bar->mapToScene(QPointF(8, 180)).toPoint();
         QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, start);
         QVERIFY(bar->property("pressed").toBool());
         QTest::mouseMove(&window, end);
@@ -293,7 +295,7 @@ private Q_SLOTS:
         popup->open();
         auto* surface = popup->surfaceItem();
         QVERIFY(surface->contains(QPointF(100, 100)));
-        QVERIFY(!surface->contains(QPointF(500, 500)));
+        QVERIFY(! surface->contains(QPointF(500, 500)));
         QQuickItem container(surface);
         container.setPosition(QPointF(30, 40));
         container.setScale(2);
@@ -301,22 +303,24 @@ private Q_SLOTS:
         hit->setSize(QSizeF(50, 50));
         hit->setPosition(QPointF(10, 20));
         popup->setPopupItem(hit.get());
-        auto center = [&] { return hit->mapToItem(surface, QPointF(25, 25)); };
+        auto center = [&] {
+            return hit->mapToItem(surface, QPointF(25, 25));
+        };
         QVERIFY(surface->contains(center()));
-        QVERIFY(!surface->contains(QPointF(1, 1)));
+        QVERIFY(! surface->contains(QPointF(1, 1)));
         auto oldCenter = center();
         hit->setY(150);
-        QVERIFY(!surface->contains(oldCenter));
+        QVERIFY(! surface->contains(oldCenter));
         QVERIFY(surface->contains(center()));
         hit->setVisible(false);
-        QVERIFY(!surface->contains(center()));
+        QVERIFY(! surface->contains(center()));
         hit->setVisible(true);
         QVERIFY(surface->contains(center()));
         QQuickItem replacement(surface);
         replacement.setSize(QSizeF(20, 20));
         popup->setPopupItem(&replacement);
         QVERIFY(surface->contains(QPointF(1, 1)));
-        QVERIFY(!surface->contains(center()));
+        QVERIFY(! surface->contains(center()));
         popup->setPopupItem(hit.get());
         hit.reset();
         QCOMPARE(popup->popupItem(), surface);
@@ -355,7 +359,8 @@ private Q_SLOTS:
                 }
                 id: rootItem
             }
-        )", QUrl());
+        )",
+                          QUrl());
         std::unique_ptr<QObject> object(component.create());
         QVERIFY2(object, qPrintable(component.errorString()));
         auto* root = qobject_cast<QQuickItem*>(object.get());
@@ -372,8 +377,14 @@ private Q_SLOTS:
         QTest::mouseClick(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 100));
         QCOMPARE(root->property("clicks").toInt(), 1);
         auto wheel = [&](QPoint position) {
-            QWheelEvent event(position, m_window.mapToGlobal(position), {}, QPoint(0, -120),
-                              Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
+            QWheelEvent event(position,
+                              m_window.mapToGlobal(position),
+                              {},
+                              QPoint(0, -120),
+                              Qt::NoButton,
+                              Qt::NoModifier,
+                              Qt::NoScrollPhase,
+                              false);
             QCoreApplication::sendEvent(&m_window, &event);
         };
         wheel(QPoint(100, 100));
@@ -390,7 +401,7 @@ private Q_SLOTS:
         QTest::mousePress(&m_window, Qt::LeftButton, Qt::NoModifier, buttonPoint);
         QTest::mouseMove(&m_window, QPoint(100, 100));
         QTest::mouseRelease(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 100));
-        QVERIFY(!button->property("pressed").toBool());
+        QVERIFY(! button->property("pressed").toBool());
         QCOMPARE(root->property("clicks").toInt(), 1);
         auto* scroller = sheet->findChild<qml_material::Flickable*>();
         QVERIFY(scroller);
@@ -400,9 +411,9 @@ private Q_SLOTS:
         QTest::mouseMove(&m_window, handlePoint + QPoint(0, 80));
         QVERIFY(scroller->isDragging());
         QTest::mouseRelease(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 100));
-        QVERIFY(!scroller->isDragging());
+        QVERIFY(! scroller->isDragging());
         QCOMPARE(root->property("clicks").toInt(), 1);
-        for (bool dim : {false, true}) {
+        for (bool dim : { false, true }) {
             sheet->setModal(true);
             sheet->setDim(dim);
             sheet->setClosePolicy(qml_material::Popup::NoAutoClose);
@@ -412,7 +423,7 @@ private Q_SLOTS:
             QCOMPARE(root->property("wheels").toInt(), 1);
         }
         sheet->close();
-        QTRY_VERIFY(!sheet->isVisible());
+        QTRY_VERIFY(! sheet->isVisible());
         QTest::mouseClick(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 100));
         QCOMPARE(root->property("clicks").toInt(), 2);
         sheet->setModal(false);
@@ -422,7 +433,7 @@ private Q_SLOTS:
         QCOMPARE(root->property("clicks").toInt(), 3);
         sheet->setClosePolicy(qml_material::Popup::CloseOnPressOutside);
         QTest::mouseClick(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 100));
-        QTRY_VERIFY(!sheet->isVisible());
+        QTRY_VERIFY(! sheet->isVisible());
         QCOMPARE(root->property("clicks").toInt(), 4);
         qml_material::Popup blocker;
         blocker.setParentItem(root);
@@ -457,10 +468,11 @@ private Q_SLOTS:
                 MD.ScrollBar.vertical: MD.ScrollBar { objectName: "vertical" }
                 MD.ScrollIndicator.horizontal: MD.ScrollIndicator { objectName: "horizontal" }
             }
-        )", QUrl());
+        )",
+                          QUrl());
         std::unique_ptr<QObject> root(component.create());
         QVERIFY2(root, qPrintable(component.errorString()));
-        auto* bar = root->findChild<QQuickItem*>("vertical");
+        auto* bar       = root->findChild<QQuickItem*>("vertical");
         auto* indicator = root->findChild<QQuickItem*>("horizontal");
         QVERIFY(bar);
         QVERIFY(indicator);
@@ -483,8 +495,8 @@ private Q_SLOTS:
     }
 
     void initTestCase() {
-        m_engine.addImportPath(QCoreApplication::applicationDirPath()
-                               + QStringLiteral("/../qml_modules"));
+        m_engine.addImportPath(QCoreApplication::applicationDirPath() +
+                               QStringLiteral("/../qml_modules"));
         const QByteArray envPath = qgetenv("QML_IMPORT_PATH");
         if (! envPath.isEmpty()) {
 #if defined(Q_OS_WIN)
@@ -493,8 +505,7 @@ private Q_SLOTS:
             const QList<QByteArray> parts = envPath.split(':');
 #endif
             for (const QByteArray& part : parts) {
-                if (! part.isEmpty())
-                    m_engine.addImportPath(QString::fromLocal8Bit(part));
+                if (! part.isEmpty()) m_engine.addImportPath(QString::fromLocal8Bit(part));
             }
         }
         m_window.setGeometry(0, 0, 800, 600);
@@ -848,7 +859,7 @@ private Q_SLOTS:
         QVERIFY(firstGuard.isNull());
         QTRY_VERIFY(! sharedToolTip->property("visible").toBool());
 
-        QQmlEngine otherEngine;
+        QQmlEngine    otherEngine;
         QQmlComponent otherComponent(&otherEngine);
         otherComponent.setData(
             QByteArrayLiteral(R"(
@@ -868,8 +879,7 @@ private Q_SLOTS:
 
     void toolTipTypeContract() {
         QQmlComponent initiallyVisible(&m_engine);
-        initiallyVisible.setData(
-            QByteArrayLiteral(R"(
+        initiallyVisible.setData(QByteArrayLiteral(R"(
                 import QtQuick
                 import Qcm.Material as MD
                 Item {
@@ -880,7 +890,7 @@ private Q_SLOTS:
                     MD.ToolTip.text: "Initially visible"
                 }
             )"),
-            QUrl(QStringLiteral("qrc:/tests/tooltip-initially-visible.qml")));
+                                 QUrl(QStringLiteral("qrc:/tests/tooltip-initially-visible.qml")));
         QVERIFY2(! initiallyVisible.isError(), qPrintable(initiallyVisible.errorString()));
         std::unique_ptr<QObject> initiallyVisibleObject(initiallyVisible.create());
         QVERIFY2(initiallyVisibleObject, qPrintable(initiallyVisible.errorString()));
@@ -895,21 +905,19 @@ private Q_SLOTS:
         initiallyVisibleAttached->hide();
 
         QQmlComponent attachedOnly(&m_engine);
-        attachedOnly.setData(
-            QByteArrayLiteral(R"(
+        attachedOnly.setData(QByteArrayLiteral(R"(
                 import Qcm.Material as MD
                 MD.ToolTip {}
             )"),
-            QUrl(QStringLiteral("qrc:/tests/tooltip-uncreatable.qml")));
+                             QUrl(QStringLiteral("qrc:/tests/tooltip-uncreatable.qml")));
         QVERIFY(attachedOnly.isError());
 
         QQmlComponent plain(&m_engine);
-        plain.setData(
-            QByteArrayLiteral(R"(
+        plain.setData(QByteArrayLiteral(R"(
                 import Qcm.Material as MD
                 MD.PlainToolTip {}
             )"),
-            QUrl(QStringLiteral("qrc:/tests/plain-tooltip.qml")));
+                      QUrl(QStringLiteral("qrc:/tests/plain-tooltip.qml")));
         QVERIFY2(! plain.isError(), qPrintable(plain.errorString()));
         std::unique_ptr<QObject> plainObject(plain.create());
         QVERIFY2(plainObject, qPrintable(plain.errorString()));
@@ -1213,8 +1221,8 @@ private Q_SLOTS:
         QQuickItem* delegate = nullptr;
         QTRY_VERIFY_WITH_TIMEOUT(
             QMetaObject::invokeMethod(
-                menu, "itemAt", Q_RETURN_ARG(QQuickItem*, delegate), Q_ARG(int, 0))
-                && delegate,
+                menu, "itemAt", Q_RETURN_ARG(QQuickItem*, delegate), Q_ARG(int, 0)) &&
+                delegate,
             3000);
         settle(delegate);
         QCOMPARE(menu->property("count").toInt(), 1);
@@ -1587,15 +1595,15 @@ private Q_SLOTS:
         QTest::addColumn<int>("fontSize");
         QTest::addColumn<bool>("mediumSize");
 
-        QTest::newRow("xs") << QStringLiteral("mdState.size: MD.Enum.XS") << 32.0 << 8.0
-                            << 18.0 << 0.0 << 12 << false;
-        QTest::newRow("s") << QStringLiteral("mdState.size: MD.Enum.S") << 40.0 << 10.0
-                           << 20.0 << 0.0 << 14 << false;
+        QTest::newRow("xs") << QStringLiteral("mdState.size: MD.Enum.XS") << 32.0 << 8.0 << 18.0
+                            << 0.0 << 12 << false;
+        QTest::newRow("s") << QStringLiteral("mdState.size: MD.Enum.S") << 40.0 << 10.0 << 20.0
+                           << 0.0 << 14 << false;
         QTest::newRow("default-m") << QString() << 48.0 << 12.0 << 24.0 << 0.0 << 16 << true;
-        QTest::newRow("l") << QStringLiteral("mdState.size: MD.Enum.L") << 56.0 << 16.0
-                           << 24.0 << 0.0 << 16 << false;
-        QTest::newRow("xl") << QStringLiteral("mdState.size: MD.Enum.XL") << 72.0 << 24.0
-                            << 32.0 << 0.0 << 16 << false;
+        QTest::newRow("l") << QStringLiteral("mdState.size: MD.Enum.L") << 56.0 << 16.0 << 24.0
+                           << 0.0 << 16 << false;
+        QTest::newRow("xl") << QStringLiteral("mdState.size: MD.Enum.XL") << 72.0 << 24.0 << 32.0
+                            << 0.0 << 16 << false;
     }
 
     void comboBoxSizes() {
@@ -1669,8 +1677,8 @@ private Q_SLOTS:
         picker->setParentItem(m_window.contentItem());
         settle(picker);
 
-        auto* swatch = itemWithImplicitSizeAndColor(
-            picker, QSizeF(20, 20), QColor(QStringLiteral("#6750A4")));
+        auto* swatch =
+            itemWithImplicitSizeAndColor(picker, QSizeF(20, 20), QColor(QStringLiteral("#6750A4")));
         auto* label = itemWithText(picker, QStringLiteral("#6750A4FF"));
         QVERIFY(swatch);
         QVERIFY(label);
@@ -2184,9 +2192,9 @@ private Q_SLOTS:
 
         QObject* view = nullptr;
         for (auto* child : root->findChildren<QObject*>()) {
-            if (child->property("contentWidth").isValid()
-                && child->property("currentIndex").isValid()
-                && child->property("itemExtent").isValid()) {
+            if (child->property("contentWidth").isValid() &&
+                child->property("currentIndex").isValid() &&
+                child->property("itemExtent").isValid()) {
                 view = child;
                 break;
             }

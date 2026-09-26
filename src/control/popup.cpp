@@ -478,25 +478,23 @@ bool Popup::containsScenePoint(const QPointF& point) const {
 bool Popup::parentContainsScenePoint(const QPointF& point) const {
     return m_parent && m_parent->contains(m_parent->mapFromScene(point));
 }
-void Popup::cancelOverlayPress() {
-    m_outsidePressed = m_outsideParentPressed = false;
-}
+void Popup::cancelOverlayPress() { m_outsidePressed = m_outsideParentPressed = false; }
 void Popup::overlayPress(const QPointF& point) {
-    m_outsidePressed = !containsScenePoint(point);
-    m_outsideParentPressed = m_outsidePressed && !parentContainsScenePoint(point);
-    if (!closing() && m_outsidePressed &&
+    m_outsidePressed       = ! containsScenePoint(point);
+    m_outsideParentPressed = m_outsidePressed && ! parentContainsScenePoint(point);
+    if (! closing() && m_outsidePressed &&
         (m_closePolicy.testFlag(CloseOnPressOutside) ||
          (m_outsideParentPressed && m_closePolicy.testFlag(CloseOnPressOutsideParent))))
         closeFromInput();
 }
 void Popup::overlayRelease(const QPointF& point) {
-    const bool outside = m_outsidePressed;
+    const bool outside       = m_outsidePressed;
     const bool outsideParent = m_outsideParentPressed;
     cancelOverlayPress();
-    if (!closing() && isVisible() && outside && overlayContainsScenePoint(point) &&
-        !containsScenePoint(point) &&
+    if (! closing() && isVisible() && outside && overlayContainsScenePoint(point) &&
+        ! containsScenePoint(point) &&
         (m_closePolicy.testFlag(CloseOnReleaseOutside) ||
-         (outsideParent && !parentContainsScenePoint(point) &&
+         (outsideParent && ! parentContainsScenePoint(point) &&
           m_closePolicy.testFlag(CloseOnReleaseOutsideParent))))
         closeFromInput();
 }

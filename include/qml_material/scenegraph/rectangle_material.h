@@ -20,7 +20,6 @@ public:
 
     bool updateUniformData(QSGMaterialShader::RenderState& state, QSGMaterial* newMaterial,
                            QSGMaterial* oldMaterial) override;
-
 };
 
 } // namespace qml_material::sg

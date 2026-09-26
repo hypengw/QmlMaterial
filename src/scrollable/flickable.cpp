@@ -229,9 +229,7 @@ auto Flickable::setContentX(qreal position) -> void {
 
 auto Flickable::contentY() const -> qreal { return m_vData.position; }
 
-auto Flickable::setContentY(qreal position) -> void {
-    setContentPosition(VerticalAxis, position);
-}
+auto Flickable::setContentY(qreal position) -> void { setContentPosition(VerticalAxis, position); }
 
 void Flickable::setContentPosition(Axis axis, qreal position) {
     if (! std::isfinite(position)) return;
@@ -797,19 +795,19 @@ auto Flickable::stopAxisMotion(Axis axis) -> void {
 }
 
 auto Flickable::attachMotionWindow(QQuickWindow* target) -> void {
-    const bool replacing = m_motionWindowAttached;
+    const bool replacing   = m_motionWindowAttached;
     m_motionWindowAttached = target != nullptr;
     disconnect(m_frameConnection);
     disconnect(m_windowVisibilityConnection);
-    m_frameConnection = {};
+    m_frameConnection            = {};
     m_windowVisibilityConnection = {};
     if (target) {
         m_frameConnection =
             connect(target, &QQuickWindow::afterAnimating, this, &Flickable::requestMotionFrame);
-        m_windowVisibilityConnection = connect(target, &QWindow::visibleChanged, this,
-                                               [this](bool visible) {
-            if (! visible) cancelScrollActivity();
-        });
+        m_windowVisibilityConnection =
+            connect(target, &QWindow::visibleChanged, this, [this](bool visible) {
+                if (! visible) cancelScrollActivity();
+            });
     }
     if (replacing) cancelScrollActivity();
 }
@@ -883,7 +881,6 @@ auto Flickable::handlePress(const QPointF& position, qint64 timestamp) -> void {
     };
     setupAxis(HorizontalAxis);
     setupAxis(VerticalAxis);
-
 }
 
 auto Flickable::handleMove(const QPointF& position, qint64 timestamp, Qt::MouseButtons buttons)
@@ -1004,7 +1001,7 @@ bool Flickable::captureDelayedPress(QQuickItem* receiver, QPointerEvent* event) 
     m_delayedPress = pointer_delivery::cloneForWindow(event);
     m_delayedPress->setAccepted(false);
     m_delayedReceiver = receiver;
-    m_delayedWindow = window();
+    m_delayedWindow   = window();
     m_pressDelayTimer.start(m_pressDelay, this);
     setKeepMouseGrab(true);
     setKeepTouchGrab(true);
@@ -1025,19 +1022,20 @@ void Flickable::clearDelayedPress() {
 
 void Flickable::replayDelayedPress(QPointerEvent* release) {
     if (! m_delayedPress) return;
-    auto event = std::move(m_delayedPress);
+    auto                   event  = std::move(m_delayedPress);
     QPointer<QQuickWindow> target = m_delayedWindow;
     const bool valid = target && target == window() && m_delayedReceiver &&
-        m_contentItem->isAncestorOf(m_delayedReceiver) &&
-        m_delayedReceiver->isVisible() && m_delayedReceiver->isEnabled() && m_interactive;
+                       m_contentItem->isAncestorOf(m_delayedReceiver) &&
+                       m_delayedReceiver->isVisible() && m_delayedReceiver->isEnabled() &&
+                       m_interactive;
     clearDelayedPress();
     if (! valid) {
         cancelInteraction();
         return;
     }
     QPointer<Flickable> guard(this);
-    auto released = release ? pointer_delivery::cloneForWindow(release) : nullptr;
-    m_replayingPress = true;
+    auto                released = release ? pointer_delivery::cloneForWindow(release) : nullptr;
+    m_replayingPress             = true;
     setKeepMouseGrab(false);
     setKeepTouchGrab(false);
     const auto point = event->points().first();
@@ -1153,7 +1151,10 @@ auto Flickable::childMouseEventFilter(QQuickItem* item, QEvent* event) -> bool {
 }
 
 auto Flickable::mousePressEvent(QMouseEvent* event) -> void {
-    if (m_replayingPress) { event->ignore(); return; }
+    if (m_replayingPress) {
+        event->ignore();
+        return;
+    }
     if (m_interactive && buttonsAccepted(event) && acceptsPoint(event->position())) {
         handlePress(event->position(), eventTimestamp(event));
         event->accept();
@@ -1163,8 +1164,7 @@ auto Flickable::mousePressEvent(QMouseEvent* event) -> void {
 }
 
 auto Flickable::mouseMoveEvent(QMouseEvent* event) -> void {
-    if (m_interactive && buttonsAccepted(event) &&
-        (m_pressed || acceptsPoint(event->position()))) {
+    if (m_interactive && buttonsAccepted(event) && (m_pressed || acceptsPoint(event->position()))) {
         handleMove(event->position(), eventTimestamp(event), event->buttons());
         event->accept();
         return;
@@ -1187,7 +1187,10 @@ auto Flickable::mouseReleaseEvent(QMouseEvent* event) -> void {
 }
 
 auto Flickable::touchEvent(QTouchEvent* event) -> void {
-    if (m_replayingPress) { event->ignore(); return; }
+    if (m_replayingPress) {
+        event->ignore();
+        return;
+    }
     if (event->type() == QEvent::TouchCancel) {
         cancelInteraction();
         event->accept();
@@ -1361,8 +1364,12 @@ auto Flickable::componentComplete() -> void {
     updateBeginningEnd();
 }
 
-auto Flickable::mouseUngrabEvent() -> void { if (! m_replayingPress) cancelInteraction(); }
-auto Flickable::touchUngrabEvent() -> void { if (! m_replayingPress) cancelInteraction(); }
+auto Flickable::mouseUngrabEvent() -> void {
+    if (! m_replayingPress) cancelInteraction();
+}
+auto Flickable::touchUngrabEvent() -> void {
+    if (! m_replayingPress) cancelInteraction();
+}
 
 auto Flickable::minXExtent() const -> qreal { return originX() - m_hData.startMargin; }
 auto Flickable::minYExtent() const -> qreal { return originY() - m_vData.startMargin; }

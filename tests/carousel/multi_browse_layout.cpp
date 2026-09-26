@@ -11,12 +11,11 @@ using namespace qml_material;
 namespace
 {
 
-constexpr int kSizeLarge         = 2;
-constexpr int kSizeMedium        = 1;
-constexpr int kSizeSmall         = 0;
+constexpr int kSizeLarge  = 2;
+constexpr int kSizeMedium = 1;
+constexpr int kSizeSmall  = 0;
 
-auto makeInput(qreal scroll, int count = 10) -> CarouselLayoutInput
-{
+auto makeInput(qreal scroll, int count = 10) -> CarouselLayoutInput {
     CarouselLayoutInput in;
     in.layout                = CarouselLayoutId::MultiBrowse;
     in.viewport_size         = 480;
@@ -33,8 +32,7 @@ auto makeInput(qreal scroll, int count = 10) -> CarouselLayoutInput
     return in;
 }
 
-auto findItem(const CarouselLayoutOutput& out, int index) -> const CarouselItemGeometry*
-{
+auto findItem(const CarouselLayoutOutput& out, int index) -> const CarouselItemGeometry* {
     for (const auto& g : out.items) {
         if (g.index == index) {
             return &g;
@@ -43,31 +41,28 @@ auto findItem(const CarouselLayoutOutput& out, int index) -> const CarouselItemG
     return nullptr;
 }
 
-auto fail(const char* msg) -> int
-{
+auto fail(const char* msg) -> int {
     std::fprintf(stderr, "FAIL: %s\n", msg);
     return EXIT_FAILURE;
 }
 
 } // namespace
 
-int run_multi_browse_layout(int argc, char** argv)
-{
-
+int run_multi_browse_layout(int argc, char** argv) {
     for (int width = 1; width <= 200; ++width) {
-        auto input = makeInput(0);
+        auto input          = makeInput(0);
         input.viewport_size = width;
         const auto keylines = CarouselKeylines::buildList(input);
-        if (keylines.keylines.isEmpty() || keylines.large_size <= 0
-            || keylines.medium_size <= 0 || keylines.small_size <= 0) {
+        if (keylines.keylines.isEmpty() || keylines.large_size <= 0 || keylines.medium_size <= 0 ||
+            keylines.small_size <= 0) {
             return fail("narrow multi-browse should have positive item sizes");
         }
         const auto narrow = CarouselStrategy::compute(input);
-        if (!std::isfinite(narrow.content_size) || !std::isfinite(narrow.max_scroll_offset)) {
+        if (! std::isfinite(narrow.content_size) || ! std::isfinite(narrow.max_scroll_offset)) {
             return fail("narrow multi-browse should have finite scroll bounds");
         }
         for (const auto& item : narrow.items) {
-            if (!std::isfinite(item.position) || !std::isfinite(item.size) || item.size <= 0) {
+            if (! std::isfinite(item.position) || ! std::isfinite(item.size) || item.size <= 0) {
                 return fail("narrow multi-browse should have finite positive geometry");
             }
         }
@@ -94,12 +89,12 @@ int run_multi_browse_layout(int argc, char** argv)
             has_small = true;
         }
     }
-    if (!has_large || !has_small) {
+    if (! has_large || ! has_small) {
         return fail("multi-browse should include large and small size classes");
     }
 
     const auto* leading = findItem(out, out.leading_index);
-    if (!leading || leading->size_class != kSizeLarge) {
+    if (! leading || leading->size_class != kSizeLarge) {
         return fail("leading multi-browse item should be large");
     }
 

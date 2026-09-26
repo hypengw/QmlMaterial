@@ -17,7 +17,8 @@ namespace qml_material::math
 
 inline constexpr scalar k_ambient_height_factor = 1.0f / 128.0f;
 inline constexpr scalar k_ambient_geom_factor   = 64.0f;
-inline constexpr scalar k_max_ambient_radius    = 300 * k_ambient_height_factor * k_ambient_geom_factor;
+inline constexpr scalar k_max_ambient_radius =
+    300 * k_ambient_height_factor * k_ambient_geom_factor;
 
 [[nodiscard]] inline scalar ambient_blur_radius(scalar height) {
     return std::min(height * k_ambient_height_factor * k_ambient_geom_factor, k_max_ambient_radius);
@@ -28,8 +29,7 @@ inline constexpr scalar k_max_ambient_radius    = 300 * k_ambient_height_factor 
 }
 
 void spot_params(scalar occluder_z, scalar light_x, scalar light_y, scalar light_z,
-                 scalar light_radius, scalar* blur_radius, scalar* scale,
-                 QVector2D* translate);
+                 scalar light_radius, scalar* blur_radius, scalar* scale, QVector2D* translate);
 
 void directional_params(scalar occluder_z, scalar light_x, scalar light_y, scalar light_z,
                         scalar light_radius, scalar* blur_radius, scalar* scale,

@@ -29,7 +29,7 @@ public:
     float  start_fraction = 0;
     float  end_fraction   = 0;
     QColor color {};
-    qint32    gap_size = 0;
+    qint32 gap_size = 0;
     // The fraction [0, 1] of the amplitude on indicator.
     float amplitude_fraction = 1;
     // The fraction [0, 1] of the initial phase [0, 2 * PI] on indicator.
@@ -79,9 +79,9 @@ public:
     auto indeterminateAnimationType() const noexcept -> IndeterminateAnimationType;
     void setIndeterminateAnimationType(IndeterminateAnimationType t);
 
-    void updateContiguous(double progress) noexcept;
-    void updateDisjoint(double progress) noexcept;
-    void updateColors() noexcept;
+    void        updateContiguous(double progress) noexcept;
+    void        updateDisjoint(double progress) noexcept;
+    void        updateColors() noexcept;
     Q_SLOT void initIndicatorDatas() noexcept;
 
     Q_SLOT void   update(double progress);

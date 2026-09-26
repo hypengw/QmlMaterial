@@ -105,10 +105,11 @@ void WheelHandler::setTarget(QQuickItem* target) {
     auto hasProperty = [](QQuickItem* item, const char* name) {
         return item && item->metaObject()->indexOfProperty(name) >= 0;
     };
-    if (target && (!hasProperty(target, "originX") || !hasProperty(target, "originY") ||
-                   !hasProperty(target, "contentX") || !hasProperty(target, "contentY") ||
-                   !hasProperty(target, "contentWidth") || !hasProperty(target, "contentHeight") ||
-                   !hasProperty(target, "interactive"))) {
+    if (target &&
+        (! hasProperty(target, "originX") || ! hasProperty(target, "originY") ||
+         ! hasProperty(target, "contentX") || ! hasProperty(target, "contentY") ||
+         ! hasProperty(target, "contentWidth") || ! hasProperty(target, "contentHeight") ||
+         ! hasProperty(target, "interactive"))) {
         qmlWarning(this) << "target must expose Flickable-compatible properties";
         return;
     }
@@ -120,13 +121,13 @@ void WheelHandler::setTarget(QQuickItem* target) {
     m_target = target;
 
     QQmlContext* qCtx = qmlContext(m_target);
-    if (!qCtx) {
+    if (! qCtx) {
         qCtx = qmlContext(this);
     }
-    if (!qCtx && m_engine) {
+    if (! qCtx && m_engine) {
         qCtx = m_engine->rootContext();
     }
-    if (!qCtx) {
+    if (! qCtx) {
         qmlWarning(this) << "WheelHandler: could not resolve QQmlContext for target";
         m_target = nullptr;
         return;
@@ -262,13 +263,11 @@ void WheelHandler::resetPageScrollModifiers() {
     setPageScrollModifiers(m_defaultPageScrollModifiers);
 }
 
-Qt::KeyboardModifiers WheelHandler::horizontalScrollModifiers() const
-{
+Qt::KeyboardModifiers WheelHandler::horizontalScrollModifiers() const {
     return m_horizontalScrollModifiers;
 }
 
-void WheelHandler::setHorizontalScrollModifiers(Qt::KeyboardModifiers modifiers)
-{
+void WheelHandler::setHorizontalScrollModifiers(Qt::KeyboardModifiers modifiers) {
     if (m_horizontalScrollModifiers == modifiers) {
         return;
     }
@@ -276,8 +275,7 @@ void WheelHandler::setHorizontalScrollModifiers(Qt::KeyboardModifiers modifiers)
     Q_EMIT horizontalScrollModifiersChanged();
 }
 
-void WheelHandler::resetHorizontalScrollModifiers()
-{
+void WheelHandler::resetHorizontalScrollModifiers() {
     setHorizontalScrollModifiers(m_defaultHorizontalScrollModifiers);
 }
 
@@ -301,9 +299,7 @@ void WheelHandler::setKeyNavigationEnabled(bool enabled) {
     Q_EMIT keyNavigationEnabledChanged();
 }
 
-void WheelHandler::classBegin() {
-    m_engine = qmlEngine(this);
-}
+void WheelHandler::classBegin() { m_engine = qmlEngine(this); }
 
 void WheelHandler::componentComplete() {}
 
@@ -327,8 +323,8 @@ bool WheelHandler::scrollFlickable(QPointF pixelDelta, QPointF angleDelta,
 
     auto handler = [this, modifiers, pixelDelta, angleDelta, &scrolled](Qt::Orientation ori) {
         const bool hr = ori == Qt::Horizontal;
-        QPointF      ad = angleDelta;
-        QPointF      pd = pixelDelta;
+        QPointF    ad = angleDelta;
+        QPointF    pd = pixelDelta;
 
         if (hr && (modifiers & m_horizontalScrollModifiers) && qAbs(ad.x()) < qAbs(ad.y())) {
             ad = ad.transposed();
@@ -455,9 +451,9 @@ bool WheelHandler::eventFilter(QObject* watched, QEvent* event) {
         contentWidth  = m_flickable.contentWidth.read().toReal();
         contentHeight = m_flickable.contentHeight.read().toReal();
         pageWidth     = m_flickable.width.read().toReal() - m_flickable.leftMargin.read().toReal() -
-                    m_flickable.rightMargin.read().toReal();
-        pageHeight = m_flickable.height.read().toReal() - m_flickable.topMargin.read().toReal() -
-                     m_flickable.bottomMargin.read().toReal();
+                        m_flickable.rightMargin.read().toReal();
+        pageHeight    = m_flickable.height.read().toReal() - m_flickable.topMargin.read().toReal() -
+                        m_flickable.bottomMargin.read().toReal();
     }
 
     switch (event->type()) {
@@ -493,7 +489,7 @@ bool WheelHandler::eventFilter(QObject* watched, QEvent* event) {
             QPointF pixelDelta = m_kirigamiWheelEvent.angleDelta().isNull()
                                      ? m_kirigamiWheelEvent.pixelDelta()
                                      : QPoint(0, 0);
-            scrolled           = scrollFlickable(pixelDelta,
+            scrolled = scrollFlickable(pixelDelta,
                                        m_kirigamiWheelEvent.angleDelta(),
                                        Qt::KeyboardModifiers(m_kirigamiWheelEvent.modifiers()));
         }

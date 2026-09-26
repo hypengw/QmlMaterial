@@ -53,14 +53,14 @@ private:
     };
     QList<Entry>                    m_entries;
     QPointer<QQuickWindow>          m_window;
-    QList<QPointer<Popup>>         m_pressObservers;
+    QList<QPointer<Popup>>          m_pressObservers;
     QList<QPointer<Drawer>>         m_drawers;
     QPointer<Drawer>                m_dragDrawer;
     QPointer<const QPointingDevice> m_dragDevice;
-    int                             m_dragId = -1;
-    bool m_pressed = false, m_blocked = false;
-    bool m_destroying = false;
-    int  m_touchId    = -1;
+    int                             m_dragId  = -1;
+    bool                            m_pressed = false, m_blocked = false;
+    bool                            m_destroying = false;
+    int                             m_touchId    = -1;
 };
 
 class QML_MATERIAL_API Overlay : public QObject {

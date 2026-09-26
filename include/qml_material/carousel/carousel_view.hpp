@@ -17,8 +17,7 @@ class QAbstractItemModel;
 namespace qml_material
 {
 
-class CarouselView : public QQuickItem
-{
+class CarouselView : public QQuickItem {
     Q_OBJECT
     QML_ELEMENT
     QML_ATTACHED(CarouselAttached)
@@ -27,25 +26,32 @@ class CarouselView : public QQuickItem
     Q_PROPERTY(QQmlComponent* delegate READ delegate WRITE setDelegate NOTIFY delegateChanged FINAL)
     Q_PROPERTY(int count READ count NOTIFY countChanged FINAL)
     Q_PROPERTY(int layout READ layout WRITE setLayout NOTIFY layoutChanged FINAL)
-    Q_PROPERTY(int orientation READ orientation WRITE setOrientation NOTIFY orientationChanged FINAL)
+    Q_PROPERTY(
+        int orientation READ orientation WRITE setOrientation NOTIFY orientationChanged FINAL)
     Q_PROPERTY(qreal itemExtent READ itemExtent WRITE setItemExtent NOTIFY itemExtentChanged FINAL)
     Q_PROPERTY(qreal minSmallItemWidth READ minSmallItemWidth WRITE setMinSmallItemWidth NOTIFY
                    minSmallItemWidthChanged FINAL)
     Q_PROPERTY(qreal maxSmallItemWidth READ maxSmallItemWidth WRITE setMaxSmallItemWidth NOTIFY
                    maxSmallItemWidthChanged FINAL)
-    Q_PROPERTY(bool itemSnapping READ itemSnapping WRITE setItemSnapping NOTIFY itemSnappingChanged FINAL)
-    Q_PROPERTY(int currentIndex READ currentIndex WRITE setCurrentIndex NOTIFY currentIndexChanged FINAL)
-    Q_PROPERTY(int initialItem READ initialItem WRITE setInitialItem NOTIFY initialItemChanged FINAL)
+    Q_PROPERTY(
+        bool itemSnapping READ itemSnapping WRITE setItemSnapping NOTIFY itemSnappingChanged FINAL)
+    Q_PROPERTY(
+        int currentIndex READ currentIndex WRITE setCurrentIndex NOTIFY currentIndexChanged FINAL)
+    Q_PROPERTY(
+        int initialItem READ initialItem WRITE setInitialItem NOTIFY initialItemChanged FINAL)
     Q_PROPERTY(qreal spacing READ spacing WRITE setSpacing NOTIFY spacingChanged FINAL)
-    Q_PROPERTY(qreal contentPaddingStart READ contentPaddingStart WRITE setContentPaddingStart NOTIFY
-                   contentPaddingChanged FINAL)
+    Q_PROPERTY(qreal contentPaddingStart READ contentPaddingStart WRITE setContentPaddingStart
+                   NOTIFY contentPaddingChanged FINAL)
     Q_PROPERTY(qreal contentPaddingEnd READ contentPaddingEnd WRITE setContentPaddingEnd NOTIFY
                    contentPaddingChanged FINAL)
-    Q_PROPERTY(qreal contentPaddingCross READ contentPaddingCross WRITE setContentPaddingCross NOTIFY
-                   contentPaddingCrossChanged FINAL)
-    Q_PROPERTY(bool clipContainer READ clipContainer WRITE setClipContainer NOTIFY clipContainerChanged FINAL)
-    Q_PROPERTY(bool reduceMotion READ reduceMotion WRITE setReduceMotion NOTIFY reduceMotionChanged FINAL)
-    Q_PROPERTY(bool interactive READ interactive WRITE setInteractive NOTIFY interactiveChanged FINAL)
+    Q_PROPERTY(qreal contentPaddingCross READ contentPaddingCross WRITE setContentPaddingCross
+                   NOTIFY contentPaddingCrossChanged FINAL)
+    Q_PROPERTY(bool clipContainer READ clipContainer WRITE setClipContainer NOTIFY
+                   clipContainerChanged FINAL)
+    Q_PROPERTY(
+        bool reduceMotion READ reduceMotion WRITE setReduceMotion NOTIFY reduceMotionChanged FINAL)
+    Q_PROPERTY(
+        bool interactive READ interactive WRITE setInteractive NOTIFY interactiveChanged FINAL)
     Q_PROPERTY(qreal itemCornerRadius READ itemCornerRadius WRITE setItemCornerRadius NOTIFY
                    itemCornerRadiusChanged FINAL)
     Q_PROPERTY(qreal contentWidth READ contentWidth NOTIFY contentWidthChanged FINAL)
@@ -69,36 +75,36 @@ public:
     int  orientation() const;
     void setOrientation(int orientation);
 
-    qreal itemExtent() const;
-    void  setItemExtent(qreal extent);
-    qreal minSmallItemWidth() const;
-    void  setMinSmallItemWidth(qreal width);
-    qreal maxSmallItemWidth() const;
-    void  setMaxSmallItemWidth(qreal width);
-    bool itemSnapping() const;
-    void setItemSnapping(bool snapping);
-    int  currentIndex() const;
-    void setCurrentIndex(int index);
-    int  initialItem() const;
-    void setInitialItem(int item);
-    qreal spacing() const;
-    void  setSpacing(qreal spacing);
-    qreal contentPaddingStart() const;
-    void  setContentPaddingStart(qreal padding);
-    qreal contentPaddingEnd() const;
-    void  setContentPaddingEnd(qreal padding);
-    qreal contentPaddingCross() const;
-    void  setContentPaddingCross(qreal padding);
-    bool  clipContainer() const;
-    void  setClipContainer(bool clip);
-    bool  reduceMotion() const;
-    void  setReduceMotion(bool reduce);
-    qreal itemCornerRadius() const;
-    void  setItemCornerRadius(qreal radius);
-    bool interactive() const;
-    void setInteractive(bool interactive);
-    qreal contentWidth() const;
-    qreal contentHeight() const;
+    qreal       itemExtent() const;
+    void        setItemExtent(qreal extent);
+    qreal       minSmallItemWidth() const;
+    void        setMinSmallItemWidth(qreal width);
+    qreal       maxSmallItemWidth() const;
+    void        setMaxSmallItemWidth(qreal width);
+    bool        itemSnapping() const;
+    void        setItemSnapping(bool snapping);
+    int         currentIndex() const;
+    void        setCurrentIndex(int index);
+    int         initialItem() const;
+    void        setInitialItem(int item);
+    qreal       spacing() const;
+    void        setSpacing(qreal spacing);
+    qreal       contentPaddingStart() const;
+    void        setContentPaddingStart(qreal padding);
+    qreal       contentPaddingEnd() const;
+    void        setContentPaddingEnd(qreal padding);
+    qreal       contentPaddingCross() const;
+    void        setContentPaddingCross(qreal padding);
+    bool        clipContainer() const;
+    void        setClipContainer(bool clip);
+    bool        reduceMotion() const;
+    void        setReduceMotion(bool reduce);
+    qreal       itemCornerRadius() const;
+    void        setItemCornerRadius(qreal radius);
+    bool        interactive() const;
+    void        setInteractive(bool interactive);
+    qreal       contentWidth() const;
+    qreal       contentHeight() const;
     QQuickItem* flickable() const;
 
     Q_INVOKABLE void incrementCurrentIndex();
@@ -147,80 +153,80 @@ private Q_SLOTS:
                             const QList<int>& roles);
 
 private:
-    void syncCurrentIndexAfterCountChange();
-    void rebuildItems();
-    void updateLayout();
-    void updateCount();
-    void clearLayout();
-    void bindItemModel(QAbstractItemModel* model);
-    void unbindItemModel();
-    void snapAfterGesture();
-    void cancelSnapAnimation();
-    void applySnapAnimation(qreal targetOffset);
-    void finishSnap(qreal targetOffset);
-    qreal snapOffsetForIndex(int index) const;
-    void  syncScrollToIndex(int index);
-    qreal snapTargetForGesture(qreal offset, qreal velocity) const;
-    int  snapIndexForOffset(qreal offset) const;
-    int  snapIndexForFling(qreal offset, qreal velocity) const;
-    bool usesSingleAdvanceFling() const;
-    bool usesFreeScrollSnap() const;
+    void        syncCurrentIndexAfterCountChange();
+    void        rebuildItems();
+    void        updateLayout();
+    void        updateCount();
+    void        clearLayout();
+    void        bindItemModel(QAbstractItemModel* model);
+    void        unbindItemModel();
+    void        snapAfterGesture();
+    void        cancelSnapAnimation();
+    void        applySnapAnimation(qreal targetOffset);
+    void        finishSnap(qreal targetOffset);
+    qreal       snapOffsetForIndex(int index) const;
+    void        syncScrollToIndex(int index);
+    qreal       snapTargetForGesture(qreal offset, qreal velocity) const;
+    int         snapIndexForOffset(qreal offset) const;
+    int         snapIndexForFling(qreal offset, qreal velocity) const;
+    bool        usesSingleAdvanceFling() const;
+    bool        usesFreeScrollSnap() const;
     QVariant    modelDataAt(int index) const;
     QVariantMap initialPropertiesForDelegate(int index) const;
     void        applyDelegateProperties(QQuickItem* item, int index) const;
     void        createDelegate(int index);
-    void     destroyDelegate(int index);
-    void     positionItem(QQuickItem* item, const CarouselItemGeometry& geom, bool isActive);
-    int      activeIndexForLayout(const CarouselLayoutOutput& out) const;
-    void     broadcastFocusRingState();
-    void     completeKeyboardNavigation();
+    void        destroyDelegate(int index);
+    void        positionItem(QQuickItem* item, const CarouselItemGeometry& geom, bool isActive);
+    int         activeIndexForLayout(const CarouselLayoutOutput& out) const;
+    void        broadcastFocusRingState();
+    void        completeKeyboardNavigation();
 
-    QVariant                         m_model;
-    QQmlComponent*                   m_delegate = nullptr;
-    QPointer<QAbstractItemModel>     m_item_model;
-    QPersistentModelIndex            m_current_model_index;
-    int                              m_count    = 0;
-    int                              m_layout   = 0;
-    Qt::Orientation                  m_orientation = Qt::Horizontal;
-    qreal                            m_item_extent = 180;
-    qreal                            m_min_small_item_width = 40;
-    qreal                            m_max_small_item_width = 56;
-    qreal                            m_item_corner_radius = 28;
-    bool                             m_item_snapping = true;
-    int                              m_current_index = 0;
-    int                              m_initial_item  = 0;
-    qreal                            m_spacing       = 8;
-    qreal                            m_content_padding_start = 0;
-    qreal                            m_content_padding_end   = 0;
-    qreal                            m_content_padding_cross = 0;
-    bool                             m_clip_container = true;
-    bool                             m_reduce_motion  = false;
-    bool                             m_interactive   = true;
-    bool                             m_snapping      = false;
-    qreal                            m_content_width  = 0;
-    qreal                            m_content_height = 0;
-    bool                             m_completed     = false;
+    QVariant                     m_model;
+    QQmlComponent*               m_delegate = nullptr;
+    QPointer<QAbstractItemModel> m_item_model;
+    QPersistentModelIndex        m_current_model_index;
+    int                          m_count                 = 0;
+    int                          m_layout                = 0;
+    Qt::Orientation              m_orientation           = Qt::Horizontal;
+    qreal                        m_item_extent           = 180;
+    qreal                        m_min_small_item_width  = 40;
+    qreal                        m_max_small_item_width  = 56;
+    qreal                        m_item_corner_radius    = 28;
+    bool                         m_item_snapping         = true;
+    int                          m_current_index         = 0;
+    int                          m_initial_item          = 0;
+    qreal                        m_spacing               = 8;
+    qreal                        m_content_padding_start = 0;
+    qreal                        m_content_padding_end   = 0;
+    qreal                        m_content_padding_cross = 0;
+    bool                         m_clip_container        = true;
+    bool                         m_reduce_motion         = false;
+    bool                         m_interactive           = true;
+    bool                         m_snapping              = false;
+    qreal                        m_content_width         = 0;
+    qreal                        m_content_height        = 0;
+    bool                         m_completed             = false;
 
-    qreal                            m_snap_pos       = 0;
-    qreal                            m_snap_velocity  = 0;
-    qreal                            m_snap_target    = 0;
-    class QTimer*                    m_snap_timer     = nullptr;
-    QObject*                         m_snap_anim      = nullptr;
+    qreal         m_snap_pos      = 0;
+    qreal         m_snap_velocity = 0;
+    qreal         m_snap_target   = 0;
+    class QTimer* m_snap_timer    = nullptr;
+    QObject*      m_snap_anim     = nullptr;
 
-    QQuickItem*                      m_flickable = nullptr;
-    QQuickItem*                      m_content    = nullptr;
-    QVector<QQuickItem*>             m_items;
-    QVector<CarouselItemGeometry>    m_geometries;
-    QVector<qreal>                   m_snap_offsets;
-    QVector<qreal>                   m_item_aspects;
-    qreal                            m_max_scroll_offset = 0;
-    qreal                            m_end_snap_offset   = 0;
-    qreal                            m_scroll_step       = 0;
-    bool                             m_updating    = false;
-    bool                             m_focus_ring_suppressed = true;
-    bool                             m_tab_focus_engaged     = false;
-    bool                             m_keyboard_nav_pending  = false;
-    bool                             m_suppress_tab_engage   = false;
+    QQuickItem*                   m_flickable = nullptr;
+    QQuickItem*                   m_content   = nullptr;
+    QVector<QQuickItem*>          m_items;
+    QVector<CarouselItemGeometry> m_geometries;
+    QVector<qreal>                m_snap_offsets;
+    QVector<qreal>                m_item_aspects;
+    qreal                         m_max_scroll_offset     = 0;
+    qreal                         m_end_snap_offset       = 0;
+    qreal                         m_scroll_step           = 0;
+    bool                          m_updating              = false;
+    bool                          m_focus_ring_suppressed = true;
+    bool                          m_tab_focus_engaged     = false;
+    bool                          m_keyboard_nav_pending  = false;
+    bool                          m_suppress_tab_engage   = false;
 };
 
 } // namespace qml_material

@@ -26,7 +26,8 @@ QString generateHandleToken() {
     QString           out;
     out.reserve(32);
     for (int i = 0; i < 32; ++i) {
-        out.append(QLatin1Char(alphabet[QRandomGenerator::global()->bounded(int(sizeof(alphabet) - 1))]));
+        out.append(
+            QLatin1Char(alphabet[QRandomGenerator::global()->bounded(int(sizeof(alphabet) - 1))]));
     }
     return out;
 }
@@ -138,8 +139,8 @@ public:
         }
 
         const QString method = req.save ? QStringLiteral("SaveFile") : QStringLiteral("OpenFile");
-        QDBusMessage msg = QDBusMessage::createMethodCall(
-            kService, kObjectPath, kFileChooserIface, method);
+        QDBusMessage  msg =
+            QDBusMessage::createMethodCall(kService, kObjectPath, kFileChooserIface, method);
 
         QVariantMap options;
         options.insert(QStringLiteral("handle_token"), m_handle_token);
@@ -152,8 +153,7 @@ public:
         if (! req.directory && ! req.filters.isEmpty()) {
             auto xdp_filters = filtersToXdp(req.filters);
             options.insert(QStringLiteral("filters"), QVariant::fromValue(xdp_filters));
-            if (req.current_filter_index >= 0
-                && req.current_filter_index < xdp_filters.size()) {
+            if (req.current_filter_index >= 0 && req.current_filter_index < xdp_filters.size()) {
                 options.insert(QStringLiteral("current_filter"),
                                QVariant::fromValue(xdp_filters[req.current_filter_index]));
             }
@@ -164,8 +164,7 @@ public:
 
         if (! req.current_folder.isEmpty()) {
             auto bytes = pathToBytes(req.current_folder);
-            if (! bytes.isEmpty())
-                options.insert(QStringLiteral("current_folder"), bytes);
+            if (! bytes.isEmpty()) options.insert(QStringLiteral("current_folder"), bytes);
         }
 
         const QString parent_window = makeParentWindowHandle(req.parent_window);
@@ -173,40 +172,41 @@ public:
 
         auto pending = bus.asyncCall(msg);
         auto watcher = new QDBusPendingCallWatcher(pending, this);
-        connect(watcher, &QDBusPendingCallWatcher::finished, this, [this](QDBusPendingCallWatcher* w) {
-            QDBusPendingReply<QDBusObjectPath> reply = *w;
-            w->deleteLater();
-            if (reply.isError()) {
-                qCWarning(LcXdp) << "FileChooser call failed:" << reply.error().message();
-                disconnectResponse();
-                Q_EMIT rejected();
-                deleteLater();
-                return;
-            }
-            const QString actual = reply.value().path();
-            if (actual != m_request_path) {
-                // resubscribe on the real path. Disconnect predicted, connect actual.
-                auto bus = QDBusConnection::sessionBus();
-                bus.disconnect(kService,
-                               m_request_path,
-                               kRequestIface,
-                               QStringLiteral("Response"),
-                               this,
-                               SLOT(onResponse(uint, QVariantMap)));
-                m_request_path = actual;
-                bool ok2 = bus.connect(kService,
-                                       m_request_path,
-                                       kRequestIface,
-                                       QStringLiteral("Response"),
-                                       this,
-                                       SLOT(onResponse(uint, QVariantMap)));
-                if (! ok2) {
-                    qCWarning(LcXdp) << "failed to resubscribe Response on" << m_request_path;
+        connect(
+            watcher, &QDBusPendingCallWatcher::finished, this, [this](QDBusPendingCallWatcher* w) {
+                QDBusPendingReply<QDBusObjectPath> reply = *w;
+                w->deleteLater();
+                if (reply.isError()) {
+                    qCWarning(LcXdp) << "FileChooser call failed:" << reply.error().message();
+                    disconnectResponse();
                     Q_EMIT rejected();
                     deleteLater();
+                    return;
                 }
-            }
-        });
+                const QString actual = reply.value().path();
+                if (actual != m_request_path) {
+                    // resubscribe on the real path. Disconnect predicted, connect actual.
+                    auto bus = QDBusConnection::sessionBus();
+                    bus.disconnect(kService,
+                                   m_request_path,
+                                   kRequestIface,
+                                   QStringLiteral("Response"),
+                                   this,
+                                   SLOT(onResponse(uint, QVariantMap)));
+                    m_request_path = actual;
+                    bool ok2       = bus.connect(kService,
+                                                 m_request_path,
+                                                 kRequestIface,
+                                                 QStringLiteral("Response"),
+                                                 this,
+                                                 SLOT(onResponse(uint, QVariantMap)));
+                    if (! ok2) {
+                        qCWarning(LcXdp) << "failed to resubscribe Response on" << m_request_path;
+                        Q_EMIT rejected();
+                        deleteLater();
+                    }
+                }
+            });
 
         return true;
     }
@@ -296,7 +296,9 @@ void XdpFileDialogBackend::open(const PortalRequest& req) {
     connect(call, &XdpDialogCall::accepted, this, [this](QList<QUrl> urls) {
         Q_EMIT accepted(std::move(urls));
     });
-    connect(call, &XdpDialogCall::rejected, this, [this] { Q_EMIT rejected(); });
+    connect(call, &XdpDialogCall::rejected, this, [this] {
+        Q_EMIT rejected();
+    });
     call->run(req);
 }
 

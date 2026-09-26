@@ -13,7 +13,7 @@ struct ButtonSizeItem {
     Q_GADGET
     QML_ELEMENT
     QML_VALUE_TYPE(button_size_item)
-    
+
     /// Button container height (dp)
     Q_PROPERTY(qreal container_height MEMBER container_height CONSTANT FINAL)
     /// Corner radius (dp)
@@ -46,7 +46,7 @@ struct ButtonSize {
     Q_GADGET
     QML_ELEMENT
     QML_VALUE_TYPE(button_size)
-    
+
     Q_PROPERTY(qml_material::token::ButtonSizeItem xsmall MEMBER xsmall CONSTANT FINAL)
     Q_PROPERTY(qml_material::token::ButtonSizeItem small MEMBER small CONSTANT FINAL)
     Q_PROPERTY(qml_material::token::ButtonSizeItem medium MEMBER medium CONSTANT FINAL)
@@ -184,23 +184,23 @@ public:
     };
 
     IconButtonSizeItem large {
-        32.0, // icon_size
-        96.0, // container_height
-        96.0, // default_width
-        64.0, // narrow_width
-        128.0,// wide_width
-        28.0, // corner_size
-        16.0  // pressed_corner_size
+        32.0,  // icon_size
+        96.0,  // container_height
+        96.0,  // default_width
+        64.0,  // narrow_width
+        128.0, // wide_width
+        28.0,  // corner_size
+        16.0   // pressed_corner_size
     };
 
     IconButtonSizeItem xlarge {
-        40.0, // icon_size
-        136.0,// container_height
-        136.0,// default_width
-        104.0,// narrow_width
-        184.0,// wide_width
-        28.0, // corner_size
-        16.0  // pressed_corner_size
+        40.0,  // icon_size
+        136.0, // container_height
+        136.0, // default_width
+        104.0, // narrow_width
+        184.0, // wide_width
+        28.0,  // corner_size
+        16.0   // pressed_corner_size
     };
 };
 

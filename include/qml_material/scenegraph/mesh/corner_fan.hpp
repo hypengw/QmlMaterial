@@ -34,8 +34,8 @@ void for_each_rrect_corner(const QRectF& bounds, QVector4D radius, float inset, 
     // Corner layout matches the existing TL/TR/BL/BR convention used throughout.
     const struct {
         int   idx;
-        float ox, oy;     // outer rect corner
-        float sx, sy;     // outward sign
+        float ox, oy; // outer rect corner
+        float sx, sy; // outward sign
     } sides[4] = {
         { 0, L, T, -1.0f, -1.0f },
         { 1, R, T, +1.0f, -1.0f },
@@ -44,7 +44,7 @@ void for_each_rrect_corner(const QRectF& bounds, QVector4D radius, float inset, 
     };
 
     for (auto const& s : sides) {
-        const float r = radius[s.idx];
+        const float  r = radius[s.idx];
         rrect_corner c {
             .corner_index = s.idx,
             .outer_x      = s.ox,

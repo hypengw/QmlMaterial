@@ -310,12 +310,12 @@ struct FocusRing {
     Q_PROPERTY(qreal outer_stroke_width MEMBER outer_stroke_width CONSTANT FINAL)
     Q_PROPERTY(qreal inner_stroke_width MEMBER inner_stroke_width CONSTANT FINAL)
     Q_PROPERTY(qreal inner_stroke_inset MEMBER inner_stroke_inset CONSTANT FINAL)
-    Q_PROPERTY(qreal outer_offset       MEMBER outer_offset       CONSTANT FINAL)
+    Q_PROPERTY(qreal outer_offset MEMBER outer_offset CONSTANT FINAL)
 public:
     qreal outer_stroke_width { 2 };
     qreal inner_stroke_width { 3 };
     qreal inner_stroke_inset { 1 };
-    qreal outer_offset       { 2 };
+    qreal outer_offset { 2 };
 };
 
 /**
@@ -556,7 +556,8 @@ class Token : public QObject {
     /// Button size settings
     Q_PROPERTY(qml_material::token::ButtonSize button READ button CONSTANT FINAL)
     /// Segmented button size settings
-    Q_PROPERTY(qml_material::token::SegmentedButtonSize segmented_button READ segmented_button CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::SegmentedButtonSize segmented_button READ segmented_button
+                   CONSTANT FINAL)
     /// Icon button size settings
     Q_PROPERTY(qml_material::token::IconButtonSize icon_button READ icon_button CONSTANT FINAL)
     /// Combo box size settings
@@ -568,7 +569,7 @@ class Token : public QObject {
     /// Carousel layout tokens
     Q_PROPERTY(qml_material::token::Carousel carousel READ carousel CONSTANT FINAL)
     Q_PROPERTY(qml_material::token::Slider slider READ slider CONSTANT FINAL)
-    public:
+public:
     Token(QObject* = nullptr);
     ~Token();
 
@@ -601,28 +602,28 @@ class Token : public QObject {
 
     Q_INVOKABLE double cal_curve_scale(double dpr) const;
 
-    private:
-    TypeScale*  m_typescale;
-    IconToken*  m_icon;
-    Flick*      m_flick;
-    Duration    m_duration;
-    Easing      m_easing;
-    Elevation   m_elevation;
-    State       m_state;
-    Shape       m_shape;
-    WindowClass m_win_class;
-    Spacing     m_spacing;
+private:
+    TypeScale*          m_typescale;
+    IconToken*          m_icon;
+    Flick*              m_flick;
+    Duration            m_duration;
+    Easing              m_easing;
+    Elevation           m_elevation;
+    State               m_state;
+    Shape               m_shape;
+    WindowClass         m_win_class;
+    Spacing             m_spacing;
     SplitButtonSize     m_split_button;
     ButtonSize          m_button;
     SegmentedButtonSize m_segmented_button;
     IconButtonSize      m_icon_button;
-    ComboBoxSize    m_combo_box;
-    TextFieldSize   m_text_field;
-    BadgeSize       m_badge;
-    Carousel        m_carousel;
-    Slider          m_slider;
+    ComboBoxSize        m_combo_box;
+    TextFieldSize       m_text_field;
+    BadgeSize           m_badge;
+    Carousel            m_carousel;
+    Slider              m_slider;
 
     QList<QObject*> m_datas;
-    };
+};
 
-    } // namespace qml_material::token
+} // namespace qml_material::token

@@ -6,11 +6,11 @@ using namespace qml_material;
 
 namespace
 {
-void updateGeometry(QSGGeometry *g, double radius_, QRectF rect) {
+void updateGeometry(QSGGeometry* g, double radius_, QRectF rect) {
     int vertexCount = 0;
 
     // Radius should never exceeds half of the width or half of the height
-    qreal  radius = qMin(qMin(rect.width() / 2, rect.height() / 2), radius_);
+    qreal radius = qMin(qMin(rect.width() / 2, rect.height() / 2), radius_);
     rect.adjust(radius, radius, -radius, -radius);
 
     int segments = qMin(30, qCeil(radius)); // Number of segments per corner.
@@ -41,8 +41,6 @@ RoundItem::RoundItem(QQuickItem* parent): QQuickItem(parent) {}
 
 RoundItem::~RoundItem() {}
 
-QSGNode* RoundItem::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData*) {
-    return nullptr;
-}
+QSGNode* RoundItem::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData*) { return nullptr; }
 
 #include <qml_material/item/moc_round_item.cpp>

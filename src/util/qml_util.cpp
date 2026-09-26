@@ -33,7 +33,7 @@ Util::~Util() {}
 void Util::openUrlExternally(const QString& url) { sysOpenUrl(url); }
 void Util::openFolderExternally(const QString& url) { sysOpenFolder(url); }
 
-bool Util::hasIcon(ActionIcon* icon) const { return icon && !icon->isEmpty(); }
+bool Util::hasIcon(ActionIcon* icon) const { return icon && ! icon->isEmpty(); }
 
 auto Util::transparent(QColor in, float alpha) noexcept -> QColor {
     in.setAlphaF(alpha);

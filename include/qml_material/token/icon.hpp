@@ -5,12 +5,11 @@
 #include <QtGui/QColor>
 #include <QtQml/QQmlEngine>
 
-
 namespace qml_material::token
 {
 /**
  * @brief IconToken, full @ref icon_code.inl "codes"
- * 
+ *
  */
 class IconToken : public QObject {
     Q_OBJECT

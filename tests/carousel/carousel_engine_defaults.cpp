@@ -15,13 +15,10 @@ using namespace qml_material;
 
 static_assert(CarouselEngineDefaults::min_peek_px == TokenCarouselLiterals::min_peek_px);
 static_assert(CarouselEngineDefaults::parallax_ratio == TokenCarouselLiterals::parallax_ratio);
-static_assert(CarouselEngineDefaults::parallax_ratio_uncontained
-              == TokenCarouselLiterals::parallax_ratio_uncontained);
+static_assert(CarouselEngineDefaults::parallax_ratio_uncontained ==
+              TokenCarouselLiterals::parallax_ratio_uncontained);
 static_assert(CarouselEngineDefaults::snap_duration == TokenCarouselLiterals::snap_duration);
 static_assert(CarouselEngineDefaults::min_item_aspect == TokenCarouselLiterals::min_item_aspect);
 static_assert(CarouselEngineDefaults::max_item_aspect == TokenCarouselLiterals::max_item_aspect);
 
-int run_carousel_engine_defaults(int argc, char** argv)
-{
-    return 0;
-}
+int run_carousel_engine_defaults(int argc, char** argv) { return 0; }

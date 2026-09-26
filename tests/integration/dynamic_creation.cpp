@@ -281,7 +281,8 @@ private Q_SLOTS:
                 focus: true
                 modal: true
             }
-        )", QUrl("qrc:/tests/popup-window-destruction.qml"));
+        )",
+                          QUrl("qrc:/tests/popup-window-destruction.qml"));
         std::unique_ptr<qml_material::Popup> popup(
             qobject_cast<qml_material::Popup*>(component.create()));
         QVERIFY2(popup, qPrintable(component.errorString()));
@@ -292,10 +293,10 @@ private Q_SLOTS:
         QSignalSpy closed(popup.get(), &qml_material::Popup::closed);
         window.reset();
         QCOMPARE(closed.count(), 1);
-        QVERIFY(!popup->isVisible());
-        QVERIFY(!popup->overlayItem());
-        QVERIFY(!popup->surfaceItem()->window());
-        QVERIFY(!popup->surfaceItem()->parentItem());
+        QVERIFY(! popup->isVisible());
+        QVERIFY(! popup->overlayItem());
+        QVERIFY(! popup->surfaceItem()->window());
+        QVERIFY(! popup->surfaceItem()->parentItem());
 
         QQuickWindow replacement;
         host.setParentItem(replacement.contentItem());
@@ -309,7 +310,7 @@ private Q_SLOTS:
         QQuickWindow window;
         window.resize(640, 480);
         QQuickItem host(window.contentItem());
-        host.setPosition({40, 60});
+        host.setPosition({ 40, 60 });
         QQmlComponent component(&m_engine);
         component.setData(R"(
             import QtQuick
@@ -319,7 +320,8 @@ private Q_SLOTS:
                 x: 20; y: 30
                 collisionPolicy: MD.PopupBase.Unrestricted
             }
-        )", QUrl("qrc:/tests/popup-coordinates.qml"));
+        )",
+                          QUrl("qrc:/tests/popup-coordinates.qml"));
         std::unique_ptr<qml_material::Popup> popup(
             qobject_cast<qml_material::Popup*>(component.create()));
         QVERIFY2(popup, qPrintable(component.errorString()));
@@ -330,7 +332,7 @@ private Q_SLOTS:
         QCOMPARE(popup->surfaceItem()->position(), QPointF(20, 30));
         QVERIFY(popup->isOpened());
         QCOMPARE(popup->parentItem(), &host);
-        host.setPosition({80, 100});
+        host.setPosition({ 80, 100 });
         QCOMPARE(popup->surfaceItem()->position(), QPointF(20, 30));
         popup->setX(-25);
         QCOMPARE(popup->surfaceItem()->x(), -25);
@@ -339,30 +341,34 @@ private Q_SLOTS:
         popup->setCollisionPolicy(qml_material::Popup::Unrestricted);
 
         QQuickItem ancestor(window.contentItem());
-        ancestor.setPosition({100, 110});
+        ancestor.setPosition({ 100, 110 });
         auto reference = std::make_unique<QQuickItem>(&ancestor);
-        reference->setPosition({10, 15});
+        reference->setPosition({ 10, 15 });
         popup->setPositioningItem(reference.get());
-        QCOMPARE(popup->surfaceItem()->position(), reference->mapToItem(popup->overlayItem(), {-25, 30}));
+        QCOMPARE(popup->surfaceItem()->position(),
+                 reference->mapToItem(popup->overlayItem(), { -25, 30 }));
         ancestor.setX(200);
         ancestor.setRotation(30);
-        QCOMPARE(popup->surfaceItem()->position(), reference->mapToItem(popup->overlayItem(), {-25, 30}));
+        QCOMPARE(popup->surfaceItem()->position(),
+                 reference->mapToItem(popup->overlayItem(), { -25, 30 }));
         reference->setParentItem(&host);
-        QCOMPARE(popup->surfaceItem()->position(), reference->mapToItem(popup->overlayItem(), {-25, 30}));
+        QCOMPARE(popup->surfaceItem()->position(),
+                 reference->mapToItem(popup->overlayItem(), { -25, 30 }));
         QQuickWindow otherWindow;
-        const auto previous = popup->surfaceItem()->position();
+        const auto   previous = popup->surfaceItem()->position();
         reference->setParentItem(otherWindow.contentItem());
         QCOMPARE(popup->surfaceItem()->position(), previous);
         reference->setParentItem(&host);
-        QCOMPARE(popup->surfaceItem()->position(), reference->mapToItem(popup->overlayItem(), {-25, 30}));
+        QCOMPARE(popup->surfaceItem()->position(),
+                 reference->mapToItem(popup->overlayItem(), { -25, 30 }));
         reference.reset();
-        QVERIFY(!popup->positioningItem());
+        QVERIFY(! popup->positioningItem());
         QCOMPARE(popup->surfaceItem()->position(), QPointF(55, 130));
         popup->close();
         popup->open();
         QCOMPARE(popup->surfaceItem()->position(), QPointF(55, 130));
         host.setVisible(false);
-        QVERIFY(!popup->isVisible());
+        QVERIFY(! popup->isVisible());
     }
 
     void popupCoordinateAnimation() {
@@ -382,7 +388,8 @@ private Q_SLOTS:
                 Behavior on x { NumberAnimation { duration: 160 } }
                 Behavior on y { NumberAnimation { duration: 160 } }
             }
-        )", QUrl("qrc:/tests/popup-coordinate-animation.qml"));
+        )",
+                          QUrl("qrc:/tests/popup-coordinate-animation.qml"));
         std::unique_ptr<qml_material::Popup> popup(
             qobject_cast<qml_material::Popup*>(component.create()));
         QVERIFY2(popup, qPrintable(component.errorString()));
@@ -410,14 +417,15 @@ private Q_SLOTS:
         QQuickWindow window;
         window.resize(640, 480);
         QQuickItem host(window.contentItem());
-        host.setPosition({40, 60});
-        host.setSize({400, 300});
+        host.setPosition({ 40, 60 });
+        host.setSize({ 400, 300 });
         QQmlComponent component(&m_engine);
         component.setData(R"(
             import QtQuick
             import Qcm.Material as MD
             MD.BottomSheet { Item { width: 200; height: 100 } }
-        )", QUrl("qrc:/tests/bottom-sheet-coordinates.qml"));
+        )",
+                          QUrl("qrc:/tests/bottom-sheet-coordinates.qml"));
         std::unique_ptr<qml_material::Popup> popup(
             qobject_cast<qml_material::Popup*>(component.create()));
         QVERIFY2(popup, qPrintable(component.errorString()));
@@ -429,7 +437,7 @@ private Q_SLOTS:
         popup->setX(25);
         popup->setY(-20);
         QCOMPARE(popup->surfaceItem()->position(), modal ? QPointF(25, -20) : QPointF(65, 40));
-        host.setSize({500, 350});
+        host.setSize({ 500, 350 });
         QCOMPARE(popup->surfaceItem()->size(), modal ? QSizeF(640, 480) : QSizeF(500, 350));
     }
 
@@ -462,13 +470,14 @@ private Q_SLOTS:
                     enter: null; exit: null
                 }
             }
-        )", QUrl());
+        )",
+                          QUrl());
         std::unique_ptr<QObject> object(component.create());
         QVERIFY2(object, qPrintable(component.errorString()));
         auto* root = qobject_cast<QQuickItem*>(object.get());
         root->setParentItem(m_window.contentItem());
         auto* popup = root->findChild<qml_material::Popup*>("popup");
-        auto* tip = root->findChild<qml_material::Popup*>("tip");
+        auto* tip   = root->findChild<qml_material::Popup*>("tip");
         QVERIFY(popup && tip);
         if (releaseOutside) tip->setClosePolicy(qml_material::Popup::CloseOnReleaseOutside);
         popup->open();
@@ -480,7 +489,7 @@ private Q_SLOTS:
         QVERIFY(tip->isVisible());
         QTest::mouseRelease(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(40, 60));
         QCOMPARE(root->property("clicks").toInt(), 0);
-        QCOMPARE(tip->isVisible(), !releaseOutside);
+        QCOMPARE(tip->isVisible(), ! releaseOutside);
     }
 
     void popupPressReentry() {
@@ -513,20 +522,22 @@ private Q_SLOTS:
         QTest::addColumn<bool>("qt");
         QTest::addColumn<bool>("dim");
         QTest::addColumn<int>("delay");
-        for (bool qt : {false, true})
-            for (bool dim : {false, true})
-                for (int delay : {0, 250})
-                    QTest::newRow(qPrintable(QString("%1-dim%2-delay%3").arg(qt ? "qt" : "md").arg(dim).arg(delay)))
+        for (bool qt : { false, true })
+            for (bool dim : { false, true })
+                for (int delay : { 0, 250 })
+                    QTest::newRow(qPrintable(
+                        QString("%1-dim%2-delay%3").arg(qt ? "qt" : "md").arg(dim).arg(delay)))
                         << qt << dim << delay;
     }
     void modalHover() {
-        if (QGuiApplication::platformName() == "offscreen" || QGuiApplication::platformName() == "minimal")
+        if (QGuiApplication::platformName() == "offscreen" ||
+            QGuiApplication::platformName() == "minimal")
             QSKIP("Requires window-system hover delivery");
         QFETCH(bool, qt);
         QFETCH(bool, dim);
         QFETCH(int, delay);
         QQmlComponent component(&m_engine);
-        QByteArray source = R"(
+        QByteArray    source = R"(
             import QtQuick
             import QtQuick.Controls as QC
             import Qcm.Material as MD
@@ -577,7 +588,7 @@ private Q_SLOTS:
         auto* root = qobject_cast<QQuickItem*>(object.get());
         root->setParentItem(m_window.contentItem());
         auto* button = root->findChild<QQuickItem*>("button");
-        auto* popup = root->findChild<QObject*>("popup");
+        auto* popup  = root->findChild<QObject*>("popup");
         QVERIFY(button && popup);
         m_window.show();
         QVERIFY(QTest::qWaitForWindowExposed(&m_window));
@@ -587,26 +598,27 @@ private Q_SLOTS:
         if (delay == 0) QTRY_VERIFY(root->property("tooltipVisible").toBool());
         QVERIFY(QMetaObject::invokeMethod(popup, "open"));
         QTest::qWait(500);
-        qInfo() << "hover after modal" << button->property("hovered") << "tooltip" << root->property("tooltipVisible");
+        qInfo() << "hover after modal" << button->property("hovered") << "tooltip"
+                << root->property("tooltipVisible");
         if (qt) {
             if (dim) {
-                QVERIFY(!button->property("hovered").toBool());
-                QVERIFY(!root->property("tooltipVisible").toBool());
+                QVERIFY(! button->property("hovered").toBool());
+                QVERIFY(! root->property("tooltipVisible").toBool());
             }
             QVERIFY(QMetaObject::invokeMethod(popup, "close"));
             m_window.hide();
             return;
         }
         // Qt's dim=false behavior is a reference observation, not our chosen contract.
-        if (!qt || dim) {
-            QTRY_VERIFY(!button->property("hovered").toBool());
-            QTRY_VERIFY(!root->property("tooltipVisible").toBool());
+        if (! qt || dim) {
+            QTRY_VERIFY(! button->property("hovered").toBool());
+            QTRY_VERIFY(! root->property("tooltipVisible").toBool());
             QTest::mouseMove(&m_window, QPoint(150, 50));
             QTest::qWait(50);
-            QVERIFY(!root->findChild<QObject*>("hoverArea")->property("containsMouse").toBool());
+            QVERIFY(! root->findChild<QObject*>("hoverArea")->property("containsMouse").toBool());
             QTest::mouseMove(&m_window, QPoint(210, 50));
             QTest::qWait(50);
-            QVERIFY(!root->findChild<QObject*>("hoverHandler")->property("hovered").toBool());
+            QVERIFY(! root->findChild<QObject*>("hoverHandler")->property("hovered").toBool());
         }
         auto* inner = root->findChild<QQuickItem*>("inner");
         QVERIFY(inner);
@@ -614,10 +626,10 @@ private Q_SLOTS:
         QTRY_VERIFY(inner->property("hovered").toBool());
         QTRY_VERIFY(root->property("innerTooltipVisible").toBool());
         QTest::mouseMove(&m_window, QPoint(50, 50));
-        if (!qt || dim) {
+        if (! qt || dim) {
             QTest::qWait(300);
-            QTRY_VERIFY(!button->property("hovered").toBool());
-            QTRY_VERIFY(!root->property("tooltipVisible").toBool());
+            QTRY_VERIFY(! button->property("hovered").toBool());
+            QTRY_VERIFY(! root->property("tooltipVisible").toBool());
         }
         QVERIFY(QMetaObject::invokeMethod(popup, "close"));
         QTRY_VERIFY(button->property("hovered").toBool());
@@ -626,11 +638,11 @@ private Q_SLOTS:
         QTest::qWait(300);
         QVERIFY(button->property("hovered").toBool());
         popup->setProperty("modal", true);
-        QTRY_VERIFY(!button->property("hovered").toBool());
+        QTRY_VERIFY(! button->property("hovered").toBool());
         popup->setProperty("deferredCompletion", true);
         QVERIFY(QMetaObject::invokeMethod(popup, "close"));
         QTest::qWait(100);
-        QVERIFY(!button->property("hovered").toBool());
+        QVERIFY(! button->property("hovered").toBool());
         QVERIFY(QMetaObject::invokeMethod(popup, "completeExit"));
         QTRY_VERIFY(button->property("hovered").toBool());
         m_window.hide();
@@ -816,12 +828,13 @@ private Q_SLOTS:
                     return "";
                 }
             }
-        )", QUrl("qrc:/tests/NativeControlExports.qml"));
+        )",
+                          QUrl("qrc:/tests/NativeControlExports.qml"));
         QVERIFY2(component.isReady(), qPrintable(component.errorString()));
         std::unique_ptr<QObject> host(component.create());
         QVERIFY(host);
-        auto* actions = host->findChild<qml_material::ActionGroup*>("actions");
-        auto* buttons = host->findChild<qml_material::ButtonGroup*>("buttons");
+        auto* actions   = host->findChild<qml_material::ActionGroup*>("actions");
+        auto* buttons   = host->findChild<qml_material::ButtonGroup*>("buttons");
         auto* separator = host->findChild<qml_material::ToolSeparator*>("separator");
         QVERIFY(actions && buttons && separator);
         QCOMPARE(actions->metaObject(), &qml_material::ActionGroup::staticMetaObject);

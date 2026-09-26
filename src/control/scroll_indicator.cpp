@@ -146,8 +146,7 @@ void ScrollIndicatorAttached::detach(Axis& axis) {
 }
 
 void ScrollIndicatorAttached::activate(Axis& axis, bool horizontal) {
-    if (axis.item && m_flickable)
-        axis.item->setMoving(m_viewport->moving(horizontal));
+    if (axis.item && m_flickable) axis.item->setMoving(m_viewport->moving(horizontal));
 }
 
 void ScrollIndicatorAttached::syncHorizontal() { sync(m_horizontal, true); }

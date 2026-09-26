@@ -26,9 +26,7 @@ State::State(QQuickItem* parent)
       m_state_group(nullptr) {
     connect(this, &State::targetChanged, this, &State::updateCtx, Qt::DirectConnection);
 }
-State::~State() {
-    delete m_state_group;
-}
+State::~State() { delete m_state_group; }
 
 auto State::datas() -> QQmlListProperty<QObject> { return { this, &m_datas }; }
 

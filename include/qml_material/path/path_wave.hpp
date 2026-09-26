@@ -18,8 +18,7 @@ class QML_MATERIAL_API PathWave : public QQuickCurve {
     Q_PROPERTY(
         qreal waveLength READ wave_length WRITE set_wave_length NOTIFY waveLengthChanged FINAL)
     Q_PROPERTY(qreal phase READ phase WRITE set_phase NOTIFY phaseChanged FINAL)
-    Q_PROPERTY(
-        qreal smoothness READ smoothness WRITE set_smoothness NOTIFY smoothnessChanged FINAL)
+    Q_PROPERTY(qreal smoothness READ smoothness WRITE set_smoothness NOTIFY smoothnessChanged FINAL)
     QML_NAMED_ELEMENT(PathWave)
     QML_ADDED_IN_VERSION(2, 0)
 

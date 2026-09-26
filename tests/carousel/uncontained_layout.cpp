@@ -10,8 +10,7 @@ using namespace qml_material;
 namespace
 {
 
-auto makeUncontainedInput(qreal scroll) -> CarouselLayoutInput
-{
+auto makeUncontainedInput(qreal scroll) -> CarouselLayoutInput {
     CarouselLayoutInput in;
     in.layout                = CarouselLayoutId::Uncontained;
     in.viewport_size         = 480;
@@ -24,8 +23,7 @@ auto makeUncontainedInput(qreal scroll) -> CarouselLayoutInput
     return in;
 }
 
-auto makeMultiAspectInput(qreal scroll) -> CarouselLayoutInput
-{
+auto makeMultiAspectInput(qreal scroll) -> CarouselLayoutInput {
     CarouselLayoutInput in;
     in.layout                = CarouselLayoutId::UncontainedMultiAspect;
     in.viewport_size         = 480;
@@ -38,27 +36,21 @@ auto makeMultiAspectInput(qreal scroll) -> CarouselLayoutInput
     return in;
 }
 
-auto fail(const char* msg) -> int
-{
+auto fail(const char* msg) -> int {
     std::fprintf(stderr, "FAIL: %s\n", msg);
     return EXIT_FAILURE;
 }
 
-auto nearEqual(qreal a, qreal b, qreal eps = 1.0) -> bool
-{
-    return std::fabs(a - b) <= eps;
-}
+auto nearEqual(qreal a, qreal b, qreal eps = 1.0) -> bool { return std::fabs(a - b) <= eps; }
 
 } // namespace
 
-int run_uncontained_layout(int argc, char** argv)
-{
-
+int run_uncontained_layout(int argc, char** argv) {
     const auto uncontained = CarouselStrategy::compute(makeUncontainedInput(0));
     if (uncontained.items.isEmpty()) {
         return fail("uncontained should layout visible items");
     }
-    if (!nearEqual(uncontained.items.first().size, 180, 2.0)) {
+    if (! nearEqual(uncontained.items.first().size, 180, 2.0)) {
         return fail("uncontained item size should match item_extent");
     }
     if (uncontained.snap_offsets.size() < 2) {
@@ -69,15 +61,15 @@ int run_uncontained_layout(int argc, char** argv)
     if (multi_aspect.items.size() < 2) {
         return fail("multi-aspect should layout multiple items");
     }
-    qreal prev = -1;
-    bool varied = false;
+    qreal prev   = -1;
+    bool  varied = false;
     for (const auto& g : multi_aspect.items) {
-        if (prev > 0 && !nearEqual(g.size, prev, 0.5)) {
+        if (prev > 0 && ! nearEqual(g.size, prev, 0.5)) {
             varied = true;
         }
         prev = g.size;
     }
-    if (!varied) {
+    if (! varied) {
         return fail("multi-aspect items should have different widths");
     }
 

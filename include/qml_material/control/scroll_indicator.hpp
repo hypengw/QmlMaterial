@@ -93,18 +93,18 @@ private:
         bool                           syncing     = false;
         bool                           syncPending = false;
     };
-    void                      attach(Axis&, ScrollIndicator*, bool horizontal);
-    void                      detach(Axis&);
-    void                      layout(Axis&, bool horizontal, bool force = false);
-    void                      activate(Axis&, bool horizontal);
-    void                      sync(Axis&, bool horizontal);
-    void                      scroll(Axis&, bool horizontal);
-    Q_SLOT void               syncHorizontal();
-    Q_SLOT void               syncVertical();
+    void                            attach(Axis&, ScrollIndicator*, bool horizontal);
+    void                            detach(Axis&);
+    void                            layout(Axis&, bool horizontal, bool force = false);
+    void                            activate(Axis&, bool horizontal);
+    void                            sync(Axis&, bool horizontal);
+    void                            scroll(Axis&, bool horizontal);
+    Q_SLOT void                     syncHorizontal();
+    Q_SLOT void                     syncVertical();
     std::unique_ptr<ScrollViewport> m_viewport;
-    QPointer<QQuickItem> m_flickable;
-    bool                      m_bidirectional = false;
-    Axis                      m_horizontal, m_vertical;
+    QPointer<QQuickItem>            m_flickable;
+    bool                            m_bidirectional = false;
+    Axis                            m_horizontal, m_vertical;
 };
 
 } // namespace qml_material

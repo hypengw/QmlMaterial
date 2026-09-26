@@ -79,14 +79,13 @@ public:
 
     // Positive-area intersections with the half-open viewport, excluding spacing.
     Range visibleRange(double begin, double end) const {
-        if (! std::isfinite(begin) || ! std::isfinite(end) || begin >= end ||
-            m_positive.empty())
+        if (! std::isfinite(begin) || ! std::isfinite(end) || begin >= end || m_positive.empty())
             return {};
         int first = indexAt(begin);
         if (offset(first) + extent(first) <= begin) ++first;
         auto it = m_positive.lower_bound(first);
         if (it == m_positive.end() || offset(*it) >= end) return {};
-        first = *it;
+        first    = *it;
         int last = indexAt(end);
         if (offset(last) >= end) --last;
         auto past = m_positive.upper_bound(last);

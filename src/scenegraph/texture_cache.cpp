@@ -23,8 +23,8 @@ constexpr float kMinSigma    = 0.5f;
 constexpr float kMinRadius   = 0.5f;
 
 struct CornerKey {
-    int sigma_q;
-    int radius_q;
+    int  sigma_q;
+    int  radius_q;
     bool operator==(const CornerKey&) const = default;
 };
 
@@ -33,9 +33,9 @@ inline std::size_t qHash(const CornerKey& k, std::size_t seed = 0) noexcept {
 }
 
 struct WindowEntry {
-    QSGTexture*                          profile = nullptr;
-    QSGTexture*                          fadeoff = nullptr;
-    QHash<CornerKey, QSGTexture*>        corners;
+    QSGTexture*                   profile = nullptr;
+    QSGTexture*                   fadeoff = nullptr;
+    QHash<CornerKey, QSGTexture*> corners;
 };
 
 QMutex& cache_mutex() {
@@ -72,12 +72,17 @@ WindowEntry* ensure_entry_locked(QQuickWindow* win) {
     // window hide, or window destruction). Emitted on the render thread under
     // the threaded loop — DirectConnection keeps the QSGTexture deletes on the
     // owning render thread. Qt guarantees this fires before ~QQuickWindow.
-    QObject::connect(win, &QQuickWindow::sceneGraphInvalidated, win, [win]() {
-        QMutexLocker lk(&cache_mutex());
-        auto&        map = cache_map();
-        auto         it  = map.find(win);
-        if (it != map.end()) release_textures_locked(*it);
-    }, Qt::DirectConnection);
+    QObject::connect(
+        win,
+        &QQuickWindow::sceneGraphInvalidated,
+        win,
+        [win]() {
+            QMutexLocker lk(&cache_mutex());
+            auto&        map = cache_map();
+            auto         it  = map.find(win);
+            if (it != map.end()) release_textures_locked(*it);
+        },
+        Qt::DirectConnection);
 
     // Drop the bookkeeping entry on the GUI thread after destruction. By the
     // time this fires, sceneGraphInvalidated has already cleared the textures
@@ -111,7 +116,7 @@ QSGTexture* build_fadeoff_texture(QQuickWindow* win) {
     uchar* row = image.scanLine(0);
     for (int i = 0; i < kFadeoffSize; ++i) {
         const float d = math::k_scalar_one - i / float(kFadeoffSize - 1);
-        row[i] = math::round_to_int((std::exp(-4.0f * d * d) - 0.018f) * 255.0f);
+        row[i]        = math::round_to_int((std::exp(-4.0f * d * d) - 0.018f) * 255.0f);
     }
     return win->createTextureFromImage(image);
 }
@@ -156,7 +161,7 @@ QSGTexture* shared_rrect_corner_blur_texture(QQuickWindow* win, float sigma, flo
         .radius_q = static_cast<int>(std::round(radius * 2.0f)),
     };
     QMutexLocker lk(&cache_mutex());
-    auto*        e = ensure_entry_locked(win);
+    auto*        e  = ensure_entry_locked(win);
     auto         it = e->corners.find(key);
     if (it != e->corners.end()) return *it;
     QSGTexture* t = build_corner_texture(win, sigma, radius);

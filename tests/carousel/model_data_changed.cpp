@@ -15,18 +15,13 @@ using namespace qml_material;
 namespace
 {
 
-struct TestCarouselView : CarouselView
-{
+struct TestCarouselView : CarouselView {
     using CarouselView::CarouselView;
 
-    void complete()
-    {
-        componentComplete();
-    }
+    void complete() { componentComplete(); }
 };
 
-class TestListModel : public QAbstractListModel
-{
+class TestListModel : public QAbstractListModel {
     Q_OBJECT
 
 public:
@@ -35,20 +30,16 @@ public:
         TitleRole = Qt::UserRole + 1,
     };
 
-    explicit TestListModel(QObject* parent = nullptr)
-        : QAbstractListModel(parent)
-    {
+    explicit TestListModel(QObject* parent = nullptr): QAbstractListModel(parent) {
         m_titles = { QStringLiteral("Alpha"), QStringLiteral("Beta"), QStringLiteral("Gamma") };
     }
 
-    int rowCount(const QModelIndex& parent = QModelIndex()) const override
-    {
+    int rowCount(const QModelIndex& parent = QModelIndex()) const override {
         return parent.isValid() ? 0 : m_titles.size();
     }
 
-    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override
-    {
-        if (!index.isValid() || index.row() < 0 || index.row() >= m_titles.size()) {
+    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override {
+        if (! index.isValid() || index.row() < 0 || index.row() >= m_titles.size()) {
             return {};
         }
         if (role == TitleRole) {
@@ -57,9 +48,9 @@ public:
         return {};
     }
 
-    bool setData(const QModelIndex& index, const QVariant& value, int role = Qt::EditRole) override
-    {
-        if (!index.isValid() || role != TitleRole) {
+    bool setData(const QModelIndex& index, const QVariant& value,
+                 int role = Qt::EditRole) override {
+        if (! index.isValid() || role != TitleRole) {
             return false;
         }
         m_titles[index.row()] = value.toString();
@@ -67,37 +58,29 @@ public:
         return true;
     }
 
-    QHash<int, QByteArray> roleNames() const override
-    {
-        return { { TitleRole, "title" } };
-    }
+    QHash<int, QByteArray> roleNames() const override { return { { TitleRole, "title" } }; }
 
-    void setTitle(int row, const QString& title)
-    {
-        setData(index(row, 0), title, TitleRole);
-    }
+    void setTitle(int row, const QString& title) { setData(index(row, 0), title, TitleRole); }
 
 private:
     QStringList m_titles;
 };
 
-auto fail(const char* msg) -> int
-{
+auto fail(const char* msg) -> int {
     std::fprintf(stderr, "FAIL: %s\n", msg);
     return EXIT_FAILURE;
 }
 
-auto findDelegateItem(CarouselView* view, int index) -> QQuickItem*
-{
+auto findDelegateItem(CarouselView* view, int index) -> QQuickItem* {
     auto* flick = view ? view->flickable() : nullptr;
-    if (!flick) {
+    if (! flick) {
         return nullptr;
     }
     for (QQuickItem* content_item : flick->childItems()) {
         for (QQuickItem* row_content : content_item->childItems()) {
             for (QQuickItem* item : row_content->childItems()) {
                 const QVariant index_value = item->property("_carouselIndex");
-                if (!index_value.isValid() || index_value.toInt() != index) {
+                if (! index_value.isValid() || index_value.toInt() != index) {
                     continue;
                 }
                 return item;
@@ -109,10 +92,8 @@ auto findDelegateItem(CarouselView* view, int index) -> QQuickItem*
 
 } // namespace
 
-int run_model_data_changed(int argc, char** argv)
-{
-
-    QQmlEngine engine;
+int run_model_data_changed(int argc, char** argv) {
+    QQmlEngine   engine;
     QQuickWindow window;
     window.resize(480, 196);
 
@@ -123,28 +104,26 @@ int run_model_data_changed(int argc, char** argv)
         return EXIT_FAILURE;
     }
     auto* root = qobject_cast<QQuickItem*>(root_component.create());
-    if (!root) {
+    if (! root) {
         return fail("expected engine root item");
     }
     root->setParentItem(window.contentItem());
     QQmlEngine::setObjectOwnership(root, QQmlEngine::CppOwnership);
 
     QQmlComponent delegate_component(&engine);
-    delegate_component.setData(
-        QByteArrayLiteral(
-            "import QtQuick\n"
-            "Item {\n"
-            "    property var model\n"
-            "    property string title: \"\"\n"
-            "}\n"),
-        QUrl());
+    delegate_component.setData(QByteArrayLiteral("import QtQuick\n"
+                                                 "Item {\n"
+                                                 "    property var model\n"
+                                                 "    property string title: \"\"\n"
+                                                 "}\n"),
+                               QUrl());
     if (delegate_component.isError()) {
-        std::fprintf(stderr, "FAIL: delegate QML: %s\n",
-                     qPrintable(delegate_component.errorString()));
+        std::fprintf(
+            stderr, "FAIL: delegate QML: %s\n", qPrintable(delegate_component.errorString()));
         return EXIT_FAILURE;
     }
 
-    TestListModel model;
+    TestListModel    model;
     TestCarouselView view;
     view.setParentItem(root);
     view.setWidth(480);
@@ -163,19 +142,21 @@ int run_model_data_changed(int argc, char** argv)
     }
 
     auto* delegate = findDelegateItem(&view, 0);
-    if (!delegate) {
+    if (! delegate) {
         return fail("expected delegate item at index 0");
     }
 
     if (delegate->property("title").toString() != QStringLiteral("Alpha")) {
-        std::fprintf(stderr, "FAIL: initial title=%s expected=Alpha\n",
+        std::fprintf(stderr,
+                     "FAIL: initial title=%s expected=Alpha\n",
                      qPrintable(delegate->property("title").toString()));
         return EXIT_FAILURE;
     }
 
     model.setTitle(0, QStringLiteral("Updated"));
     if (delegate->property("title").toString() != QStringLiteral("Updated")) {
-        std::fprintf(stderr, "FAIL: dataChanged title=%s expected=Updated\n",
+        std::fprintf(stderr,
+                     "FAIL: dataChanged title=%s expected=Updated\n",
                      qPrintable(delegate->property("title").toString()));
         return EXIT_FAILURE;
     }

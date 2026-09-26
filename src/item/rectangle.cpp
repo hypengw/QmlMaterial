@@ -27,7 +27,7 @@ public:
         }
         if (rect == m_last_rect && color == m_last_color && radius == m_last_radius) return;
 
-        QVector2D size = { (float)rect.size().width(), (float)rect.size().height() };
+        QVector2D size     = { (float)rect.size().width(), (float)rect.size().height() };
         auto      vertices = static_cast<RectangleVertex*>(geometry()->vertexData());
         update_rectangle_geometry(vertices, size, color, radius);
 

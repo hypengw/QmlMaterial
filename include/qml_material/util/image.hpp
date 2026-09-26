@@ -33,4 +33,4 @@ struct CornersMaskRef {
     friend inline constexpr bool operator==(CornersMaskRef a, CornersMaskRef b) noexcept = default;
 };
 
-} // namespace qml_image
+} // namespace qml_material

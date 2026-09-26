@@ -606,9 +606,7 @@ void Control::updateEnvironment(bool propagate) {
             ? m_requested_layout_direction
             : (parent ? parent->layoutDirection() : QGuiApplication::layoutDirection());
     const bool newHoverEnabled =
-        m_requested_hover_enabled
-            ? *m_requested_hover_enabled
-            : utils::inheritedHoverEnabled(this);
+        m_requested_hover_enabled ? *m_requested_hover_enabled : utils::inheritedHoverEnabled(this);
 
     bool changed = false;
     if (m_font != newFont || m_font.resolveMask() != newFont.resolveMask()) {

@@ -42,13 +42,13 @@ class QML_MATERIAL_API FileDialog : public QObject {
     QML_NAMED_ELEMENT(FileDialog)
 
     Q_PROPERTY(QString title READ title WRITE setTitle NOTIFY titleChanged FINAL)
-    Q_PROPERTY(QString acceptLabel READ acceptLabel WRITE setAcceptLabel NOTIFY acceptLabelChanged
-                   FINAL)
+    Q_PROPERTY(
+        QString acceptLabel READ acceptLabel WRITE setAcceptLabel NOTIFY acceptLabelChanged FINAL)
     Q_PROPERTY(FileMode fileMode READ fileMode WRITE setFileMode NOTIFY fileModeChanged FINAL)
     Q_PROPERTY(QStringList nameFilters READ nameFilters WRITE setNameFilters NOTIFY
                    nameFiltersChanged FINAL)
-    Q_PROPERTY(FileDialogSelectedNameFilter* selectedNameFilter READ selectedNameFilter CONSTANT
-                   FINAL)
+    Q_PROPERTY(
+        FileDialogSelectedNameFilter* selectedNameFilter READ selectedNameFilter CONSTANT FINAL)
     Q_PROPERTY(QUrl currentFolder READ currentFolder WRITE setCurrentFolder NOTIFY
                    currentFolderChanged FINAL)
     Q_PROPERTY(QString defaultSuffix READ defaultSuffix WRITE setDefaultSuffix NOTIFY
@@ -61,7 +61,8 @@ class QML_MATERIAL_API FileDialog : public QObject {
         QWindow* parentWindow READ parentWindow WRITE setParentWindow NOTIFY parentWindowChanged)
 
 public:
-    enum FileMode {
+    enum FileMode
+    {
         OpenFile  = 0,
         OpenFiles = 1,
         SaveFile  = 2,
@@ -71,23 +72,23 @@ public:
     explicit FileDialog(QObject* parent = nullptr);
     ~FileDialog() override;
 
-    QString  title() const;
-    void     setTitle(const QString&);
-    QString  acceptLabel() const;
-    void     setAcceptLabel(const QString&);
-    FileMode fileMode() const;
-    void     setFileMode(FileMode);
-    QStringList nameFilters() const;
-    void        setNameFilters(const QStringList&);
+    QString                       title() const;
+    void                          setTitle(const QString&);
+    QString                       acceptLabel() const;
+    void                          setAcceptLabel(const QString&);
+    FileMode                      fileMode() const;
+    void                          setFileMode(FileMode);
+    QStringList                   nameFilters() const;
+    void                          setNameFilters(const QStringList&);
     FileDialogSelectedNameFilter* selectedNameFilter() const;
-    QUrl     currentFolder() const;
-    void     setCurrentFolder(const QUrl&);
-    QString  defaultSuffix() const;
-    void     setDefaultSuffix(const QString&);
-    QUrl         selectedFile() const;
-    QList<QUrl>  selectedFiles() const;
-    QWindow* parentWindow() const;
-    void     setParentWindow(QWindow*);
+    QUrl                          currentFolder() const;
+    void                          setCurrentFolder(const QUrl&);
+    QString                       defaultSuffix() const;
+    void                          setDefaultSuffix(const QString&);
+    QUrl                          selectedFile() const;
+    QList<QUrl>                   selectedFiles() const;
+    QWindow*                      parentWindow() const;
+    void                          setParentWindow(QWindow*);
 
     Q_INVOKABLE void open();
     Q_INVOKABLE void close();
@@ -124,8 +125,8 @@ class QML_MATERIAL_API FolderDialog : public QObject {
     QML_NAMED_ELEMENT(FolderDialog)
 
     Q_PROPERTY(QString title READ title WRITE setTitle NOTIFY titleChanged FINAL)
-    Q_PROPERTY(QString acceptLabel READ acceptLabel WRITE setAcceptLabel NOTIFY acceptLabelChanged
-                   FINAL)
+    Q_PROPERTY(
+        QString acceptLabel READ acceptLabel WRITE setAcceptLabel NOTIFY acceptLabelChanged FINAL)
     Q_PROPERTY(QUrl currentFolder READ currentFolder WRITE setCurrentFolder NOTIFY
                    currentFolderChanged FINAL)
     Q_PROPERTY(QUrl selectedFolder READ selectedFolder NOTIFY selectedFolderChanged FINAL)
@@ -136,13 +137,13 @@ public:
     explicit FolderDialog(QObject* parent = nullptr);
     ~FolderDialog() override;
 
-    QString title() const;
-    void    setTitle(const QString&);
-    QString acceptLabel() const;
-    void    setAcceptLabel(const QString&);
-    QUrl    currentFolder() const;
-    void    setCurrentFolder(const QUrl&);
-    QUrl    selectedFolder() const;
+    QString  title() const;
+    void     setTitle(const QString&);
+    QString  acceptLabel() const;
+    void     setAcceptLabel(const QString&);
+    QUrl     currentFolder() const;
+    void     setCurrentFolder(const QUrl&);
+    QUrl     selectedFolder() const;
     QWindow* parentWindow() const;
     void     setParentWindow(QWindow*);
 

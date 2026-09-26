@@ -14,7 +14,8 @@ class Rectangle : public QQuickItem {
 
     Q_PROPERTY(qreal radius READ radius WRITE setRadius NOTIFY radiusChanged FINAL)
     Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY colorChanged FINAL)
-    Q_PROPERTY(qml_material::CornersGroup corners READ corners WRITE setCorners NOTIFY cornersChanged FINAL)
+    Q_PROPERTY(qml_material::CornersGroup corners READ corners WRITE setCorners NOTIFY
+                   cornersChanged FINAL)
 public:
     Rectangle(QQuickItem* parent = nullptr);
     ~Rectangle() override;

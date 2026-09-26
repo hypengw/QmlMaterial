@@ -58,16 +58,15 @@ private slots:
     void visibleRanges() {
         LinearLayout layout;
         std::mt19937 random(71);
-        for (double spacing : {0.0, 5.0}) {
+        for (double spacing : { 0.0, 5.0 }) {
             QVERIFY(layout.reset(40, 0, spacing));
             for (int i = 0; i < layout.count(); ++i)
                 QVERIFY(layout.setExtent(i, random() % 3 == 0 ? 0 : random() % 30));
             for (double begin = -10; begin < layout.totalExtent() + 10; begin += 1) {
-                for (double size : {0.0, 1.0, 20.0, 100.0}) {
+                for (double size : { 0.0, 1.0, 20.0, 100.0 }) {
                     int first = -1, last = -1;
                     for (int i = 0; i < layout.count(); ++i) {
-                        if (size > 0 && layout.extent(i) > 0 &&
-                            layout.offset(i) < begin + size &&
+                        if (size > 0 && layout.extent(i) > 0 && layout.offset(i) < begin + size &&
                             layout.offset(i) + layout.extent(i) > begin) {
                             if (first < 0) first = i;
                             last = i;

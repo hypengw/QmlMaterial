@@ -299,7 +299,7 @@ private Q_SLOTS:
         QCOMPARE(footer->width(), 472.0);
         view->setProperty("contentWidth", 800);
         settle(root);
-        for (const auto contentX : {-4, 0, 12}) {
+        for (const auto contentX : { -4, 0, 12 }) {
             view->setProperty("contentX", contentX);
             QCOMPARE(view->property("contentX").toReal(), qreal(contentX));
             QVariant insets;
@@ -382,7 +382,7 @@ private Q_SLOTS:
 };
 
 int run_page_layout(int argc, char** argv) {
-    PageLayoutTest  test;
+    PageLayoutTest test;
     return QTest::qExec(&test, argc, argv);
 }
 

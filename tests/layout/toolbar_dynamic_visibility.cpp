@@ -98,17 +98,29 @@ int run_toolbar_dynamic_visibility(int argc, char** argv) {
     }
 
     root->setProperty("maxShowActionNum", 1);
-    if (! waitFor([root]() { return root->property("hiddenCount").toInt() == 2; }, window)) {
+    if (! waitFor(
+            [root]() {
+                return root->property("hiddenCount").toInt() == 2;
+            },
+            window)) {
         delete root;
         return fail("changing maxShowActionNum did not fold actions");
     }
     root->setProperty("maxShowActionNum", 0);
-    if (! waitFor([root]() { return root->property("hiddenCount").toInt() == 3; }, window)) {
+    if (! waitFor(
+            [root]() {
+                return root->property("hiddenCount").toInt() == 3;
+            },
+            window)) {
         delete root;
         return fail("zero maxShowActionNum did not fold all actions");
     }
     root->setProperty("maxShowActionNum", 3);
-    if (! waitFor([root]() { return root->property("hiddenCount").toInt() == 0; }, window)) {
+    if (! waitFor(
+            [root]() {
+                return root->property("hiddenCount").toInt() == 0;
+            },
+            window)) {
         delete root;
         return fail("restoring maxShowActionNum did not restore actions");
     }

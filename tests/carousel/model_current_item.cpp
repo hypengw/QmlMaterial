@@ -12,35 +12,29 @@ using namespace qml_material;
 namespace
 {
 
-class StringModel : public QAbstractListModel
-{
+class StringModel : public QAbstractListModel {
 public:
-    int rowCount(const QModelIndex& parent = {}) const override
-    {
+    int rowCount(const QModelIndex& parent = {}) const override {
         return parent.isValid() ? 0 : m_values.size();
     }
 
-    QVariant data(const QModelIndex& index, int role) const override
-    {
+    QVariant data(const QModelIndex& index, int role) const override {
         return index.isValid() && role == Qt::DisplayRole ? m_values.at(index.row()) : QVariant {};
     }
 
-    void prepend(QString value)
-    {
+    void prepend(QString value) {
         beginInsertRows({}, 0, 0);
         m_values.prepend(std::move(value));
         endInsertRows();
     }
 
-    void moveToFront(int row)
-    {
+    void moveToFront(int row) {
         beginMoveRows({}, row, row, {}, 0);
         m_values.move(row, 0);
         endMoveRows();
     }
 
-    void remove(int row)
-    {
+    void remove(int row) {
         beginRemoveRows({}, row, row);
         m_values.removeAt(row);
         endRemoveRows();
@@ -52,17 +46,14 @@ private:
     QStringList m_values { QStringLiteral("a"), QStringLiteral("b"), QStringLiteral("c") };
 };
 
-auto fail(const char* message) -> int
-{
+auto fail(const char* message) -> int {
     std::fprintf(stderr, "FAIL: %s\n", message);
     return EXIT_FAILURE;
 }
 
 } // namespace
 
-int run_model_current_item(int argc, char** argv)
-{
-
+int run_model_current_item(int argc, char** argv) {
     StringModel  model;
     CarouselView view;
     view.setModel(QVariant::fromValue<QObject*>(&model));

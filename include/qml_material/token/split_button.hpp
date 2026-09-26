@@ -13,7 +13,7 @@ struct SplitButtonSizeItem {
     Q_GADGET
     QML_ELEMENT
     QML_VALUE_TYPE(split_button_size_item)
-    
+
     /// Split button container height (dp)
     Q_PROPERTY(qreal container_height MEMBER container_height CONSTANT FINAL)
     /// Space between leading and trailing buttons (dp)
@@ -23,21 +23,26 @@ struct SplitButtonSizeItem {
     /// Outer corner radius (dp)
     Q_PROPERTY(qreal outer_corner_size MEMBER outer_corner_size CONSTANT FINAL)
     /// Leading space of leading button (dp)
-    Q_PROPERTY(qreal leading_button_leading_space MEMBER leading_button_leading_space CONSTANT FINAL)
+    Q_PROPERTY(
+        qreal leading_button_leading_space MEMBER leading_button_leading_space CONSTANT FINAL)
     /// Trailing space of leading button (dp)
-    Q_PROPERTY(qreal leading_button_trailing_space MEMBER leading_button_trailing_space CONSTANT FINAL)
+    Q_PROPERTY(
+        qreal leading_button_trailing_space MEMBER leading_button_trailing_space CONSTANT FINAL)
     /// Icon size for trailing button (dp)
     Q_PROPERTY(qreal trailing_button_icon_size MEMBER trailing_button_icon_size CONSTANT FINAL)
     /// Leading space of trailing button (dp)
-    Q_PROPERTY(qreal trailing_button_leading_space MEMBER trailing_button_leading_space CONSTANT FINAL)
+    Q_PROPERTY(
+        qreal trailing_button_leading_space MEMBER trailing_button_leading_space CONSTANT FINAL)
     /// Trailing space of trailing button (dp)
-    Q_PROPERTY(qreal trailing_button_trailing_space MEMBER trailing_button_trailing_space CONSTANT FINAL)
+    Q_PROPERTY(
+        qreal trailing_button_trailing_space MEMBER trailing_button_trailing_space CONSTANT FINAL)
     /// Inner corner radius when hovered (dp)
     Q_PROPERTY(qreal inner_corner_hovered_size MEMBER inner_corner_hovered_size CONSTANT FINAL)
     /// Inner corner radius when pressed (dp)
     Q_PROPERTY(qreal inner_corner_pressed_size MEMBER inner_corner_pressed_size CONSTANT FINAL)
     /// Inner corner radius for trailing button when selected (dp)
-    Q_PROPERTY(qreal trailing_button_inner_corner_selected_size MEMBER trailing_button_inner_corner_selected_size CONSTANT FINAL)
+    Q_PROPERTY(qreal trailing_button_inner_corner_selected_size MEMBER
+                   trailing_button_inner_corner_selected_size CONSTANT FINAL)
 
 public:
     qreal container_height;
@@ -61,7 +66,7 @@ struct SplitButtonSize {
     Q_GADGET
     QML_ELEMENT
     QML_VALUE_TYPE(split_button_size)
-    
+
     /// Size tokens for extra small (XS) split buttons
     Q_PROPERTY(qml_material::token::SplitButtonSizeItem xsmall MEMBER xsmall CONSTANT FINAL)
     /// Size tokens for small (S) split buttons

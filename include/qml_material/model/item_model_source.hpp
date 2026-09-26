@@ -25,11 +25,11 @@ public:
     void                setRoles(const QStringList&);
     Q_INVOKABLE void    requestMore() override;
     // QAbstractItemModel has no notification for canFetchMore changes without row changes.
-    Q_INVOKABLE void    notifyFetchStateChanged();
-    Q_SIGNAL void       modelChanged();
-    Q_SIGNAL void       keyRoleChanged();
-    Q_SIGNAL void       typeRoleChanged();
-    Q_SIGNAL void       rolesChanged();
+    Q_INVOKABLE void notifyFetchStateChanged();
+    Q_SIGNAL void    modelChanged();
+    Q_SIGNAL void    keyRoleChanged();
+    Q_SIGNAL void    typeRoleChanged();
+    Q_SIGNAL void    rolesChanged();
 
 private:
     void                           update(QVector<ItemChange> changes = {}, bool reset = true);

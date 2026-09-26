@@ -10,9 +10,7 @@
 namespace qml_material::sg
 {
 
-ShadowMaterial::ShadowMaterial() {
-    setFlag(QSGMaterial::Blending, true);
-}
+ShadowMaterial::ShadowMaterial() { setFlag(QSGMaterial::Blending, true); }
 
 QSGMaterialShader* ShadowMaterial::createShader(QSGRendererInterface::RenderMode) const {
     return new ShadowShader {};

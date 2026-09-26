@@ -238,8 +238,8 @@ void LazyList::updatePolish() {
     const auto current    = [&] {
         return guard && state->generation == generation;
     };
-    const bool limited = state->limitedGeneration == generation &&
-                         state->limitedOffset == contentY();
+    const bool limited =
+        state->limitedGeneration == generation && state->limitedOffset == contentY();
     if (limited) {
         bool progress = false;
         for (const auto& key : std::as_const(state->dirtyMeasurements)) {
@@ -293,13 +293,13 @@ void LazyList::updatePolish() {
     if (! snapshot) return;
     const auto visibleBeforeMeasurement =
         state->controller.layout().visibleRange(offset, offset + height());
-    const bool preserveAnchor = ! limited ||
-        (visibleBeforeMeasurement.first >= 0 &&
-         state->live.contains(snapshot->rows[visibleBeforeMeasurement.first].key));
+    const bool preserveAnchor =
+        ! limited || (visibleBeforeMeasurement.first >= 0 &&
+                      state->live.contains(snapshot->rows[visibleBeforeMeasurement.first].key));
     const auto dirty = std::exchange(state->dirtyMeasurements, {});
     for (const auto& key : dirty) {
-        const auto item = state->live.value(key);
-        const int index = snapshot->indexOfKey(key);
+        const auto item  = state->live.value(key);
+        const int  index = snapshot->indexOfKey(key);
         if (! item || index < 0 || item->width() != width()) continue;
         const auto row = state->recycler->row(item);
         if (! row || row->revision() != snapshot->revision) continue;
@@ -385,10 +385,13 @@ void LazyList::updatePolish() {
             }
             state->live.insert(key, item);
             state->connections[key] = {
-                connect(item, &QQuickItem::heightChanged, this, [this, key] {
-                    d->dirtyMeasurements.insert(key);
-                    scheduleLayout();
-                }),
+                connect(item,
+                        &QQuickItem::heightChanged,
+                        this,
+                        [this, key] {
+                            d->dirtyMeasurements.insert(key);
+                            scheduleLayout();
+                        }),
                 connect(item, &QObject::destroyed, this, &LazyList::scheduleLayout)
             };
             state->recycler->attach(item, contentItem());
@@ -401,7 +404,7 @@ void LazyList::updatePolish() {
             continue;
         }
         const qreal previousExtent = layout.extent(index);
-        const auto measured = state->controller.measure(index, item->height(), offset);
+        const auto  measured       = state->controller.measure(index, item->height(), offset);
         ++processed;
         if (measured.accepted) {
             changedExtent |= previousExtent != item->height();
@@ -434,8 +437,8 @@ void LazyList::updatePolish() {
     }
     const auto visible = width() > 0 ? layout.visibleRange(contentY(), contentY() + height())
                                      : LinearLayout::Range {};
-    state->first = visible.first;
-    state->last  = visible.last;
+    state->first       = visible.first;
+    state->last        = visible.last;
     if (state->zeroWork >= 256 || (processed == 256 && start + processed < layout.count() &&
                                    layout.offset(start + processed) < end)) {
         state->limitedGeneration = generation;

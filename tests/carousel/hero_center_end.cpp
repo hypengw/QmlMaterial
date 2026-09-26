@@ -12,8 +12,7 @@ namespace
 
 constexpr int kSizeLarge = 2;
 
-auto makeInput(int count, qreal scroll, qreal viewport = 480) -> CarouselLayoutInput
-{
+auto makeInput(int count, qreal scroll, qreal viewport = 480) -> CarouselLayoutInput {
     CarouselLayoutInput in;
     in.layout                = CarouselLayoutId::HeroCenter;
     in.viewport_size         = viewport;
@@ -30,8 +29,7 @@ auto makeInput(int count, qreal scroll, qreal viewport = 480) -> CarouselLayoutI
     return in;
 }
 
-auto findItem(const CarouselLayoutOutput& out, int index) -> const CarouselItemGeometry*
-{
+auto findItem(const CarouselLayoutOutput& out, int index) -> const CarouselItemGeometry* {
     for (const auto& g : out.items) {
         if (g.index == index) {
             return &g;
@@ -40,21 +38,18 @@ auto findItem(const CarouselLayoutOutput& out, int index) -> const CarouselItemG
     return nullptr;
 }
 
-auto fail(const char* msg) -> int
-{
+auto fail(const char* msg) -> int {
     std::fprintf(stderr, "FAIL: %s\n", msg);
     return EXIT_FAILURE;
 }
 
 } // namespace
 
-int run_hero_center_end(int argc, char** argv)
-{
-
+int run_hero_center_end(int argc, char** argv) {
     constexpr int   count    = 10;
     constexpr qreal viewport = 480;
 
-    CarouselLayoutInput in = makeInput(count, 0, viewport);
+    CarouselLayoutInput in   = makeInput(count, 0, viewport);
     const auto          base = CarouselStrategy::compute(in);
 
     if (base.snap_offsets.size() != count) {
@@ -63,21 +58,21 @@ int run_hero_center_end(int argc, char** argv)
 
     const auto* item0 = findItem(base, 0);
     const auto* item1 = findItem(base, 1);
-    if (!item0 || item0->size_class != kSizeLarge) {
+    if (! item0 || item0->size_class != kSizeLarge) {
         return fail("start layout item0");
     }
-    if (!item1 || item1->size >= 80.0) {
+    if (! item1 || item1->size >= 80.0) {
         return fail("start layout item1 peek");
     }
 
-    const qreal snap1 = base.snap_offsets.at(1);
-    in.scroll_offset  = snap1 * 0.5;
+    const qreal snap1   = base.snap_offsets.at(1);
+    in.scroll_offset    = snap1 * 0.5;
     const auto mid_lead = CarouselStrategy::compute(in);
     if (mid_lead.items.size() < 2) {
         return fail("leading transition visible");
     }
     const auto* grow = findItem(mid_lead, 1);
-    if (!grow || grow->size <= item1->size + 4.0) {
+    if (! grow || grow->size <= item1->size + 4.0) {
         return fail("leading transition grows focal");
     }
 
@@ -93,13 +88,13 @@ int run_hero_center_end(int argc, char** argv)
         return fail("last snap too far from penultimate");
     }
 
-    in.scroll_offset = penult_snap;
+    in.scroll_offset  = penult_snap;
     const auto penult = CarouselStrategy::compute(in);
     if (penult.leading_index != count - 2 || penult.items.size() < 2) {
         return fail("penultimate layout");
     }
 
-    in.scroll_offset = base.snap_offsets.at(1);
+    in.scroll_offset  = base.snap_offsets.at(1);
     const auto middle = CarouselStrategy::compute(in);
     if (middle.leading_index != 1 || middle.items.size() > 3) {
         return fail("middle layout");
@@ -111,13 +106,13 @@ int run_hero_center_end(int argc, char** argv)
     }
 
     in.scroll_offset = last_snap;
-    const auto end = CarouselStrategy::compute(in);
+    const auto end   = CarouselStrategy::compute(in);
     if (end.leading_index != count - 1) {
         return fail("end leading_index");
     }
 
     const auto* last_item = findItem(end, count - 1);
-    if (!last_item || last_item->size_class != kSizeLarge) {
+    if (! last_item || last_item->size_class != kSizeLarge) {
         return fail("last item not large at end");
     }
 

@@ -9,17 +9,13 @@ auto qcolor_to_argb(QColor c) -> uint32_t {
     return (uint32_t(c.alpha()) << 24) | (uint32_t(c.red()) << 16) | (uint32_t(c.green()) << 8) |
            uint32_t(c.blue());
 }
-auto argb_to_qcolor(uint32_t argb) -> QColor {
-    return QColor::fromRgba(argb);
-}
+auto argb_to_qcolor(uint32_t argb) -> QColor { return QColor::fromRgba(argb); }
 } // namespace
 
 namespace qml_material
 {
 
-Hct::Hct(QObject* parent): QObject(parent), m_color(Qt::black) {
-    rebuildFromColor(m_color);
-}
+Hct::Hct(QObject* parent): QObject(parent), m_color(Qt::black) { rebuildFromColor(m_color); }
 Hct::~Hct() = default;
 
 QColor Hct::color() const noexcept { return m_color; }
@@ -54,10 +50,10 @@ void Hct::rebuildFromHct() {
     m_blocked = true;
     material_color_utilities::Hct hct(m_hue, m_chroma, m_tone);
     // chroma may have been clamped
-    m_hue    = hct.get_hue();
-    m_chroma = hct.get_chroma();
-    m_tone   = hct.get_tone();
-    QColor c = argb_to_qcolor(hct.ToInt());
+    m_hue                = hct.get_hue();
+    m_chroma             = hct.get_chroma();
+    m_tone               = hct.get_tone();
+    QColor c             = argb_to_qcolor(hct.ToInt());
     bool   color_changed = c != m_color;
     m_color              = c;
     m_blocked            = false;

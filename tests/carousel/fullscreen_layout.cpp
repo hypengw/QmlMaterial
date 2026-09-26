@@ -10,10 +10,9 @@ using namespace qml_material;
 namespace
 {
 
-constexpr qreal kViewport       = 360;
+constexpr qreal kViewport = 360;
 
-auto makeInput(qreal scroll, int count = 10) -> CarouselLayoutInput
-{
+auto makeInput(qreal scroll, int count = 10) -> CarouselLayoutInput {
     CarouselLayoutInput in;
     in.layout                = CarouselLayoutId::FullScreen;
     in.viewport_size         = kViewport;
@@ -27,25 +26,19 @@ auto makeInput(qreal scroll, int count = 10) -> CarouselLayoutInput
     return in;
 }
 
-auto fail(const char* msg) -> int
-{
+auto fail(const char* msg) -> int {
     std::fprintf(stderr, "FAIL: %s\n", msg);
     return EXIT_FAILURE;
 }
 
-auto nearEqual(qreal a, qreal b, qreal eps = 1.0) -> bool
-{
-    return std::fabs(a - b) <= eps;
-}
+auto nearEqual(qreal a, qreal b, qreal eps = 1.0) -> bool { return std::fabs(a - b) <= eps; }
 
 } // namespace
 
-int run_fullscreen_layout(int argc, char** argv)
-{
-
+int run_fullscreen_layout(int argc, char** argv) {
     constexpr int count = 10;
 
-    CarouselLayoutInput in = makeInput(0);
+    CarouselLayoutInput in   = makeInput(0);
     const auto          base = CarouselStrategy::compute(in);
 
     if (base.snap_offsets.size() != count) {
@@ -57,8 +50,8 @@ int run_fullscreen_layout(int argc, char** argv)
     }
 
     const auto& item0 = base.items.first();
-    if (item0.index != 0 || !nearEqual(item0.size, kViewport)
-        || item0.mask_start > 0.001 || item0.mask_end > 0.001) {
+    if (item0.index != 0 || ! nearEqual(item0.size, kViewport) || item0.mask_start > 0.001 ||
+        item0.mask_end > 0.001) {
         return fail("first item not full viewport at rest");
     }
 
@@ -67,7 +60,7 @@ int run_fullscreen_layout(int argc, char** argv)
     }
 
     for (int i = 1; i < base.snap_offsets.size(); ++i) {
-        if (!nearEqual(base.snap_offsets.at(i) - base.snap_offsets.at(i - 1), kViewport)) {
+        if (! nearEqual(base.snap_offsets.at(i) - base.snap_offsets.at(i - 1), kViewport)) {
             return fail("snap stride not equal to viewport");
         }
         if (base.snap_offsets.at(i) <= base.snap_offsets.at(i - 1)) {
@@ -75,25 +68,25 @@ int run_fullscreen_layout(int argc, char** argv)
         }
     }
 
-    in.spacing = 8;
+    in.spacing        = 8;
     const auto spaced = CarouselStrategy::compute(in);
-    if (!nearEqual(spaced.snap_offsets.at(1) - spaced.snap_offsets.at(0), kViewport + 8.0)) {
+    if (! nearEqual(spaced.snap_offsets.at(1) - spaced.snap_offsets.at(0), kViewport + 8.0)) {
         return fail("snap stride with spacing");
     }
 
-    in.scroll_offset = base.snap_offsets.at(1);
+    in.scroll_offset  = base.snap_offsets.at(1);
     const auto at_one = CarouselStrategy::compute(in);
     if (at_one.leading_index != 1 || at_one.items.size() != 1) {
         return fail("rest at snap[1]");
     }
 
     in.scroll_offset = base.snap_offsets.first() + kViewport * 0.5;
-    const auto mid = CarouselStrategy::compute(in);
+    const auto mid   = CarouselStrategy::compute(in);
     if (mid.items.size() != 2) {
         return fail("mid-transition should show two items");
     }
     for (const auto& g : mid.items) {
-        if (!nearEqual(g.size, kViewport)) {
+        if (! nearEqual(g.size, kViewport)) {
             return fail("transition items not full page size");
         }
         if (g.mask_start > 0.001 || g.mask_end > 0.001) {

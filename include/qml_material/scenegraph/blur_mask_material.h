@@ -7,7 +7,8 @@
 namespace qml_material::sg
 {
 
-enum class BlurStyle : int {
+enum class BlurStyle : int
+{
     Normal = 0,
     Solid  = 1,
     Outer  = 2,

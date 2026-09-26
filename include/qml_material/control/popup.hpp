@@ -130,8 +130,8 @@ public:
         Clamp
     };
     Q_ENUM(CollisionPolicy)
-    QQuickItem*               parentItem() const { return m_parent; }
-    void                      setParentItem(QQuickItem*);
+    QQuickItem* parentItem() const { return m_parent; }
+    void        setParentItem(QQuickItem*);
     // Null uses the logical parent; changing the coordinate reference does not reparent the popup.
     QQuickItem*               positioningItem() const { return m_positioningItem; }
     void                      setPositioningItem(QQuickItem*);

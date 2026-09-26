@@ -11,11 +11,11 @@ namespace
 {
 PortalFilter parseNameFilter(const QString& s) {
     PortalFilter out;
-    out.name = s;
-    int open = s.lastIndexOf(QLatin1Char('('));
+    out.name  = s;
+    int open  = s.lastIndexOf(QLatin1Char('('));
     int close = s.lastIndexOf(QLatin1Char(')'));
     if (open >= 0 && close > open) {
-        const QString inside = s.mid(open + 1, close - open - 1).trimmed();
+        const QString                   inside = s.mid(open + 1, close - open - 1).trimmed();
         static const QRegularExpression sep(QStringLiteral("\\s+"));
         for (const auto& tok : inside.split(sep, Qt::SkipEmptyParts)) {
             out.globs.push_back(tok);
@@ -119,7 +119,7 @@ void    FileDialog::setDefaultSuffix(const QString& v) {
     Q_EMIT defaultSuffixChanged();
 }
 
-QUrl        FileDialog::selectedFile() const {
+QUrl FileDialog::selectedFile() const {
     return m_selected_files.isEmpty() ? QUrl() : m_selected_files.first();
 }
 QList<QUrl> FileDialog::selectedFiles() const { return m_selected_files; }
@@ -157,12 +157,12 @@ void FileDialog::applyResult(const QList<QUrl>& urls) {
 void FileDialog::open() {
     ensureBackend();
     PortalRequest req;
-    req.title         = m_title;
-    req.accept_label  = m_accept_label;
-    req.save          = (m_file_mode == SaveFile);
-    req.multiple      = (m_file_mode == OpenFiles);
-    req.directory     = false;
-    req.filters       = parseNameFilters(m_name_filters);
+    req.title                = m_title;
+    req.accept_label         = m_accept_label;
+    req.save                 = (m_file_mode == SaveFile);
+    req.multiple             = (m_file_mode == OpenFiles);
+    req.directory            = false;
+    req.filters              = parseNameFilters(m_name_filters);
     req.current_filter_index = m_selected_name_filter->index();
     req.current_folder       = m_current_folder;
     if (req.save && ! m_selected_files.isEmpty() && m_selected_files.first().isLocalFile()) {

@@ -16,18 +16,11 @@ constexpr int kSizeSmall  = 0;
 constexpr int kSizeMedium = 1;
 constexpr int kSizeLarge  = 2;
 
-auto lerp(qreal a, qreal b, qreal t) -> qreal
-{
-    return a + (b - a) * t;
-}
+auto lerp(qreal a, qreal b, qreal t) -> qreal { return a + (b - a) * t; }
 
-auto clamp(qreal v, qreal lo, qreal hi) -> qreal
-{
-    return qBound(lo, v, hi);
-}
+auto clamp(qreal v, qreal lo, qreal hi) -> qreal { return qBound(lo, v, hi); }
 
-auto sizeClassFor(qreal size, qreal large, qreal medium, qreal small) -> int
-{
+auto sizeClassFor(qreal size, qreal large, qreal medium, qreal small) -> int {
     if (size >= large - 1) {
         return kSizeLarge;
     }
@@ -37,8 +30,7 @@ auto sizeClassFor(qreal size, qreal large, qreal medium, qreal small) -> int
     return kSizeSmall;
 }
 
-auto sizeAtCenter(qreal center, const QVector<Keyline>& keylines) -> qreal
-{
+auto sizeAtCenter(qreal center, const QVector<Keyline>& keylines) -> qreal {
     if (keylines.isEmpty()) {
         return 0;
     }
@@ -57,8 +49,8 @@ auto sizeAtCenter(qreal center, const QVector<Keyline>& keylines) -> qreal
     return keylines.last().size;
 }
 
-auto resolveSize(qreal anchor, qreal scroll_offset, const QVector<Keyline>& keylines, qreal guess) -> qreal
-{
+auto resolveSize(qreal anchor, qreal scroll_offset, const QVector<Keyline>& keylines, qreal guess)
+    -> qreal {
     qreal size = guess;
     for (int i = 0; i < 6; ++i) {
         const qreal center = anchor + size * 0.5 - scroll_offset;
@@ -73,10 +65,9 @@ auto resolveSize(qreal anchor, qreal scroll_offset, const QVector<Keyline>& keyl
 
 void layoutItemChain(const CarouselLayoutInput& in, const QVector<Keyline>& keylines,
                      qreal scroll_offset, const KeylineList& kl, bool chain_anchor,
-                     QVector<qreal>& item_starts, QVector<qreal>& item_sizes)
-{
-    const qreal guess = kl.large_size;
-    qreal       pos   = in.content_padding_start;
+                     QVector<qreal>& item_starts, QVector<qreal>& item_sizes) {
+    const qreal guess     = kl.large_size;
+    qreal       pos       = in.content_padding_start;
     qreal       prev_size = 0;
     item_starts.resize(in.count);
     item_sizes.resize(in.count);
@@ -88,16 +79,15 @@ void layoutItemChain(const CarouselLayoutInput& in, const QVector<Keyline>& keyl
         const qreal grid_anchor = in.content_padding_start + qreal(i) * kl.scroll_step;
         const qreal size_anchor = chain_anchor ? pos : grid_anchor;
         const qreal size        = resolveSize(size_anchor, scroll_offset, keylines, guess);
-        prev_size      = size;
-        item_starts[i] = pos;
-        item_sizes[i]  = size;
+        prev_size               = size;
+        item_starts[i]          = pos;
+        item_sizes[i]           = size;
     }
 }
 
 void layoutHeroTrailingRest(const CarouselLayoutInput& in, const KeylineList& trailing_kl,
                             qreal scroll_offset, QVector<qreal>& item_starts,
-                            QVector<qreal>& item_sizes)
-{
+                            QVector<qreal>& item_sizes) {
     const qreal large = trailing_kl.large_size;
     const qreal small = trailing_kl.small_size;
     item_starts.resize(in.count);
@@ -107,8 +97,7 @@ void layoutHeroTrailingRest(const CarouselLayoutInput& in, const KeylineList& tr
         return;
     }
 
-    const qreal last_start =
-        scroll_offset + in.viewport_size - in.content_padding_end - large;
+    const qreal last_start    = scroll_offset + in.viewport_size - in.content_padding_end - large;
     item_starts[in.count - 1] = last_start;
     item_sizes[in.count - 1]  = large;
 
@@ -126,17 +115,16 @@ void layoutHeroTrailingRest(const CarouselLayoutInput& in, const KeylineList& tr
 }
 
 void layoutHeroLeadingTransition(const CarouselLayoutInput& in, const KeylineList& leading_kl,
-                                 const KeylineList& middle_kl, qreal first_scroll, qreal second_scroll,
-                                 qreal scroll_offset, QVector<qreal>& item_starts,
-                                 QVector<qreal>& item_sizes)
-{
+                                 const KeylineList& middle_kl, qreal first_scroll,
+                                 qreal second_scroll, qreal scroll_offset,
+                                 QVector<qreal>& item_starts, QVector<qreal>& item_sizes) {
     QVector<qreal> start_starts;
     QVector<qreal> start_sizes;
     QVector<qreal> end_starts;
     QVector<qreal> end_sizes;
 
-    layoutItemChain(in, leading_kl.keylines, first_scroll, leading_kl, true, start_starts,
-                    start_sizes);
+    layoutItemChain(
+        in, leading_kl.keylines, first_scroll, leading_kl, true, start_starts, start_sizes);
     layoutItemChain(in, middle_kl.keylines, second_scroll, middle_kl, true, end_starts, end_sizes);
 
     const qreal span = qMax(1.0, second_scroll - first_scroll);
@@ -153,19 +141,18 @@ void layoutHeroLeadingTransition(const CarouselLayoutInput& in, const KeylineLis
 void layoutHeroTrailingTransition(const CarouselLayoutInput& in, const KeylineList& middle_kl,
                                   const KeylineList& trailing_kl, qreal penult_scroll,
                                   qreal last_scroll, qreal scroll_offset,
-                                  QVector<qreal>& item_starts, QVector<qreal>& item_sizes)
-{
+                                  QVector<qreal>& item_starts, QVector<qreal>& item_sizes) {
     QVector<qreal> penult_starts;
     QVector<qreal> penult_sizes;
     QVector<qreal> rest_starts;
     QVector<qreal> rest_sizes;
 
-    layoutItemChain(in, middle_kl.keylines, penult_scroll, middle_kl, true, penult_starts,
-                    penult_sizes);
+    layoutItemChain(
+        in, middle_kl.keylines, penult_scroll, middle_kl, true, penult_starts, penult_sizes);
     layoutHeroTrailingRest(in, trailing_kl, last_scroll, rest_starts, rest_sizes);
 
     const qreal span = qMax(1.0, last_scroll - penult_scroll);
-    const qreal t      = qBound(0.0, (scroll_offset - penult_scroll) / span, 1.0);
+    const qreal t    = qBound(0.0, (scroll_offset - penult_scroll) / span, 1.0);
 
     item_starts.resize(in.count);
     item_sizes.resize(in.count);
@@ -175,9 +162,8 @@ void layoutHeroTrailingTransition(const CarouselLayoutInput& in, const KeylineLi
     }
 }
 
-void applyMaskAndParallax(CarouselItemGeometry& g, qreal view_start, qreal view_end, qreal parallax_ratio,
-                          qreal min_peek_px, bool hide_narrow_peek)
-{
+void applyMaskAndParallax(CarouselItemGeometry& g, qreal view_start, qreal view_end,
+                          qreal parallax_ratio, qreal min_peek_px, bool hide_narrow_peek) {
     const qreal item_end = g.position + g.size;
     if (item_end <= view_start || g.position >= view_end) {
         g.mask_start = 1;
@@ -205,10 +191,9 @@ void applyMaskAndParallax(CarouselItemGeometry& g, qreal view_start, qreal view_
 }
 
 auto fitMultiBrowseSizes(qreal available, qreal spacing, qreal preferred_large, qreal min_small,
-                         qreal max_small) -> std::tuple<qreal, qreal, qreal>
-{
-    const qreal gaps = spacing * 2;
-    qreal       best_large = 0;
+                         qreal max_small) -> std::tuple<qreal, qreal, qreal> {
+    const qreal gaps        = spacing * 2;
+    qreal       best_large  = 0;
     qreal       best_medium = 0;
     qreal       best_small  = 0;
     qreal       best_err    = std::numeric_limits<qreal>::max();
@@ -246,11 +231,9 @@ auto fitMultiBrowseSizes(qreal available, qreal spacing, qreal preferred_large, 
     return { best_large, best_medium, best_small };
 }
 
-auto buildMultiBrowse(const CarouselLayoutInput& in) -> KeylineList
-{
+auto buildMultiBrowse(const CarouselLayoutInput& in) -> KeylineList {
     KeylineList list;
-    const qreal available =
-        in.viewport_size - in.content_padding_start - in.content_padding_end;
+    const qreal available = in.viewport_size - in.content_padding_start - in.content_padding_end;
     const qreal min_small = in.small_item_min > 0 ? in.small_item_min : 40;
     const qreal max_small = qMax(min_small, in.small_item_max > 0 ? in.small_item_max : 56);
 
@@ -258,7 +241,7 @@ auto buildMultiBrowse(const CarouselLayoutInput& in) -> KeylineList
     if (available < 3 * min_small + 2 * in.spacing) {
         const qreal size = qMax(1.0, available);
         list.large_size = list.medium_size = list.small_size = size;
-        list.scroll_step = size + in.spacing;
+        list.scroll_step                                     = size + in.spacing;
         list.keylines.append({ in.content_padding_start + size * 0.5, size, kSizeLarge });
         return list;
     }
@@ -286,8 +269,7 @@ auto buildMultiBrowse(const CarouselLayoutInput& in) -> KeylineList
     return list;
 }
 
-auto buildUncontained(const CarouselLayoutInput& in) -> KeylineList
-{
+auto buildUncontained(const CarouselLayoutInput& in) -> KeylineList {
     KeylineList list;
     const qreal size = in.item_extent;
     list.large_size  = size;
@@ -298,8 +280,7 @@ auto buildUncontained(const CarouselLayoutInput& in) -> KeylineList
     return list;
 }
 
-auto buildFullScreen(const CarouselLayoutInput& in) -> KeylineList
-{
+auto buildFullScreen(const CarouselLayoutInput& in) -> KeylineList {
     KeylineList list;
     const qreal size = in.viewport_size > 0 ? in.viewport_size : in.item_extent;
     list.large_size  = size;
@@ -310,8 +291,8 @@ auto buildFullScreen(const CarouselLayoutInput& in) -> KeylineList
     return list;
 }
 
-void finalizeSnapAndScrollBounds(CarouselLayoutOutput& out, const CarouselLayoutInput& in, qreal stride)
-{
+void finalizeSnapAndScrollBounds(CarouselLayoutOutput& out, const CarouselLayoutInput& in,
+                                 qreal stride) {
     const qreal max_scroll = qMax(0.0, out.content_size - in.viewport_size);
     out.max_scroll_offset  = max_scroll;
     out.end_snap_offset    = max_scroll;
@@ -339,20 +320,19 @@ void finalizeSnapAndScrollBounds(CarouselLayoutOutput& out, const CarouselLayout
 void finalizeKeylineSnapAndScrollBounds(CarouselLayoutOutput& out, const CarouselLayoutInput& in,
                                         const QVector<qreal>& item_starts,
                                         const QVector<qreal>& item_sizes,
-                                        qreal stride_override = 0)
-{
+                                        qreal                 stride_override = 0) {
     const qreal layout_max = qMax(0.0, out.content_size - in.viewport_size);
     const qreal scroll_max = layout_max;
 
     const qreal last_size = item_sizes.isEmpty() ? 0 : item_sizes.last();
-    out.scroll_step        = last_size + in.spacing;
-    const qreal stride     = stride_override > 0 ? stride_override : out.scroll_step;
+    out.scroll_step       = last_size + in.spacing;
+    const qreal stride    = stride_override > 0 ? stride_override : out.scroll_step;
 
     out.snap_offsets.resize(in.count);
     out.max_scroll_offset = scroll_max;
     out.end_snap_offset   = scroll_max;
     for (int i = 0; i < in.count; ++i) {
-        const qreal snap    = i < item_starts.size() ? item_starts[i] - in.content_padding_start : 0;
+        const qreal snap = i < item_starts.size() ? item_starts[i] - in.content_padding_start : 0;
         out.snap_offsets[i] = qMin(snap, scroll_max);
     }
 
@@ -370,17 +350,16 @@ void finalizeKeylineSnapAndScrollBounds(CarouselLayoutOutput& out, const Carouse
     out.leading_index = qBound(0, focal, in.count - 1);
 }
 
-auto computeStartAlignedEndScroll(const CarouselLayoutInput& in) -> qreal
-{
-    const KeylineList middle_kl = CarouselHeroKeylines::phaseKeylines(
-        in, CarouselHeroKeylines::HeroPhase::Middle, false);
+auto computeStartAlignedEndScroll(const CarouselLayoutInput& in) -> qreal {
+    const KeylineList middle_kl =
+        CarouselHeroKeylines::phaseKeylines(in, CarouselHeroKeylines::HeroPhase::Middle, false);
     if (middle_kl.keylines.isEmpty() || in.viewport_size <= 0 || in.count <= 0) {
         return 0;
     }
 
-    const qreal max_scroll = qMax(
-        0.0, in.content_padding_start + in.count * middle_kl.scroll_step - in.spacing
-                 + in.content_padding_end - in.viewport_size);
+    const qreal max_scroll = qMax(0.0,
+                                  in.content_padding_start + in.count * middle_kl.scroll_step -
+                                      in.spacing + in.content_padding_end - in.viewport_size);
 
     const auto        strategy  = CarouselScrollStrategy::build(middle_kl, in.viewport_size);
     const KeylineList active_kl = strategy.keylinesForScrollOffset(max_scroll, max_scroll);
@@ -396,13 +375,13 @@ auto computeStartAlignedEndScroll(const CarouselLayoutInput& in) -> qreal
     return qMax(0.0, content_size - in.viewport_size);
 }
 
-auto layoutFixedStride(const CarouselLayoutInput& in, const KeylineList& kl) -> CarouselLayoutOutput
-{
+auto layoutFixedStride(const CarouselLayoutInput& in, const KeylineList& kl)
+    -> CarouselLayoutOutput {
     CarouselLayoutOutput out;
-    const qreal stride = kl.scroll_step;
-    const qreal view_start = in.scroll_offset;
-    const qreal view_end   = in.scroll_offset + in.viewport_size;
-    const qreal size       = kl.large_size;
+    const qreal          stride     = kl.scroll_step;
+    const qreal          view_start = in.scroll_offset;
+    const qreal          view_end   = in.scroll_offset + in.viewport_size;
+    const qreal          size       = kl.large_size;
 
     for (int i = 0; i < in.count; ++i) {
         const qreal pos = in.content_padding_start + qreal(i) * stride;
@@ -422,16 +401,15 @@ auto layoutFixedStride(const CarouselLayoutInput& in, const KeylineList& kl) -> 
         }
     }
 
-    out.content_size = in.count > 0
-        ? in.content_padding_start + stride * in.count - in.spacing + in.content_padding_end
-        : 0;
+    out.content_size = in.count > 0 ? in.content_padding_start + stride * in.count - in.spacing +
+                                          in.content_padding_end
+                                    : 0;
 
     finalizeSnapAndScrollBounds(out, in, stride);
     return out;
 }
 
-auto layoutFullScreenItems(const CarouselLayoutInput& in) -> CarouselLayoutOutput
-{
+auto layoutFullScreenItems(const CarouselLayoutInput& in) -> CarouselLayoutOutput {
     CarouselLayoutOutput out;
     if (in.count <= 0 || in.viewport_size <= 0) {
         return out;
@@ -459,16 +437,15 @@ auto layoutFullScreenItems(const CarouselLayoutInput& in) -> CarouselLayoutOutpu
         out.items.append(g);
     }
 
-    out.content_size = in.count > 0
-        ? in.content_padding_start + stride * (in.count - 1) + page_size + in.content_padding_end
-        : 0;
+    out.content_size = in.count > 0 ? in.content_padding_start + stride * (in.count - 1) +
+                                          page_size + in.content_padding_end
+                                    : 0;
 
     finalizeSnapAndScrollBounds(out, in, stride);
     return out;
 }
 
-auto itemWidthForAspect(const CarouselLayoutInput& in, int index, qreal cross) -> qreal
-{
+auto itemWidthForAspect(const CarouselLayoutInput& in, int index, qreal cross) -> qreal {
     qreal aspect = 1.0;
     if (index >= 0 && index < in.item_aspects.size()) {
         aspect = in.item_aspects[index];
@@ -479,13 +456,12 @@ auto itemWidthForAspect(const CarouselLayoutInput& in, int index, qreal cross) -
     return cross * aspect;
 }
 
-auto layoutVariableStride(const CarouselLayoutInput& in, const KeylineList& kl) -> CarouselLayoutOutput
-{
+auto layoutVariableStride(const CarouselLayoutInput& in, const KeylineList& kl)
+    -> CarouselLayoutOutput {
     Q_UNUSED(kl);
     CarouselLayoutOutput out;
-    const qreal cross = in.cross_size > 0
-        ? in.cross_size - 2.0 * in.content_padding_cross
-        : in.item_extent;
+    const qreal          cross =
+        in.cross_size > 0 ? in.cross_size - 2.0 * in.content_padding_cross : in.item_extent;
     const qreal view_start = in.scroll_offset;
     const qreal view_end   = in.scroll_offset + in.viewport_size;
 
@@ -505,7 +481,7 @@ auto layoutVariableStride(const CarouselLayoutInput& in, const KeylineList& kl) 
     }
 
     for (int i = 0; i < in.count; ++i) {
-        const qreal pos = positions[i];
+        const qreal pos  = positions[i];
         const qreal size = widths[i];
         const qreal end  = pos + size;
         if (end <= view_start || pos >= view_end) {
@@ -523,7 +499,8 @@ auto layoutVariableStride(const CarouselLayoutInput& in, const KeylineList& kl) 
         }
     }
 
-    out.content_size = in.count > 0 ? positions[in.count - 1] + last_width + in.content_padding_end : 0;
+    out.content_size =
+        in.count > 0 ? positions[in.count - 1] + last_width + in.content_padding_end : 0;
 
     const qreal max_scroll = qMax(0.0, out.content_size - in.viewport_size);
     out.max_scroll_offset  = max_scroll;
@@ -532,7 +509,7 @@ auto layoutVariableStride(const CarouselLayoutInput& in, const KeylineList& kl) 
 
     out.snap_offsets.resize(in.count);
     for (int i = 0; i < in.count; ++i) {
-        const qreal snap = positions[i] - in.content_padding_start;
+        const qreal snap    = positions[i] - in.content_padding_start;
         out.snap_offsets[i] = qMin(snap, max_scroll);
     }
 
@@ -551,13 +528,13 @@ auto layoutVariableStride(const CarouselLayoutInput& in, const KeylineList& kl) 
     return out;
 }
 
-auto layoutKeylineUniform(const CarouselLayoutInput& in, const KeylineList& kl) -> CarouselLayoutOutput
-{
+auto layoutKeylineUniform(const CarouselLayoutInput& in, const KeylineList& kl)
+    -> CarouselLayoutOutput {
     CarouselLayoutOutput out;
-    const qreal size   = kl.medium_size > 0 ? kl.medium_size : kl.large_size;
-    const qreal stride = size + in.spacing;
-    const qreal view_start = in.scroll_offset;
-    const qreal view_end   = in.scroll_offset + in.viewport_size;
+    const qreal          size       = kl.medium_size > 0 ? kl.medium_size : kl.large_size;
+    const qreal          stride     = size + in.spacing;
+    const qreal          view_start = in.scroll_offset;
+    const qreal          view_end   = in.scroll_offset + in.viewport_size;
 
     QVector<qreal> item_starts;
     QVector<qreal> item_sizes;
@@ -585,16 +562,16 @@ auto layoutKeylineUniform(const CarouselLayoutInput& in, const KeylineList& kl) 
         }
     }
 
-    out.content_size = in.count > 0
-        ? in.content_padding_start + stride * in.count - in.spacing + in.content_padding_end
-        : 0;
+    out.content_size = in.count > 0 ? in.content_padding_start + stride * in.count - in.spacing +
+                                          in.content_padding_end
+                                    : 0;
 
     finalizeKeylineSnapAndScrollBounds(out, in, item_starts, item_sizes);
     return out;
 }
 
-auto layoutKeylineItems(const CarouselLayoutInput& in, const KeylineList& kl) -> CarouselLayoutOutput
-{
+auto layoutKeylineItems(const CarouselLayoutInput& in, const KeylineList& kl)
+    -> CarouselLayoutOutput {
     CarouselLayoutOutput out;
     if (in.count <= 0 || in.viewport_size <= 0 || kl.keylines.isEmpty()) {
         return out;
@@ -607,20 +584,19 @@ auto layoutKeylineItems(const CarouselLayoutInput& in, const KeylineList& kl) ->
     const qreal view_start = in.scroll_offset;
     const qreal view_end   = in.scroll_offset + in.viewport_size;
 
-    const auto strategy = CarouselScrollStrategy::build(in, kl);
-    const qreal max_scroll =
-        qMax(0.0, in.content_padding_start + in.count * kl.scroll_step - in.spacing
-                 + in.content_padding_end - in.viewport_size);
+    const auto  strategy   = CarouselScrollStrategy::build(in, kl);
+    const qreal max_scroll = qMax(0.0,
+                                  in.content_padding_start + in.count * kl.scroll_step -
+                                      in.spacing + in.content_padding_end - in.viewport_size);
 
     QVector<qreal> item_starts;
     QVector<qreal> item_sizes;
     item_starts.resize(in.count);
     item_sizes.resize(in.count);
 
-    const KeylineList active_kl =
-        strategy.keylinesForScrollOffset(in.scroll_offset, max_scroll);
-    layoutItemChain(in, active_kl.keylines, in.scroll_offset, active_kl, false, item_starts,
-                    item_sizes);
+    const KeylineList active_kl = strategy.keylinesForScrollOffset(in.scroll_offset, max_scroll);
+    layoutItemChain(
+        in, active_kl.keylines, in.scroll_offset, active_kl, false, item_starts, item_sizes);
 
     qreal last_pos  = 0;
     qreal last_size = 0;
@@ -651,8 +627,8 @@ auto layoutKeylineItems(const CarouselLayoutInput& in, const KeylineList& kl) ->
     return out;
 }
 
-auto layoutHeroItems(const CarouselLayoutInput& in, const KeylineList& metrics_kl) -> CarouselLayoutOutput
-{
+auto layoutHeroItems(const CarouselLayoutInput& in, const KeylineList& metrics_kl)
+    -> CarouselLayoutOutput {
     CarouselLayoutOutput out;
     if (in.count <= 0 || in.viewport_size <= 0) {
         return out;
@@ -672,16 +648,16 @@ auto layoutHeroItems(const CarouselLayoutInput& in, const KeylineList& metrics_k
     QVector<qreal> item_starts;
     QVector<qreal> item_sizes;
 
-    if (!keep_peek) {
-        const auto strategy = CarouselScrollStrategy::build(metrics_kl, in.viewport_size);
-        qreal max_scroll = qMax(
-            0.0, in.content_padding_start + in.count * metrics_kl.scroll_step - in.spacing
-                     + in.content_padding_end - in.viewport_size);
+    if (! keep_peek) {
+        const auto strategy   = CarouselScrollStrategy::build(metrics_kl, in.viewport_size);
+        qreal      max_scroll = qMax(0.0,
+                                     in.content_padding_start + in.count * metrics_kl.scroll_step -
+                                         in.spacing + in.content_padding_end - in.viewport_size);
 
         const KeylineList active_kl =
             strategy.keylinesForScrollOffset(in.scroll_offset, max_scroll);
-        layoutItemChain(in, active_kl.keylines, in.scroll_offset, active_kl, false, item_starts,
-                        item_sizes);
+        layoutItemChain(
+            in, active_kl.keylines, in.scroll_offset, active_kl, false, item_starts, item_sizes);
 
         qreal last_pos  = 0;
         qreal last_size = 0;
@@ -700,8 +676,8 @@ auto layoutHeroItems(const CarouselLayoutInput& in, const KeylineList& metrics_k
             g.index      = i;
             g.position   = pos;
             g.size       = size;
-            g.size_class = sizeClassFor(size, metrics_kl.large_size, metrics_kl.medium_size,
-                                        metrics_kl.small_size);
+            g.size_class = sizeClassFor(
+                size, metrics_kl.large_size, metrics_kl.medium_size, metrics_kl.small_size);
             applyMaskAndParallax(g, view_start, view_end, in.parallax_ratio, in.min_peek_px, true);
             if (g.mask_start + g.mask_end < 1.0) {
                 out.items.append(g);
@@ -711,14 +687,19 @@ auto layoutHeroItems(const CarouselLayoutInput& in, const KeylineList& metrics_k
         out.content_size = in.count > 0 ? last_pos + last_size + in.content_padding_end : 0;
         finalizeKeylineSnapAndScrollBounds(out, in, item_starts, item_sizes);
 
-        const qreal scroll_max = qMax(0.0, out.content_size - in.viewport_size);
-        QVector<qreal> end_starts;
-        QVector<qreal> end_sizes;
+        const qreal       scroll_max = qMax(0.0, out.content_size - in.viewport_size);
+        QVector<qreal>    end_starts;
+        QVector<qreal>    end_sizes;
         const KeylineList trailing_kl = CarouselHeroKeylines::phaseKeylines(
             in, CarouselHeroKeylines::HeroPhase::Trailing, false);
-        layoutItemChain(in, trailing_kl.keylines, out.end_snap_offset, trailing_kl, false,
-                        end_starts, end_sizes);
-        if (!end_sizes.isEmpty()) {
+        layoutItemChain(in,
+                        trailing_kl.keylines,
+                        out.end_snap_offset,
+                        trailing_kl,
+                        false,
+                        end_starts,
+                        end_sizes);
+        if (! end_sizes.isEmpty()) {
             const qreal end_content_size =
                 end_starts.last() + end_sizes.last() + in.content_padding_end;
             out.content_size = qMax(out.content_size, end_content_size);
@@ -729,46 +710,62 @@ auto layoutHeroItems(const CarouselLayoutInput& in, const KeylineList& metrics_k
 
     CarouselHeroKeylines::computeHeroSnapOffsets(out, in, keep_peek);
 
-    const qreal keyline_scroll_max = out.snap_offsets.isEmpty()
-        ? out.max_scroll_offset
-        : out.snap_offsets.last();
+    const qreal keyline_scroll_max =
+        out.snap_offsets.isEmpty() ? out.max_scroll_offset : out.snap_offsets.last();
 
-    const auto strategy = CarouselScrollStrategy::buildHero(
-        in, keep_peek, out.snap_offsets, keyline_scroll_max);
+    const auto strategy =
+        CarouselScrollStrategy::buildHero(in, keep_peek, out.snap_offsets, keyline_scroll_max);
 
     const HeroScrollZone zone = strategy.zoneFor(in.scroll_offset, keyline_scroll_max);
 
-    KeylineList active_kl;
-    const KeylineList leading_kl = CarouselHeroKeylines::phaseKeylines(
-        in, CarouselHeroKeylines::HeroPhase::Leading, true);
-    const KeylineList trailing_kl = CarouselHeroKeylines::phaseKeylines(
-        in, CarouselHeroKeylines::HeroPhase::Trailing, false);
+    KeylineList       active_kl;
+    const KeylineList leading_kl =
+        CarouselHeroKeylines::phaseKeylines(in, CarouselHeroKeylines::HeroPhase::Leading, true);
+    const KeylineList trailing_kl =
+        CarouselHeroKeylines::phaseKeylines(in, CarouselHeroKeylines::HeroPhase::Trailing, false);
 
     if (zone == HeroScrollZone::TrailingRest) {
         layoutHeroTrailingRest(in, trailing_kl, in.scroll_offset, item_starts, item_sizes);
-    } else if (zone == HeroScrollZone::TrailingLerp && in.count >= 2
-               && out.snap_offsets.size() >= in.count) {
+    } else if (zone == HeroScrollZone::TrailingLerp && in.count >= 2 &&
+               out.snap_offsets.size() >= in.count) {
         const qreal penult_scroll = out.snap_offsets.at(in.count - 2);
         const qreal last_scroll   = out.snap_offsets.last();
-        layoutHeroTrailingTransition(in, metrics_kl, trailing_kl, penult_scroll, last_scroll,
-                                     in.scroll_offset, item_starts, item_sizes);
+        layoutHeroTrailingTransition(in,
+                                     metrics_kl,
+                                     trailing_kl,
+                                     penult_scroll,
+                                     last_scroll,
+                                     in.scroll_offset,
+                                     item_starts,
+                                     item_sizes);
     } else if (zone == HeroScrollZone::Leading && out.snap_offsets.size() >= 2) {
         const qreal second_scroll = out.snap_offsets.at(1);
-        layoutHeroLeadingTransition(in, leading_kl, metrics_kl, out.snap_offsets.first(),
-                                    second_scroll, in.scroll_offset, item_starts, item_sizes);
+        layoutHeroLeadingTransition(in,
+                                    leading_kl,
+                                    metrics_kl,
+                                    out.snap_offsets.first(),
+                                    second_scroll,
+                                    in.scroll_offset,
+                                    item_starts,
+                                    item_sizes);
     } else {
         const bool chain_anchor = zone != HeroScrollZone::Leading;
-        active_kl               = strategy.keylinesForScrollOffset(in.scroll_offset, keyline_scroll_max);
-        layoutItemChain(in, active_kl.keylines, in.scroll_offset, active_kl, chain_anchor,
-                        item_starts, item_sizes);
+        active_kl = strategy.keylinesForScrollOffset(in.scroll_offset, keyline_scroll_max);
+        layoutItemChain(in,
+                        active_kl.keylines,
+                        in.scroll_offset,
+                        active_kl,
+                        chain_anchor,
+                        item_starts,
+                        item_sizes);
     }
 
-    int focal_index = 0;
+    int        focal_index = 0;
     const bool restrict_focal_window =
         zone == HeroScrollZone::Middle || zone == HeroScrollZone::TrailingLerp;
-    if (restrict_focal_window && !item_starts.isEmpty()) {
-        qreal best_focal_dist = std::numeric_limits<qreal>::max();
-        const qreal view_center = in.viewport_size * 0.5;
+    if (restrict_focal_window && ! item_starts.isEmpty()) {
+        qreal       best_focal_dist = std::numeric_limits<qreal>::max();
+        const qreal view_center     = in.viewport_size * 0.5;
         for (int i = 0; i < in.count; ++i) {
             const qreal cx = item_starts[i] + item_sizes[i] * 0.5 - view_start;
             const qreal d  = qAbs(cx - view_center);
@@ -800,8 +797,8 @@ auto layoutHeroItems(const CarouselLayoutInput& in, const KeylineList& metrics_k
         g.index      = i;
         g.position   = pos;
         g.size       = size;
-        g.size_class =
-            sizeClassFor(size, metrics_kl.large_size, metrics_kl.medium_size, metrics_kl.small_size);
+        g.size_class = sizeClassFor(
+            size, metrics_kl.large_size, metrics_kl.medium_size, metrics_kl.small_size);
         applyMaskAndParallax(g, view_start, view_end, in.parallax_ratio, in.min_peek_px, true);
         if (g.mask_start + g.mask_end < 1.0) {
             out.items.append(g);
@@ -815,7 +812,7 @@ auto layoutHeroItems(const CarouselLayoutInput& in, const KeylineList& metrics_k
     QVector<qreal> end_starts;
     QVector<qreal> end_sizes;
     layoutHeroTrailingRest(in, trailing_kl, out.end_snap_offset, end_starts, end_sizes);
-    if (!end_sizes.isEmpty()) {
+    if (! end_sizes.isEmpty()) {
         const qreal end_content_size =
             end_starts.last() + end_sizes.last() + in.content_padding_end;
         out.content_size = qMax(out.content_size, end_content_size);
@@ -850,13 +847,10 @@ namespace
 constexpr int kSizeSmall = 0;
 constexpr int kSizeLarge = 2;
 
-auto clamp(qreal v, qreal lo, qreal hi) -> qreal
-{
-    return qBound(lo, v, hi);
-}
+auto clamp(qreal v, qreal lo, qreal hi) -> qreal { return qBound(lo, v, hi); }
 
-auto buildStartAlignedKeylines(const CarouselLayoutInput& in, const HeroMetrics& metrics) -> KeylineList
-{
+auto buildStartAlignedKeylines(const CarouselLayoutInput& in, const HeroMetrics& metrics)
+    -> KeylineList {
     KeylineList list;
     const qreal min_small = in.small_item_min > 0 ? in.small_item_min : 40;
 
@@ -866,22 +860,24 @@ auto buildStartAlignedKeylines(const CarouselLayoutInput& in, const HeroMetrics&
     list.scroll_step = metrics.scroll_step_leading;
 
     qreal cursor = in.content_padding_start;
-    list.keylines.append({ cursor + metrics.large_leading * 0.5, metrics.large_leading, kSizeLarge });
+    list.keylines.append(
+        { cursor + metrics.large_leading * 0.5, metrics.large_leading, kSizeLarge });
     cursor += metrics.large_leading + in.spacing;
-    list.keylines.append({ cursor + metrics.small_leading * 0.5, metrics.small_leading, kSizeSmall });
+    list.keylines.append(
+        { cursor + metrics.small_leading * 0.5, metrics.small_leading, kSizeSmall });
     while (cursor + min_small < in.viewport_size - in.content_padding_end) {
         cursor += metrics.small_leading + in.spacing;
-        list.keylines.append(
-            { cursor - in.spacing + metrics.small_leading * 0.5, metrics.small_leading, kSizeSmall });
+        list.keylines.append({ cursor - in.spacing + metrics.small_leading * 0.5,
+                               metrics.small_leading,
+                               kSizeSmall });
     }
     return list;
 }
 
-auto buildCenterMiddleKeylines(const CarouselLayoutInput& in, const HeroMetrics& metrics) -> KeylineList
-{
+auto buildCenterMiddleKeylines(const CarouselLayoutInput& in, const HeroMetrics& metrics)
+    -> KeylineList {
     KeylineList list;
-    const qreal available =
-        in.viewport_size - in.content_padding_start - in.content_padding_end;
+    const qreal available = in.viewport_size - in.content_padding_start - in.content_padding_end;
 
     list.large_size  = metrics.large_center;
     list.small_size  = metrics.small_center;
@@ -889,8 +885,8 @@ auto buildCenterMiddleKeylines(const CarouselLayoutInput& in, const HeroMetrics&
     list.scroll_step = metrics.scroll_step_center;
 
     const qreal start        = in.content_padding_start;
-    const qreal large_center = in.content_padding_start + (available - metrics.large_center) * 0.5
-        + metrics.large_center * 0.5;
+    const qreal large_center = in.content_padding_start + (available - metrics.large_center) * 0.5 +
+                               metrics.large_center * 0.5;
     list.keylines.append({ start + metrics.small_center * 0.5, metrics.small_center, kSizeSmall });
     list.keylines.append({ large_center, metrics.large_center, kSizeLarge });
     list.keylines.append({ in.viewport_size - in.content_padding_end - metrics.small_center * 0.5,
@@ -899,8 +895,8 @@ auto buildCenterMiddleKeylines(const CarouselLayoutInput& in, const HeroMetrics&
     return list;
 }
 
-auto buildStartTrailingKeylines(const CarouselLayoutInput& in, const HeroMetrics& metrics) -> KeylineList
-{
+auto buildStartTrailingKeylines(const CarouselLayoutInput& in, const HeroMetrics& metrics)
+    -> KeylineList {
     KeylineList list;
     list.large_size  = metrics.large_leading;
     list.small_size  = metrics.small_leading;
@@ -915,16 +911,13 @@ auto buildStartTrailingKeylines(const CarouselLayoutInput& in, const HeroMetrics
 
 } // namespace
 
-auto keepLeadingPeek(const CarouselLayoutInput& in) -> bool
-{
+auto keepLeadingPeek(const CarouselLayoutInput& in) -> bool {
     return in.layout == CarouselLayoutId::HeroCenter;
 }
 
-auto computeMetrics(const CarouselLayoutInput& in) -> HeroMetrics
-{
+auto computeMetrics(const CarouselLayoutInput& in) -> HeroMetrics {
     HeroMetrics metrics;
-    const qreal available =
-        in.viewport_size - in.content_padding_start - in.content_padding_end;
+    const qreal available = in.viewport_size - in.content_padding_start - in.content_padding_end;
     const qreal min_small = in.small_item_min > 0 ? in.small_item_min : 40;
     const qreal max_small = qMax(min_small, in.small_item_max > 0 ? in.small_item_max : 56);
 
@@ -933,8 +926,8 @@ auto computeMetrics(const CarouselLayoutInput& in) -> HeroMetrics
 
     // A narrow viewport cannot fit the minimum focal item plus the trailing peek.
     if (metrics.large_leading < min_small * 2) {
-        metrics.single_item = true;
-        const qreal size = qMax(1.0, available);
+        metrics.single_item   = true;
+        const qreal size      = qMax(1.0, available);
         metrics.small_leading = metrics.small_center = size;
         metrics.large_leading = metrics.large_center = size;
         metrics.medium_leading = metrics.medium_center = size;
@@ -944,50 +937,47 @@ auto computeMetrics(const CarouselLayoutInput& in) -> HeroMetrics
 
     metrics.large_center =
         clamp(available * 0.72, min_small * 2, available - metrics.small_leading - in.spacing);
-    metrics.small_center = clamp((available - metrics.large_center - in.spacing) * 0.5, min_small,
-                                 max_small);
+    metrics.small_center =
+        clamp((available - metrics.large_center - in.spacing) * 0.5, min_small, max_small);
 
-    metrics.medium_leading = (metrics.large_leading + metrics.small_leading) * 0.5;
-    metrics.medium_center  = (metrics.large_center + metrics.small_center) * 0.5;
+    metrics.medium_leading      = (metrics.large_leading + metrics.small_leading) * 0.5;
+    metrics.medium_center       = (metrics.large_center + metrics.small_center) * 0.5;
     metrics.scroll_step_leading = metrics.medium_leading + in.spacing;
     metrics.scroll_step_center  = metrics.medium_center + in.spacing;
     return metrics;
 }
 
-auto phaseKeylines(const CarouselLayoutInput& in, HeroPhase phase, bool keep_leading_peek) -> KeylineList
-{
+auto phaseKeylines(const CarouselLayoutInput& in, HeroPhase phase, bool keep_leading_peek)
+    -> KeylineList {
     const HeroMetrics metrics = computeMetrics(in);
     if (metrics.single_item) {
         KeylineList list;
         list.large_size = list.medium_size = list.small_size = metrics.large_leading;
-        list.scroll_step = metrics.scroll_step_leading;
+        list.scroll_step                                     = metrics.scroll_step_leading;
         list.keylines.append({ in.content_padding_start + metrics.large_leading * 0.5,
-                               metrics.large_leading, kSizeLarge });
+                               metrics.large_leading,
+                               kSizeLarge });
         return list;
     }
     switch (phase) {
-    case HeroPhase::Leading:
-        return buildStartAlignedKeylines(in, metrics);
+    case HeroPhase::Leading: return buildStartAlignedKeylines(in, metrics);
     case HeroPhase::Middle:
         if (keep_leading_peek) {
             return buildCenterMiddleKeylines(in, metrics);
         }
         return buildStartAlignedKeylines(in, metrics);
-    case HeroPhase::Trailing:
-        return buildStartTrailingKeylines(in, metrics);
+    case HeroPhase::Trailing: return buildStartTrailingKeylines(in, metrics);
     }
     return {};
 }
 
 void computeHeroSnapOffsets(CarouselLayoutOutput& out, const CarouselLayoutInput& in,
-                            bool keep_leading_peek)
-{
-    if (in.count <= 0 || in.viewport_size <= 0 || !keep_leading_peek) {
+                            bool keep_leading_peek) {
+    if (in.count <= 0 || in.viewport_size <= 0 || ! keep_leading_peek) {
         return;
     }
 
-    struct SnapCache
-    {
+    struct SnapCache {
         CarouselLayoutInput key;
         QVector<qreal>      snap_offsets;
         qreal               end_snap_offset   = 0;
@@ -996,19 +986,19 @@ void computeHeroSnapOffsets(CarouselLayoutOutput& out, const CarouselLayoutInput
     };
     static SnapCache cache;
 
-    auto cacheKey = in;
+    auto cacheKey          = in;
     cacheKey.scroll_offset = 0;
 
-    if (cache.valid && cache.key.layout == cacheKey.layout && cache.key.count == cacheKey.count
-        && qFuzzyCompare(cache.key.viewport_size, cacheKey.viewport_size)
-        && qFuzzyCompare(cache.key.cross_size, cacheKey.cross_size)
-        && qFuzzyCompare(cache.key.item_extent, cacheKey.item_extent)
-        && qFuzzyCompare(cache.key.spacing, cacheKey.spacing)
-        && qFuzzyCompare(cache.key.content_padding_start, cacheKey.content_padding_start)
-        && qFuzzyCompare(cache.key.content_padding_end, cacheKey.content_padding_end)
-        && qFuzzyCompare(cache.key.small_item_min, cacheKey.small_item_min)
-        && qFuzzyCompare(cache.key.small_item_max, cacheKey.small_item_max)
-        && cache.key.item_aspects == cacheKey.item_aspects) {
+    if (cache.valid && cache.key.layout == cacheKey.layout && cache.key.count == cacheKey.count &&
+        qFuzzyCompare(cache.key.viewport_size, cacheKey.viewport_size) &&
+        qFuzzyCompare(cache.key.cross_size, cacheKey.cross_size) &&
+        qFuzzyCompare(cache.key.item_extent, cacheKey.item_extent) &&
+        qFuzzyCompare(cache.key.spacing, cacheKey.spacing) &&
+        qFuzzyCompare(cache.key.content_padding_start, cacheKey.content_padding_start) &&
+        qFuzzyCompare(cache.key.content_padding_end, cacheKey.content_padding_end) &&
+        qFuzzyCompare(cache.key.small_item_min, cacheKey.small_item_min) &&
+        qFuzzyCompare(cache.key.small_item_max, cacheKey.small_item_max) &&
+        cache.key.item_aspects == cacheKey.item_aspects) {
         out.snap_offsets      = cache.snap_offsets;
         out.end_snap_offset   = cache.end_snap_offset;
         out.max_scroll_offset = cache.max_scroll_offset;
@@ -1017,23 +1007,23 @@ void computeHeroSnapOffsets(CarouselLayoutOutput& out, const CarouselLayoutInput
 
     const KeylineList middle_kl = phaseKeylines(in, HeroPhase::Middle, true);
     if (middle_kl.keylines.size() == 1) {
-        const auto uniform = layoutFixedStride(in, middle_kl);
-        out.snap_offsets = uniform.snap_offsets;
-        out.end_snap_offset = uniform.end_snap_offset;
+        const auto uniform    = layoutFixedStride(in, middle_kl);
+        out.snap_offsets      = uniform.snap_offsets;
+        out.end_snap_offset   = uniform.end_snap_offset;
         out.max_scroll_offset = uniform.max_scroll_offset;
         return;
     }
-    qreal             max_scroll = qMax(
-        0.0, in.content_padding_start + in.count * middle_kl.scroll_step - in.spacing
-                 + in.content_padding_end - in.viewport_size);
+    qreal max_scroll = qMax(0.0,
+                            in.content_padding_start + in.count * middle_kl.scroll_step -
+                                in.spacing + in.content_padding_end - in.viewport_size);
 
     QVector<qreal> starts;
     QVector<qreal> sizes;
     out.snap_offsets.resize(in.count);
     out.snap_offsets[0] = 0;
 
-    const qreal focal_center = in.viewport_size * 0.5;
-    const KeylineList center_kl = middle_kl;
+    const qreal       focal_center = in.viewport_size * 0.5;
+    const KeylineList center_kl    = middle_kl;
 
     for (int i = 1; i < in.count - 1; ++i) {
         qreal lo     = out.snap_offsets[i - 1];
@@ -1073,30 +1063,23 @@ void computeHeroSnapOffsets(CarouselLayoutOutput& out, const CarouselLayoutInput
 
 } // namespace CarouselHeroKeylines
 
-auto CarouselKeylines::buildList(const CarouselLayoutInput& input) -> KeylineList
-{
+auto CarouselKeylines::buildList(const CarouselLayoutInput& input) -> KeylineList {
     switch (input.layout) {
-    case CarouselLayoutId::MultiBrowse:
-        return buildMultiBrowse(input);
+    case CarouselLayoutId::MultiBrowse: return buildMultiBrowse(input);
     case CarouselLayoutId::Hero:
     case CarouselLayoutId::HeroCenter:
-        return CarouselHeroKeylines::phaseKeylines(
-            input, CarouselHeroKeylines::HeroPhase::Middle,
-            CarouselHeroKeylines::keepLeadingPeek(input));
-    case CarouselLayoutId::Uncontained:
-        return buildUncontained(input);
-    case CarouselLayoutId::UncontainedMultiAspect:
-        return buildUncontained(input);
-    case CarouselLayoutId::FullScreen:
-        return buildFullScreen(input);
-    default:
-        return buildUncontained(input);
+        return CarouselHeroKeylines::phaseKeylines(input,
+                                                   CarouselHeroKeylines::HeroPhase::Middle,
+                                                   CarouselHeroKeylines::keepLeadingPeek(input));
+    case CarouselLayoutId::Uncontained: return buildUncontained(input);
+    case CarouselLayoutId::UncontainedMultiAspect: return buildUncontained(input);
+    case CarouselLayoutId::FullScreen: return buildFullScreen(input);
+    default: return buildUncontained(input);
     }
 }
 
 auto CarouselKeylines::layoutItems(const CarouselLayoutInput& in, const KeylineList& kl)
-    -> CarouselLayoutOutput
-{
+    -> CarouselLayoutOutput {
     if (in.layout == CarouselLayoutId::UncontainedMultiAspect) {
         return layoutVariableStride(in, kl);
     }

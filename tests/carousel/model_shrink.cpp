@@ -13,34 +13,24 @@ using namespace qml_material;
 namespace
 {
 
-struct TestCarouselView : CarouselView
-{
+struct TestCarouselView : CarouselView {
     using CarouselView::CarouselView;
 
-    void complete()
-    {
-        componentComplete();
-    }
+    void complete() { componentComplete(); }
 };
 
-auto fail(const char* msg) -> int
-{
+auto fail(const char* msg) -> int {
     std::fprintf(stderr, "FAIL: %s\n", msg);
     return EXIT_FAILURE;
 }
 
-auto nearEqual(qreal a, qreal b, qreal eps = 1.0) -> bool
-{
-    return std::fabs(a - b) <= eps;
-}
+auto nearEqual(qreal a, qreal b, qreal eps = 1.0) -> bool { return std::fabs(a - b) <= eps; }
 
-auto flickContentX(QQuickItem* flickable) -> qreal
-{
+auto flickContentX(QQuickItem* flickable) -> qreal {
     return flickable ? flickable->property("contentX").toDouble() : 0;
 }
 
-auto expectedSnapOffset(int index, int count) -> qreal
-{
+auto expectedSnapOffset(int index, int count) -> qreal {
     CarouselLayoutInput in;
     in.layout                = CarouselLayoutId::Uncontained;
     in.viewport_size         = 480;
@@ -65,10 +55,8 @@ auto expectedSnapOffset(int index, int count) -> qreal
 
 } // namespace
 
-int run_model_shrink(int argc, char** argv)
-{
-
-    QQmlEngine engine;
+int run_model_shrink(int argc, char** argv) {
+    QQmlEngine   engine;
     QQuickWindow window;
     window.resize(480, 196);
 
@@ -90,14 +78,16 @@ int run_model_shrink(int argc, char** argv)
 
     view.setModel(5);
     if (view.currentIndex() != 4) {
-        std::fprintf(stderr, "FAIL: shrink model currentIndex=%d expected=4\n", view.currentIndex());
+        std::fprintf(
+            stderr, "FAIL: shrink model currentIndex=%d expected=4\n", view.currentIndex());
         return EXIT_FAILURE;
     }
 
-    auto* flick = view.flickable();
+    auto*       flick    = view.flickable();
     const qreal expected = expectedSnapOffset(4, 5);
-    if (!nearEqual(flickContentX(flick), expected)) {
-        std::fprintf(stderr, "FAIL: shrink scroll contentX=%.2f expected=%.2f\n",
+    if (! nearEqual(flickContentX(flick), expected)) {
+        std::fprintf(stderr,
+                     "FAIL: shrink scroll contentX=%.2f expected=%.2f\n",
                      flickContentX(flick),
                      expected);
         return EXIT_FAILURE;
