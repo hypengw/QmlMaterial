@@ -1,5 +1,6 @@
 #include "qml_material/scrollable/flickable.hpp"
 #include "pointer_delivery.hpp"
+#include "qml_material/input/nested_scroll.hpp"
 
 #include <QCoreApplication>
 #include <QGuiApplication>
@@ -1098,6 +1099,7 @@ auto Flickable::ignorePointerEvent(QEvent* event) const -> void {
 }
 
 auto Flickable::childMouseEventFilter(QQuickItem* item, QEvent* event) -> bool {
+    if (NestedScroll::coordinates(item, this)) return false;
     if (! m_interactive || ! item || ! isVisible() || ! isEnabled() ||
         ! pointerAccepted(item, event)) {
         cancelInteraction();

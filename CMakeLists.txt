@@ -200,6 +200,9 @@ set(SOURCES
     include/qml_material/scrollable/flickable.hpp
     include/qml_material/scrollable/scroll_motion.hpp
     src/input/wheel_handler.cpp
+    src/input/nested_scroll.cpp
+    src/input/scroll_participant.cpp
+    include/qml_material/input/nested_scroll.hpp
     include/qml_material/input/wheel_handler.hpp
     src/carousel/carousel_attached.cpp
     src/carousel/carousel_view.cpp

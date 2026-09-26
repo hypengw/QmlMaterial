@@ -307,6 +307,7 @@ protected:
 
 private:
     friend class FlickableVisibleArea;
+    friend class ScrollParticipant;
 
     enum Axis
     {

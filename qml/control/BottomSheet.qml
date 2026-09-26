@@ -8,7 +8,9 @@ MD.PopupBase {
     property alias mdState: m_state
     property int sheetType: MD.Enum.BottomSheetModal
     property bool showDragHandle: true
+    property bool nestedScrollEnabled: false
     property bool dismissOnDragDown: sheetType === MD.Enum.BottomSheetModal
+    property real dragDismissThreshold: _collapsedHeight * 0.25
     property real lowHeight: -1
     property real collapsedHeight: -1
     property real maxSheetWidth: 640
@@ -24,6 +26,7 @@ MD.PopupBase {
     property real _slideOffset: _visibleHeight
     property real _scrimOpacity: 0
     property bool _dragDismissPending: false
+    property real _dragReleasePosition: 0
 
     readonly property real _parentWidth: parent ? parent.width : width
     readonly property real _parentHeight: parent ? parent.height : height
@@ -64,6 +67,7 @@ MD.PopupBase {
     onAboutToShow: _startEnter()
     onAboutToHide: _startExit()
     onClosed: {
+        m_drag_return.stop();
         m_sheet_motion.stop();
         m_sheet_flickable.cancelFlick();
         _dragDismissPending = false;
@@ -72,6 +76,7 @@ MD.PopupBase {
     }
 
     function _startEnter() {
+        m_drag_return.stop();
         m_sheet_motion.stop();
         m_sheet_flickable.cancelFlick();
         m_sheet_flickable.contentY = 0;
@@ -81,6 +86,7 @@ MD.PopupBase {
     }
 
     function _startExit() {
+        m_drag_return.stop();
         m_sheet_motion.stop();
         m_sheet_flickable.cancelFlick();
         _slideOffset = -m_sheet_flickable.contentY;
@@ -111,15 +117,24 @@ MD.PopupBase {
         if (!dismissOnDragDown || !control.opened || control.closing || m_sheet_flickable.contentY >= -control._collapseDistance - 0.5)
             return;
         _dragDismissPending = true;
-        Qt.callLater(control._closeAfterDrag);
+        _dragReleasePosition = m_sheet_flickable.contentY;
+        Qt.callLater(control._settleAfterDrag);
     }
 
-    function _closeAfterDrag() {
+    function _settleAfterDrag() {
         if (!_dragDismissPending)
             return;
+        m_sheet_flickable.cancelFlick();
         _dragDismissPending = false;
-        if (control.opened && !control.closing)
+        if (!control.opened || control.closing || m_sheet_flickable.dragging)
+            return;
+        m_sheet_flickable.contentY = _dragReleasePosition;
+        if (-_dragReleasePosition - _collapseDistance >= Math.max(0, dragDismissThreshold)) {
             control.close();
+        } else {
+            m_drag_return.to = -_collapseDistance;
+            m_drag_return.start();
+        }
     }
 
     Rectangle {
@@ -138,11 +153,22 @@ MD.PopupBase {
         topMargin: control._dragDownRange
         flickableDirection: MD.Scrollable.VerticalFlick
         synchronousDrag: true
+        MD.NestedScroll.enabled: control.nestedScrollEnabled
+        MD.NestedScroll.wheelEnabled: false
+        MD.NestedScroll.restoreOnReverse: true
+        onMovementEnded: {
+            if (!control._dragDismissPending && !dragging && contentY < -control._collapseDistance)
+                contentY = -control._collapseDistance;
+        }
         inputMaskMode: MD.Scrollable.CustomItem
         interactionItem: m_panel
         interactive: control.opened && !control.closing
 
-        onDragStarted: m_sheet_motion.stop()
+        onDragStarted: {
+            control._dragDismissPending = false;
+            m_drag_return.stop();
+            m_sheet_motion.stop();
+        }
         onDragEnded: control._finishDrag()
 
         MD.ElevationRectangle {
@@ -205,6 +231,14 @@ MD.PopupBase {
         id: m_state
         item: control
         type: control.sheetType
+    }
+
+    NumberAnimation {
+        id: m_drag_return
+        target: m_sheet_flickable
+        property: "contentY"
+        duration: control.animationDuration
+        easing.type: Easing.OutCubic
     }
 
     ParallelAnimation {
