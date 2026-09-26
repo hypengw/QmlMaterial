@@ -300,41 +300,53 @@ public:
     Q_INVOKABLE void         completeExit();
     Q_INVOKABLE void         forceActiveFocus(Qt::FocusReason reason = Qt::OtherFocusReason);
     Q_INVOKABLE virtual void dismissImmediately();
-    void                     reposition();
-    virtual void             updateDimmer(QQuickItem*, qreal opacity) const;
-    bool                     containsScenePoint(const QPointF&) const;
-    virtual bool             blocksScenePoint(const QPointF&) const { return modal(); }
-    virtual bool             overlayContainsScenePoint(const QPointF&) const { return true; }
-    bool                     parentContainsScenePoint(const QPointF&) const;
-    Q_SIGNAL void            parentChanged();
-    Q_SIGNAL void            popupItemChanged();
-    Q_SIGNAL void            overlayItemChanged();
-    Q_SIGNAL void            overlayGeometryChanged();
-    Q_SIGNAL void            contentChildrenChanged();
-    Q_SIGNAL void            visibleChanged();
-    Q_SIGNAL void            openedChanged();
-    Q_SIGNAL void            enteringChanged();
-    Q_SIGNAL void            closingChanged();
-    Q_SIGNAL void            modalChanged();
-    Q_SIGNAL void            dimChanged();
-    Q_SIGNAL void            focusChanged();
-    Q_SIGNAL void            positioningItemChanged();
-    Q_SIGNAL void            deferredCompletionChanged();
-    Q_SIGNAL void            hideDelayChanged();
-    Q_SIGNAL void            closePolicyChanged();
-    Q_SIGNAL void            collisionPolicyChanged();
-    Q_SIGNAL void            xChanged();
-    Q_SIGNAL void            yChanged();
-    Q_SIGNAL void            zChanged();
-    Q_SIGNAL void            marginsChanged();
-    Q_SIGNAL void            fontChanged();
-    Q_SIGNAL void            localeChanged();
-    Q_SIGNAL void            enterChanged();
-    Q_SIGNAL void            exitChanged();
-    Q_SIGNAL void            aboutToShow();
-    Q_SIGNAL void            aboutToHide();
-    Q_SIGNAL void            opened();
-    Q_SIGNAL void            closed();
+    bool                     acquirePresentation(QObject* owner);
+    void                     releasePresentation(QObject* owner);
+    void                     setPresentationAllowed(QObject* owner, bool allowed);
+    void                     setPresentationRequestEnabled(QObject* owner, bool enabled);
+    bool                     requestPresentation();
+    bool                     canRequestPresentation() const {
+        return presentationAllowed() || m_presentationRequestEnabled;
+    }
+    QObject* presentationOwner() const { return m_presentationOwner; }
+    bool     presentationAllowed() const { return ! m_presentationOwner || m_presentationAllowed; }
+    Q_SIGNAL void presentationOwnerChanged();
+    Q_SIGNAL void presentationRequested();
+    void          reposition();
+    virtual void  updateDimmer(QQuickItem*, qreal opacity) const;
+    bool          containsScenePoint(const QPointF&) const;
+    virtual bool  blocksScenePoint(const QPointF&) const { return modal(); }
+    virtual bool  overlayContainsScenePoint(const QPointF&) const { return true; }
+    bool          parentContainsScenePoint(const QPointF&) const;
+    Q_SIGNAL void parentChanged();
+    Q_SIGNAL void popupItemChanged();
+    Q_SIGNAL void overlayItemChanged();
+    Q_SIGNAL void overlayGeometryChanged();
+    Q_SIGNAL void contentChildrenChanged();
+    Q_SIGNAL void visibleChanged();
+    Q_SIGNAL void openedChanged();
+    Q_SIGNAL void enteringChanged();
+    Q_SIGNAL void closingChanged();
+    Q_SIGNAL void modalChanged();
+    Q_SIGNAL void dimChanged();
+    Q_SIGNAL void focusChanged();
+    Q_SIGNAL void positioningItemChanged();
+    Q_SIGNAL void deferredCompletionChanged();
+    Q_SIGNAL void hideDelayChanged();
+    Q_SIGNAL void closePolicyChanged();
+    Q_SIGNAL void collisionPolicyChanged();
+    Q_SIGNAL void xChanged();
+    Q_SIGNAL void yChanged();
+    Q_SIGNAL void zChanged();
+    Q_SIGNAL void marginsChanged();
+    Q_SIGNAL void fontChanged();
+    Q_SIGNAL void localeChanged();
+    Q_SIGNAL void enterChanged();
+    Q_SIGNAL void exitChanged();
+    Q_SIGNAL void aboutToShow();
+    Q_SIGNAL void aboutToHide();
+    Q_SIGNAL void opened();
+    Q_SIGNAL void closed();
 
 protected:
     void beginInteractiveTransition();
@@ -381,6 +393,10 @@ private:
     State                          m_state       = Closed;
     bool                           m_dismissing  = false;
     bool                           m_interacting = false;
+    QPointer<QObject>              m_presentationOwner;
+    QMetaObject::Connection        m_presentationOwnerConnection;
+    bool                           m_presentationAllowed = false;
+    bool m_presentationRequestEnabled = false, m_requestingPresentation = false;
     bool m_complete = false, m_requestedVisible = false, m_modal = false, m_focus = false,
          m_deferred = false, m_positioning = false;
     std::optional<bool>    m_dim;

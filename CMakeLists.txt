@@ -181,6 +181,8 @@ set(SOURCES
     include/qml_material/control/overlay.hpp
     src/control/popup_presenter.cpp
     include/qml_material/control/popup_presenter.hpp
+    src/control/adaptive_presenter.cpp
+    include/qml_material/control/adaptive_presenter.hpp
     src/control/tool_tip.cpp
     src/control/tool_tip_popup.cpp
     include/qml_material/control/tool_tip_popup.hpp

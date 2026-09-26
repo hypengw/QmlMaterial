@@ -87,6 +87,9 @@ Popup::Popup(Panel* surface, QObject* parent)
     connect(qGuiApp, &QGuiApplication::layoutDirectionChanged, this, &Popup::refreshEnvironment);
 }
 Popup::~Popup() {
+    m_dismissing = true;
+    disconnect(m_presentationOwnerConnection);
+    m_presentationOwner = nullptr;
     utils::disconnectAll(m_parentConnections);
     utils::disconnectAll(m_positioningConnections);
     utils::disconnectAll(m_overlayConnections);
@@ -282,6 +285,7 @@ void        Popup::setPopupItem(QQuickItem* item) {
     Q_EMIT popupItemChanged();
 }
 void Popup::setVisible(bool value) {
+    if (value && ! requestPresentation()) return;
     m_requestedVisible = value;
     if (! m_complete) return;
     if (value)
@@ -303,8 +307,54 @@ bool Popup::changeState(State state) {
     if ((old == Closing) != (state == Closing)) Q_EMIT closingChanged();
     return guard && m_state == state;
 }
+bool Popup::acquirePresentation(QObject* owner) {
+    if (! owner || (m_presentationOwner && m_presentationOwner != owner)) return false;
+    if (m_presentationOwner == owner) return true;
+    m_presentationOwner           = owner;
+    m_presentationAllowed         = false;
+    m_presentationRequestEnabled  = false;
+    m_presentationOwnerConnection = connect(owner, &QObject::destroyed, this, [this] {
+        QPointer<Popup> guard(this);
+        dismissImmediately();
+        if (guard) Q_EMIT presentationOwnerChanged();
+    });
+    QPointer<Popup> guard(this);
+    dismissImmediately();
+    if (! guard) return false;
+    Q_EMIT presentationOwnerChanged();
+    return guard && m_presentationOwner == owner;
+}
+void Popup::releasePresentation(QObject* owner) {
+    if (! owner || m_presentationOwner != owner) return;
+    QPointer<Popup> guard(this);
+    setPresentationAllowed(owner, false);
+    if (! guard || m_presentationOwner != owner) return;
+    disconnect(m_presentationOwnerConnection);
+    m_presentationOwner = nullptr;
+    Q_EMIT presentationOwnerChanged();
+}
+void Popup::setPresentationAllowed(QObject* owner, bool allowed) {
+    if (! owner || m_presentationOwner != owner) return;
+    m_presentationAllowed = allowed;
+    if (! allowed) dismissImmediately();
+}
+void Popup::setPresentationRequestEnabled(QObject* owner, bool enabled) {
+    if (owner && m_presentationOwner == owner) m_presentationRequestEnabled = enabled;
+}
+bool Popup::requestPresentation() {
+    if (m_dismissing) return false;
+    if (presentationAllowed()) return true;
+    if (! m_presentationRequestEnabled || m_requestingPresentation) return false;
+    QPointer<Popup>         guard(this);
+    const QPointer<QObject> owner = m_presentationOwner;
+    m_requestingPresentation      = true;
+    Q_EMIT presentationRequested();
+    if (! guard) return false;
+    m_requestingPresentation = false;
+    return owner && m_presentationOwner == owner && m_presentationAllowed;
+}
 void Popup::open() {
-    if (m_dismissing) return;
+    if (! requestPresentation()) return;
     if (! m_complete) {
         m_requestedVisible = true;
         return;
@@ -338,6 +388,7 @@ void Popup::open() {
     startTransition(true);
 }
 void Popup::beginInteractiveTransition() {
+    if (! presentationAllowed()) return;
     m_motion->cancel();
     m_hideTimer.stop();
     m_interacting = true;

@@ -11,7 +11,7 @@ import Qcm.Material as MD
 MD.ControlBase {
     id: control
     focusPolicy: Qt.NoFocus
-    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
+    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, (useModal ? 0 : implicitContentWidth) + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
     // -- data --
@@ -32,7 +32,7 @@ MD.ControlBase {
     property bool autoExpand: true
     // items use the horizontal (expanded) layout
     readonly property bool useLarge: (expanded && !useModal) || drawerOpened
-    readonly property bool drawerOpened: m_private.drawerOpenedSet
+    readonly property bool drawerOpened: m_popup_content.current
 
     // -- sizes --
     property real collapsedWidth: 96
@@ -63,8 +63,13 @@ MD.ControlBase {
 
     QtObject {
         id: m_private
-        readonly property bool drawerOpened: m_drawer.position > control.collapsedWidth / Math.max(m_drawer.implicitWidth, 1)
-        property bool drawerOpenedSet: false
+        property bool drawerRequested: false
+    }
+
+    MD.AdaptivePresenter {
+        id: m_presenter
+        content: m_flick
+        destination: control.useModal && m_private.drawerRequested ? m_popup_content : m_embed_content
     }
 
     function open() {
@@ -121,8 +126,9 @@ MD.ControlBase {
         }
     }
 
-    contentItem: Item {
+    contentItem: MD.PresentationSite {
         id: m_embed_content
+        presenter: m_presenter
     }
 
     Component {
@@ -222,7 +228,8 @@ MD.ControlBase {
         id: m_drawer
         parent: control.MD.Overlay.overlay
         modal: control.useModal
-        interactive: control.drawerGestureEnabled
+        interactive: control.drawerGestureEnabled && control.useModal
+        onClosed: m_private.drawerRequested = false
         MD.MProp.textColor: MD.MProp.color.on_surface
         MD.MProp.backgroundColor: MD.MProp.color.surface_container
 
@@ -242,41 +249,18 @@ MD.ControlBase {
             }
         }
 
-        contentItem: Item {
+        contentItem: MD.PresentationSite {
             id: m_popup_content
-            implicitWidth: m_flick.implicitWidth
-            implicitHeight: m_flick.implicitHeight
+            presenter: m_presenter
+            popup: m_drawer
+            autoOpen: false
+            activationEnabled: control.useModal
+            onActivationRequested: m_private.drawerRequested = true
         }
     }
 
     Item {
         visible: false
-        state: m_private.drawerOpened ? "popup" : "embed"
-
-        states: [
-            State {
-                name: "embed"
-                ParentChange {
-                    target: m_flick
-                    parent: m_embed_content
-                }
-                PropertyChanges {
-                    m_flick.visible: true
-                    m_private.drawerOpenedSet: false
-                }
-            },
-            State {
-                name: "popup"
-                ParentChange {
-                    target: m_flick
-                    parent: m_popup_content
-                }
-                PropertyChanges {
-                    m_flick.visible: true
-                    m_private.drawerOpenedSet: true
-                }
-            }
-        ]
 
         MD.VerticalFlickable {
             id: m_flick
@@ -285,14 +269,6 @@ MD.ControlBase {
             contentHeight: m_content.implicitHeight
             implicitWidth: m_content.implicitWidth
             implicitHeight: m_content.implicitHeight + 12 * 2
-            anchors.fill: parent
-
-            opacity: {
-                const v = m_drawer.position;
-                const left = control.collapsedWidth / Math.max(m_drawer.implicitWidth, 1);
-                const right = left + 0.1;
-                return control.useModal ? MD.Util.teleportCurve(v, left, right) : 1;
-            }
 
             Item {
                 id: m_content

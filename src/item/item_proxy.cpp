@@ -11,10 +11,10 @@ public:
     explicit ProxyControl(QQuickItem* target): QObject(target) {}
     QPointer<ItemProxy> owner;
 };
-ProxyControl* controlFor(QQuickItem* target) {
+ProxyControl* controlFor(QQuickItem* target, bool create = true) {
     for (auto* child : target->children())
         if (auto* control = dynamic_cast<ProxyControl*>(child)) return control;
-    return new ProxyControl(target);
+    return create ? new ProxyControl(target) : nullptr;
 }
 } // namespace
 
@@ -73,25 +73,28 @@ void ItemProxy::setActive(bool value) {
         release();
     if (guard && revision == m_revision) Q_EMIT activeChanged();
 }
+QString ItemProxy::acquisitionError(QQuickItem* target, const ItemProxy* releasing) const {
+    if (! target) return QStringLiteral("missing target");
+    for (auto* ancestor = static_cast<const QQuickItem*>(this); ancestor;
+         ancestor       = ancestor->parentItem()) {
+        if (ancestor == target) return QStringLiteral("target would create a visual parent cycle");
+    }
+    if (window() && target->window() && window() != target->window())
+        return QStringLiteral("target belongs to a different window");
+    auto* control = controlFor(target, false);
+    if (control && control->owner && control->owner != this && control->owner != releasing)
+        return QStringLiteral("target is already controlled by another ItemProxy");
+    return {};
+}
 void ItemProxy::acquire() {
     if (! isComponentComplete() || ! m_active || ! m_target || m_controlling || m_destroying)
         return;
-    for (auto* ancestor = static_cast<QQuickItem*>(this); ancestor;
-         ancestor       = ancestor->parentItem()) {
-        if (ancestor == m_target) {
-            qmlWarning(this) << "target would create a visual parent cycle";
-            return;
-        }
-    }
-    if (window() && m_target->window() && window() != m_target->window()) {
-        qmlWarning(this) << "target belongs to a different window";
+    const auto error = acquisitionError(m_target);
+    if (! error.isEmpty()) {
+        qmlWarning(this) << error;
         return;
     }
-    auto* control = controlFor(m_target);
-    if (control->owner && control->owner != this) {
-        qmlWarning(this) << "target is already controlled by another ItemProxy";
-        return;
-    }
+    auto* control  = controlFor(m_target);
     control->owner = this;
     m_controlling  = true;
     QPointer<ItemProxy> guard(this);

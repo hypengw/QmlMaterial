@@ -71,6 +71,38 @@ private Q_SLOTS:
         m_window.resize(800, 600);
         m_window.show();
     }
+    void paneSpacing_data() {
+        QTest::addColumn<bool>("withHandle");
+        QTest::newRow("no-handle") << false;
+        QTest::newRow("default-handle") << true;
+    }
+    void paneSpacing() {
+        QFETCH(bool, withHandle);
+        auto view = create(withHandle ? QByteArray() : QByteArray("handle: null"));
+        QVERIFY(view);
+        auto* first  = view->itemAt(0);
+        auto* second = view->itemAt(1);
+        for (auto orientation : { Qt::Horizontal, Qt::Vertical }) {
+            view->setOrientation(orientation);
+            const bool horizontal = orientation == Qt::Horizontal;
+            for (qreal spacing : { 24.0, 40.0, 0.0 }) {
+                view->setSpacing(spacing);
+                polish(view.get());
+                const auto start = second->mapToItem(view.get(), QPointF());
+                const auto end = first->mapToItem(view.get(), { first->width(), first->height() });
+                QCOMPARE(horizontal ? start.x() - end.x() : start.y() - end.y(),
+                         withHandle ? std::max(24.0, spacing) : spacing);
+                QCOMPARE(bool(view->handleItemAt(0)), withHandle);
+            }
+            view->setSpacing(24);
+            info(second)->setExpanded(false);
+            polish(view.get());
+            QCOMPARE(horizontal ? first->width() : first->height(),
+                     horizontal ? view->width() : view->height());
+            info(second)->setExpanded(true);
+            polish(view.get());
+        }
+    }
     void immediateAndBindings() {
         auto view = create();
         QVERIFY(view);

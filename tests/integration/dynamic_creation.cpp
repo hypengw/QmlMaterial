@@ -1315,6 +1315,25 @@ private Q_SLOTS:
         delete presentation;
     }
 
+    void popupPresenterOwnsPresentationLease() {
+        auto host = createPresentationHost();
+        QVERIFY(host);
+        auto* presentation = invokePresentation(host.get(), "presentControlled");
+        QVERIFY(presentation);
+        QCOMPARE(presentation->status(), qml_material::PopupPresentation::Open);
+        auto* popup =
+            qobject_cast<qml_material::Popup*>(host->property("controlledPopup").value<QObject*>());
+        QVERIFY(popup);
+        QCOMPARE(popup->presentationOwner(), presentation);
+        QObject competitor;
+        QVERIFY(! popup->acquirePresentation(&competitor));
+        QVERIFY(popup->isOpened());
+        presentation->close();
+        QCOMPARE(popup->presentationOwner(), nullptr);
+        processDeferredDeletes();
+        delete presentation;
+    }
+
     void popupPresenterCancelsAsynchronousCreationOnce() {
         auto host = createPresentationHost();
         QVERIFY(host);

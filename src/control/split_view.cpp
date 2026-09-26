@@ -375,6 +375,7 @@ SplitView::SplitView(QQuickItem* parent): Container(parent) {
     connect(this, &Control::availableWidthChanged, this, &SplitView::invalidateLayout);
     connect(this, &Control::availableHeightChanged, this, &SplitView::invalidateLayout);
     connect(this, &Control::contentItemChanged, this, &SplitView::invalidateLayout);
+    connect(this, &Control::spacingChanged, this, &SplitView::invalidateLayout);
     connect(this, &QQuickItem::visibleChanged, this, [this] {
         QPointer<SplitView> guard(this);
         if (! isVisible()) settleExpansions(false);
@@ -699,8 +700,11 @@ QList<split_layout::Pane> SplitView::layoutPanes(Qt::Orientation orientation) co
             pane.fill         = horizontal ? info->fillWidth() : info->fillHeight();
         }
         if (orientation == m_orientation) {
+            pane.handleSize = std::isfinite(spacing()) ? std::max(qreal(0), spacing()) : 0;
             if (auto* handle = handleItemAt(i))
-                pane.handleSize = horizontal ? handle->implicitWidth() : handle->implicitHeight();
+                pane.handleSize =
+                    std::max(pane.handleSize,
+                             horizontal ? handle->implicitWidth() : handle->implicitHeight());
         }
         panes.append(pane);
     }

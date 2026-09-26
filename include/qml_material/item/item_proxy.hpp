@@ -20,6 +20,7 @@ public:
     QQuickItem*   target() const { return m_target; }
     bool          active() const { return m_active; }
     bool          controlling() const { return m_controlling; }
+    QString       acquisitionError(QQuickItem* target, const ItemProxy* releasing = nullptr) const;
     void          setTarget(QQuickItem*);
     void          setActive(bool);
     Q_SIGNAL void targetChanged();

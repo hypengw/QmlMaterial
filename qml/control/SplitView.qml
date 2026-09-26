@@ -4,6 +4,7 @@ import Qcm.Material as MD
 
 // Optional expandTransition/collapseTransition animate "progress" on an internal target.
 // Use SplitViewBase.expanded for animated disclosure; visible remains an immediate hide.
+// spacing sets the minimum pane gap, including when handle is null.
 MD.SplitViewBase {
     id: control
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)

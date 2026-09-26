@@ -1,4 +1,5 @@
 #include "qml_material/control/popup_presenter.hpp"
+#include "qml_material/control/popup.hpp"
 
 #include <QMetaMethod>
 #include <QQmlContext>
@@ -274,6 +275,19 @@ void PopupPresenter::attachPopup(PopupPresentation* presentation, QObject* popup
         return;
     }
 
+    if (auto* managed = qobject_cast<Popup*>(popup)) {
+        QPointer<PopupPresenter>    guard(this);
+        QPointer<PopupPresentation> handle(presentation);
+        const bool                  acquired = managed->acquirePresentation(presentation);
+        if (! guard || ! handle || handle->m_terminal) return;
+        if (! acquired) {
+            failPresentation(presentation,
+                             QStringLiteral("popup already has a presentation owner"));
+            return;
+        }
+        managed->setPresentationAllowed(presentation, true);
+    }
+    presentation->m_popup        = popup;
     const auto* presentationMeta = presentation->metaObject();
     const auto  openedSlot       = presentationMeta->indexOfSlot("onPopupOpened()");
     const auto  closedSlot       = presentationMeta->indexOfSlot("onPopupClosed()");
@@ -365,6 +379,12 @@ void PopupPresenter::finishPresentation(PopupPresentation*        presentation,
     if (presentation->m_request)
         disconnect(presentation->m_request, nullptr, presentation, nullptr);
     if (presentation->m_popup) disconnect(presentation->m_popup, nullptr, presentation, nullptr);
+    if (auto* popup = qobject_cast<Popup*>(presentation->m_popup.data())) {
+        QPointer<PopupPresenter>    guard(this);
+        QPointer<PopupPresentation> handle(presentation);
+        popup->releasePresentation(presentation);
+        if (! guard || ! handle) return;
+    }
     if (presentation->m_attached) {
         disconnect(presentation->m_attached, nullptr, presentation, nullptr);
         presentation->m_attached->unbind(presentation);

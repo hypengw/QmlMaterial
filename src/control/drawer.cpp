@@ -63,6 +63,7 @@ qreal Drawer::distanceFromEdge(const QPointF& point) const {
     return 0;
 }
 bool Drawer::acceptsDrag(const QPointF& point) const {
+    if (! canRequestPresentation()) return false;
     if (! m_interactive || ! enabled() || ! parentItem() || ! parentItem()->isVisible() ||
         extent() <= 0)
         return false;
@@ -87,6 +88,7 @@ void Drawer::pressDrag(const QPointF& point, ulong timestamp) {
     m_wasOpen        = isVisible() && ! closing();
 }
 bool Drawer::wantsDrag(const QPointF& point) const {
+    if (! canRequestPresentation()) return false;
     if (! m_interactive || ! enabled() || extent() <= 0) return false;
     if (! isVisible() && m_dragMargin <= 0) return false;
     const auto delta  = point - m_pressPoint;
@@ -97,6 +99,7 @@ bool Drawer::wantsDrag(const QPointF& point) const {
            (isVisible() || along > 0);
 }
 void Drawer::startDrag(const QPointF& point) {
+    if (! requestPresentation()) return;
     m_dragging     = true;
     m_dragOrigin   = axis(point);
     m_dragPosition = m_position;
@@ -123,6 +126,7 @@ void Drawer::cancelDrag() {
     endInteractiveTransition(m_wasOpen);
 }
 void Drawer::open() {
+    if (! requestPresentation()) return;
     if (m_inputOverlay) m_inputOverlay->releaseDrawer(this);
     const bool wasDragging = m_dragging;
     m_dragging             = false;
