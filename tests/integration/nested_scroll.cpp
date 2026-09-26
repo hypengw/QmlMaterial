@@ -8,6 +8,7 @@
 #include <QtQuick/private/qquickflickable_p.h>
 #include <QtQuick/private/qquickdeliveryagent_p_p.h>
 #include <QtQuick/private/qquickwindow_p.h>
+#include <QtQuick/private/qquickanimation_p.h>
 #include <QtTest>
 
 using namespace qml_material;
@@ -303,6 +304,118 @@ MD.Scrollable {
         QCOMPARE(qtOuter.contentY(), 30);
         mouse(QEvent::MouseButtonRelease, { 100, 130 }, 1240);
     }
+    void sheetRelease_data() {
+        QTest::addColumn<bool>("nested");
+        QTest::addColumn<QString>("gesture");
+        QTest::addColumn<bool>("dismiss");
+        for (bool nested : { false, true }) {
+            for (const auto& gesture :
+                 { "fast", "paused", "rest", "reverse", "distance", "cancel", "threshold" }) {
+                const auto name = QByteArray(nested ? "nested-" : "direct-") + gesture;
+                QTest::newRow(name.constData())
+                    << nested << QString::fromLatin1(gesture)
+                    << (QByteArray(gesture) == "fast" || QByteArray(gesture) == "distance" ||
+                        QByteArray(gesture) == "threshold");
+            }
+        }
+    }
+    void sheetRelease() {
+        QFETCH(bool, nested);
+        QFETCH(QString, gesture);
+        QFETCH(bool, dismiss);
+        root.reset();
+        QQmlComponent component(&engine);
+        component.setData(R"(
+import QtQuick
+import Qcm.Material as MD
+Item {
+    id: page; width: 300; height: 500
+    property MD.BottomSheet sheet: MD.BottomSheet {
+        parent: page
+        property bool reducedThreshold: false
+        dragDismissThreshold: _collapsedHeight * (reducedThreshold ? 0.125 : 0.25)
+        animationDuration: 0
+        preferredContentHeight: 300
+        nestedScrollEnabled: true
+        MD.ListView {
+            MD.NestedScroll.enabled: true
+            objectName: "sheetList"
+            width: page.sheet.contentViewportWidth
+            height: page.sheet.contentViewportHeight
+            model: 20
+            delegate: Rectangle { width: 300; height: 50 }
+        }
+    }
+})",
+                          QUrl("qrc:/sheet-release-test.qml"));
+        QVERIFY2(component.isReady(), qPrintable(component.errorString()));
+        root.reset(qobject_cast<QQuickItem*>(component.create()));
+        QVERIFY(root);
+        window.resize(300, 500);
+        root->setParentItem(window.contentItem());
+        auto* sheet = qobject_cast<Popup*>(root->property("sheet").value<QObject*>());
+        QVERIFY(sheet);
+        sheet->open();
+        QTRY_VERIFY(sheet->isOpened());
+        auto* list   = sheet->findChild<QQuickFlickable*>("sheetList");
+        auto* scroll = sheet->findChild<Flickable*>();
+        QVERIFY(list && scroll);
+        QVERIFY(QMetaObject::invokeMethod(list, "forceLayout"));
+        if (gesture == "threshold") sheet->setProperty("reducedThreshold", true);
+        QSignalSpy frames(&window, &QQuickWindow::afterAnimating);
+        window.update();
+        QTRY_VERIFY(! frames.isEmpty());
+        const auto start = list->mapToScene({ 100, nested ? 40.0 : -24.0 });
+        QSignalSpy released(scroll, &Flickable::dragReleased);
+        mouse(QEvent::MouseButtonPress, start, 1000);
+        const bool far   = gesture == "reverse" || gesture == "distance" || gesture == "cancel";
+        auto       moved = start + QPointF(0, far ? 120 : gesture == "threshold" ? 60 : 30);
+        mouse(QEvent::MouseMove, moved, 1020);
+        QVERIFY(scroll->isDragging());
+        if (gesture == "threshold") {
+            QCOMPARE(sheet->property("dragDismissThreshold").toReal(),
+                     sheet->property("_collapsedHeight").toReal() * 0.125);
+            QCOMPARE(scroll->contentY(), -60);
+        }
+        QVERIFY(scroll->dragVelocity().y() < 0);
+        QCOMPARE(sheet->property("_scrimOpacity").toReal(), 0);
+        if (gesture == "rest") {
+            QTRY_COMPARE(scroll->dragVelocity(), QPointF());
+            QCOMPARE(sheet->property("_scrimOpacity").toReal(), 1);
+            QVERIFY(scroll->isDragging());
+        }
+        if (gesture == "reverse") {
+            moved -= QPointF(0, 10);
+            mouse(QEvent::MouseMove, moved, 1040);
+            QVERIFY(scroll->dragVelocity().y() > 0);
+            QVERIFY(-scroll->contentY() > sheet->property("dragDismissThreshold").toReal());
+            QCOMPARE(sheet->property("_scrimOpacity").toReal(), 1);
+        }
+        if (gesture == "cancel") {
+            scroll->setInteractive(false);
+            QCOMPARE(released.size(), 0);
+        } else {
+            const bool pause = gesture == "paused" || gesture == "rest" || gesture == "distance" ||
+                               gesture == "threshold";
+            mouse(QEvent::MouseButtonRelease, moved, pause ? 1240 : 1060);
+            QCOMPARE(released.size(), 1);
+            const auto velocity = released.first().first().toPointF();
+            if (pause)
+                QCOMPARE(velocity, QPointF());
+            else if (gesture == "reverse")
+                QVERIFY(velocity.y() > 0);
+            else
+                QVERIFY(velocity.y() < 0);
+        }
+        if (dismiss)
+            QTRY_VERIFY(! sheet->isVisible());
+        else {
+            QTRY_COMPARE(scroll->contentY(), 0);
+            QVERIFY(sheet->isOpened());
+            QCOMPARE(sheet->property("_scrimOpacity").toReal(), 1);
+        }
+        QCOMPARE(scroll->dragVelocity(), QPointF());
+    }
     void sheetListPriority() {
         root.reset();
         QQmlComponent component(&engine);
@@ -339,6 +452,13 @@ Item {
         auto* list   = sheet->findChild<QQuickFlickable*>("sheetList");
         auto* scroll = sheet->findChild<Flickable*>();
         QVERIFY(list && scroll);
+        QQuickNumberAnimation* dragScrim = nullptr;
+        for (auto* animation : sheet->findChildren<QQuickNumberAnimation*>()) {
+            if (! animation->group() && animation->property() == QStringLiteral("_scrimOpacity"))
+                dragScrim = animation;
+        }
+        QVERIFY(dragScrim);
+        QCOMPARE(sheet->property("_scrimOpacity").toReal(), 1);
         QVERIFY(QMetaObject::invokeMethod(list, "forceLayout"));
         const auto  wheelPosition = list->mapToScene({ 100, 100 });
         QWheelEvent down(wheelPosition,
@@ -387,10 +507,22 @@ Item {
         mouse(QEvent::MouseMove, start + QPointF(0, 160), 1060);
         QCOMPARE(scroll->contentY(), -110);
         QVERIFY(sheet->isOpened());
+        QVERIFY(dragScrim->isRunning());
+        QCOMPARE(dragScrim->to(), 0);
+        QCOMPARE(sheet->property("_scrimOpacity").toReal(), 1);
+        dragScrim->complete();
+        QCOMPARE(sheet->property("_scrimOpacity").toReal(), 0);
+        QVERIFY(sheet->modal());
+        QVERIFY(sheet->dim());
         mouse(QEvent::MouseMove, start + QPointF(0, 70), 1080);
         QCOMPARE(scroll->contentY(), -20);
         QCOMPARE(list->contentY(), 0);
         QVERIFY(sheet->isOpened());
+        QVERIFY(dragScrim->isRunning());
+        QCOMPARE(dragScrim->to(), 1);
+        QCOMPARE(sheet->property("_scrimOpacity").toReal(), 0);
+        dragScrim->complete();
+        QCOMPARE(sheet->property("_scrimOpacity").toReal(), 1);
         mouse(QEvent::MouseMove, start + QPointF(0, 40), 1100);
         QCOMPARE(scroll->contentY(), 0);
         QCOMPARE(list->contentY(), 10);
@@ -411,8 +543,17 @@ Item {
         mouse(QEvent::MouseMove, handle + QPointF(0, 120), 2020);
         QCOMPARE(list->contentY(), 50);
         QVERIFY(scroll->contentY() < 0);
+        QVERIFY(dragScrim->isRunning());
+        QCOMPARE(dragScrim->to(), 0);
+        dragScrim->complete();
+        QCOMPARE(sheet->property("_scrimOpacity").toReal(), 0);
         mouse(QEvent::MouseButtonRelease, handle + QPointF(0, 120), 2240);
         QTRY_VERIFY(! sheet->isVisible());
+        QVERIFY(! dragScrim->isRunning());
+        sheet->setProperty("animationDuration", 0);
+        sheet->open();
+        QTRY_VERIFY(sheet->isOpened());
+        QCOMPARE(sheet->property("_scrimOpacity").toReal(), 1);
     }
 };
 

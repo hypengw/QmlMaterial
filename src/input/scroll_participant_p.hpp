@@ -27,7 +27,7 @@ public:
     void             begin();
     QPointF          consume(QPointF delta, Activity activity, QPointF velocity,
                              const std::function<bool()>& current);
-    void             end();
+    void             end(std::optional<QPointF> releaseVelocity = std::nullopt);
 
 private:
     QPointer<Flickable>       m_owned;

@@ -10,6 +10,7 @@
 #include <QVector>
 #include <QPointerEvent>
 #include <memory>
+#include <optional>
 #include "qml_material/scrollable/scroll_motion.hpp"
 #include "qml_material/export.hpp"
 
@@ -72,6 +73,7 @@ class QML_MATERIAL_API Flickable : public QQuickItem {
 
     Q_PROPERTY(qreal horizontalVelocity READ horizontalVelocity NOTIFY horizontalVelocityChanged)
     Q_PROPERTY(qreal verticalVelocity READ verticalVelocity NOTIFY verticalVelocityChanged)
+    Q_PROPERTY(QPointF dragVelocity READ dragVelocity NOTIFY dragVelocityChanged)
     Q_PROPERTY(qreal maximumFlickVelocity READ maximumFlickVelocity WRITE setMaximumFlickVelocity
                    NOTIFY maximumFlickVelocityChanged)
     Q_PROPERTY(qreal flickDeceleration READ flickDeceleration WRITE setFlickDeceleration NOTIFY
@@ -186,6 +188,8 @@ public:
 
     qreal horizontalVelocity() const;
     qreal verticalVelocity() const;
+    // Drag input velocity in content coordinates, in logical pixels per second; expires at rest.
+    QPointF dragVelocity() const { return m_dragVelocity; }
 
     bool isAtXEnd() const;
     bool isAtXBeginning() const;
@@ -265,6 +269,8 @@ public:
     Q_SIGNAL void flickEnded();
     Q_SIGNAL void dragStarted();
     Q_SIGNAL void dragEnded();
+    Q_SIGNAL void dragVelocityChanged();
+    Q_SIGNAL void dragReleased(QPointF velocity);
     Q_SIGNAL void pixelAlignedChanged();
     Q_SIGNAL void synchronousDragChanged();
     Q_SIGNAL void atXEndChanged();
@@ -374,7 +380,8 @@ private:
     auto movementEnding() -> void;
     auto flickingStarted(bool horizontal, bool vertical) -> void;
     auto draggingStarting(bool horizontal, bool vertical) -> void;
-    auto draggingEnding() -> void;
+    auto setDragVelocity(QPointF velocity) -> void;
+    auto draggingEnding(std::optional<QPointF> releaseVelocity = std::nullopt) -> void;
 
     auto startAxisFlick(Axis axis, qreal velocity) -> void;
     auto stopAxisMotion(Axis axis) -> void;
@@ -406,6 +413,7 @@ private:
     QList<QObject*>                m_data;
     AxisData                       m_hData;
     AxisData                       m_vData;
+    QPointF                        m_dragVelocity;
     FlickableVisibleArea*          m_visibleArea { nullptr };
     QPointer<QQuickItem>           m_interactionItem;
     QMetaObject::Connection        m_frameConnection;
@@ -413,6 +421,7 @@ private:
     bool                           m_motionWindowAttached = false;
     QElapsedTimer                  m_motionClock;
     QBasicTimer                    m_pressDelayTimer;
+    QBasicTimer                    m_dragVelocityTimer;
     std::unique_ptr<QPointerEvent> m_delayedPress;
     QPointer<QQuickItem>           m_delayedReceiver;
     QPointer<QQuickWindow>         m_delayedWindow;

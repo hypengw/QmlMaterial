@@ -769,11 +769,31 @@ auto Flickable::draggingStarting(bool horizontal, bool vertical) -> void {
     if (! wasDragging && isDragging()) emit dragStarted();
 }
 
-auto Flickable::draggingEnding() -> void {
-    const bool wasDragging = isDragging();
+auto Flickable::setDragVelocity(QPointF velocity) -> void {
+    velocity.setX(xflick() ? std::clamp(velocity.x(), -m_maxVelocity, m_maxVelocity) : 0);
+    velocity.setY(yflick() ? std::clamp(velocity.y(), -m_maxVelocity, m_maxVelocity) : 0);
+    if (velocity.isNull())
+        m_dragVelocityTimer.stop();
+    else
+        m_dragVelocityTimer.start(100, Qt::PreciseTimer, this);
+    if (m_dragVelocity == velocity) return;
+    m_dragVelocity = velocity;
+    emit dragVelocityChanged();
+}
+
+auto Flickable::draggingEnding(std::optional<QPointF> releaseVelocity) -> void {
+    QPointer<Flickable> guard(this);
+    const bool          wasDragging = isDragging();
+    if (releaseVelocity) setDragVelocity(*releaseVelocity);
+    if (! guard) return;
     setAxisDragging(HorizontalAxis, false);
+    if (! guard) return;
     setAxisDragging(VerticalAxis, false);
+    if (! guard) return;
+    if (wasDragging && releaseVelocity) emit dragReleased(m_dragVelocity);
+    if (! guard) return;
     if (wasDragging) emit dragEnded();
+    if (guard) setDragVelocity({});
 }
 
 auto Flickable::startAxisFlick(Axis axis, qreal velocity) -> void {
@@ -888,6 +908,12 @@ auto Flickable::handleMove(const QPointF& position, qint64 timestamp, Qt::MouseB
     -> void {
     if (! m_pressed || buttons == Qt::NoButton) return;
 
+    QPointer<Flickable> guard(this);
+    const auto          elapsed = timestamp - m_lastPosTime;
+    setDragVelocity(elapsed > 0 && elapsed < 150 ? (m_lastPos - position) * (1000.0 / elapsed)
+                                                 : QPointF());
+    if (! guard || ! m_pressed) return;
+
     const QPointF delta     = position - m_pressPos;
     const int     threshold = qGuiApp->styleHints()->startDragDistance();
     bool          stealX    = false;
@@ -938,9 +964,11 @@ auto Flickable::handleRelease(const QPointF& position, qint64 timestamp) -> void
     m_hData.updateVelocity();
     m_vData.updateVelocity();
 
-    const qint64 elapsed     = m_lastPosTime < 0 ? 1000 : timestamp - m_lastPosTime;
-    const bool   wasDragging = isDragging();
-    draggingEnding();
+    const qint64        elapsed     = m_lastPosTime < 0 ? 1000 : timestamp - m_lastPosTime;
+    const bool          wasDragging = isDragging();
+    QPointer<Flickable> guard(this);
+    draggingEnding(elapsed < 100 ? m_dragVelocity : QPointF());
+    if (! guard) return;
 
     bool          flickedX       = false;
     bool          flickedY       = false;
@@ -1336,6 +1364,10 @@ auto Flickable::wheelEvent(QWheelEvent* event) -> void {
 }
 
 auto Flickable::timerEvent(QTimerEvent* event) -> void {
+    if (event->timerId() == m_dragVelocityTimer.timerId()) {
+        setDragVelocity({});
+        return;
+    }
     if (event->timerId() == m_pressDelayTimer.timerId()) {
         replayDelayedPress();
         event->accept();

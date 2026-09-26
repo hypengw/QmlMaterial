@@ -27,6 +27,7 @@ MD.PopupBase {
     property real _scrimOpacity: 0
     property bool _dragDismissPending: false
     property real _dragReleasePosition: 0
+    property real _dragReleaseVelocity: 0
 
     readonly property real _parentWidth: parent ? parent.width : width
     readonly property real _parentHeight: parent ? parent.height : height
@@ -54,7 +55,6 @@ MD.PopupBase {
     y: 0
     width: _overlayWidth
     height: _overlayHeight
-    z: 1000
     modal: sheetType === MD.Enum.BottomSheetModal
     focus: modal
     dim: modal
@@ -66,8 +66,17 @@ MD.PopupBase {
 
     onAboutToShow: _startEnter()
     onAboutToHide: _startExit()
+    onDragDismissThresholdChanged: {
+        if (m_sheet_flickable.dragging)
+            _updateDragScrim();
+    }
+    onDismissOnDragDownChanged: {
+        if (m_sheet_flickable.dragging)
+            _updateDragScrim();
+    }
     onClosed: {
         m_drag_return.stop();
+        m_drag_scrim.stop();
         m_sheet_motion.stop();
         m_sheet_flickable.cancelFlick();
         _dragDismissPending = false;
@@ -77,6 +86,7 @@ MD.PopupBase {
 
     function _startEnter() {
         m_drag_return.stop();
+        m_drag_scrim.stop();
         m_sheet_motion.stop();
         m_sheet_flickable.cancelFlick();
         m_sheet_flickable.contentY = 0;
@@ -87,6 +97,7 @@ MD.PopupBase {
 
     function _startExit() {
         m_drag_return.stop();
+        m_drag_scrim.stop();
         m_sheet_motion.stop();
         m_sheet_flickable.cancelFlick();
         _slideOffset = -m_sheet_flickable.contentY;
@@ -113,11 +124,34 @@ MD.PopupBase {
             control.completeExit();
     }
 
-    function _finishDrag() {
+    function _willDismissAt(position, velocity) {
+        // Positive content velocity moves the sheet back up; reversal wins over distance.
+        const projectedPosition = position + velocity * 0.1;
+        return dismissOnDragDown && velocity <= 0 && position < -_collapseDistance - 0.5 && -projectedPosition - _collapseDistance >= Math.max(0, dragDismissThreshold);
+    }
+
+    function _updateDragScrim() {
+        if (!control.opened || control.closing)
+            return;
+        const target = _willDismissAt(m_sheet_flickable.contentY, m_sheet_flickable.dragVelocity.y) ? 0 : 1;
+        _animateDragScrim(target);
+    }
+
+    function _animateDragScrim(target) {
+        if (m_drag_scrim.to === target && m_drag_scrim.running || !m_drag_scrim.running && _scrimOpacity === target)
+            return;
+        m_drag_scrim.stop();
+        m_drag_scrim.to = target;
+        m_drag_scrim.start();
+    }
+
+    function _finishDrag(velocity) {
+        _updateDragScrim();
         if (!dismissOnDragDown || !control.opened || control.closing || m_sheet_flickable.contentY >= -control._collapseDistance - 0.5)
             return;
         _dragDismissPending = true;
         _dragReleasePosition = m_sheet_flickable.contentY;
+        _dragReleaseVelocity = velocity;
         Qt.callLater(control._settleAfterDrag);
     }
 
@@ -129,7 +163,7 @@ MD.PopupBase {
         if (!control.opened || control.closing || m_sheet_flickable.dragging)
             return;
         m_sheet_flickable.contentY = _dragReleasePosition;
-        if (-_dragReleasePosition - _collapseDistance >= Math.max(0, dragDismissThreshold)) {
+        if (_willDismissAt(_dragReleasePosition, _dragReleaseVelocity)) {
             control.close();
         } else {
             m_drag_return.to = -_collapseDistance;
@@ -168,8 +202,21 @@ MD.PopupBase {
             control._dragDismissPending = false;
             m_drag_return.stop();
             m_sheet_motion.stop();
+            control._updateDragScrim();
         }
-        onDragEnded: control._finishDrag()
+        onContentYChanged: {
+            if (dragging)
+                control._updateDragScrim();
+        }
+        onDragVelocityChanged: {
+            if (dragging)
+                control._updateDragScrim();
+        }
+        onDragReleased: velocity => control._finishDrag(velocity.y)
+        onDragEnded: {
+            if (!control._dragDismissPending && control.opened && !control.closing)
+                control._animateDragScrim(1);
+        }
 
         MD.ElevationRectangle {
             id: m_panel
@@ -237,6 +284,14 @@ MD.PopupBase {
         id: m_drag_return
         target: m_sheet_flickable
         property: "contentY"
+        duration: control.animationDuration
+        easing.type: Easing.OutCubic
+    }
+
+    NumberAnimation {
+        id: m_drag_scrim
+        target: control
+        property: "_scrimOpacity"
         duration: control.animationDuration
         easing.type: Easing.OutCubic
     }

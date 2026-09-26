@@ -306,6 +306,85 @@ private Q_SLOTS:
         popup->close();
     }
 
+    void popupPresentedAboveBottomSheet_data() {
+        QTest::addColumn<bool>("modal");
+        QTest::newRow("modal-popup") << true;
+        QTest::newRow("modeless-popup") << false;
+    }
+
+    void popupPresentedAboveBottomSheet() {
+        QFETCH(bool, modal);
+        QQuickWindow window;
+        window.resize(640, 480);
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            Item {
+                id: root
+                width: 640; height: 480
+                property int infoClicks: 0
+                property var infoPopup: null
+                property var presentation: null
+                property alias sheet: sheet
+                MD.PopupPresenter {
+                    id: presenter
+                    host: root
+                    incubationMode: MD.Pool.Synchronous
+                }
+                MD.BottomSheet {
+                    id: sheet
+                    parent: root
+                    preferredContentHeight: 300
+                    animationDuration: 0
+                }
+                Component {
+                    id: infoSource
+                    MD.Popup {
+                        parent: root
+                        x: 220; y: 240
+                        width: 200; height: 120
+                        focus: true
+                        enter: null
+                        exit: null
+                        Component.onCompleted: root.infoPopup = this
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: ++root.infoClicks
+                        }
+                    }
+                }
+                function openInfo(modal) {
+                    presentation = presenter.present(infoSource, {modal: modal})
+                }
+            }
+        )",
+                          QUrl("qrc:/tests/popup-above-sheet.qml"));
+        std::unique_ptr<QQuickItem> root(qobject_cast<QQuickItem*>(component.create()));
+        QVERIFY2(root, qPrintable(component.errorString()));
+        root->setParentItem(window.contentItem());
+        window.show();
+        auto* sheet = root->property("sheet").value<qml_material::Popup*>();
+        QVERIFY(sheet);
+        sheet->open();
+        QTRY_VERIFY(sheet->isOpened());
+        for (int i = 0; i < 2; ++i) {
+            QVERIFY(QMetaObject::invokeMethod(root.get(), "openInfo", Q_ARG(QVariant, modal)));
+            auto* info = root->property("infoPopup").value<qml_material::Popup*>();
+            QVERIFY(info);
+            QTRY_VERIFY(info->isOpened());
+            QCOMPARE(info->overlayItem(), sheet->overlayItem());
+            QVERIFY(info->surfaceItem()->z() > sheet->surfaceItem()->z());
+            QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, QPoint(320, 300));
+            QCOMPARE(root->property("infoClicks").toInt(), i + 1);
+            QTest::keyClick(&window, Qt::Key_Escape);
+            QTRY_VERIFY(! info->isVisible());
+            QVERIFY(sheet->isOpened());
+        }
+        sheet->close();
+        QTRY_VERIFY(! sheet->isVisible());
+    }
+
     void popupCoordinates() {
         QQuickWindow window;
         window.resize(640, 480);

@@ -102,6 +102,10 @@ QPointF ScrollParticipant::consume(QPointF delta, Activity activity, QPointF vel
     const auto direction = axes();
     if (! direction.testFlag(Qt::Horizontal)) after.setX(before.x());
     if (! direction.testFlag(Qt::Vertical)) after.setY(before.y());
+    if (m_owned && activity == Activity::Drag && (after != before || m_owned->isDragging())) {
+        m_owned->setDragVelocity(velocity);
+        if (! live()) return {};
+    }
     if (after == before) return {};
     const bool x = after.x() != before.x(), y = after.y() != before.y();
     if (m_owned) {
@@ -140,11 +144,11 @@ QPointF ScrollParticipant::consume(QPointF delta, Activity activity, QPointF vel
     }
     return position() - before;
 }
-void ScrollParticipant::end() {
+void ScrollParticipant::end(std::optional<QPointF> releaseVelocity) {
     if (m_owned) {
         m_owned->m_hData.platformScrolling = false;
         m_owned->m_vData.platformScrolling = false;
-        m_owned->draggingEnding();
+        m_owned->draggingEnding(releaseVelocity);
         if (! m_owned) return;
         m_owned->setAxisVelocity(Flickable::HorizontalAxis, 0);
         if (! m_owned) return;

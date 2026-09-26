@@ -190,7 +190,7 @@ protected:
             }
             const auto delta   = m_last - scene;
             const auto elapsed = event->timestamp() - m_lastTime;
-            if (elapsed > 0 && elapsed < 150) m_velocity = delta * (1000.0 / elapsed);
+            m_velocity = elapsed > 0 && elapsed < 150 ? delta * (1000.0 / elapsed) : QPointF();
             m_last     = scene;
             m_lastTime = event->timestamp();
             consume(delta, ScrollParticipant::Activity::Drag, m_velocity);
@@ -204,13 +204,15 @@ protected:
             m_dragging = false;
             setExclusiveGrab(event, point, false);
             setPassiveGrab(event, point, false);
-            m_device         = nullptr;
+            m_device = nullptr;
+            if (event->timestamp() - m_lastTime >= 100) m_velocity = {};
             const auto chain = m_chain;
             for (auto config : chain) {
-                if (config) ScrollParticipant(config->item()).end();
+                if (config)
+                    ScrollParticipant(config->item())
+                        .end(vectorFromScene(config->item(), m_velocity));
                 if (! guard || m_chain.isEmpty()) return;
             }
-            if (event->timestamp() - m_lastTime > 100) m_velocity = {};
             const ScrollParticipant first(m_config->item());
             const auto              maximum = first.maximumVelocity();
             m_velocity.setX(std::clamp(m_velocity.x(), -maximum, maximum));
