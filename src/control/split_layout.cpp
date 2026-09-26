@@ -95,4 +95,58 @@ Result calculate(const QList<Pane>& panes, qreal available) {
     }
     return result;
 }
+Result reveal(const QList<Pane>& panes, const QList<qreal>& progress,
+              const QList<qreal>& expandedSizes, qreal available) {
+    auto result    = calculate(panes, available);
+    available      = finiteSize(available);
+    int   receiver = -1;
+    qreal used     = 0;
+    for (int i = 0; i < panes.size(); ++i) {
+        auto& geometry = result.panes[i];
+        if (! geometry.visible) continue;
+        const qreal amount = finiteSize(progress[i]);
+        geometry.size = std::min(expandedSizes[i] * amount, std::max(qreal(0), panes[i].maximum));
+        int next      = i + 1;
+        while (next < panes.size() && ! panes[next].visible) ++next;
+        geometry.handleSize *=
+            next < panes.size() ? std::min({ qreal(1), amount, finiteSize(progress[next]) }) : 0;
+        geometry.handleVisible = geometry.handleSize > 0;
+        used += geometry.size + geometry.handleSize;
+        if (progress[i] == 1 && (receiver < 0 || i == result.fillIndex)) receiver = i;
+    }
+    if (used < available && receiver >= 0) {
+        auto& geometry = result.panes[receiver];
+        geometry.size +=
+            std::min(available - used, std::max(qreal(0), panes[receiver].maximum - geometry.size));
+    }
+    // Preserve the spring's state; constrain only the geometry shown in the viewport.
+    if (used > available) {
+        qreal excess = used - available;
+        for (int pass = 0; pass < 2 && excess > 0; ++pass) {
+            for (int i = panes.size() - 1; i >= 0 && excess > 0; --i) {
+                if ((progress[i] == 1) != (pass == 1)) continue;
+                auto&       geometry = result.panes[i];
+                const qreal minimum  = pass == 0 ? 0 : finiteSize(panes[i].minimum);
+                const qreal reduction =
+                    std::min(excess, std::max(qreal(0), geometry.size - minimum));
+                geometry.size -= reduction;
+                excess -= reduction;
+            }
+        }
+        for (int i = panes.size() - 1; i >= 0 && excess > 0; --i) {
+            auto&       geometry  = result.panes[i];
+            const qreal reduction = std::min(excess, geometry.handleSize);
+            geometry.handleSize -= reduction;
+            geometry.handleVisible = geometry.handleSize > 0;
+            excess -= reduction;
+        }
+    }
+    result.extent = 0;
+    for (auto& geometry : result.panes) {
+        geometry.position       = result.extent;
+        geometry.handlePosition = geometry.position + geometry.size;
+        result.extent           = geometry.handlePosition + geometry.handleSize;
+    }
+    return result;
+}
 } // namespace qml_material::split_layout

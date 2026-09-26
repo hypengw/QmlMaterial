@@ -14,9 +14,64 @@
 #include <QCborMap>
 #include <QCborStreamReader>
 #include <QSet>
+#include <functional>
+#include <QQuickWindow>
+#include <QtQuick/private/qquickitem_p.h>
+#include <QtQuick/private/qquicktransitionmanager_p_p.h>
 
 namespace qml_material
 {
+class SplitTransitionTarget : public QObject {
+    Q_OBJECT
+    Q_PROPERTY(qreal progress READ progress WRITE setProgress)
+public:
+    qreal progress() const { return m_progress; }
+    void  setProgress(qreal value) {
+        if (! std::isfinite(value) || m_progress == value) return;
+        m_progress = value;
+        if (changed) changed();
+    }
+    std::function<void()> changed;
+
+private:
+    qreal m_progress = 1;
+};
+
+class SplitPaneHost : public QQuickItem {
+public:
+    QRectF clipRect() const override { return m_bounds; }
+    bool   contains(const QPointF& point) const override { return m_bounds.contains(point); }
+    void   setBounds(const QRectF& bounds) {
+        if (m_bounds == bounds) return;
+        m_bounds = bounds;
+        QQuickItemPrivate::get(this)->dirty(QQuickItemPrivate::Size);
+    }
+
+private:
+    QRectF m_bounds;
+};
+
+class SplitMotion : public QQuickTransitionManager {
+public:
+    std::function<void()> completed;
+
+protected:
+    void finished() override {
+        if (completed) completed();
+    }
+};
+
+struct SplitPaneState {
+    QPointer<QQuickItem>        item;
+    QPointer<SplitViewAttached> info;
+    QPointer<SplitPaneHost>     host;
+    SplitTransitionTarget       target;
+    SplitMotion                 motion;
+    quint64                     generation = 0;
+    bool                        pending    = false;
+    std::optional<qreal>        expandedSize;
+};
+
 namespace
 {
 SplitViewAttached* attached(QQuickItem* item) {
@@ -241,6 +296,12 @@ bool SplitView::beginResize(QQuickItem* handle, const QPointF& point) {
     if (m_resize || m_destroying || m_handles_dirty || ! handle || ! handle->isVisible() ||
         ! isEnabled() || ! isVisible())
         return false;
+    QPointer<SplitView>  guard(this);
+    QPointer<QQuickItem> handleGuard(handle);
+    settleExpansions(true);
+    if (! guard) return false;
+    updatePolish();
+    if (! guard || ! handleGuard || ! handleGuard->isVisible()) return false;
     const int   index     = m_handles.indexOf(handle);
     auto        panes     = layoutPanes(m_orientation);
     const qreal available = m_orientation == Qt::Horizontal ? availableWidth() : availableHeight();
@@ -254,7 +315,6 @@ bool SplitView::beginResize(QQuickItem* handle, const QPointF& point) {
                            index,
                            available,
                            m_orientation == Qt::Horizontal ? local.x() : local.y() });
-    QPointer<SplitView> guard(this);
     Q_EMIT resizingChanged();
     if (! guard || ! m_resize) return false;
     handleState(handle)->setPressed(true);
@@ -291,6 +351,7 @@ void SplitView::endResize() {
 }
 void SplitView::invalidateLayout() {
     QPointer<SplitView> guard(this);
+    for (auto& state : m_panes) state->expandedSize.reset();
     endResize();
     if (guard) requestLayout();
 }
@@ -299,7 +360,11 @@ SplitView::SplitView(QQuickItem* parent): Container(parent) {
     connect(this, &Control::availableWidthChanged, this, &SplitView::invalidateLayout);
     connect(this, &Control::availableHeightChanged, this, &SplitView::invalidateLayout);
     connect(this, &Control::contentItemChanged, this, &SplitView::invalidateLayout);
-    connect(this, &QQuickItem::visibleChanged, this, &SplitView::invalidateLayout);
+    connect(this, &QQuickItem::visibleChanged, this, [this] {
+        QPointer<SplitView> guard(this);
+        if (! isVisible()) settleExpansions(false);
+        if (guard) invalidateLayout();
+    });
     connect(this, &QQuickItem::enabledChanged, this, &SplitView::invalidateLayout);
     connect(this, &QQuickItem::windowChanged, this, &SplitView::invalidateLayout);
     connect(contentHost(), &QQuickItem::xChanged, this, &SplitView::invalidateLayout);
@@ -307,6 +372,7 @@ SplitView::SplitView(QQuickItem* parent): Container(parent) {
 }
 SplitView::~SplitView() {
     m_destroying = true;
+    m_panes.clear();
     m_resize.reset();
     disconnect(this, nullptr, this, nullptr);
     beginTeardown();
@@ -426,16 +492,145 @@ bool SplitView::syncHandles() {
     }
     return true;
 }
+void SplitView::componentComplete() {
+    QPointer<SplitView> guard(this);
+    Container::componentComplete();
+    if (guard) settleExpansions(false);
+}
+void SplitView::setExpandTransition(QQuickTransition* value) {
+    if (m_expand == value) return;
+    m_expand = value;
+    Q_EMIT transitionsChanged();
+}
+void SplitView::setCollapseTransition(QQuickTransition* value) {
+    if (m_collapse == value) return;
+    m_collapse = value;
+    Q_EMIT transitionsChanged();
+}
+void SplitView::changeExpanded(QQuickItem* item) {
+    const auto state = m_panes.value(item);
+    if (! state || ! state->info) return;
+    const auto generation = ++state->generation;
+    if (! state->info->isTransitioning()) state->expandedSize.reset();
+    state->motion.cancel();
+    state->pending = false;
+    if (! isComponentComplete() || ! isVisible() ||
+        ! QQuickItemPrivate::get(item)->explicitVisible) {
+        cancelExpansion(item);
+        return;
+    }
+    QPointer<SplitView> guard(this);
+    endResize();
+    if (! guard || state->generation != generation || ! state->info) return;
+    if (state->host) state->host->setEnabled(state->info->isExpanded());
+    if (! guard || state->generation != generation || ! state->info) return;
+    if (! state->info->m_transitioning) {
+        state->info->m_transitioning = true;
+        Q_EMIT state->info->transitioningChanged();
+    }
+    if (! guard || state->generation != generation || ! state->info) return;
+    QPointer<QQuickTransition> transition = state->info->isExpanded() ? m_expand : m_collapse;
+    if (transition && ! transition->enabled()) transition = nullptr;
+    if (transition) {
+        qmlExecuteDeferred(transition);
+        if (! guard || state->generation != generation || ! state->info) return;
+    }
+    state->motion.completed = [guard, item, generation] {
+        if (! guard) return;
+        const auto current = guard->m_panes.value(item);
+        if (! current || current->generation != generation) return;
+        current->pending = true;
+        guard->requestLayout();
+    };
+    requestLayout();
+    // The Transition animates the private proxy's "progress", never pane geometry.
+    state->motion.transition({ QQuickStateAction(&state->target,
+                                                 QStringLiteral("progress"),
+                                                 state->info->isExpanded() ? 1.0 : 0.0) },
+                             transition,
+                             &state->target);
+}
+void SplitView::cancelExpansion(QQuickItem* item) {
+    const auto state = m_panes.value(item);
+    if (! state || ! state->info) return;
+    ++state->generation;
+    state->motion.cancel();
+    state->pending = false;
+    state->target.setProgress(state->info->isExpanded() ? 1 : 0);
+    if (state->info->m_transitioning) {
+        state->info->m_transitioning = false;
+        Q_EMIT state->info->transitioningChanged();
+    }
+}
+void SplitView::completeExpansion(QQuickItem* item, quint64 generation) {
+    const auto state = m_panes.value(item);
+    if (! state || ! state->info || state->generation != generation) return;
+    state->pending = false;
+    state->motion.cancel();
+    state->info->m_transitioning = false;
+    QPointer<SplitView> guard(this);
+    requestLayout();
+    Q_EMIT state->info->transitioningChanged();
+    if (! guard || ! state->info || state->generation != generation) return;
+    if (state->info->isExpanded())
+        Q_EMIT state->info->expandedCompleted();
+    else
+        Q_EMIT state->info->collapsedCompleted();
+}
+void SplitView::settleExpansions(bool notify) {
+    const auto          snapshot = items();
+    QPointer<SplitView> guard(this);
+    for (auto item : snapshot) {
+        const auto state = m_panes.value(item);
+        if (! state || ! state->info) continue;
+        if (notify && state->info->isTransitioning()) {
+            state->motion.cancel();
+            state->target.setProgress(state->info->isExpanded() ? 1 : 0);
+            state->pending = true;
+            requestLayout();
+        } else {
+            cancelExpansion(item);
+        }
+        if (! guard) return;
+    }
+}
 void SplitView::setOrientation(Qt::Orientation value) {
     if ((value != Qt::Horizontal && value != Qt::Vertical) || m_orientation == value) return;
     m_orientation = value;
     QPointer<SplitView> guard(this);
+    settleExpansions(true);
+    if (! guard) return;
     invalidateLayout();
     if (! guard) return;
     Q_EMIT orientationChanged();
 }
 void SplitView::itemAdded(QQuickItem* item) {
+    QPointer<SplitView> guard(this);
+    auto                state = std::make_shared<SplitPaneState>();
+    state->item               = item;
+    state->info               = attached(item);
+    state->host               = new SplitPaneHost;
+    state->target.setProgress(state->info->isExpanded() ? 1 : 0);
+    state->target.changed = [guard = QPointer<SplitView>(this)] {
+        if (guard) guard->requestLayout();
+    };
+    m_panes.insert(item, state);
+    setPresentationHost(item, state->host);
+    if (! guard || ! state->item || ! state->host) return;
+    state->host->setZ(item->z());
     auto& connections = m_connections[item];
+    connections.append(connect(item, &QQuickItem::zChanged, this, [state] {
+        if (state->item && state->host) state->host->setZ(state->item->z());
+    }));
+    connections.append(connect(item, &QObject::destroyed, this, [this, item] {
+        if (auto state = m_panes.take(item)) {
+            state->target.changed = {};
+            state->motion.cancel();
+        }
+        utils::disconnectAll(m_connections[item]);
+        m_connections.remove(item);
+        invalidateLayout();
+    }));
     connections.append(
         connect(attached(item), &SplitViewAttached::constraintsChanged, this, [this] {
             if (m_writing_preferred) {
@@ -448,16 +643,24 @@ void SplitView::itemAdded(QQuickItem* item) {
         connect(item, &QQuickItem::implicitWidthChanged, this, &SplitView::invalidateLayout));
     connections.append(
         connect(item, &QQuickItem::implicitHeightChanged, this, &SplitView::invalidateLayout));
-    connections.append(
-        connect(item, &QQuickItem::visibleChanged, this, &SplitView::invalidateLayout));
-    connections.append(connect(item, &QObject::destroyed, this, [this, item] {
-        m_connections.remove(item);
-        requestLayout();
+    connections.append(connect(item, &QQuickItem::visibleChanged, this, [this, item] {
+        if (m_updating_hosts) return;
+        QPointer<SplitView> guard(this);
+        if (! item->isVisible()) cancelExpansion(item);
+        if (guard) invalidateLayout();
     }));
 }
 void SplitView::itemRemoved(QQuickItem* item) {
     auto connections = m_connections.take(item);
     utils::disconnectAll(connections);
+    if (auto state = m_panes.take(item)) {
+        state->target.changed = {};
+        state->motion.cancel();
+        if (state->info && state->info->m_transitioning) {
+            state->info->m_transitioning = false;
+            Q_EMIT state->info->transitioningChanged();
+        }
+    }
 }
 void                      SplitView::itemsChanged() { invalidateLayout(); }
 QList<split_layout::Pane> SplitView::layoutPanes(Qt::Orientation orientation) const {
@@ -466,7 +669,8 @@ QList<split_layout::Pane> SplitView::layoutPanes(Qt::Orientation orientation) co
     for (int i = 0; i < count(); ++i) {
         auto*              item = itemAt(i);
         split_layout::Pane pane;
-        pane.visible = item && item->isVisible();
+        pane.visible = item && QQuickItemPrivate::get(item)->explicitVisible &&
+                       (attached(item)->isExpanded() || attached(item)->isTransitioning());
         if (item) {
             auto* info        = attached(item);
             pane.implicitSize = horizontal ? item->implicitWidth() : item->implicitHeight();
@@ -500,17 +704,39 @@ void SplitView::updatePolish() {
         }
         return;
     }
-    const auto  contentRevision = revision();
-    const auto  layoutRevision  = m_layout_revision;
-    const auto  snapshot        = items();
-    const bool  horizontal      = m_orientation == Qt::Horizontal;
-    const auto  widths          = layoutPanes(Qt::Horizontal);
-    const auto  heights         = layoutPanes(Qt::Vertical);
-    const auto  x               = split_layout::calculate(widths, availableWidth());
-    const auto  y               = split_layout::calculate(heights, availableHeight());
-    const auto& main            = horizontal ? x : y;
-    const auto& cross           = horizontal ? y : x;
-    qreal       crossImplicit   = 0;
+    const auto   contentRevision = revision();
+    const auto   layoutRevision  = m_layout_revision;
+    const auto   snapshot        = items();
+    const bool   horizontal      = m_orientation == Qt::Horizontal;
+    const auto   widths          = layoutPanes(Qt::Horizontal);
+    const auto   heights         = layoutPanes(Qt::Vertical);
+    const auto   normalX         = split_layout::calculate(widths, availableWidth());
+    const auto   normalY         = split_layout::calculate(heights, availableHeight());
+    const auto&  normal          = horizontal ? normalX : normalY;
+    QList<qreal> expandedSizes;
+    QList<qreal> progress;
+    bool         transitioning = false;
+    for (auto item : snapshot) {
+        const auto state = m_panes.value(item);
+        progress.append(state ? state->target.progress() : 1);
+        const auto size = normal.panes[expandedSizes.size()].size;
+        if (state && state->info && state->info->isTransitioning()) {
+            if (! state->expandedSize) state->expandedSize = size;
+            expandedSizes.append(*state->expandedSize);
+        } else {
+            expandedSizes.append(size);
+        }
+        transitioning |= state && state->info && state->info->isTransitioning();
+    }
+    const auto  x = horizontal && transitioning
+                        ? split_layout::reveal(widths, progress, expandedSizes, availableWidth())
+                        : normalX;
+    const auto  y = ! horizontal && transitioning
+                        ? split_layout::reveal(heights, progress, expandedSizes, availableHeight())
+                        : normalY;
+    const auto& main          = horizontal ? x : y;
+    const auto& cross         = horizontal ? y : x;
+    qreal       crossImplicit = 0;
     for (const auto& pane : cross.panes)
         crossImplicit = std::max(crossImplicit, pane.preferredSize);
     const QSizeF implicitSize = horizontal ? QSizeF(main.implicitExtent, crossImplicit)
@@ -522,8 +748,36 @@ void SplitView::updatePolish() {
     };
     for (int i = 0; i < snapshot.size() && valid(); ++i) {
         auto item = snapshot[i];
-        if (! item || ! main.panes[i].visible) continue;
-        const auto& geometry = main.panes[i];
+        if (! item) continue;
+        const auto state = m_panes.value(item);
+        if (! state || ! state->host || ! state->info) continue;
+        const auto&  geometry = main.panes[i];
+        const QRectF bounds(horizontal ? QPointF(geometry.position, 0)
+                                       : QPointF(0, geometry.position),
+                            horizontal ? QSizeF(geometry.size, available.height())
+                                       : QSizeF(available.width(), geometry.size));
+        m_updating_hosts = true;
+        state->host->setBounds(bounds);
+        state->host->setClip(state->info->isTransitioning());
+        if (! guard) return;
+        if (! valid() || ! state->host || ! state->info) {
+            m_updating_hosts = false;
+            break;
+        }
+        state->host->setSize(available);
+        if (! guard) return;
+        if (! valid() || ! state->host || ! state->info) {
+            m_updating_hosts = false;
+            break;
+        }
+        // Do not hide the ancestor for an explicit visible=false on the pane:
+        // changing it back to true would otherwise emit no effective visibility signal.
+        state->host->setVisible(state->info->isExpanded() || state->info->isTransitioning());
+        if (! guard) return;
+        if (state->host && state->info) state->host->setEnabled(state->info->isExpanded());
+        if (! guard) return;
+        m_updating_hosts = false;
+        if (! valid() || ! item) break;
         item->setSize(horizontal ? QSizeF(geometry.size, available.height())
                                  : QSizeF(available.width(), geometry.size));
         if (! valid()) break;
@@ -553,6 +807,12 @@ void SplitView::updatePolish() {
     if (! guard) return;
     m_laying_out = false;
     if (! valid()) polish();
+    if (! valid()) return;
+    const auto states = m_panes;
+    for (auto it = states.cbegin(); it != states.cend(); ++it) {
+        if (it.value()->pending) completeExpansion(it.key(), it.value()->generation);
+        if (! guard) return;
+    }
 }
 
 SplitViewAttached::SplitViewAttached(QObject* object): QObject(object) {
@@ -626,4 +886,15 @@ void SplitViewAttached::setFillHeight(bool value) {
     if (guard) Q_EMIT fillHeightChanged();
 }
 
+void SplitViewAttached::setExpanded(bool value) {
+    if (m_expanded == value) return;
+    m_expanded = value;
+    QPointer<SplitViewAttached> guard(this);
+    Q_EMIT expandedChanged();
+    if (! guard || m_expanded != value) return;
+    if (auto* owner = view()) owner->changeExpanded(qobject_cast<QQuickItem*>(parent()));
+}
+
 } // namespace qml_material
+
+#include "split_view.moc"

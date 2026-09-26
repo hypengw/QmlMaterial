@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QQmlListProperty>
+#include <QHash>
 #include "qml_material/control/control.hpp"
 
 namespace qml_material
@@ -76,26 +77,29 @@ protected:
     void                               refreshItems();
     void                               setImplicitContentSize(const QSizeF&);
     void                               beginTeardown();
+    void                               setPresentationHost(QQuickItem*, QQuickItem*);
+    QQuickItem*                        presentationItem(QQuickItem*) const;
 
 private:
-    void                           updateContentSize();
-    QQuickItem*                    m_host;
-    QList<QPointer<QQuickItem>>    m_items;
-    QList<QPointer<QQuickItem>>    m_observed;
-    QList<QMetaObject::Connection> m_connections;
-    QList<QMetaObject::Connection> m_measure_connections;
-    QPointer<QQuickItem>           m_current;
-    QQuickItem*                    m_current_identity = nullptr;
-    int                            m_index            = -1;
-    bool                           m_explicit_index   = false;
-    bool                           m_refreshing       = false;
-    bool                           m_refresh_again    = false;
-    bool                           m_destroying       = false;
-    quint64                        m_revision         = 0;
-    std::optional<QSizeF>          m_implicit_content;
-    QSizeF                         m_content_size { 0, 0 };
-    std::optional<qreal>           m_content_width;
-    std::optional<qreal>           m_content_height;
+    void                                     updateContentSize();
+    QQuickItem*                              m_host;
+    QHash<QQuickItem*, QPointer<QQuickItem>> m_presentation_hosts;
+    QList<QPointer<QQuickItem>>              m_items;
+    QList<QPointer<QQuickItem>>              m_observed;
+    QList<QMetaObject::Connection>           m_connections;
+    QList<QMetaObject::Connection>           m_measure_connections;
+    QPointer<QQuickItem>                     m_current;
+    QQuickItem*                              m_current_identity = nullptr;
+    int                                      m_index            = -1;
+    bool                                     m_explicit_index   = false;
+    bool                                     m_refreshing       = false;
+    bool                                     m_refresh_again    = false;
+    bool                                     m_destroying       = false;
+    quint64                                  m_revision         = 0;
+    std::optional<QSizeF>                    m_implicit_content;
+    QSizeF                                   m_content_size { 0, 0 };
+    std::optional<qreal>                     m_content_width;
+    std::optional<qreal>                     m_content_height;
 };
 
 class QML_MATERIAL_API ContainerAttached : public QObject {

@@ -5,12 +5,14 @@
 #include <QQmlComponent>
 #include <limits>
 #include <memory>
+#include <QtQuick/private/qquicktransition_p.h>
 
 namespace qml_material
 {
 class SplitViewAttached;
 class SplitHandleInput;
 struct SplitResizeState;
+struct SplitPaneState;
 namespace split_layout
 {
 struct Pane;
@@ -24,6 +26,10 @@ class QML_MATERIAL_API SplitView : public Container {
                    orientationChanged FINAL)
     Q_PROPERTY(QQmlComponent* handle READ handle WRITE setHandle NOTIFY handleChanged FINAL)
     Q_PROPERTY(bool resizing READ isResizing NOTIFY resizingChanged FINAL)
+    Q_PROPERTY(QQuickTransition* expandTransition READ expandTransition WRITE setExpandTransition
+                   NOTIFY transitionsChanged FINAL)
+    Q_PROPERTY(QQuickTransition* collapseTransition READ collapseTransition WRITE
+                   setCollapseTransition NOTIFY transitionsChanged FINAL)
 public:
     explicit SplitView(QQuickItem* parent = nullptr);
     ~SplitView() override;
@@ -39,6 +45,11 @@ public:
     Q_SIGNAL void             resizingChanged();
     Q_INVOKABLE QVariant      saveState() const;
     Q_INVOKABLE bool          restoreState(const QVariant&);
+    QQuickTransition*         expandTransition() const { return m_expand; }
+    QQuickTransition*         collapseTransition() const { return m_collapse; }
+    void                      setExpandTransition(QQuickTransition*);
+    void                      setCollapseTransition(QQuickTransition*);
+    Q_SIGNAL void             transitionsChanged();
 
 protected:
     bool isContent(QQuickItem*) const override;
@@ -46,29 +57,38 @@ protected:
     void itemRemoved(QQuickItem*) override;
     void itemsChanged() override;
     void updatePolish() override;
+    void componentComplete() override;
 
 private:
     friend class SplitHandleInput;
-    bool                                               beginResize(QQuickItem*, const QPointF&);
-    void                                               moveResize(const QPointF&);
-    void                                               endResize();
-    void                                               invalidateLayout();
-    QList<split_layout::Pane>                          layoutPanes(Qt::Orientation) const;
-    std::unique_ptr<SplitResizeState>                  m_resize;
-    bool                                               m_writing_preferred = false;
-    void                                               requestLayout();
-    bool                                               syncHandles();
-    void                                               clearHandles();
-    QPointer<QQmlComponent>                            m_handle;
-    QList<QPointer<QQuickItem>>                        m_handles;
-    QList<QMetaObject::Connection>                     m_handle_connections;
-    bool                                               m_handles_dirty = false;
-    bool                                               m_destroying    = false;
-    Qt::Orientation                                    m_orientation   = Qt::Horizontal;
-    QHash<QQuickItem*, QList<QMetaObject::Connection>> m_connections;
-    quint64                                            m_layout_revision  = 0;
-    bool                                               m_laying_out       = false;
-    quint64                                            m_restore_revision = 0;
+    friend class SplitViewAttached;
+    void                                                changeExpanded(QQuickItem*);
+    void                                                completeExpansion(QQuickItem*, quint64);
+    void                                                settleExpansions(bool notify);
+    void                                                cancelExpansion(QQuickItem*);
+    QHash<QQuickItem*, std::shared_ptr<SplitPaneState>> m_panes;
+    QPointer<QQuickTransition>                          m_expand, m_collapse;
+    bool                                                m_updating_hosts = false;
+    bool                                                beginResize(QQuickItem*, const QPointF&);
+    void                                                moveResize(const QPointF&);
+    void                                                endResize();
+    void                                                invalidateLayout();
+    QList<split_layout::Pane>                           layoutPanes(Qt::Orientation) const;
+    std::unique_ptr<SplitResizeState>                   m_resize;
+    bool                                                m_writing_preferred = false;
+    void                                                requestLayout();
+    bool                                                syncHandles();
+    void                                                clearHandles();
+    QPointer<QQmlComponent>                             m_handle;
+    QList<QPointer<QQuickItem>>                         m_handles;
+    QList<QMetaObject::Connection>                      m_handle_connections;
+    bool                                                m_handles_dirty = false;
+    bool                                                m_destroying    = false;
+    Qt::Orientation                                     m_orientation   = Qt::Horizontal;
+    QHash<QQuickItem*, QList<QMetaObject::Connection>>  m_connections;
+    quint64                                             m_layout_revision  = 0;
+    bool                                                m_laying_out       = false;
+    quint64                                             m_restore_revision = 0;
 };
 
 class QML_MATERIAL_API SplitHandleAttached : public QObject {
@@ -114,6 +134,8 @@ class QML_MATERIAL_API SplitViewAttached : public QObject {
                    resetMaximumHeight NOTIFY maximumHeightChanged FINAL)
     Q_PROPERTY(bool fillWidth READ fillWidth WRITE setFillWidth NOTIFY fillWidthChanged FINAL)
     Q_PROPERTY(bool fillHeight READ fillHeight WRITE setFillHeight NOTIFY fillHeightChanged FINAL)
+    Q_PROPERTY(bool expanded READ isExpanded WRITE setExpanded NOTIFY expandedChanged FINAL)
+    Q_PROPERTY(bool transitioning READ isTransitioning NOTIFY transitioningChanged FINAL)
 public:
     explicit SplitViewAttached(QObject*);
     SplitView*    view() const;
@@ -125,6 +147,13 @@ public:
     qreal         maximumHeight() const { return m_maximum_height; }
     bool          fillWidth() const { return m_fill_width; }
     bool          fillHeight() const { return m_fill_height; }
+    bool          isExpanded() const { return m_expanded; }
+    bool          isTransitioning() const { return m_transitioning; }
+    void          setExpanded(bool);
+    Q_SIGNAL void expandedChanged();
+    Q_SIGNAL void transitioningChanged();
+    Q_SIGNAL void expandedCompleted();
+    Q_SIGNAL void collapsedCompleted();
     void          setMinimumWidth(qreal);
     void          setMinimumHeight(qreal);
     void          setPreferredWidth(qreal);
@@ -159,8 +188,10 @@ private:
     qreal                       m_maximum_height = std::numeric_limits<qreal>::infinity();
     std::optional<qreal>        m_preferred_width;
     std::optional<qreal>        m_preferred_height;
-    bool                        m_fill_width  = false;
-    bool                        m_fill_height = false;
+    bool                        m_fill_width    = false;
+    bool                        m_fill_height   = false;
+    bool                        m_expanded      = true;
+    bool                        m_transitioning = false;
 };
 } // namespace qml_material
 QML_DECLARE_TYPEINFO(qml_material::SplitView, QML_HAS_ATTACHED_PROPERTIES)

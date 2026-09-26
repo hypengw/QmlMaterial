@@ -21,6 +21,7 @@ set(QM_TEST_SOURCES
   carousel/model_current_item.cpp
   layout/toolbar_dynamic_visibility.cpp
   layout/lite_layout.cpp
+  layout/split_view.cpp
   layout/control_layout.cpp
   integration/dynamic_creation.cpp
   integration/attached_property_propagation.cpp

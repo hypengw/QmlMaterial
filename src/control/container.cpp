@@ -74,8 +74,24 @@ QQmlListProperty<QQuickItem> Container::contentChildren() {
 QQuickItem* Container::itemAt(int index) const { return m_items.value(index); }
 int         Container::indexOf(QQuickItem* item) const { return item ? m_items.indexOf(item) : -1; }
 bool        Container::isContent(QQuickItem*) const { return true; }
-void        Container::addItem(QQuickItem* item) { insertItem(count(), item); }
-void        Container::insertItem(int index, QQuickItem* item) {
+QQuickItem* Container::presentationItem(QQuickItem* item) const {
+    for (auto it = m_presentation_hosts.cbegin(); it != m_presentation_hosts.cend(); ++it)
+        if (it.value() == item && item->parentItem() == it.key()) return it.key();
+    return item;
+}
+void Container::setPresentationHost(QQuickItem* item, QQuickItem* host) {
+    // Register before reparenting: refreshItems can run synchronously from childrenChanged.
+    m_presentation_hosts.insert(host, item);
+    QPointer<Container>  guard(this);
+    QPointer<QQuickItem> aliveHost(host);
+    QPointer<QQuickItem> aliveItem(item);
+    host->setParent(m_host);
+    if (! guard || ! aliveHost || ! aliveItem) return;
+    aliveItem->setParentItem(aliveHost);
+    if (guard && aliveHost) aliveHost->setParentItem(m_host);
+}
+void Container::addItem(QQuickItem* item) { insertItem(count(), item); }
+void Container::insertItem(int index, QQuickItem* item) {
     if (! item || m_destroying || item == this || item == m_host || item == background() ||
         item == contentItem() || item->isAncestorOf(this) || ! isContent(item))
         return;
@@ -96,9 +112,9 @@ void Container::moveItem(int from, int to) {
     auto                neighbor = m_items[to];
     if (! item || ! neighbor) return;
     if (from < to)
-        item->stackAfter(neighbor);
+        presentationItem(item)->stackAfter(presentationItem(neighbor));
     else
-        item->stackBefore(neighbor);
+        presentationItem(item)->stackBefore(presentationItem(neighbor));
     if (guard) refreshItems();
 }
 QQuickItem* Container::takeItem(int index) {
@@ -163,6 +179,11 @@ void Container::refreshItems() {
         QList<QPointer<QQuickItem>> next;
         QList<QPointer<QQuickItem>> observed;
         for (auto* child : m_host->childItems()) {
+            if (m_presentation_hosts.contains(child)) {
+                auto item = m_presentation_hosts.value(child);
+                if (! item || item->parentItem() != child) continue;
+                child = item;
+            }
             observed.append(child);
             if (attached(child)->isManaged() && isContent(child)) next.append(child);
         }
@@ -174,6 +195,10 @@ void Container::refreshItems() {
             m_connections.append(
                 connect(info, &ContainerAttached::managedChanged, this, &Container::refreshItems));
             if (! info->isManaged() || ! isContent(child)) continue;
+            m_connections.append(
+                connect(child, &QQuickItem::parentChanged, this, &Container::refreshItems));
+            m_connections.append(
+                connect(child, &QObject::destroyed, this, &Container::refreshItems));
             m_connections.append(
                 connect(child, &QQuickItem::widthChanged, this, &QQuickItem::polish));
             m_connections.append(
@@ -196,12 +221,27 @@ void Container::refreshItems() {
             if (item && attached(item)->container() == this) attached(item)->update(nullptr, -1);
             if (! guard) return;
         }
+        for (auto it = m_presentation_hosts.begin(); it != m_presentation_hosts.end();) {
+            if (! it.value() || ! next.contains(it.value())) {
+                QPointer<QQuickItem> host = it.key();
+                auto                 item = it.value();
+                it                        = m_presentation_hosts.erase(it);
+                if (item && item->parentItem() == host) item->setParentItem(m_host);
+                if (! guard) return;
+                if (host) host->setParentItem(nullptr);
+                if (! guard) return;
+                if (host) host->deleteLater();
+            } else {
+                ++it;
+            }
+        }
         for (int i = 0; i < next.size(); ++i) {
             auto item = next[i];
-            if (! item || item->parentItem() != m_host) continue;
+            if (! item || presentationItem(item)->parentItem() != m_host) continue;
             attached(item)->update(this, i);
             if (! guard) return;
-            if (item && item->parentItem() == m_host && ! old.contains(item)) itemAdded(item);
+            if (item && presentationItem(item)->parentItem() == m_host && ! old.contains(item))
+                itemAdded(item);
             if (! guard) return;
         }
         itemsChanged();

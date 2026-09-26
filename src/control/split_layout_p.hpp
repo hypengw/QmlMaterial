@@ -36,6 +36,8 @@ struct Result {
 
 // Axis-independent geometry; the view owns object lifetimes and applies the result.
 Result calculate(const QList<Pane>& panes, qreal available);
+Result reveal(const QList<Pane>& panes, const QList<qreal>& progress,
+              const QList<qreal>& expandedSizes, qreal available);
 struct Resize {
     int   index = -1;
     qreal size  = 0;
