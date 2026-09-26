@@ -14,12 +14,122 @@ Drawer::Drawer(QObject* parent): Popup(parent) {
     setClosePolicy(CloseOnEscape | CloseOnReleaseOutside);
     resetDragMargin();
     connect(this, &Popup::overlayItemChanged, this, &Drawer::registerOverlay);
+    connect(this, &Popup::closed, this, [this] {
+        clearExpansion(presentationOwner());
+    });
     connect(this, &Popup::enabledChanged, this, [this] {
         if (! enabled()) cancelDrag();
     });
 }
 Drawer::~Drawer() {
     if (m_inputOverlay) m_inputOverlay->unregisterDrawer(this);
+}
+void Drawer::setRevealMode(RevealMode value) {
+    if (value != Slide && value != Expand) return;
+    if (m_revealMode == value) return;
+    if (isVisible()) {
+        qmlWarning(this) << "Cannot change revealMode while visible";
+        return;
+    }
+    m_revealMode = value;
+    surfaceItem()->setClip(value == Expand);
+    QPointer<Drawer> guard(this);
+    reposition();
+    if (guard) Q_EMIT revealModeChanged();
+}
+bool Drawer::prepareExpansion(QObject* owner, ItemProxy* origin) {
+    if (owner != presentationOwner() || ! origin || m_revealMode != Expand) return false;
+    const auto geometry = origin->geometryIn(overlayItem());
+    if (! geometry) return false;
+    m_origin         = origin;
+    m_originGeometry = *geometry;
+    m_geometryReady  = false;
+    QPointer<Drawer> guard(this);
+    observeOrigin();
+    return guard;
+}
+void Drawer::clearExpansion(QObject* owner) {
+    if (owner != presentationOwner()) return;
+    m_origin        = nullptr;
+    m_geometryReady = false;
+    observeOrigin();
+}
+void Drawer::observeOrigin() {
+    for (const auto& connection : m_originConnections) disconnect(connection);
+    m_originConnections.clear();
+    for (auto* item = static_cast<QQuickItem*>(m_origin.data()); item; item = item->parentItem()) {
+        for (auto signal : { &QQuickItem::xChanged,
+                             &QQuickItem::yChanged,
+                             &QQuickItem::widthChanged,
+                             &QQuickItem::heightChanged,
+                             &QQuickItem::scaleChanged,
+                             &QQuickItem::rotationChanged })
+            m_originConnections.append(connect(item, signal, this, &Drawer::reposition));
+        m_originConnections.append(
+            connect(item, &QQuickItem::transformOriginChanged, this, &Drawer::reposition));
+        m_originConnections.append(
+            connect(item, &QQuickItem::parentChanged, this, &Drawer::observeOrigin));
+    }
+    reposition();
+}
+ItemProxy::Geometry Drawer::originGeometry() const {
+    if (m_origin) {
+        const auto current = m_origin->geometryIn(overlayItem());
+        if (current) return *current;
+    }
+    return m_originGeometry;
+}
+qreal Drawer::presentationScale() const {
+    return m_revealMode == Expand && m_origin ? expansionGeometry().scale : 1;
+}
+QRectF              Drawer::expansionRect() const { return expansionGeometry().rect; }
+ItemProxy::Geometry Drawer::expansionGeometry() const {
+    const auto geometry = originGeometry();
+    const auto origin   = geometry.rect.adjusted(-leftPadding() * geometry.scale,
+                                                 -topPadding() * geometry.scale,
+                                                 rightPadding() * geometry.scale,
+                                                 bottomPadding() * geometry.scale);
+    auto       end      = Popup::surfacePosition();
+    switch (m_edge) {
+    case Qt::LeftEdge: end.setX(origin.left()); break;
+    case Qt::RightEdge: end.setX(origin.right() - width()); break;
+    case Qt::TopEdge: end.setY(origin.top()); break;
+    case Qt::BottomEdge: end.setY(origin.bottom() - height()); break;
+    }
+    const ItemProxy::Geometry start { origin, geometry.scale };
+    const ItemProxy::Geometry target { QRectF(end, QSizeF(width(), height())), 1 };
+    const auto mix = [](const ItemProxy::Geometry& a, const ItemProxy::Geometry& b, qreal p) {
+        return ItemProxy::Geometry { QRectF(a.rect.topLeft() +
+                                                (b.rect.topLeft() - a.rect.topLeft()) * p,
+                                            a.rect.size() + (b.rect.size() - a.rect.size()) * p),
+                                     std::lerp(a.scale, b.scale, p) };
+    };
+    const auto sample = [&] {
+        if (m_anchorProgress > 0 && m_anchorProgress < 1) {
+            if (m_position <= m_anchorProgress)
+                return mix(m_startGeometry, m_anchorGeometry, m_position / m_anchorProgress);
+            return mix(m_anchorGeometry,
+                       m_endGeometry,
+                       (m_position - m_anchorProgress) / (1 - m_anchorProgress));
+        }
+        return mix(m_startGeometry, m_endGeometry, m_position);
+    };
+    if (! m_geometryReady) {
+        m_anchorProgress = 0;
+        m_geometryReady  = true;
+    } else if (start.rect != m_startGeometry.rect || start.scale != m_startGeometry.scale ||
+               target.rect != m_endGeometry.rect) {
+        // Keep the displayed geometry when either endpoint moves during a transition.
+        m_anchorGeometry = sample();
+        m_anchorProgress = m_position;
+    }
+    m_startGeometry = start;
+    m_endGeometry   = target;
+    return sample();
+}
+QSizeF Drawer::surfaceSize() const {
+    if (m_revealMode == Expand && m_origin) return expansionRect().size() / presentationScale();
+    return Popup::surfaceSize();
 }
 void Drawer::registerOverlay() {
     auto next = qobject_cast<OverlayManager*>(overlayItem());
@@ -63,6 +173,7 @@ qreal Drawer::distanceFromEdge(const QPointF& point) const {
     return 0;
 }
 bool Drawer::acceptsDrag(const QPointF& point) const {
+    if (m_revealMode == Expand && (entering() || closing())) return false;
     if (! canRequestPresentation()) return false;
     if (! m_interactive || ! enabled() || ! parentItem() || ! parentItem()->isVisible() ||
         extent() <= 0)
@@ -78,9 +189,10 @@ bool Drawer::blocksScenePoint(const QPointF& point) const {
 }
 bool Drawer::overlayContainsScenePoint(const QPointF& point) const {
     const auto local = point - surfacePosition();
+    const auto size  = surfaceSize() * presentationScale();
     return m_edge == Qt::LeftEdge || m_edge == Qt::RightEdge
-               ? local.y() >= 0 && local.y() < height()
-               : local.x() >= 0 && local.x() < width();
+               ? local.y() >= 0 && local.y() < size.height()
+               : local.x() >= 0 && local.x() < size.width();
 }
 void Drawer::pressDrag(const QPointF& point, ulong timestamp) {
     m_pressPoint     = point;
@@ -88,6 +200,7 @@ void Drawer::pressDrag(const QPointF& point, ulong timestamp) {
     m_wasOpen        = isVisible() && ! closing();
 }
 bool Drawer::wantsDrag(const QPointF& point) const {
+    if (m_revealMode == Expand && (entering() || closing())) return false;
     if (! canRequestPresentation()) return false;
     if (! m_interactive || ! enabled() || extent() <= 0) return false;
     if (! isVisible() && m_dragMargin <= 0) return false;
@@ -99,6 +212,10 @@ bool Drawer::wantsDrag(const QPointF& point) const {
            (isVisible() || along > 0);
 }
 void Drawer::startDrag(const QPointF& point) {
+    if (m_revealMode == Expand) {
+        if (canRequestPresentation() && ! entering() && ! closing()) m_dragging = true;
+        return;
+    }
     if (! requestPresentation()) return;
     m_dragging     = true;
     m_dragOrigin   = axis(point);
@@ -106,13 +223,22 @@ void Drawer::startDrag(const QPointF& point) {
     beginInteractiveTransition();
 }
 void Drawer::moveDrag(const QPointF& point) {
+    if (m_revealMode == Expand) return;
     if (m_dragging && extent() > 0)
         setPosition(m_dragPosition + (axis(point) - m_dragOrigin) / extent());
 }
 void Drawer::releaseDrag(const QPointF& point, ulong timestamp) {
     if (! m_dragging) return;
-    m_dragging           = false;
-    const qreal delta    = axis(point - m_pressPoint);
+    m_dragging        = false;
+    const qreal delta = axis(point - m_pressPoint);
+    if (m_revealMode == Expand) {
+        const auto threshold = std::max(20, qGuiApp->styleHints()->startDragDistance() + 5);
+        if (! m_wasOpen && delta > threshold)
+            open();
+        else if (m_wasOpen && delta < -threshold)
+            close();
+        return;
+    }
     const auto  elapsed  = timestamp > m_pressTimestamp ? timestamp - m_pressTimestamp : 0;
     const qreal velocity = elapsed ? delta * 1000 / elapsed : 0;
     const bool  opening  = m_position > 0.7 || velocity > 300 ||
@@ -123,12 +249,13 @@ void Drawer::cancelDrag() {
     if (m_inputOverlay) m_inputOverlay->releaseDrawer(this);
     if (! m_dragging) return;
     m_dragging = false;
+    if (m_revealMode == Expand) return;
     endInteractiveTransition(m_wasOpen);
 }
 void Drawer::open() {
     if (! requestPresentation()) return;
     if (m_inputOverlay) m_inputOverlay->releaseDrawer(this);
-    const bool wasDragging = m_dragging;
+    const bool wasDragging = m_dragging && m_revealMode == Slide;
     m_dragging             = false;
     if (wasDragging)
         endInteractiveTransition(true);
@@ -170,6 +297,7 @@ void Drawer::setPosition(qreal value) {
     if (guard) Q_EMIT positionChanged();
 }
 QPointF Drawer::surfacePosition() const {
+    if (m_revealMode == Expand && m_origin) return expansionRect().topLeft();
     auto point = Popup::surfacePosition();
     switch (m_edge) {
     case Qt::LeftEdge: point.setX((m_position - 1) * width()); break;
@@ -182,12 +310,13 @@ QPointF Drawer::surfacePosition() const {
 void Drawer::updateDimmer(QQuickItem* item, qreal) const {
     QRectF     rect(0, 0, overlayWidth(), overlayHeight());
     const auto point = surfacePosition();
+    const auto size  = surfaceSize() * presentationScale();
     if (m_edge == Qt::LeftEdge || m_edge == Qt::RightEdge) {
         rect.setY(point.y());
-        rect.setHeight(height());
+        rect.setHeight(size.height());
     } else {
         rect.setX(point.x());
-        rect.setWidth(width());
+        rect.setWidth(size.width());
     }
     QPointer<QQuickItem> guard(item);
     const auto           opacity = m_position;

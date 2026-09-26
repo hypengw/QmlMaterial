@@ -11,7 +11,7 @@ import Qcm.Material as MD
 MD.ControlBase {
     id: control
     focusPolicy: Qt.NoFocus
-    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, (useModal ? 0 : implicitContentWidth) + leftPadding + rightPadding)
+    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, (useModal || drawerOpened ? 0 : implicitContentWidth) + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
     // -- data --
@@ -31,7 +31,8 @@ MD.ControlBase {
     // automatically expand when the window becomes large enough to embed
     property bool autoExpand: true
     // items use the horizontal (expanded) layout
-    readonly property bool useLarge: (expanded && !useModal) || drawerOpened
+    readonly property bool useLarge: useModal ? m_private.drawerRequested : expanded
+    readonly property real expansionProgress: drawerOpened ? m_drawer.position : (useModal ? 0 : m_private.embeddedProgress)
     readonly property bool drawerOpened: m_popup_content.current
 
     // -- sizes --
@@ -64,6 +65,15 @@ MD.ControlBase {
     QtObject {
         id: m_private
         property bool drawerRequested: false
+        property bool ready: false
+        property real embeddedProgress: control.drawerOpened ? m_drawer.position : (control.expanded ? 1 : 0)
+        Behavior on embeddedProgress {
+            enabled: m_private.ready && !control.useModal && !control.drawerOpened
+            NumberAnimation {
+                duration: MD.Token.duration.long2
+                easing: MD.Token.easing.emphasized
+            }
+        }
     }
 
     MD.AdaptivePresenter {
@@ -73,9 +83,10 @@ MD.ControlBase {
     }
 
     function open() {
-        if (useModal)
+        if (useModal) {
+            m_private.drawerRequested = true;
             m_drawer.open();
-        else
+        } else
             expanded = true;
     }
 
@@ -88,10 +99,12 @@ MD.ControlBase {
 
     function toggle() {
         if (useModal) {
-            if (m_drawer.visible)
+            if (m_private.drawerRequested)
                 m_drawer.close();
-            else
+            else {
+                m_private.drawerRequested = true;
                 m_drawer.open();
+            }
         } else {
             expanded = !expanded;
         }
@@ -106,24 +119,18 @@ MD.ControlBase {
     Component.onCompleted: {
         if (autoExpand && useEmbed)
             expanded = true;
+        m_private.ready = true;
     }
 
     background: Item {
         implicitWidth: {
             if (control.hideWhenCollapsed && MD.MProp.size.isCompact)
                 return 0;
-            if (control.useModal)
+            if (control.useModal || control.drawerOpened)
                 return control.collapsedWidth;
-            return control.expanded ? control.expandedWidth : control.collapsedWidth;
+            return MD.Util.lerp(control.collapsedWidth, control.expandedWidth, control.expansionProgress);
         }
         implicitHeight: 400
-
-        Behavior on implicitWidth {
-            NumberAnimation {
-                duration: MD.Token.duration.long2
-                easing: MD.Token.easing.emphasized
-            }
-        }
     }
 
     contentItem: MD.PresentationSite {
@@ -134,29 +141,23 @@ MD.ControlBase {
     Component {
         id: m_header_comp
         Item {
-            implicitWidth: control.useLarge ? Math.max(m_fab.x + m_fab.width + 12, 220) : control.collapsedWidth
+            implicitWidth: MD.Util.lerp(control.collapsedWidth, control.expandedWidth, control.expansionProgress)
             implicitHeight: m_menu_btn.y + m_menu_btn.height + (m_fab.visible ? m_fab.height + 12 : 0) + 12
 
             MD.StandardIconButton {
                 id: m_menu_btn
                 // expanded x aligns the menu icon left edge (btn is 40 wide, icon 24 centered)
                 // with the nav item icons at x=32; collapsed target keeps it centered in the rail
-                x: control.useLarge ? (32 - (width - 24) / 2) : (control.collapsedWidth - width) / 2
+                x: MD.Util.lerp((control.collapsedWidth - width) / 2, 32 - (width - 24) / 2, control.expansionProgress)
                 y: 4
                 icon.name: control.useLarge ? MD.Token.icon.menu_open : MD.Token.icon.menu
                 onClicked: control.headerAction ? control.headerAction.trigger() : control.toggle()
-
-                Behavior on x {
-                    NumberAnimation {
-                        duration: MD.Token.duration.long2
-                        easing: MD.Token.easing.emphasized
-                    }
-                }
             }
 
             // built-in morphing FAB (icon-only -> extended)
             MD.ButtonBase {
                 id: m_fab
+                clip: true
                 action: control.fabAction
                 icon.width: 24
                 icon.height: 24
@@ -164,39 +165,27 @@ MD.ControlBase {
                 visible: !control.fab && control.fabAction
                 // expanded x=16 aligns the FAB indicator left edge with the nav item indicators;
                 // collapsed target uses the final collapsed width (56) so x and width animate together
-                x: control.useLarge ? 16 : (control.collapsedWidth - 56) / 2
+                x: MD.Util.lerp((control.collapsedWidth - 56) / 2, 16, control.expansionProgress)
                 y: m_menu_btn.y + m_menu_btn.height + 12
                 height: 56
-                width: control.useLarge ? (16 + m_fab_icon.width + 12 + m_fab_label.implicitWidth + 20) : 56
+                width: MD.Util.lerp(56, 16 + m_fab_icon.width + 12 + m_fab_label.implicitWidth + 20, control.expansionProgress)
                 background: MD.ElevationRectangle {
                     radius: MD.Token.shape.corner.large
                     color: MD.MProp.color.primary_container
                     elevationVisible: false
                 }
 
-                Behavior on x {
-                    NumberAnimation {
-                        duration: MD.Token.duration.long2
-                        easing: MD.Token.easing.emphasized
-                    }
-                }
-                Behavior on width {
-                    NumberAnimation {
-                        duration: MD.Token.duration.long2
-                        easing: MD.Token.easing.emphasized
-                    }
-                }
-
                 MD.IconView {
                     id: m_fab_icon
                     icon: m_fab.icon
-                    x: control.useLarge ? 16 : (56 - width) / 2
+                    x: MD.Util.lerp((56 - width) / 2, 16, control.expansionProgress)
                     y: (parent.height - height) / 2
                 }
                 MD.Text {
                     id: m_fab_label
                     text: control.fabAction?.text ?? ''
-                    visible: control.useLarge
+                    visible: opacity > 0
+                    opacity: control.expansionProgress
                     typescale: MD.Token.typescale.label_large
                     color: MD.MProp.color.on_primary_container
                     x: m_fab_icon.x + m_fab_icon.width + 12
@@ -216,7 +205,7 @@ MD.ControlBase {
             // custom FAB slot
             Loader {
                 id: m_fab_loader
-                x: control.useLarge ? 12 : (control.collapsedWidth - width) / 2
+                x: MD.Util.lerp((control.collapsedWidth - width) / 2, 12, control.expansionProgress)
                 y: m_menu_btn.y + m_menu_btn.height + 12
                 visible: sourceComponent
                 sourceComponent: control.fab
@@ -226,6 +215,21 @@ MD.ControlBase {
 
     MD.Drawer {
         id: m_drawer
+        revealMode: MD.DrawerBase.Expand
+        width: control.expandedWidth
+        onAboutToHide: m_private.drawerRequested = false
+        enter: Transition {
+            NumberAnimation {
+                duration: MD.Token.duration.long2
+                easing: MD.Token.easing.emphasized
+            }
+        }
+        exit: Transition {
+            NumberAnimation {
+                duration: MD.Token.duration.long2
+                easing: MD.Token.easing.emphasized
+            }
+        }
         parent: control.MD.Overlay.overlay
         modal: control.useModal
         interactive: control.drawerGestureEnabled && control.useModal
@@ -235,6 +239,13 @@ MD.ControlBase {
 
         topPadding: 4
         bottomPadding: 4
+
+        MD.Overlay.modal: Rectangle {
+            color: MD.Util.transparent(MD.Token.color.scrim, 0.32)
+        }
+        MD.Overlay.modeless: Rectangle {
+            color: MD.Util.transparent(MD.Token.color.scrim, 0.32)
+        }
 
         background: Item {
             implicitWidth: control.expandedWidth
@@ -253,6 +264,7 @@ MD.ControlBase {
             id: m_popup_content
             presenter: m_presenter
             popup: m_drawer
+            originSite: m_embed_content
             autoOpen: false
             activationEnabled: control.useModal
             onActivationRequested: m_private.drawerRequested = true
@@ -274,7 +286,7 @@ MD.ControlBase {
                 id: m_content
                 width: parent.width
                 height: Math.max(implicitHeight, m_flick.height - 12 * 2)
-                implicitWidth: control.useLarge ? control.expandedWidth : control.collapsedWidth
+                implicitWidth: MD.Util.lerp(control.collapsedWidth, control.expandedWidth, control.expansionProgress)
                 implicitHeight: m_header_loader.height + m_rail_container.implicitHeight + m_footer_container.implicitHeight
 
                 // -- header --
@@ -298,16 +310,14 @@ MD.ControlBase {
                         id: m_rail_view
                         expand: true
                         y: {
-                            if (control.useLarge)
-                                return 0;
                             const max = Math.max(parent.height - height, 0);
                             switch (control.arrangement) {
                             case MD.Enum.RailCenter:
                                 // center within the whole control, not just the
                                 // space left between header and footer
-                                return MD.Util.clamp((m_content.height - height) / 2 - m_header_loader.height, 0, max);
+                                return (1 - control.expansionProgress) * MD.Util.clamp((m_content.height - height) / 2 - m_header_loader.height, 0, max);
                             case MD.Enum.RailBottom:
-                                return max;
+                                return (1 - control.expansionProgress) * max;
                             default:
                                 return 0;
                             }
@@ -315,7 +325,7 @@ MD.ControlBase {
                         height: implicitHeight
                         width: parent.width
 
-                        spacing: control.useLarge ? 0 : 6
+                        spacing: 6 * (1 - control.expansionProgress)
 
                         interactive: false
                         reuseItems: false
@@ -336,11 +346,12 @@ MD.ControlBase {
                                 id: m_section
                                 visible: m_delegate.isHeader
                                 width: parent.width
-                                implicitHeight: control.useLarge ? (12 + m_section_label.implicitHeight + 8) : 21
+                                implicitHeight: MD.Util.lerp(21, 12 + m_section_label.implicitHeight + 8, control.expansionProgress)
 
                                 MD.Text {
                                     id: m_section_label
-                                    visible: control.useLarge
+                                    visible: opacity > 0
+                                    opacity: control.expansionProgress
                                     x: 16
                                     y: 12
                                     width: parent.width - 32
@@ -349,7 +360,8 @@ MD.ControlBase {
                                     color: MD.MProp.color.on_surface_variant
                                 }
                                 Rectangle {
-                                    visible: !control.useLarge
+                                    visible: opacity > 0
+                                    opacity: 1 - control.expansionProgress
                                     width: 48
                                     height: 1
                                     x: (parent.width - width) / 2
@@ -370,6 +382,7 @@ MD.ControlBase {
                                 }
                                 text: m_delegate.model.name ?? ''
                                 expand: control.useLarge
+                                expansionProgress: control.expansionProgress
                                 checked: control.currentIndex === m_delegate.index
                                 onClicked: {
                                     control.currentIndex = m_delegate.index;

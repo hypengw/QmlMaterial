@@ -4,6 +4,9 @@ import Qcm.Material as MD
 
 MD.UtilCpp {
     id: root
+    function lerp(from: real, to: real, progress: real): real {
+        return from + (to - from) * progress;
+    }
     function epsilonEqual(x: real, y: real): real {
         return Math.abs(x - y) < Number.EPSILON;
     }

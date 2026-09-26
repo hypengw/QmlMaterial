@@ -91,6 +91,200 @@ Item {
 class AdaptivePresenterTest : public QObject {
     Q_OBJECT
 private slots:
+    void expandingDrawer_data() {
+        QTest::addColumn<qreal>("scale");
+        QTest::addColumn<Qt::Edge>("edge");
+        QTest::newRow("left") << qreal(1) << Qt::LeftEdge;
+        QTest::newRow("right") << qreal(1) << Qt::RightEdge;
+        QTest::newRow("top") << qreal(1) << Qt::TopEdge;
+        QTest::newRow("bottom") << qreal(1) << Qt::BottomEdge;
+        QTest::newRow("scaled") << qreal(1.25) << Qt::LeftEdge;
+    }
+    void expandingDrawer() {
+        QFETCH(qreal, scale);
+        QFETCH(Qt::Edge, edge);
+        Scene s;
+        QVERIFY(s.root);
+        s.side->setPosition({ 24, 18 });
+        s.side->setWidth(96);
+        s.side->setScale(scale);
+        s.presenter->setDestination(s.side);
+        QTRY_COMPARE(s.presenter->currentSite(), s.side);
+        s.drawer->setRevealMode(Drawer::Expand);
+        s.drawer->setEdge(edge);
+        s.drawerSite->setOriginSite(s.side);
+        s.drawerSite->setActivationEnabled(true);
+        connect(s.drawerSite, &PresentationSite::activationRequested, s.presenter, [&] {
+            s.presenter->setDestination(s.drawerSite);
+        });
+        connect(s.drawer, &Popup::aboutToHide, s.presenter, [&] {
+            s.presenter->setDestination(s.side);
+        });
+        auto*      owner  = s.content->parent();
+        const auto origin = s.content->mapRectToScene(s.content->boundingRect());
+        s.drawer->open();
+        QVERIFY(s.drawer->entering());
+        QCOMPARE(s.content->mapRectToScene(s.content->boundingRect()), origin);
+        QCOMPARE(s.drawer->width(), 300);
+        QCOMPARE(s.content->parent(), owner);
+        for (qreal p : { 0.25, 0.5, 0.75 }) {
+            s.drawer->setPosition(p);
+            QCOMPARE(s.drawer->presentationRect().width(),
+                     origin.width() + (300 - origin.width()) * p);
+            QCOMPARE(s.drawer->width(), 300);
+        }
+        s.drawer->close();
+        s.drawer->setPosition(0.4);
+        const auto reversing = s.drawer->presentationRect();
+        s.presenter->setDestination(s.drawerSite);
+        s.drawer->open();
+        QCOMPARE(s.drawer->presentationRect(), reversing);
+        s.drawer->completeEnter();
+        s.drawer->close();
+        QCoreApplication::processEvents();
+        QCOMPARE(s.presenter->currentSite(), s.drawerSite);
+        bool returnedWhileVisible = false;
+        connect(s.presenter, &AdaptivePresenter::currentSiteChanged, s.root.get(), [&] {
+            if (s.presenter->currentSite() == s.side) returnedWhileVisible = s.drawer->isVisible();
+        });
+        s.drawer->completeExit();
+        QCOMPARE(s.presenter->currentSite(), s.side);
+        QVERIFY(returnedWhileVisible);
+        QCOMPARE(s.content->mapRectToScene(s.content->boundingRect()), origin);
+        QCOMPARE(s.content->parent(), owner);
+        QVERIFY(! s.drawer->isVisible());
+    }
+    void expansionRetargetsGeometry() {
+        Scene s;
+        QVERIFY(s.root);
+        s.side->setWidth(96);
+        s.presenter->setDestination(s.side);
+        QTRY_COMPARE(s.presenter->currentSite(), s.side);
+        s.drawer->setRevealMode(Drawer::Expand);
+        s.drawerSite->setOriginSite(s.side);
+        s.presenter->setDestination(s.drawerSite);
+        QTRY_COMPARE(s.presenter->currentSite(), s.drawerSite);
+        s.drawer->open();
+        s.drawer->setPosition(0.4);
+        const auto before        = s.drawer->presentationRect();
+        const auto contentBefore = s.content->mapRectToScene(s.content->boundingRect());
+        s.drawer->setWidth(350);
+        s.side->setX(20);
+        s.side->setScale(1.25);
+        s.window.resize(1000, 750);
+        QCOMPARE(s.drawer->presentationRect(), before);
+        QCOMPARE(s.content->mapRectToScene(s.content->boundingRect()), contentBefore);
+        s.drawer->setPosition(1);
+        QCOMPARE(s.drawer->presentationRect().width(), 350);
+        s.drawer->close();
+        s.presenter->setDestination(s.side);
+        QCoreApplication::processEvents();
+        s.drawer->setPosition(0);
+        const auto returning = s.content->mapRectToScene(s.content->boundingRect());
+        s.drawer->completeExit();
+        QCOMPARE(s.presenter->currentSite(), s.side);
+        QCOMPARE(s.content->mapRectToScene(s.content->boundingRect()), returning);
+    }
+    void invalidExpansionKeepsSource() {
+        Scene s;
+        QVERIFY(s.root);
+        s.presenter->setDestination(s.side);
+        QTRY_COMPARE(s.presenter->currentSite(), s.side);
+        auto* parent = s.content->parentItem();
+        s.side->setRotation(15);
+        s.drawer->setRevealMode(Drawer::Expand);
+        s.drawerSite->setOriginSite(s.side);
+        s.presenter->setDestination(s.drawerSite);
+        QTRY_COMPARE(s.presenter->status(), AdaptivePresenter::Error);
+        QCOMPARE(s.content->parentItem(), parent);
+        QVERIFY(! s.drawer->isVisible());
+    }
+    void expansionReturnReentry() {
+        Scene s;
+        QVERIFY(s.root);
+        s.presenter->setDestination(s.side);
+        QTRY_COMPARE(s.presenter->currentSite(), s.side);
+        s.drawer->setRevealMode(Drawer::Expand);
+        s.drawerSite->setOriginSite(s.side);
+        s.presenter->setDestination(s.drawerSite);
+        QTRY_COMPARE(s.presenter->currentSite(), s.drawerSite);
+        s.drawer->open();
+        s.drawer->completeEnter();
+        s.presenter->setDestination(s.side);
+        QTRY_VERIFY(s.drawer->closing());
+        bool redirected = false;
+        connect(s.presenter,
+                &AdaptivePresenter::aboutToRelocate,
+                s.root.get(),
+                [&](PresentationSite*, PresentationSite* to) {
+                    if (to != s.side || redirected) return;
+                    redirected = true;
+                    s.presenter->setDestination(s.drawerSite);
+                    s.drawer->open();
+                });
+        QSignalSpy closed(s.drawer, &Popup::closed);
+        s.drawer->completeExit();
+        QVERIFY(redirected);
+        QVERIFY(s.drawer->entering());
+        QCOMPARE(closed.count(), 0);
+        QCOMPARE(s.presenter->currentSite(), s.drawerSite);
+        s.drawer->completeEnter();
+        s.presenter->setDestination(s.side);
+        QTRY_VERIFY(s.drawer->closing());
+        s.drawer->completeExit();
+        QCOMPARE(s.presenter->currentSite(), s.side);
+        QCOMPARE(closed.count(), 1);
+    }
+    void expansionOriginDestruction() {
+        Scene s;
+        QVERIFY(s.root);
+        s.presenter->setDestination(s.side);
+        QTRY_COMPARE(s.presenter->currentSite(), s.side);
+        s.drawer->setRevealMode(Drawer::Expand);
+        s.drawerSite->setOriginSite(s.side);
+        s.presenter->setDestination(s.drawerSite);
+        QTRY_COMPARE(s.presenter->currentSite(), s.drawerSite);
+        s.drawer->open();
+        s.drawer->setPosition(0.5);
+        auto* owner = s.content->parent();
+        delete s.side;
+        QVERIFY(! s.drawer->isVisible());
+        QVERIFY(! s.content->parentItem());
+        QCOMPARE(s.content->parent(), owner);
+        QTRY_COMPARE(s.presenter->status(), AdaptivePresenter::Error);
+        QVERIFY(! s.drawer->isVisible());
+    }
+    void expandingGestureIntent() {
+        Scene s;
+        QVERIFY(s.root);
+        s.presenter->setDestination(s.side);
+        QTRY_COMPARE(s.presenter->currentSite(), s.side);
+        s.drawer->setRevealMode(Drawer::Expand);
+        s.drawerSite->setOriginSite(s.side);
+        s.drawerSite->setActivationEnabled(true);
+        connect(s.drawerSite, &PresentationSite::activationRequested, s.presenter, [&] {
+            s.presenter->setDestination(s.drawerSite);
+        });
+        QSignalSpy requests(s.drawerSite, &PresentationSite::activationRequested);
+        s.drawer->pressDrag({ 1, 100 }, 100);
+        s.drawer->startDrag({ 50, 100 });
+        s.drawer->moveDrag({ 120, 100 });
+        QCOMPARE(s.presenter->currentSite(), s.side);
+        QCOMPARE(s.drawer->position(), 0);
+        s.drawer->releaseDrag({ 2, 100 }, 200);
+        QCOMPARE(requests.count(), 0);
+        s.drawer->pressDrag({ 1, 100 }, 300);
+        s.drawer->startDrag({ 50, 100 });
+        s.drawer->releaseDrag({ 100, 100 }, 400);
+        QCOMPARE(requests.count(), 1);
+        QVERIFY(s.drawer->entering());
+        QVERIFY(! s.drawer->acceptsDrag({ 1, 100 }));
+        s.drawer->completeEnter();
+        s.drawer->pressDrag({ 150, 100 }, 500);
+        s.drawer->startDrag({ 100, 100 });
+        s.drawer->releaseDrag({ 149, 100 }, 600);
+        QVERIFY(s.drawer->isOpened());
+    }
     void drawerActivationRequest() {
         Scene s;
         QVERIFY(s.root);
@@ -165,9 +359,8 @@ MD.NavigationRail {
         drawer->pressDrag({ 1, 100 }, 100);
         drawer->startDrag({ 40, 100 });
         drawer->moveDrag({ 100, 100 });
-        QVERIFY(drawer->position() > 0);
+        QCOMPARE(drawer->position(), 0);
         drawer->cancelDrag();
-        drawer->completeExit();
         QTRY_COMPARE(presenter->currentSite(), inlineSite);
     }
     void activationOwnerDestroyed() {

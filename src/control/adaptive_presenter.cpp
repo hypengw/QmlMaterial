@@ -1,4 +1,5 @@
 #include "qml_material/control/adaptive_presenter.hpp"
+#include "qml_material/control/drawer.hpp"
 #include <QQuickWindow>
 
 namespace qml_material
@@ -115,6 +116,23 @@ void PresentationSite::setAutoOpen(bool value) {
     if (m_autoOpen == value) return;
     m_autoOpen = value;
     Q_EMIT autoOpenChanged();
+}
+void PresentationSite::setOriginSite(PresentationSite* value) {
+    if (m_origin == value && m_originRequired == bool(value)) return;
+    QPointer<PresentationSite> guard(this);
+    disconnect(m_originConnection);
+    m_origin         = value;
+    m_originRequired = bool(value);
+    if (value)
+        m_originConnection = connect(value, &QObject::destroyed, this, [this] {
+            QPointer<PresentationSite> guard(this);
+            if (m_presenter) m_presenter->siteChanging(this);
+            if (guard) Q_EMIT originSiteChanged();
+        });
+    if (m_presenter) m_presenter->siteChanging(this);
+    if (! guard) return;
+    changed();
+    Q_EMIT originSiteChanged();
 }
 void PresentationSite::setActivationEnabled(bool value) {
     if (m_activationEnabled == value) return;
@@ -250,6 +268,7 @@ void AdaptivePresenter::detach() {
     for (auto connection : m_popupConnections) disconnect(connection);
     m_popupConnections.clear();
     m_popup = nullptr;
+    if (popup && old) popup->setPresentationCloseHandler(old, {});
     if (popup && old) popup->setPresentationAllowed(old, false);
     if (! guard) return;
     if (old) old->m_proxy->setActive(false);
@@ -262,7 +281,7 @@ void AdaptivePresenter::detach() {
 void AdaptivePresenter::siteChanging(PresentationSite* site) {
     ++m_generation;
     QPointer<AdaptivePresenter> guard(this);
-    if (m_current == site) detach();
+    if (m_current == site || (m_current && m_current->m_origin == site)) detach();
     if (guard) schedule();
 }
 void AdaptivePresenter::completeDismiss(quint64 generation) {
@@ -272,6 +291,12 @@ void AdaptivePresenter::completeDismiss(quint64 generation) {
 }
 void AdaptivePresenter::observePopup() {
     if (! m_popup) return;
+    if (m_current && m_current->m_origin) {
+        QPointer<AdaptivePresenter> guard(this);
+        m_popup->setPresentationCloseHandler(m_current, [guard] {
+            if (guard) guard->finishReturn();
+        });
+    }
     m_popupConnections << connect(m_popup, &Popup::aboutToShow, this, [this] {
         ++m_generation;
         if (! m_session) m_explicit = false;
@@ -307,6 +332,41 @@ void AdaptivePresenter::observePopup() {
             },
             Qt::QueuedConnection);
     });
+}
+void AdaptivePresenter::finishReturn() {
+    auto from  = m_current;
+    auto popup = m_popup;
+    auto to    = from ? from->m_origin : nullptr;
+    if (! from || ! popup || ! to || m_destination != to || ! m_enabled ||
+        ! siteError(to).isEmpty())
+        return;
+    QPointer<AdaptivePresenter> guard(this);
+    const auto                  generation = m_generation;
+    m_relocating                           = true;
+    Q_EMIT aboutToRelocate(from, to);
+    if (! guard) return;
+    if (! from || ! to || generation != m_generation || ! popup || ! popup->closing()) {
+        m_relocating = false;
+        schedule();
+        return;
+    }
+    const bool transferred = to->m_proxy->takeFrom(from->m_proxy);
+    if (! guard) return;
+    if (! transferred || ! popup || ! from || ! to || generation != m_generation) {
+        m_relocating = false;
+        schedule();
+        return;
+    }
+    for (auto connection : m_popupConnections) disconnect(connection);
+    m_popupConnections.clear();
+    popup->setPresentationCloseHandler(from, {});
+    popup->setPresentationAllowed(from, false);
+    m_popup       = nullptr;
+    m_current     = to;
+    m_relocating  = false;
+    m_reachedOpen = m_session = m_explicit = m_dismissRequested = false;
+    Q_EMIT currentSiteChanged();
+    if (guard) updateStatus();
 }
 void AdaptivePresenter::reconcile(bool activationRequest) {
     if (m_relocating) {
@@ -363,6 +423,12 @@ void AdaptivePresenter::reconcile(bool activationRequest) {
     }
     setError({});
     if (! guard || generation != m_generation) return;
+    if (m_current && m_current->m_origin == next && m_popup && m_popup->isVisible() &&
+        qobject_cast<Drawer*>(m_popup.data())) {
+        m_popup->close();
+        if (guard) updateStatus();
+        return;
+    }
     if (next->m_popup &&
         (! next->m_popup->parentItem() || ! next->m_popup->parentItem()->window())) {
         if (m_current == next) detach();
@@ -393,7 +459,32 @@ void AdaptivePresenter::reconcile(bool activationRequest) {
             if (guard) setStatus(Error);
             return;
         }
-        detach();
+        bool  transferred = false;
+        auto* drawer      = qobject_cast<Drawer*>(next->m_popup.data());
+        if (drawer && drawer->revealMode() == Drawer::Expand && next->m_origin == m_current &&
+            m_current) {
+            if (! drawer->prepareExpansion(next, m_current->m_proxy)) {
+                m_relocating = false;
+                setError(QStringLiteral("origin geometry cannot be presented continuously"));
+                if (guard) setStatus(Error);
+                return;
+            }
+            if (! guard) return;
+            if (! next || ! m_current || generation != m_generation) {
+                m_relocating = false;
+                schedule();
+                return;
+            }
+            transferred = next->m_proxy->takeFrom(m_current->m_proxy);
+            if (! guard) return;
+            if (! transferred) {
+                m_relocating = false;
+                setError(QStringLiteral("continuous content transfer failed"));
+                if (guard) setStatus(Error);
+                return;
+            }
+        }
+        if (! transferred) detach();
         if (! guard) return;
         if (! next || generation != m_generation) {
             m_relocating = false;
@@ -407,7 +498,7 @@ void AdaptivePresenter::reconcile(bool activationRequest) {
             schedule();
             return;
         }
-        next->m_proxy->setActive(true);
+        if (! transferred) next->m_proxy->setActive(true);
         if (! guard) return;
         m_relocating = false;
         if (generation != m_generation) {
@@ -464,6 +555,20 @@ QString AdaptivePresenter::siteError(PresentationSite* next) const {
         return QStringLiteral("destination popup was destroyed");
     if (next->m_popup && next->m_popup->presentationOwner() != next)
         return QStringLiteral("destination popup already has a presentation owner");
+    if (next->m_originRequired && ! next->m_origin)
+        return QStringLiteral("originSite was destroyed");
+    if (next->m_origin) {
+        const auto origin = next->m_origin;
+        const auto drawer = qobject_cast<Drawer*>(next->m_popup.data());
+        if (origin == next || origin->m_presenter != this || origin->m_popup || origin->m_origin ||
+            ! drawer || drawer->revealMode() != Drawer::Expand)
+            return QStringLiteral(
+                "originSite requires an inline site and an Expand drawer in the same presenter");
+        if (origin->window() && drawer->parentItem() && drawer->parentItem()->window() &&
+            origin->window() != drawer->parentItem()->window())
+            return QStringLiteral("originSite belongs to a different window");
+        if (! origin->isVisible()) return QStringLiteral("originSite is not visible");
+    }
     const auto error =
         next->m_proxy->acquisitionError(m_content, m_current ? m_current->m_proxy : nullptr);
     if (! error.isEmpty()) return error;

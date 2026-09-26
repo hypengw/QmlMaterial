@@ -5,22 +5,38 @@ MD.ButtonBase {
     id: control
 
     property int iconStyle: hasIcon ? MD.Enum.IconAndText : MD.Enum.TextOnly
+    property int collapsedIconStyle: iconStyle
+    property bool expand: false
+    property real expansionProgress: -1
+    property Item trailing: null
     readonly property bool hasIcon: !icon.empty
     readonly property bool _showIcon: iconStyle !== MD.Enum.TextOnly && hasIcon
     readonly property bool _showLabel: iconStyle !== MD.Enum.IconOnly
+    readonly property bool _collapsedLabel: collapsedIconStyle !== MD.Enum.IconOnly
+    readonly property real _progress: expansionProgress >= 0 ? MD.Util.clamp(expansionProgress, 0, 1) : _localProgress
+    property real _localProgress: expand ? 1 : 0
+    property bool _ready: false
+    Component.onCompleted: _ready = true
+
+    Behavior on _localProgress {
+        enabled: control._ready && control.expansionProgress < 0
+        NumberAnimation {
+            duration: MD.Token.duration.long2
+            easing: MD.Token.easing.emphasized
+        }
+    }
+
     property MD.StateRailItem mdState: MD.StateRailItem {
         item: control
     }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
-
     flat: false
     topInset: 0
     bottomInset: 0
     leftInset: 0
     rightInset: 0
-
     padding: 0
     spacing: 0
     hoverEnabled: true
@@ -30,212 +46,79 @@ MD.ButtonBase {
     icon.color: control.mdState.supportTextColor
     icon.fill: control.checked
 
-    property bool expand: false
-    property Item trailing: null
-
-    // -- metrics --
-    // expanded indicator inset from rail edge
     readonly property real _indicatorMargin: 16
-    // M3 expressive wide rail collapsed container = 96dp
     readonly property real _collapsedWidth: 96
     readonly property real _collapsedIndicatorW: 56
     readonly property real _collapsedIndicatorH: 32
     readonly property real _expandedIndicatorH: 56
-    // leading space between the active indicator edge and the icon
     readonly property real _expandedLeadingPad: 16
     readonly property real _expandedTrailingPad: 24
     readonly property real _iconLabelSpacing: 12
-
-    // expanded indicator wraps content
     readonly property real _expandedIndicatorW: {
         if (control.iconStyle === MD.Enum.IconOnly)
             return _expandedIndicatorH;
-        let width = _expandedLeadingPad + _expandedTrailingPad;
-        if (control._showIcon)
-            width += control.icon.width;
-        if (control._showLabel)
-            width += m_label.implicitWidth;
-        if (control._showIcon && control._showLabel)
-            width += _iconLabelSpacing;
-        return width;
+        return _expandedLeadingPad + _expandedTrailingPad + (_showIcon ? icon.width : 0) + (_showLabel ? m_label.implicitWidth : 0) + (_showIcon && _showLabel ? _iconLabelSpacing : 0);
     }
-    readonly property real _expandedWidth: _expandedIndicatorW + _indicatorMargin * 2
-    readonly property real _implicitWidth: {
-        if (!control.expand)
-            return _collapsedWidth;
-        if (control.iconStyle === MD.Enum.IconOnly)
-            return _expandedWidth;
-        return Math.max(_expandedIndicatorW, 220);
-    }
-    readonly property real _collapsedHeight: {
-        let height = _collapsedIndicatorH;
-        if (control._showLabel)
-            height += 4 + m_label.implicitHeight;
-        return height;
-    }
+    readonly property real _expandedWidth: iconStyle === MD.Enum.IconOnly ? _expandedIndicatorW + _indicatorMargin * 2 : Math.max(_expandedIndicatorW, 220)
+    readonly property real _implicitWidth: _collapsedWidth + (_expandedWidth - _collapsedWidth) * _progress
+    readonly property real _collapsedHeight: _collapsedIndicatorH + (_collapsedLabel ? 4 + m_collapsed_label.implicitHeight : 0)
+    readonly property real _itemHeight: _collapsedHeight + (_expandedIndicatorH - _collapsedHeight) * _progress
 
-    MD.ToolTip.text: {
-        const materialAction = control.action as MD.Action;
-        return materialAction?.tooltip || control.text || "";
-    }
-    MD.ToolTip.visible: control.iconStyle === MD.Enum.IconOnly && control.hovered && !control.pressed && MD.ToolTip.text.length > 0
+    MD.ToolTip.text: control.action?.tooltip || control.text || ""
+    MD.ToolTip.visible: (control._progress === 0 ? !control._collapsedLabel : !control._showLabel) && control.hovered && !control.pressed && MD.ToolTip.text.length > 0
 
     contentItem: Item {
-        id: m_content
         implicitWidth: control._implicitWidth
-        implicitHeight: control.expand ? control._expandedIndicatorH : control._collapsedHeight
+        implicitHeight: control._itemHeight
 
-        Behavior on implicitWidth {
-            NumberAnimation {
-                duration: MD.Token.duration.long2
-                easing: MD.Token.easing.emphasized
-            }
-        }
-        Behavior on implicitHeight {
-            NumberAnimation {
-                duration: MD.Token.duration.long2
-                easing: MD.Token.easing.emphasized
-            }
-        }
-
-        // -- icon --
         MD.IconView {
             id: m_icon
             visible: control._showIcon
             icon: control.icon
-
-            // positioned by states
+            x: (control._collapsedWidth - width) / 2 + (control._expandedLeadingPad + control._indicatorMargin - (control._collapsedWidth - width) / 2) * control._progress
+            y: (control._collapsedIndicatorH - height) / 2 + (control._expandedIndicatorH - control._collapsedIndicatorH) / 2 * control._progress
         }
-
-        // -- label --
         MD.Text {
-            id: m_label
-            visible: control._showLabel
+            id: m_collapsed_label
+            visible: control._collapsedLabel && opacity > 0
+            opacity: Math.max(0, 1 - control._progress * 3)
             text: control.text
             font.capitalization: Font.MixedCase
-            typescale: control.expand ? MD.Token.typescale.label_large : MD.Token.typescale.label_medium
+            typescale: MD.Token.typescale.label_medium
             prominent: control.checked
-            color: control.expand ? control.mdState.expandedLabelColor : control.mdState.collapsedLabelColor
-            // positioned by states
+            color: control.mdState.collapsedLabelColor
+            x: (control._collapsedWidth - implicitWidth) / 2
+            y: control._collapsedIndicatorH + 4
         }
-
-        states: [
-            State {
-                name: "collapsed"
-                when: !control.expand
-                PropertyChanges {
-                    m_icon {
-                        // center within the fixed collapsed width so it never jumps to the
-                        // expanded center while the rail width is still animating
-                        x: (control._collapsedWidth - control.icon.width) / 2
-                        y: (control._collapsedIndicatorH - control.icon.height) / 2
-                    }
-                    m_label {
-                        x: (control._collapsedWidth - m_label.implicitWidth) / 2
-                        y: control._collapsedIndicatorH + 4
-                    }
-                }
-            },
-            State {
-                name: "expanded"
-                when: control.expand
-                PropertyChanges {
-                    m_icon {
-                        x: control._expandedLeadingPad + control._indicatorMargin
-                        y: (control._expandedIndicatorH - control.icon.height) / 2
-                    }
-                    m_label {
-                        x: {
-                            let position = control._expandedLeadingPad + control._indicatorMargin;
-                            if (control._showIcon)
-                                position += control.icon.width + control._iconLabelSpacing;
-                            return position;
-                        }
-                        y: (control._expandedIndicatorH - m_label.implicitHeight) / 2
-                    }
-                }
-            }
-        ]
-
-        transitions: [
-            Transition {
-                from: "collapsed"
-                to: "expanded"
-                NumberAnimation {
-                    targets: [m_icon, m_label]
-                    properties: "x,y"
-                    duration: MD.Token.duration.long2
-                    easing: MD.Token.easing.emphasized
-                }
-            },
-            Transition {
-                from: "expanded"
-                to: "collapsed"
-                NumberAnimation {
-                    targets: [m_icon, m_label]
-                    properties: "x,y"
-                    duration: MD.Token.duration.long2
-                    easing: MD.Token.easing.emphasized
-                }
-            }
-        ]
+        MD.Text {
+            id: m_label
+            visible: control._showLabel && opacity > 0
+            opacity: MD.Util.clamp((control._progress - 0.2) / 0.8, 0, 1)
+            text: control.text
+            font.capitalization: Font.MixedCase
+            typescale: MD.Token.typescale.label_large
+            prominent: control.checked
+            color: control.mdState.expandedLabelColor
+            x: control._expandedLeadingPad + control._indicatorMargin + (control._showIcon ? control.icon.width + control._iconLabelSpacing : 0)
+            y: (control._expandedIndicatorH - implicitHeight) / 2
+            width: Math.max(0, parent.width - x - control._expandedTrailingPad)
+            elide: Text.ElideRight
+        }
     }
-
     background: Item {
         implicitWidth: control._implicitWidth
-        implicitHeight: control.expand ? control._expandedIndicatorH : control._collapsedHeight
-
-        Behavior on implicitWidth {
-            NumberAnimation {
-                duration: MD.Token.duration.long2
-                easing: MD.Token.easing.emphasized
-            }
-        }
-        Behavior on implicitHeight {
-            NumberAnimation {
-                duration: MD.Token.duration.long2
-                easing: MD.Token.easing.emphasized
-            }
-        }
+        implicitHeight: control._itemHeight
 
         MD.ElevationRectangle {
             id: m_indicator
-            x: control.expand ? control._indicatorMargin : (control._collapsedWidth - control._collapsedIndicatorW) / 2
+            x: (control._collapsedWidth - control._collapsedIndicatorW) / 2 + (control._indicatorMargin - (control._collapsedWidth - control._collapsedIndicatorW) / 2) * control._progress
             y: 0
-            width: {
-                if (!control.expand)
-                    return control._collapsedIndicatorW;
-                if (control.iconStyle === MD.Enum.IconOnly)
-                    return control._expandedIndicatorW;
-                return control.width - control._indicatorMargin * 2;
-            }
-            height: control.expand ? control._expandedIndicatorH : control._collapsedIndicatorH
-
+            width: control._collapsedIndicatorW + ((control.iconStyle === MD.Enum.IconOnly ? control._expandedIndicatorW : Math.max(0, control.width - control._indicatorMargin * 2)) - control._collapsedIndicatorW) * control._progress
+            height: control._collapsedIndicatorH + (control._expandedIndicatorH - control._collapsedIndicatorH) * control._progress
             radius: height / 2
             color: control.mdState.backgroundColor
-
             elevationVisible: control.enabled && color.a > 0
             elevation: control.mdState.elevation
-
-            Behavior on width {
-                enabled: !control.expand
-                NumberAnimation {
-                    duration: MD.Token.duration.long2
-                    easing: MD.Token.easing.emphasized
-                }
-            }
-            Behavior on height {
-                NumberAnimation {
-                    duration: MD.Token.duration.long2
-                    easing: MD.Token.easing.emphasized
-                }
-            }
-            Behavior on x {
-                NumberAnimation {
-                    duration: MD.Token.duration.long2
-                    easing: MD.Token.easing.emphasized
-                }
-            }
 
             MD.Ripple {
                 anchors.fill: parent

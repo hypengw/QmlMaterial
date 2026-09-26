@@ -70,6 +70,47 @@ private slots:
         QVERIFY(! second.target());
         QVERIFY(! second.controlling());
     }
+    void directTransfer() {
+        QQuickWindow window, other;
+        QObject      owner;
+        QQuickItem   target;
+        target.setParent(&owner);
+        ItemProxy source(window.contentItem()), destination(window.contentItem());
+        ItemProxy foreign(other.contentItem());
+        source.setSize({ 96, 500 });
+        destination.setSize(source.size());
+        source.setTarget(&target);
+        source.setActive(true);
+        QVERIFY(! foreign.takeFrom(&source));
+        QCOMPARE(target.parentItem(), &source);
+        QSignalSpy parentChanges(&target, &QQuickItem::parentChanged);
+        QVERIFY(destination.takeFrom(&source));
+        QCOMPARE(parentChanges.count(), 1);
+        QCOMPARE(target.parentItem(), &destination);
+        QCOMPARE(target.parent(), &owner);
+        QVERIFY(! source.controlling());
+        QVERIFY(destination.controlling());
+        source.setScale(1.25);
+        const auto geometry = source.geometryIn(window.contentItem());
+        QVERIFY(geometry);
+        QCOMPARE(geometry->rect.size(), QSizeF(120, 625));
+        QCOMPARE(geometry->scale, 1.25);
+        source.setRotation(10);
+        QVERIFY(! source.geometryIn(window.contentItem()));
+    }
+    void transferReentry() {
+        QQuickItem target;
+        ItemProxy  source, destination;
+        source.setTarget(&target);
+        source.setActive(true);
+        connect(&source, &ItemProxy::controllingChanged, &destination, [&] {
+            destination.setActive(false);
+        });
+        QVERIFY(! destination.takeFrom(&source));
+        QVERIFY(! source.controlling());
+        QVERIFY(! destination.controlling());
+        QVERIFY(! target.parentItem());
+    }
     void reentry() {
         QQuickItem target, replacement;
         auto       proxy = std::make_unique<ItemProxy>();

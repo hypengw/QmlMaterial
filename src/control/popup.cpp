@@ -7,7 +7,9 @@
 #include <QGuiApplication>
 #include <QQmlInfo>
 #include <QtQuick/private/qquicktransitionmanager_p_p.h>
+#include <QtQuick/private/qquicktranslate_p.h>
 #include <algorithm>
+#include <cmath>
 
 namespace qml_material
 {
@@ -37,8 +39,20 @@ Popup::Popup(Panel* surface, QObject* parent)
     connect(&m_hideTimer, &QTimer::timeout, this, &Popup::completeExit);
     connect(m_surface, &Panel::contentItemChanged, this, &Popup::contentItemChanged);
     connect(m_surface, &Panel::backgroundChanged, this, &Popup::backgroundChanged);
-    connect(m_surface, &Panel::widthChanged, this, &Popup::widthChanged);
-    connect(m_surface, &Panel::heightChanged, this, &Popup::heightChanged);
+    connect(this, &Popup::implicitWidthChanged, this, [this] {
+        if (! m_width) {
+            QPointer<Popup> guard(this);
+            reposition();
+            if (guard) Q_EMIT widthChanged();
+        }
+    });
+    connect(this, &Popup::implicitHeightChanged, this, [this] {
+        if (! m_height) {
+            QPointer<Popup> guard(this);
+            reposition();
+            if (guard) Q_EMIT heightChanged();
+        }
+    });
     connect(m_surface, &Panel::implicitWidthChanged, this, &Popup::implicitWidthChanged);
     connect(m_surface, &Panel::implicitHeightChanged, this, &Popup::implicitHeightChanged);
     connect(m_surface, &Panel::contentWidthChanged, this, &Popup::contentWidthChanged);
@@ -311,9 +325,11 @@ bool Popup::acquirePresentation(QObject* owner) {
     if (! owner || (m_presentationOwner && m_presentationOwner != owner)) return false;
     if (m_presentationOwner == owner) return true;
     m_presentationOwner           = owner;
+    m_presentationCloseHandler    = {};
     m_presentationAllowed         = false;
     m_presentationRequestEnabled  = false;
     m_presentationOwnerConnection = connect(owner, &QObject::destroyed, this, [this] {
+        m_presentationCloseHandler = {};
         QPointer<Popup> guard(this);
         dismissImmediately();
         if (guard) Q_EMIT presentationOwnerChanged();
@@ -330,13 +346,17 @@ void Popup::releasePresentation(QObject* owner) {
     setPresentationAllowed(owner, false);
     if (! guard || m_presentationOwner != owner) return;
     disconnect(m_presentationOwnerConnection);
-    m_presentationOwner = nullptr;
+    m_presentationOwner        = nullptr;
+    m_presentationCloseHandler = {};
     Q_EMIT presentationOwnerChanged();
 }
 void Popup::setPresentationAllowed(QObject* owner, bool allowed) {
     if (! owner || m_presentationOwner != owner) return;
     m_presentationAllowed = allowed;
-    if (! allowed) dismissImmediately();
+    if (! allowed && ! m_finishingClose) dismissImmediately();
+}
+void Popup::setPresentationCloseHandler(QObject* owner, std::function<void()> handler) {
+    if (owner && owner == m_presentationOwner) m_presentationCloseHandler = std::move(handler);
 }
 void Popup::setPresentationRequestEnabled(QObject* owner, bool enabled) {
     if (owner && m_presentationOwner == owner) m_presentationRequestEnabled = enabled;
@@ -457,6 +477,14 @@ void Popup::finishClose() {
     m_hideTimer.stop();
     finalizeTransition(false);
     if (! guard || ! closing()) return;
+    if (! m_dismissing && m_presentationOwner && m_presentationCloseHandler) {
+        m_finishingClose   = true;
+        const auto handler = m_presentationCloseHandler;
+        handler();
+        if (! guard) return;
+        m_finishingClose = false;
+        if (! closing()) return;
+    }
     if (m_overlay) m_overlay->remove(this);
     if (! guard || ! closing()) return;
     m_surface->setVisible(false);
@@ -486,14 +514,65 @@ void Popup::dismissImmediately() {
     if (guard) m_dismissing = false;
 }
 void Popup::forceActiveFocus(Qt::FocusReason reason) { m_surface->forceActiveFocus(reason); }
-void Popup::reposition() {
-    if (m_positioning || ! isVisible() || ! m_overlay || ! m_parent) return;
+void Popup::setWidth(qreal value) {
+    if (! std::isfinite(value)) return;
+    const auto old = width();
+    m_width        = value;
     QPointer<Popup> guard(this);
-    m_positioning = true;
-    m_surface->setPosition(surfacePosition());
+    reposition();
+    if (guard && old != width()) Q_EMIT widthChanged();
+}
+void Popup::resetWidth() {
+    const auto old = width();
+    m_width.reset();
+    QPointer<Popup> guard(this);
+    reposition();
+    if (guard && old != width()) Q_EMIT widthChanged();
+}
+void Popup::setHeight(qreal value) {
+    if (! std::isfinite(value)) return;
+    const auto old = height();
+    m_height       = value;
+    QPointer<Popup> guard(this);
+    reposition();
+    if (guard && old != height()) Q_EMIT heightChanged();
+}
+void Popup::resetHeight() {
+    const auto old = height();
+    m_height.reset();
+    QPointer<Popup> guard(this);
+    reposition();
+    if (guard && old != height()) Q_EMIT heightChanged();
+}
+QRectF Popup::presentationRect() const {
+    const qreal scale =
+        m_presentationTransform ? static_cast<QQuickScale*>(m_presentationTransform)->xScale() : 1;
+    return { m_surface->position(), m_surface->size() * scale };
+}
+void Popup::reposition() {
+    if (m_positioning) return;
+    QPointer<Popup> guard(this);
+    m_positioning      = true;
+    const auto oldRect = presentationRect();
+    const auto factor  = presentationScale();
+    if (factor != 1 || m_presentationTransform) {
+        if (! m_presentationTransform) {
+            m_presentationTransform = new QQuickScale(m_surface);
+            m_presentationTransform->appendToItem(m_surface);
+        }
+        auto* transform = static_cast<QQuickScale*>(m_presentationTransform);
+        transform->setXScale(factor);
+        transform->setYScale(factor);
+    }
+    m_surface->setSize(surfaceSize());
     if (! guard) return;
-    if (m_overlay) m_overlay->updateDimmer(this);
-    if (guard) m_positioning = false;
+    if (m_overlay && m_parent) m_surface->setPosition(surfacePosition());
+    if (! guard) return;
+    if (isVisible() && m_overlay) m_overlay->updateDimmer(this);
+    if (guard) {
+        m_positioning = false;
+        if (oldRect != presentationRect()) Q_EMIT presentationRectChanged();
+    }
 }
 void Popup::updateDimmer(QQuickItem* item, qreal opacity) const {
     QPointer<QQuickItem> guard(item);

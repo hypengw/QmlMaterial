@@ -66,6 +66,7 @@ private:
     void                              setStatus(Status);
     void                              setError(const QString&);
     void                              completeDismiss(quint64);
+    void                              finishReturn();
     QPointer<QQuickItem>              m_content;
     QPointer<PresentationSite>        m_destination, m_current;
     QPointer<Popup>                   m_popup;
@@ -87,6 +88,8 @@ class QML_MATERIAL_API PresentationSite : public QQuickItem {
     Q_PROPERTY(AdaptivePresenter* presenter READ presenter WRITE setPresenter NOTIFY
                    presenterChanged FINAL)
     Q_PROPERTY(Popup* popup READ popup WRITE setPopup NOTIFY popupChanged FINAL)
+    Q_PROPERTY(PresentationSite* originSite READ originSite WRITE setOriginSite NOTIFY
+                   originSiteChanged FINAL)
     Q_PROPERTY(bool autoOpen READ autoOpen WRITE setAutoOpen NOTIFY autoOpenChanged FINAL)
     Q_PROPERTY(bool current READ current NOTIFY currentChanged FINAL)
     Q_PROPERTY(bool activationEnabled READ activationEnabled WRITE setActivationEnabled NOTIFY
@@ -96,6 +99,9 @@ public:
     ~PresentationSite() override;
     AdaptivePresenter* presenter() const { return m_presenter; }
     Popup*             popup() const { return m_popup; }
+    PresentationSite*  originSite() const { return m_origin; }
+    void               setOriginSite(PresentationSite*);
+    Q_SIGNAL void      originSiteChanged();
     bool               autoOpen() const { return m_autoOpen; }
     bool               current() const { return m_proxy->controlling(); }
     bool               activationEnabled() const { return m_activationEnabled; }
@@ -122,6 +128,9 @@ private:
     ItemProxy*                     m_proxy;
     QPointer<AdaptivePresenter>    m_presenter;
     QPointer<Popup>                m_popup;
+    QPointer<PresentationSite>     m_origin;
+    QMetaObject::Connection        m_originConnection;
+    bool                           m_originRequired = false;
     QList<QMetaObject::Connection> m_popupConnections;
     QMetaObject::Connection        m_windowConnection;
     bool                           m_autoOpen = true, m_popupRequired = false, m_destroying = false;

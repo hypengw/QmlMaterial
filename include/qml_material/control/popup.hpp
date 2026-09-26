@@ -5,6 +5,7 @@
 #include <QTimer>
 #include <QtQuick/private/qquicktransition_p.h>
 #include <memory>
+#include <functional>
 
 namespace qml_material
 {
@@ -25,6 +26,7 @@ class QML_MATERIAL_API Popup : public QObject, public QQmlParserStatus {
     Q_PROPERTY(QQuickItem* overlayItem READ overlayItem NOTIFY overlayItemChanged FINAL)
     Q_PROPERTY(qreal overlayWidth READ overlayWidth NOTIFY overlayGeometryChanged FINAL)
     Q_PROPERTY(qreal overlayHeight READ overlayHeight NOTIFY overlayGeometryChanged FINAL)
+    Q_PROPERTY(QRectF presentationRect READ presentationRect NOTIFY presentationRectChanged FINAL)
     Q_PROPERTY(QQmlListProperty<QObject> contentData READ contentData FINAL)
     Q_PROPERTY(QQmlListProperty<QQuickItem> contentChildren READ contentChildren NOTIFY
                    contentChildrenChanged FINAL)
@@ -203,13 +205,13 @@ public:
     QQuickItem*       background() const { return m_surface->background(); }
     void              setBackground(QQuickItem* value) { m_surface->setBackground(value); }
     Q_SIGNAL void     backgroundChanged();
-    qreal             width() const { return m_surface->width(); }
-    void              setWidth(qreal value) { m_surface->setWidth(value); }
-    void              resetWidth() { m_surface->resetWidth(); }
+    qreal             width() const { return m_width.value_or(implicitWidth()); }
+    void              setWidth(qreal value);
+    void              resetWidth();
     Q_SIGNAL void     widthChanged();
-    qreal             height() const { return m_surface->height(); }
-    void              setHeight(qreal value) { m_surface->setHeight(value); }
-    void              resetHeight() { m_surface->resetHeight(); }
+    qreal             height() const { return m_height.value_or(implicitHeight()); }
+    void              setHeight(qreal value);
+    void              resetHeight();
     Q_SIGNAL void     heightChanged();
     qreal             implicitWidth() const { return m_surface->implicitWidth(); }
     void              setImplicitWidth(qreal value) { m_surface->setImplicitWidth(value); }
@@ -304,6 +306,9 @@ public:
     void                     releasePresentation(QObject* owner);
     void                     setPresentationAllowed(QObject* owner, bool allowed);
     void                     setPresentationRequestEnabled(QObject* owner, bool enabled);
+    void                     setPresentationCloseHandler(QObject* owner, std::function<void()>);
+    QRectF                   presentationRect() const;
+    Q_SIGNAL void            presentationRectChanged();
     bool                     requestPresentation();
     bool                     canRequestPresentation() const {
         return presentationAllowed() || m_presentationRequestEnabled;
@@ -356,6 +361,8 @@ protected:
         QVariant value;
     };
     virtual QPointF                 surfacePosition() const;
+    virtual QSizeF                  surfaceSize() const { return { width(), height() }; }
+    virtual qreal                   presentationScale() const { return 1; }
     virtual QList<TransitionTarget> transitionTargets(bool) const { return {}; }
     virtual void                    finalizeTransition(bool) {}
     virtual bool                    inheritsHoverEnabled() const { return true; }
@@ -390,8 +397,12 @@ private:
     QList<QMetaObject::Connection> m_positioningConnections;
     QPointer<QQuickTransition>     m_enter, m_exit;
     std::unique_ptr<PopupMotion>   m_motion;
-    State                          m_state       = Closed;
-    bool                           m_dismissing  = false;
+    State                          m_state          = Closed;
+    bool                           m_dismissing     = false;
+    bool                           m_finishingClose = false;
+    std::function<void()>          m_presentationCloseHandler;
+    QQuickTransform*               m_presentationTransform = nullptr;
+    std::optional<qreal>           m_width, m_height;
     bool                           m_interacting = false;
     QPointer<QObject>              m_presentationOwner;
     QMetaObject::Connection        m_presentationOwnerConnection;

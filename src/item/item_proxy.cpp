@@ -1,6 +1,7 @@
 #include "qml_material/item/item_proxy.hpp"
 #include <QQmlInfo>
 #include <QQuickWindow>
+#include <cmath>
 
 namespace qml_material
 {
@@ -72,6 +73,51 @@ void ItemProxy::setActive(bool value) {
     else
         release();
     if (guard && revision == m_revision) Q_EMIT activeChanged();
+}
+std::optional<ItemProxy::Geometry> ItemProxy::geometryIn(QQuickItem* coordinateItem) const {
+    if (! coordinateItem || ! window() || window() != coordinateItem->window()) return {};
+    bool       ok        = false;
+    const auto transform = itemTransform(coordinateItem, &ok);
+    if (! ok || ! transform.isAffine() || ! qFuzzyIsNull(transform.m12()) ||
+        ! qFuzzyIsNull(transform.m21()) || ! qFuzzyCompare(transform.m11(), transform.m22()) ||
+        ! std::isfinite(transform.m11()) || transform.m11() <= 0)
+        return {};
+    const auto rect = transform.mapRect(boundingRect());
+    if (! rect.isValid() || ! std::isfinite(rect.x()) || ! std::isfinite(rect.y()) ||
+        ! std::isfinite(rect.width()) || ! std::isfinite(rect.height()))
+        return {};
+    return Geometry { rect, transform.m11() };
+}
+bool ItemProxy::takeFrom(ItemProxy* source) {
+    if (! source || source == this || ! source->m_controlling || ! source->m_target ||
+        ! isComponentComplete() || m_destroying)
+        return false;
+    auto target = source->m_target;
+    if (! acquisitionError(target, source).isEmpty()) return false;
+    QPointer<ItemProxy> guard(this), previous(source);
+    if (m_target != target) setTarget(target);
+    if (! guard || ! previous || ! target || ! source->m_controlling ||
+        source->m_target != target || m_target != target ||
+        ! acquisitionError(target, source).isEmpty())
+        return false;
+    const auto oldRevision = ++source->m_revision;
+    const auto revision    = ++m_revision;
+    source->m_controlling  = false;
+    source->m_active       = false;
+    m_active = m_controlling  = true;
+    controlFor(target)->owner = this;
+    target->setParentItem(this);
+    if (! guard || revision != m_revision || ! m_controlling) return false;
+    syncGeometry();
+    if (! guard || revision != m_revision || ! m_controlling) return false;
+    if (previous && oldRevision == previous->m_revision) Q_EMIT previous->controllingChanged();
+    if (! guard || revision != m_revision || ! m_controlling) return false;
+    if (previous && oldRevision == previous->m_revision) Q_EMIT previous->activeChanged();
+    if (! guard || revision != m_revision || ! m_controlling) return false;
+    Q_EMIT controllingChanged();
+    if (! guard || revision != m_revision || ! m_controlling) return false;
+    Q_EMIT activeChanged();
+    return guard && m_controlling && m_target == target;
 }
 QString ItemProxy::acquisitionError(QQuickItem* target, const ItemProxy* releasing) const {
     if (! target) return QStringLiteral("missing target");
