@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.16)
 
 set(QM_VERSION 0.4.2)
 project(
@@ -18,6 +18,7 @@ set(CMAKE_AUTOMOC_PATH_PREFIX ON)
 
 option(QM_BUILD_EXAMPLE "" ${PROJECT_IS_TOP_LEVEL})
 option(QM_BUILD_TESTS "" ${PROJECT_IS_TOP_LEVEL})
+option(QM_USE_PCH "Use precompiled headers for qml_material" ON)
 
 set(QM_ICON_FONT_URL
     ""
@@ -104,6 +105,7 @@ set(SOURCES
     src/anim/linear_indicator_updator.cpp
     src/anim/loading_indicator_updator.cpp
     src/util/corner.cpp
+    src/util/control_environment.cpp
     src/util/pool.cpp
     src/util/image.cpp
     src/util/qml_util.cpp
@@ -599,6 +601,24 @@ qt_add_qml_module(
 add_library("${LIBNAME}::${LIBNAME}" ALIAS ${LIBNAME})
 
 target_compile_features(${LIBNAME} PUBLIC cxx_std_20)
+if(QM_USE_PCH)
+  target_precompile_headers(${LIBNAME} PRIVATE
+    <algorithm>
+    <memory>
+    <optional>
+    <vector>
+    <QtCore/QObject>
+    <QtCore/QPointer>
+    <QtCore/QVariant>
+    <QtGui/QColor>
+    <QtGui/QFont>
+    <QtQml/QQmlComponent>
+    <QtQml/QQmlEngine>
+    <QtQml/qqmlprivate.h>
+    <QtQuick/QQuickItem>)
+  target_compile_options(${LIBNAME} PRIVATE
+    "$<$<CXX_COMPILER_ID:Clang,AppleClang>:-Xclang;-fno-pch-timestamp>")
+endif()
 target_compile_definitions(${LIBNAME} PRIVATE QML_MATERIAL_EXPORT)
 if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
   target_compile_definitions(${LIBNAME} PUBLIC QML_MATERIAL_STATIC_DEFINE)
@@ -617,9 +637,11 @@ set(TOKEN_COMPILE_DEFINITIONS
     QM_ICON_FILL_1_FONT_URL="qrc:/Qcm/Material/${QM_ICON_FILL_1_FONT_FILE}"
     QM_VERSION="${QM_VERSION}")
 
+# The token definitions differ from the target-wide PCH compilation.
 set_source_files_properties(
   src/token/token.cpp PROPERTIES COMPILE_DEFINITIONS
-                                 "${TOKEN_COMPILE_DEFINITIONS}")
+                                 "${TOKEN_COMPILE_DEFINITIONS}"
+                                 SKIP_PRECOMPILE_HEADERS ON)
 
 set(SHADER_GLSLS "assets/shader/common.glsl" "assets/shader/sdf.glsl")
 set(SHADER_SOURCES

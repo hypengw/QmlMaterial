@@ -19,6 +19,8 @@ jobs:
           - runner: windows-2025
             compiler: msvc
     timeout-minutes: 30
+    env:
+      CCACHE_SLOPPINESS: pch_defines,time_macros
 
     steps:
       - uses: actions/checkout@v4

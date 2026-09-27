@@ -1,4 +1,5 @@
 #include "qml_material/control/popup.hpp"
+#include "qml_material/control/panel.hpp"
 #include "popup_surface.hpp"
 #include "qml_material/control/overlay.hpp"
 #include "qml_material/style/theme.hpp"
@@ -6,6 +7,9 @@
 #include <QQuickWindow>
 #include <QGuiApplication>
 #include <QQmlInfo>
+#include <QQmlEngine>
+#include <QStyleHints>
+#include <QtQuick/private/qquicktransition_p.h>
 #include <QtQuick/private/qquicktransitionmanager_p_p.h>
 #include <QtQuick/private/qquicktranslate_p.h>
 #include <algorithm>
@@ -29,6 +33,75 @@ protected:
 private:
     QPointer<Popup> m_popup;
 };
+
+QQuickItem* Popup::popupItem() const { return m_hitItem ? m_hitItem.data() : m_surface; }
+QQmlListProperty<QObject>    Popup::contentData() { return m_surface->contentData(); }
+QQmlListProperty<QQuickItem> Popup::contentChildren() { return m_surface->contentChildren(); }
+QFont                        Popup::font() const {
+    auto value = m_surface->font();
+    value.setResolveMask(m_font.resolveMask());
+    return value;
+}
+QLocale           Popup::locale() const { return m_surface->locale(); }
+QQuickTransition* Popup::enter() const { return m_enter; }
+QQuickTransition* Popup::exit() const { return m_exit; }
+QQuickItem*       Popup::contentItem() const { return m_surface->contentItem(); }
+void              Popup::setContentItem(QQuickItem* value) { m_surface->setContentItem(value); }
+QQuickItem*       Popup::background() const { return m_surface->background(); }
+void              Popup::setBackground(QQuickItem* value) { m_surface->setBackground(value); }
+qreal             Popup::implicitWidth() const { return m_surface->implicitWidth(); }
+void              Popup::setImplicitWidth(qreal value) { m_surface->setImplicitWidth(value); }
+qreal             Popup::implicitHeight() const { return m_surface->implicitHeight(); }
+void              Popup::setImplicitHeight(qreal value) { m_surface->setImplicitHeight(value); }
+qreal             Popup::contentWidth() const { return m_surface->contentWidth(); }
+void              Popup::setContentWidth(qreal value) { m_surface->setContentWidth(value); }
+void              Popup::resetContentWidth() { m_surface->resetContentWidth(); }
+qreal             Popup::contentHeight() const { return m_surface->contentHeight(); }
+void              Popup::setContentHeight(qreal value) { m_surface->setContentHeight(value); }
+void              Popup::resetContentHeight() { m_surface->resetContentHeight(); }
+qreal             Popup::padding() const { return m_surface->padding(); }
+void              Popup::setPadding(qreal value) { m_surface->setPadding(value); }
+qreal             Popup::horizontalPadding() const { return m_surface->horizontalPadding(); }
+void  Popup::setHorizontalPadding(qreal value) { m_surface->setHorizontalPadding(value); }
+qreal Popup::verticalPadding() const { return m_surface->verticalPadding(); }
+void  Popup::setVerticalPadding(qreal value) { m_surface->setVerticalPadding(value); }
+qreal Popup::leftPadding() const { return m_surface->leftPadding(); }
+void  Popup::setLeftPadding(qreal value) { m_surface->setLeftPadding(value); }
+qreal Popup::rightPadding() const { return m_surface->rightPadding(); }
+void  Popup::setRightPadding(qreal value) { m_surface->setRightPadding(value); }
+qreal Popup::topPadding() const { return m_surface->topPadding(); }
+void  Popup::setTopPadding(qreal value) { m_surface->setTopPadding(value); }
+qreal Popup::bottomPadding() const { return m_surface->bottomPadding(); }
+void  Popup::setBottomPadding(qreal value) { m_surface->setBottomPadding(value); }
+qreal Popup::spacing() const { return m_surface->spacing(); }
+void  Popup::setSpacing(qreal value) { m_surface->setSpacing(value); }
+qreal Popup::leftInset() const { return m_surface->leftInset(); }
+void  Popup::setLeftInset(qreal value) { m_surface->setLeftInset(value); }
+qreal Popup::rightInset() const { return m_surface->rightInset(); }
+void  Popup::setRightInset(qreal value) { m_surface->setRightInset(value); }
+qreal Popup::topInset() const { return m_surface->topInset(); }
+void  Popup::setTopInset(qreal value) { m_surface->setTopInset(value); }
+qreal Popup::bottomInset() const { return m_surface->bottomInset(); }
+void  Popup::setBottomInset(qreal value) { m_surface->setBottomInset(value); }
+qreal Popup::opacity() const { return m_surface->opacity(); }
+void  Popup::setOpacity(qreal value) { m_surface->setOpacity(value); }
+qreal Popup::scale() const { return m_surface->scale(); }
+void  Popup::setScale(qreal value) { m_surface->setScale(value); }
+QQuickItem::TransformOrigin Popup::transformOrigin() const { return m_surface->transformOrigin(); }
+void                        Popup::setTransformOrigin(QQuickItem::TransformOrigin value) {
+    m_surface->setTransformOrigin(value);
+}
+bool  Popup::enabled() const { return m_surface->isEnabled(); }
+void  Popup::setEnabled(bool value) { m_surface->setEnabled(value); }
+qreal Popup::availableWidth() const { return m_surface->availableWidth(); }
+qreal Popup::availableHeight() const { return m_surface->availableHeight(); }
+qreal Popup::implicitContentWidth() const { return m_surface->implicitContentWidth(); }
+qreal Popup::implicitContentHeight() const { return m_surface->implicitContentHeight(); }
+qreal Popup::implicitBackgroundWidth() const { return m_surface->implicitBackgroundWidth(); }
+qreal Popup::implicitBackgroundHeight() const { return m_surface->implicitBackgroundHeight(); }
+bool  Popup::activeFocus() const { return m_surface->hasActiveFocus(); }
+bool  Popup::visualFocus() const { return m_surface->visualFocus(); }
+bool  Popup::mirrored() const { return m_surface->mirrored(); }
 
 Popup::Popup(QObject* parent): Popup(new PopupSurface<Panel>(this), parent) {}
 Popup::Popup(Panel* surface, QObject* parent)

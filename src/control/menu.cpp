@@ -1,6 +1,8 @@
 #include "qml_material/control/menu.hpp"
+#include "qml_material/control/panel.hpp"
 #include <QtQmlModels/private/qqmlobjectmodel_p.h>
 #include <QQmlInfo>
+#include <QQmlComponent>
 #include <algorithm>
 
 namespace qml_material
@@ -17,10 +19,11 @@ Menu::~Menu() {
     for (const auto& connection : std::as_const(m_destroyConnections)) disconnect(connection);
     m_model->clear();
 }
-QObject*    Menu::contentModel() const { return m_model; }
-QQuickItem* Menu::itemAt(int index) const { return m_items.value(index); }
-int         Menu::indexOf(QQuickItem* item) const { return m_items.indexOf(item); }
-void        Menu::setCurrentIndex(int value) {
+QObject*       Menu::contentModel() const { return m_model; }
+QQmlComponent* Menu::delegate() const { return m_delegate; }
+QQuickItem*    Menu::itemAt(int index) const { return m_items.value(index); }
+int            Menu::indexOf(QQuickItem* item) const { return m_items.indexOf(item); }
+void           Menu::setCurrentIndex(int value) {
     if (m_index == value) return;
     m_index = value;
     Q_EMIT currentIndexChanged();

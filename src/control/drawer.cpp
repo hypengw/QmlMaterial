@@ -1,4 +1,5 @@
 #include "qml_material/control/drawer.hpp"
+#include "qml_material/control/panel.hpp"
 #include "qml_material/control/overlay.hpp"
 #include <QGuiApplication>
 #include <QStyleHints>

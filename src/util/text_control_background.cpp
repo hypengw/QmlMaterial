@@ -1,5 +1,6 @@
 #include "qml_material/util/text_control_background.hpp"
 #include "qml_material/util/qt.hpp"
+#include <QQuickItem>
 #include <QtQuick/private/qquickitem_p.h>
 
 namespace qml_material
@@ -7,6 +8,8 @@ namespace qml_material
 
 TextControlBackground::TextControlBackground(QQuickItem* owner): QObject(owner), m_owner(owner) {}
 TextControlBackground::~TextControlBackground() { utils::disconnectAll(m_connections); }
+
+QQuickItem* TextControlBackground::item() const { return m_item; }
 
 const std::optional<qreal>& TextControlBackground::insetValue(Qt::Edge edge) const {
     switch (edge) {

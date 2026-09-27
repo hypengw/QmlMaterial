@@ -1,14 +1,29 @@
 #pragma once
 
-#include "qml_material/control/panel.hpp"
-#include <QQmlEngine>
+#include "qml_material/export.hpp"
+#include <QFont>
+#include <QLocale>
+#include <QPointer>
+#include <QQuickItem>
+#include <QQmlListProperty>
+#include <QQmlParserStatus>
+#include <QtQml/qqmlregistration.h>
 #include <QTimer>
-#include <QtQuick/private/qquicktransition_p.h>
+#include <optional>
 #include <memory>
 #include <functional>
 
+QT_BEGIN_NAMESPACE
+class QQuickTransition;
+QT_END_NAMESPACE
+
+Q_MOC_INCLUDE("qml_material/control/panel.hpp")
+Q_MOC_INCLUDE("QtQuick/private/qquicktransition_p.h")
+
 namespace qml_material
 {
+class Control;
+class Panel;
 class OverlayManager;
 class PopupMotion;
 
@@ -135,16 +150,16 @@ public:
     QQuickItem* parentItem() const { return m_parent; }
     void        setParentItem(QQuickItem*);
     // Null uses the logical parent; changing the coordinate reference does not reparent the popup.
-    QQuickItem*               positioningItem() const { return m_positioningItem; }
-    void                      setPositioningItem(QQuickItem*);
-    Panel*                    surfaceItem() const { return m_surface; }
-    QQuickItem*               popupItem() const { return m_hitItem ? m_hitItem.data() : m_surface; }
-    void                      setPopupItem(QQuickItem*);
-    QQuickItem*               overlayItem() const;
-    qreal                     overlayWidth() const;
-    qreal                     overlayHeight() const;
-    QQmlListProperty<QObject> contentData() { return m_surface->contentData(); }
-    QQmlListProperty<QQuickItem> contentChildren() { return m_surface->contentChildren(); }
+    QQuickItem*                  positioningItem() const { return m_positioningItem; }
+    void                         setPositioningItem(QQuickItem*);
+    Panel*                       surfaceItem() const { return m_surface; }
+    QQuickItem*                  popupItem() const;
+    void                         setPopupItem(QQuickItem*);
+    QQuickItem*                  overlayItem() const;
+    qreal                        overlayWidth() const;
+    qreal                        overlayHeight() const;
+    QQmlListProperty<QObject>    contentData();
+    QQmlListProperty<QQuickItem> contentChildren();
     bool                         isVisible() const { return m_state != Closed; }
     void                         setVisible(bool);
     bool                         isOpened() const { return m_state == Open; }
@@ -186,132 +201,126 @@ public:
     qreal                        bottomMargin() const { return m_bottomMargin.value_or(m_margins); }
     void                         setBottomMargin(qreal);
     void                         resetBottomMargin();
-    QFont                        font() const {
-        auto value = m_surface->font();
-        value.setResolveMask(m_font.resolveMask());
-        return value;
-    }
-    void              setFont(const QFont&);
-    void              resetFont();
-    QLocale           locale() const { return m_surface->locale(); }
-    void              setLocale(const QLocale&);
-    void              resetLocale();
-    QQuickTransition* enter() const { return m_enter; }
-    QQuickTransition* exit() const { return m_exit; }
-    void              setEnter(QQuickTransition*);
-    void              setExit(QQuickTransition*);
-    QQuickItem*       contentItem() const { return m_surface->contentItem(); }
-    void              setContentItem(QQuickItem* value) { m_surface->setContentItem(value); }
-    Q_SIGNAL void     contentItemChanged();
-    QQuickItem*       background() const { return m_surface->background(); }
-    void              setBackground(QQuickItem* value) { m_surface->setBackground(value); }
-    Q_SIGNAL void     backgroundChanged();
-    qreal             width() const { return m_width.value_or(implicitWidth()); }
-    void              setWidth(qreal value);
-    void              resetWidth();
-    Q_SIGNAL void     widthChanged();
-    qreal             height() const { return m_height.value_or(implicitHeight()); }
-    void              setHeight(qreal value);
-    void              resetHeight();
-    Q_SIGNAL void     heightChanged();
-    qreal             implicitWidth() const { return m_surface->implicitWidth(); }
-    void              setImplicitWidth(qreal value) { m_surface->setImplicitWidth(value); }
-    Q_SIGNAL void     implicitWidthChanged();
-    qreal             implicitHeight() const { return m_surface->implicitHeight(); }
-    void              setImplicitHeight(qreal value) { m_surface->setImplicitHeight(value); }
-    Q_SIGNAL void     implicitHeightChanged();
-    qreal             contentWidth() const { return m_surface->contentWidth(); }
-    void              setContentWidth(qreal value) { m_surface->setContentWidth(value); }
-    void              resetContentWidth() { m_surface->resetContentWidth(); }
-    Q_SIGNAL void     contentWidthChanged();
-    qreal             contentHeight() const { return m_surface->contentHeight(); }
-    void              setContentHeight(qreal value) { m_surface->setContentHeight(value); }
-    void              resetContentHeight() { m_surface->resetContentHeight(); }
-    Q_SIGNAL void     contentHeightChanged();
-    qreal             padding() const { return m_surface->padding(); }
-    void              setPadding(qreal value) { m_surface->setPadding(value); }
-    Q_SIGNAL void     paddingChanged();
-    qreal             horizontalPadding() const { return m_surface->horizontalPadding(); }
-    void              setHorizontalPadding(qreal value) { m_surface->setHorizontalPadding(value); }
-    Q_SIGNAL void     horizontalPaddingChanged();
-    qreal             verticalPadding() const { return m_surface->verticalPadding(); }
-    void              setVerticalPadding(qreal value) { m_surface->setVerticalPadding(value); }
-    Q_SIGNAL void     verticalPaddingChanged();
-    qreal             leftPadding() const { return m_surface->leftPadding(); }
-    void              setLeftPadding(qreal value) { m_surface->setLeftPadding(value); }
-    Q_SIGNAL void     leftPaddingChanged();
-    qreal             rightPadding() const { return m_surface->rightPadding(); }
-    void              setRightPadding(qreal value) { m_surface->setRightPadding(value); }
-    Q_SIGNAL void     rightPaddingChanged();
-    qreal             topPadding() const { return m_surface->topPadding(); }
-    void              setTopPadding(qreal value) { m_surface->setTopPadding(value); }
-    Q_SIGNAL void     topPaddingChanged();
-    qreal             bottomPadding() const { return m_surface->bottomPadding(); }
-    void              setBottomPadding(qreal value) { m_surface->setBottomPadding(value); }
-    Q_SIGNAL void     bottomPaddingChanged();
-    qreal             spacing() const { return m_surface->spacing(); }
-    void              setSpacing(qreal value) { m_surface->setSpacing(value); }
-    Q_SIGNAL void     spacingChanged();
-    qreal             leftInset() const { return m_surface->leftInset(); }
-    void              setLeftInset(qreal value) { m_surface->setLeftInset(value); }
-    Q_SIGNAL void     leftInsetChanged();
-    qreal             rightInset() const { return m_surface->rightInset(); }
-    void              setRightInset(qreal value) { m_surface->setRightInset(value); }
-    Q_SIGNAL void     rightInsetChanged();
-    qreal             topInset() const { return m_surface->topInset(); }
-    void              setTopInset(qreal value) { m_surface->setTopInset(value); }
-    Q_SIGNAL void     topInsetChanged();
-    qreal             bottomInset() const { return m_surface->bottomInset(); }
-    void              setBottomInset(qreal value) { m_surface->setBottomInset(value); }
-    Q_SIGNAL void     bottomInsetChanged();
-    qreal             opacity() const { return m_surface->opacity(); }
-    void              setOpacity(qreal value) { m_surface->setOpacity(value); }
-    Q_SIGNAL void     opacityChanged();
-    qreal             scale() const { return m_surface->scale(); }
-    void              setScale(qreal value) { m_surface->setScale(value); }
-    Q_SIGNAL void     scaleChanged();
-    QQuickItem::TransformOrigin transformOrigin() const { return m_surface->transformOrigin(); }
-    void                        setTransformOrigin(QQuickItem::TransformOrigin value) {
-        m_surface->setTransformOrigin(value);
-    }
-    Q_SIGNAL void transformOriginChanged();
-    bool          enabled() const { return m_surface->isEnabled(); }
-    void          setEnabled(bool value) { m_surface->setEnabled(value); }
-    Q_SIGNAL void enabledChanged();
-    qreal         availableWidth() const { return m_surface->availableWidth(); }
-    Q_SIGNAL void availableWidthChanged();
-    qreal         availableHeight() const { return m_surface->availableHeight(); }
-    Q_SIGNAL void availableHeightChanged();
-    qreal         implicitContentWidth() const { return m_surface->implicitContentWidth(); }
-    Q_SIGNAL void implicitContentWidthChanged();
-    qreal         implicitContentHeight() const { return m_surface->implicitContentHeight(); }
-    Q_SIGNAL void implicitContentHeightChanged();
-    qreal         implicitBackgroundWidth() const { return m_surface->implicitBackgroundWidth(); }
-    Q_SIGNAL void implicitBackgroundWidthChanged();
-    qreal         implicitBackgroundHeight() const { return m_surface->implicitBackgroundHeight(); }
-    Q_SIGNAL void implicitBackgroundHeightChanged();
-    bool          activeFocus() const { return m_surface->hasActiveFocus(); }
-    Q_SIGNAL void activeFocusChanged();
-    bool          visualFocus() const { return m_surface->visualFocus(); }
-    Q_SIGNAL void visualFocusChanged();
-    bool          mirrored() const { return m_surface->mirrored(); }
-    Q_SIGNAL void mirroredChanged();
-    Q_INVOKABLE virtual void open();
-    Q_INVOKABLE virtual void close();
-    virtual void             closeFromInput();
-    Q_INVOKABLE void         completeEnter();
-    Q_INVOKABLE void         completeExit();
-    Q_INVOKABLE void         forceActiveFocus(Qt::FocusReason reason = Qt::OtherFocusReason);
-    Q_INVOKABLE virtual void dismissImmediately();
-    bool                     acquirePresentation(QObject* owner);
-    void                     releasePresentation(QObject* owner);
-    void                     setPresentationAllowed(QObject* owner, bool allowed);
-    void                     setPresentationRequestEnabled(QObject* owner, bool enabled);
-    void                     setPresentationCloseHandler(QObject* owner, std::function<void()>);
-    QRectF                   presentationRect() const;
-    Q_SIGNAL void            presentationRectChanged();
-    bool                     requestPresentation();
-    bool                     canRequestPresentation() const {
+    QFont                        font() const;
+    void                         setFont(const QFont&);
+    void                         resetFont();
+    QLocale                      locale() const;
+    void                         setLocale(const QLocale&);
+    void                         resetLocale();
+    QQuickTransition*            enter() const;
+    QQuickTransition*            exit() const;
+    void                         setEnter(QQuickTransition*);
+    void                         setExit(QQuickTransition*);
+    QQuickItem*                  contentItem() const;
+    void                         setContentItem(QQuickItem* value);
+    Q_SIGNAL void                contentItemChanged();
+    QQuickItem*                  background() const;
+    void                         setBackground(QQuickItem* value);
+    Q_SIGNAL void                backgroundChanged();
+    qreal                        width() const { return m_width.value_or(implicitWidth()); }
+    void                         setWidth(qreal value);
+    void                         resetWidth();
+    Q_SIGNAL void                widthChanged();
+    qreal                        height() const { return m_height.value_or(implicitHeight()); }
+    void                         setHeight(qreal value);
+    void                         resetHeight();
+    Q_SIGNAL void                heightChanged();
+    qreal                        implicitWidth() const;
+    void                         setImplicitWidth(qreal value);
+    Q_SIGNAL void                implicitWidthChanged();
+    qreal                        implicitHeight() const;
+    void                         setImplicitHeight(qreal value);
+    Q_SIGNAL void                implicitHeightChanged();
+    qreal                        contentWidth() const;
+    void                         setContentWidth(qreal value);
+    void                         resetContentWidth();
+    Q_SIGNAL void                contentWidthChanged();
+    qreal                        contentHeight() const;
+    void                         setContentHeight(qreal value);
+    void                         resetContentHeight();
+    Q_SIGNAL void                contentHeightChanged();
+    qreal                        padding() const;
+    void                         setPadding(qreal value);
+    Q_SIGNAL void                paddingChanged();
+    qreal                        horizontalPadding() const;
+    void                         setHorizontalPadding(qreal value);
+    Q_SIGNAL void                horizontalPaddingChanged();
+    qreal                        verticalPadding() const;
+    void                         setVerticalPadding(qreal value);
+    Q_SIGNAL void                verticalPaddingChanged();
+    qreal                        leftPadding() const;
+    void                         setLeftPadding(qreal value);
+    Q_SIGNAL void                leftPaddingChanged();
+    qreal                        rightPadding() const;
+    void                         setRightPadding(qreal value);
+    Q_SIGNAL void                rightPaddingChanged();
+    qreal                        topPadding() const;
+    void                         setTopPadding(qreal value);
+    Q_SIGNAL void                topPaddingChanged();
+    qreal                        bottomPadding() const;
+    void                         setBottomPadding(qreal value);
+    Q_SIGNAL void                bottomPaddingChanged();
+    qreal                        spacing() const;
+    void                         setSpacing(qreal value);
+    Q_SIGNAL void                spacingChanged();
+    qreal                        leftInset() const;
+    void                         setLeftInset(qreal value);
+    Q_SIGNAL void                leftInsetChanged();
+    qreal                        rightInset() const;
+    void                         setRightInset(qreal value);
+    Q_SIGNAL void                rightInsetChanged();
+    qreal                        topInset() const;
+    void                         setTopInset(qreal value);
+    Q_SIGNAL void                topInsetChanged();
+    qreal                        bottomInset() const;
+    void                         setBottomInset(qreal value);
+    Q_SIGNAL void                bottomInsetChanged();
+    qreal                        opacity() const;
+    void                         setOpacity(qreal value);
+    Q_SIGNAL void                opacityChanged();
+    qreal                        scale() const;
+    void                         setScale(qreal value);
+    Q_SIGNAL void                scaleChanged();
+    QQuickItem::TransformOrigin  transformOrigin() const;
+    void                         setTransformOrigin(QQuickItem::TransformOrigin value);
+    Q_SIGNAL void                transformOriginChanged();
+    bool                         enabled() const;
+    void                         setEnabled(bool value);
+    Q_SIGNAL void                enabledChanged();
+    qreal                        availableWidth() const;
+    Q_SIGNAL void                availableWidthChanged();
+    qreal                        availableHeight() const;
+    Q_SIGNAL void                availableHeightChanged();
+    qreal                        implicitContentWidth() const;
+    Q_SIGNAL void                implicitContentWidthChanged();
+    qreal                        implicitContentHeight() const;
+    Q_SIGNAL void                implicitContentHeightChanged();
+    qreal                        implicitBackgroundWidth() const;
+    Q_SIGNAL void                implicitBackgroundWidthChanged();
+    qreal                        implicitBackgroundHeight() const;
+    Q_SIGNAL void                implicitBackgroundHeightChanged();
+    bool                         activeFocus() const;
+    Q_SIGNAL void                activeFocusChanged();
+    bool                         visualFocus() const;
+    Q_SIGNAL void                visualFocusChanged();
+    bool                         mirrored() const;
+    Q_SIGNAL void                mirroredChanged();
+    Q_INVOKABLE virtual void     open();
+    Q_INVOKABLE virtual void     close();
+    virtual void                 closeFromInput();
+    Q_INVOKABLE void             completeEnter();
+    Q_INVOKABLE void             completeExit();
+    Q_INVOKABLE void             forceActiveFocus(Qt::FocusReason reason = Qt::OtherFocusReason);
+    Q_INVOKABLE virtual void     dismissImmediately();
+    bool                         acquirePresentation(QObject* owner);
+    void                         releasePresentation(QObject* owner);
+    void                         setPresentationAllowed(QObject* owner, bool allowed);
+    void                         setPresentationRequestEnabled(QObject* owner, bool enabled);
+    void                         setPresentationCloseHandler(QObject* owner, std::function<void()>);
+    QRectF                       presentationRect() const;
+    Q_SIGNAL void                presentationRectChanged();
+    bool                         requestPresentation();
+    bool                         canRequestPresentation() const {
         return presentationAllowed() || m_presentationRequestEnabled;
     }
     QObject* presentationOwner() const { return m_presentationOwner; }

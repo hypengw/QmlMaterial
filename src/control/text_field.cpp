@@ -1,6 +1,7 @@
 #include "qml_material/control/text_field.hpp"
 #include "qml_material/util/qt.hpp"
 #include <QGuiApplication>
+#include <QStyleHints>
 #include <QMetaMethod>
 #include <QtQuick/private/qquicktextinput_p_p.h>
 #include <QtQuick/private/qquickclipnode_p.h>

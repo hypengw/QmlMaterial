@@ -2,7 +2,12 @@
 
 #include "qml_material/control/popup.hpp"
 
+QT_BEGIN_NAMESPACE
+class QQmlComponent;
 class QQmlObjectModel;
+QT_END_NAMESPACE
+
+Q_MOC_INCLUDE("QtQml/QQmlComponent")
 
 namespace qml_material
 {
@@ -25,7 +30,7 @@ public:
     void                    setCurrentIndex(int);
     QString                 title() const { return m_title; }
     void                    setTitle(const QString&);
-    QQmlComponent*          delegate() const { return m_delegate; }
+    QQmlComponent*          delegate() const;
     void                    setDelegate(QQmlComponent*);
     Menu*                   parentMenu() const { return m_parentMenu; }
     void                    setParentMenu(Menu*);

@@ -1,6 +1,7 @@
 #include "qml_material/control/page_stack.hpp"
 #include "page_stack_entries_p.hpp"
 #include <QtQuick/private/qquickitem_p.h>
+#include <QtQuick/private/qquicktransition_p.h>
 #include <QtQuick/private/qquicktransitionmanager_p_p.h>
 #include <QQuickWindow>
 #include <QTimer>

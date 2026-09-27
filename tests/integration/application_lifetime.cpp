@@ -1,4 +1,5 @@
 #include "qml_material/control/control.hpp"
+#include "qml_material/control/panel.hpp"
 #include "qml_material/control/label.hpp"
 #include "qml_material/control/popup.hpp"
 #include "qml_material/control/text_field.hpp"

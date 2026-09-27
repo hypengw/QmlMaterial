@@ -1,4 +1,5 @@
 #include "qml_material/control/adaptive_presenter.hpp"
+#include "qml_material/control/panel.hpp"
 #include "qml_material/control/drawer.hpp"
 #include <QQuickWindow>
 

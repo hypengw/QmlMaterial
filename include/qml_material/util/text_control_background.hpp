@@ -1,10 +1,15 @@
 #pragma once
 
-#include <QQuickItem>
+#include <QObject>
+#include <QList>
 #include <QPointer>
 #include <array>
 #include <optional>
 #include "qml_material/export.hpp"
+
+QT_BEGIN_NAMESPACE
+class QQuickItem;
+QT_END_NAMESPACE
 
 namespace qml_material
 {
@@ -14,7 +19,7 @@ class QML_MATERIAL_API TextControlBackground : public QObject {
 public:
     explicit TextControlBackground(QQuickItem* owner);
     ~TextControlBackground() override;
-    QQuickItem* item() const { return m_item; }
+    QQuickItem* item() const;
     void        setItem(QQuickItem*);
     qreal       implicitWidth() const;
     qreal       implicitHeight() const;

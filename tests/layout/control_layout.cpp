@@ -13,6 +13,7 @@
 
 #include "qml_material/control/tool_tip.hpp"
 #include "qml_material/control/popup.hpp"
+#include "qml_material/control/panel.hpp"
 #include "qml_material/control/dialog.hpp"
 #include "qml_material/control/icon_spec.hpp"
 #include "qml_material/control/abstract_button.hpp"

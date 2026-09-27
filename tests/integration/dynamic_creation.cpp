@@ -14,6 +14,7 @@
 
 #include "qml_material/control/popup_presenter.hpp"
 #include "qml_material/control/popup.hpp"
+#include "qml_material/control/panel.hpp"
 #include "qml_material/control/action_group.hpp"
 #include "qml_material/control/application_window.hpp"
 #include "qml_material/control/button_group.hpp"

@@ -2,7 +2,12 @@
 
 #include "qml_material/control/control.hpp"
 #include <memory>
-#include <QtQuick/private/qquicktransition_p.h>
+
+QT_BEGIN_NAMESPACE
+class QQuickTransition;
+QT_END_NAMESPACE
+
+Q_MOC_INCLUDE("QtQuick/private/qquicktransition_p.h")
 
 namespace qml_material
 {
