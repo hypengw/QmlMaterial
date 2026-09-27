@@ -3,15 +3,12 @@ import QtQuick
 import QtQuick.Layouts
 import Qcm.Material as MD
 
-// Merged showcase of shape (rounded corners) + elevation (shadow). Both
-// effects are SDF-driven and share a corners model, so it's natural to
-// demonstrate them together. A single radius slider drives the dynamic
-// boxes; the token-shape-scale row is informational and uses fixed M3
-// tokens, not the slider.
 MD.Page {
     id: root
-    title: 'Effect'
+    title: 'Effects'
     padding: 0
+    showHeader: false
+    showBackground: false
 
     // Responsive: key off this page's own width rather than the global
     // window class so the layout reflows correctly regardless of where the
@@ -60,7 +57,6 @@ MD.Page {
             GridLayout {
                 Layout.alignment: Qt.AlignHCenter
                 Layout.preferredWidth: Math.min(parent.width - 32, 1200)
-                Layout.fillWidth: true
                 columns: root.gridColumns
                 columnSpacing: 16
                 rowSpacing: 16

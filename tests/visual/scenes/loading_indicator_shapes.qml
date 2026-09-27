@@ -1,16 +1,6 @@
 import QtQuick
 import Qcm.Material as MD
 
-// Visual debug for LoadingIndicator: lays out each of the 7 predefined
-// indeterminate shapes (SOFT_BURST → COOKIE_9 → PENTAGON → PILL → SUNNY →
-// COOKIE_4 → OVAL) in a 4-column grid, in declaration order, so we can
-// visually compare against MDC-Android's INDETERMINATE_SHAPES reference.
-//
-// Each cell drives a private LoadingIndicatorUpdator with `progress` set to
-// the shape's integer index — at integer progress the spring fraction is 0,
-// rotation is 0, and currentShape resolves to predefined_shapes[index]
-// untouched, so what the user sees here is the raw geometry, not the
-// animated morph.
 Rectangle {
     id: root
     width: 480
@@ -59,22 +49,28 @@ Rectangle {
                 colors: ["#80a9ff"]
             }
 
-            MD.BusyIndicatorShape {
+            MD.Shape {
                 anchors.centerIn: parent
-                scale: root.contentSize / 2
-                color: updator.color
-                points: updator.currentShape
+                width: root.contentSize
+                height: root.contentSize
+                MD.MaterialShapePath {
+                    shape: updator.shape
+                    size: Qt.size(root.contentSize, root.contentSize)
+                    radialNormalization: true
+                    fillColor: updator.color
+                    strokeWidth: 0
+                }
             }
         }
     }
 
-    Text {
-        anchors.left: parent.left
-        anchors.bottom: parent.bottom
-        anchors.margins: 8
-        text: "qml_material::LoadingIndicatorUpdator predefined shapes (progress=i, rotation=0)"
-        color: "#7a8094"
-        font.pixelSize: 10
-        font.family: "monospace"
+    MD.BusyIndicator {
+        x: root.cellPad + 3 * (root.cellSize + root.cellPad)
+        y: root.cellPad + root.cellSize + root.cellPad + 32
+        width: root.cellSize
+        height: root.cellSize
+        indicatorSize: root.contentSize
+        colors: ["#80a9ff"]
+        running: true
     }
 }

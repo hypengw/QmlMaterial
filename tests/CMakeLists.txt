@@ -7,6 +7,7 @@ endforeach()
 enable_testing()
 
 set(QM_TEST_SOURCES
+  integration/material_shapes.cpp
   integration/lazy_list.cpp
   layout/viewport_controller.cpp
   layout/linear_layout.cpp
@@ -81,7 +82,7 @@ foreach(source IN LISTS QM_TEST_SOURCES)
 endforeach()
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/test_groups.inc" CONTENT "${QM_TEST_GROUPS}")
 
-set_tests_properties(lazy_list scroll_motion lazy_data icon_spec toolbar_dynamic_visibility application_lifetime
+set_tests_properties(material_shapes lazy_list scroll_motion lazy_data icon_spec toolbar_dynamic_visibility application_lifetime
   PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 set_tests_properties(lite_layout control_layout dynamic_creation attached_property_propagation
   page_layout split_view item_proxy nested_scroll adaptive_presenter PROPERTIES ENVIRONMENT
@@ -104,7 +105,7 @@ if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
 endif()
 qt_import_qml_plugins(lazy_list_benchmark)
 
-set(VISUAL_SCENES button action_progress elevation shape ripple ripple_phases loading_indicator_shapes tooltip wave_progress snackbar
+set(VISUAL_SCENES material_shapes button action_progress elevation shape ripple ripple_phases loading_indicator_shapes tooltip wave_progress snackbar
     icon_artifacts icon_spec
     focus_button focus_iconbutton focus_fab focus_chip
     focus_switch focus_checkbox focus_radio

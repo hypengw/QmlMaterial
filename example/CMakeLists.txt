@@ -9,7 +9,8 @@ qt_add_resources(
   Components.qml
   carousel/CarouselDemoData.qml
   Color.qml
-  Effect.qml
+  Shape.qml
+  ShapeEffects.qml
   Example.qml
   Typography.qml
   About.qml

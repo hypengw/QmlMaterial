@@ -59,22 +59,26 @@ MD.BusyIndicatorBase {
                     _startMs = Date.now();
             }
             onTriggered: {
-                const period = updator.shapeCount * updator.msPerShape;
-                if (period > 0) {
-                    const t = ((Date.now() - _startMs) % period) / period;
-                    updator.progress = t * updator.shapeCount;
-                }
+                updator.progress = (Date.now() - _startMs) / updator.msPerShape;
             }
         }
 
-        MD.BusyIndicatorShape {
-            id: shape
+        MD.Shape {
+            id: indicatorShape
             anchors.centerIn: parent
-            scale: control.indicatorSize / 2
-
-            color: updator.color
+            width: control.indicatorSize
+            height: control.indicatorSize
             rotation: updator.rotation
-            points: updator.currentShape
+            MD.MaterialShapePath {
+                shape: updator.shape
+                toShape: updator.toShape
+                progress: updator.shapeProgress
+                size: Qt.size(indicatorShape.width, indicatorShape.height)
+                radialNormalization: true
+                fillColor: updator.color
+                strokeColor: "transparent"
+                strokeWidth: 0
+            }
         }
     }
 

@@ -48,6 +48,9 @@ if(UNIX AND NOT APPLE)
 endif()
 
 find_package(Qt6 REQUIRED COMPONENTS Core Quick Gui Qml ShaderTools)
+if(NOT TARGET Qt6::QuickShapesPrivate)
+  find_package(Qt6 REQUIRED COMPONENTS QuickShapesPrivate)
+endif()
 # Qt < ~6.9 often exposes Qt6::QuickPrivate via Quick; Qt 6.9+ needs an
 # explicit private package (aqt 6.8.3 CI has no Qt6QuickPrivateConfig).
 if(NOT TARGET Qt6::QuickPrivate)
@@ -70,6 +73,13 @@ endif()
 set(LIBNAME qml_material)
 
 set(SOURCES
+    include/qml_material/shape/rounded_polygon.hpp
+    include/qml_material/shape/material_shapes.hpp
+    src/shape/rounded_polygon.cpp
+    src/shape/morph.cpp
+    src/shape/material_shapes.cpp
+    src/shape/material_shape_path.hpp
+    src/shape/material_shape_path.cpp
     include/qml_material/core/state_bindings.hpp
     include/qml_material/core/attached_property.hpp
     include/qml_material/core/helper.hpp
@@ -349,7 +359,6 @@ set(QML_FILES
     qml/container/Pane.qml
     qml/container/SplitView.qml
     qml/indicator/BusyIndicator.qml
-    qml/indicator/BusyIndicatorShape.qml
     qml/indicator/CircleIndicatorShape.qml
     qml/indicator/CircleIndicatorWaveShape.qml
     qml/indicator/CircularIndicator.qml
@@ -478,6 +487,8 @@ set(QML_FILES
 set(RESOURCES assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2)
 
 set(QML_REG_INCLUDE_DIRS
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/shape"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/shape"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/view"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/anim"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/core"
@@ -723,7 +734,7 @@ target_link_libraries(
   ${LIBNAME}
   PUBLIC Qt6::Core Qt6::Quick
          Qt6::QuickPrivate # QQuickStateGroup
-  PRIVATE material_color Qt6::QmlModelsPrivate)
+  PRIVATE material_color Qt6::QmlModelsPrivate Qt6::QuickShapesPrivate)
 
 if(UNIX AND NOT ANDROID AND NOT EMSCRIPTEN)
   target_link_libraries(${LIBNAME} PRIVATE Qt6::DBus)
@@ -746,6 +757,9 @@ endif()
 
 if(NOT QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
   include(CMakePackageConfigHelpers)
+  install(FILES doc/licenses/androidx-shapes-Apache-2.0.txt
+                doc/material-shapes-sources.md
+          DESTINATION share/licenses/qml_material)
   write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/${LIBNAME}-config-version.cmake"
     VERSION ${QM_VERSION}

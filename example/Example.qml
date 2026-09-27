@@ -22,8 +22,8 @@ MD.Page {
             icon: MD.Token.icon.palette
         },
         {
-            name: 'effect',
-            source: 'qrc:/Qcm/Material/Example/Effect.qml',
+            name: 'shape',
+            source: 'qrc:/Qcm/Material/Example/Shape.qml',
             icon: MD.Token.icon.shapes
         },
         {
