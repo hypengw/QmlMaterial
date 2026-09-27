@@ -46,7 +46,7 @@ class QML_MATERIAL_API Popup : public QObject, public QQmlParserStatus {
                    collisionPolicyChanged FINAL)
     Q_PROPERTY(qreal x READ x WRITE setX NOTIFY xChanged FINAL)
     Q_PROPERTY(qreal y READ y WRITE setY NOTIFY yChanged FINAL)
-    Q_PROPERTY(qreal z READ z WRITE setZ NOTIFY zChanged FINAL)
+    Q_PROPERTY(qreal z READ z WRITE setZ RESET resetZ NOTIFY zChanged FINAL)
     Q_PROPERTY(qreal margins READ margins WRITE setMargins NOTIFY marginsChanged FINAL)
     Q_PROPERTY(qreal leftMargin READ leftMargin WRITE setLeftMargin RESET resetLeftMargin NOTIFY
                    marginsChanged FINAL)
@@ -167,10 +167,11 @@ public:
     void                         setCollisionPolicy(CollisionPolicy);
     qreal                        x() const { return m_position.x(); }
     qreal                        y() const { return m_position.y(); }
-    qreal                        z() const { return m_z; }
+    qreal                        z() const { return m_z.value_or(m_inheritedZ); }
     void                         setX(qreal);
     void                         setY(qreal);
     void                         setZ(qreal);
+    void                         resetZ();
     qreal                        margins() const { return m_margins; }
     void                         setMargins(qreal);
     qreal                        leftMargin() const { return m_leftMargin.value_or(m_margins); }
@@ -387,6 +388,7 @@ private:
     void                           observeParent();
     void                           observePositioningItem();
     void                           refreshEnvironment();
+    void                           refreshInheritedZ();
     void                           updateOverlay();
     void                           finishClose();
     void                           startTransition(bool);
@@ -414,7 +416,8 @@ private:
     ClosePolicy            m_closePolicy { CloseOnEscape | CloseOnPressOutside };
     CollisionPolicy        m_collision = Clamp;
     QPointF                m_position;
-    qreal                  m_z = 0, m_margins = 0;
+    std::optional<qreal>   m_z;
+    qreal                  m_inheritedZ = 0, m_margins = 0;
     qreal                  m_savedOpacity = 1, m_savedScale = 1;
     std::optional<qreal>   m_leftMargin, m_rightMargin, m_topMargin, m_bottomMargin;
     QFont                  m_font;

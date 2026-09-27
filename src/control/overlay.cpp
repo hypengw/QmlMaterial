@@ -174,6 +174,7 @@ void OverlayManager::add(Popup* popup) {
         if (entry.popup == popup) return;
     Entry entry;
     entry.popup         = popup;
+    entry.order         = m_nextOrder++;
     entry.previousFocus = m_window ? m_window->activeFocusItem() : nullptr;
     m_entries.append(entry);
     popup->surfaceItem()->setParentItem(this);
@@ -219,7 +220,9 @@ void OverlayManager::restoreFocus(Popup* popup, QQuickItem* previous) {
 }
 void OverlayManager::refresh() {
     std::stable_sort(m_entries.begin(), m_entries.end(), [](const Entry& a, const Entry& b) {
-        return a.popup && b.popup && a.popup->z() < b.popup->z();
+        if (! a.popup || ! b.popup) return bool(a.popup) < bool(b.popup);
+        if (a.popup->z() != b.popup->z()) return a.popup->z() < b.popup->z();
+        return a.order < b.order;
     });
     // Components may run arbitrary QML while their dimmer is created.
     const auto entries = m_entries;

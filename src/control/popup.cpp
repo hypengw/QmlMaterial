@@ -183,6 +183,11 @@ void Popup::observePositioningItem() {
 void Popup::observeParent() {
     utils::disconnectAll(m_parentConnections);
     for (auto item = m_parent.data(); item; item = item->parentItem()) {
+        if (auto popup = qobject_cast<Popup*>(item->parent());
+            popup && popup != this && popup->surfaceItem() == item) {
+            m_parentConnections.append(
+                connect(popup, &Popup::zChanged, this, &Popup::refreshInheritedZ));
+        }
         for (auto signal : { &QQuickItem::xChanged,
                              &QQuickItem::yChanged,
                              &QQuickItem::widthChanged,
@@ -223,9 +228,27 @@ void Popup::observeParent() {
             if (guard) Q_EMIT parentChanged();
         }));
     }
+    QPointer<Popup> guard(this);
+    refreshInheritedZ();
+    if (! guard) return;
     refreshEnvironment();
     updateOverlay();
     reposition();
+}
+void Popup::refreshInheritedZ() {
+    const qreal previous = z();
+    m_inheritedZ         = 0;
+    for (auto item = m_parent.data(); item; item = item->parentItem()) {
+        if (auto popup = qobject_cast<Popup*>(item->parent());
+            popup && popup != this && popup->surfaceItem() == item) {
+            m_inheritedZ = popup->z();
+            break;
+        }
+    }
+    if (z() == previous) return;
+    QPointer<Popup> guard(this);
+    if (m_overlay) m_overlay->refresh();
+    if (guard) Q_EMIT zChanged();
 }
 void Popup::refreshEnvironment() {
     QFont   inherited = QGuiApplication::font();
@@ -690,10 +713,20 @@ void Popup::setY(qreal value) {
     Q_EMIT yChanged();
 }
 void Popup::setZ(qreal value) {
-    if (m_z == value) return;
-    m_z = value;
+    const qreal previous = z();
+    m_z                  = value;
+    if (z() == previous) return;
+    QPointer<Popup> guard(this);
     if (m_overlay) m_overlay->refresh();
-    Q_EMIT zChanged();
+    if (guard) Q_EMIT zChanged();
+}
+void Popup::resetZ() {
+    const qreal previous = z();
+    m_z.reset();
+    if (z() == previous) return;
+    QPointer<Popup> guard(this);
+    if (m_overlay) m_overlay->refresh();
+    if (guard) Q_EMIT zChanged();
 }
 void Popup::setMargins(qreal value) {
     if (m_margins == value) return;

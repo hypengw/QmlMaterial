@@ -50,8 +50,10 @@ private:
         QPointer<QQmlComponent> component;
         QPointer<QQuickItem>    previousFocus;
         qreal                   opacity = 1;
+        quint64                 order   = 0;
     };
     QList<Entry>                    m_entries;
+    quint64                         m_nextOrder = 0;
     QPointer<QQuickWindow>          m_window;
     QList<QPointer<Popup>>          m_pressObservers;
     QList<QPointer<Drawer>>         m_drawers;

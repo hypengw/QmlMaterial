@@ -727,6 +727,95 @@ private Q_SLOTS:
         m_window.hide();
     }
 
+    void popupHoverHandlerToolTip() {
+        if (QGuiApplication::platformName() == "offscreen" ||
+            QGuiApplication::platformName() == "minimal")
+            QSKIP("Requires window-system hover delivery");
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            Item {
+                width: 640; height: 480
+                property var tip: tag.MD.ToolTip.toolTip
+                Item {
+                    x: 10; y: 10; width: 80; height: 40
+                    HoverHandler { id: outside; objectName: "outside" }
+                    MD.ToolTip.visible: outside.hovered
+                    MD.ToolTip.text: "Outside popup"
+                    MD.ToolTip.delay: 0
+                }
+                MD.Popup {
+                    objectName: "popup"
+                    x: 150; y: 100; width: 300; height: 240
+                    modal: true
+                    enter: null; exit: null
+                    Rectangle {
+                        id: tag; objectName: "tag"
+                        x: 40; y: 60; width: 100; height: 40
+                        HoverHandler { id: hover; objectName: "hover" }
+                        MD.ToolTip.visible: hover.hovered
+                        MD.ToolTip.text: "Inside popup"
+                        MD.ToolTip.delay: 0
+                    }
+                }
+            }
+        )",
+                          QUrl());
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* root = qobject_cast<QQuickItem*>(object.get());
+        root->setParentItem(m_window.contentItem());
+        auto* popup   = root->findChild<qml_material::Popup*>("popup");
+        auto* tag     = root->findChild<QQuickItem*>("tag");
+        auto* hover   = root->findChild<QObject*>("hover");
+        auto* outside = root->findChild<QObject*>("outside");
+        auto* tip     = qobject_cast<qml_material::Popup*>(root->property("tip").value<QObject*>());
+        QVERIFY(popup && tag && hover && outside && tip);
+        m_window.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&m_window));
+        QTest::mouseMove(&m_window, QPoint(30, 30));
+        QTRY_VERIFY(outside->property("hovered").toBool());
+        QTRY_VERIFY(tip->isOpened());
+        popup->open();
+        QTRY_VERIFY(! outside->property("hovered").toBool());
+        QTest::mouseMove(&m_window, tag->mapToScene(QPointF(30, 20)).toPoint());
+        QTRY_VERIFY(hover->property("hovered").toBool());
+        QTRY_VERIFY(tip->isOpened());
+        QVERIFY(tip->surfaceItem()->z() > popup->surfaceItem()->z());
+        popup->setZ(20);
+        QTRY_VERIFY(hover->property("hovered").toBool());
+        QVERIFY(tip->surfaceItem()->z() > popup->surfaceItem()->z());
+        QCOMPARE(tip->z(), popup->z());
+        tip->setZ(0);
+        QVERIFY(tip->surfaceItem()->z() < popup->surfaceItem()->z());
+        tip->resetZ();
+        QVERIFY(tip->surfaceItem()->z() > popup->surfaceItem()->z());
+        popup->setZ(5);
+        QCOMPARE(tip->z(), popup->z());
+        QVERIFY(tip->surfaceItem()->z() > popup->surfaceItem()->z());
+
+        qml_material::Popup cover;
+        cover.setParentItem(root);
+        cover.setZ(popup->z());
+        const auto tagPosition = tag->mapToScene(QPointF());
+        cover.setX(tagPosition.x() + 20);
+        cover.setY(tagPosition.y());
+        cover.setWidth(80);
+        cover.setHeight(40);
+        static_cast<QQmlParserStatus*>(&cover)->componentComplete();
+        cover.open();
+        QVERIFY(cover.isOpened());
+        QTRY_VERIFY(! hover->property("hovered").toBool());
+        QTRY_VERIFY(! tip->isVisible());
+        QTest::mouseMove(&m_window, tag->mapToScene(QPointF(10, 20)).toPoint());
+        QTRY_VERIFY(hover->property("hovered").toBool());
+        QTRY_VERIFY(tip->isOpened());
+        cover.close();
+        popup->close();
+        m_window.hide();
+    }
+
     void tooltipOutsidePressDoesNotShieldModalPopup() {
         QQmlComponent component(&m_engine);
         component.setData(R"(
