@@ -282,6 +282,7 @@ MD.MenuBase {
     MD.MState {
         id: item_state
 
+        target: control
         elevation: MD.Token.elevation.level2
         textColor: MD.Token.color.on_surface
         backgroundColor: MD.Token.color.surface_container

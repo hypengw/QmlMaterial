@@ -2,6 +2,7 @@
 
 #include <QtQml/QQmlEngine>
 #include "qml_material/core.hpp"
+#include "qml_material/export.hpp"
 
 namespace qml_material::token
 {
@@ -13,7 +14,7 @@ namespace qml_material::token
  * material-components-android. Container height is M3 spec.
  */
 struct SegmentedButtonSizeItem {
-    Q_GADGET
+    Q_GADGET_EXPORT(QML_MATERIAL_API)
     QML_ELEMENT
     QML_VALUE_TYPE(segmented_button_size_item)
 
@@ -37,13 +38,14 @@ public:
     qreal trailing_space;
     qreal icon_label_space;
     qreal outline_width;
+    bool  operator==(const SegmentedButtonSizeItem&) const = default;
 };
 
 /**
  * @brief Collection of segmented button size tokens for different size classes
  */
 struct SegmentedButtonSize {
-    Q_GADGET
+    Q_GADGET_EXPORT(QML_MATERIAL_API)
     QML_ELEMENT
     QML_VALUE_TYPE(segmented_button_size)
 
@@ -54,6 +56,7 @@ struct SegmentedButtonSize {
     Q_PROPERTY(qml_material::token::SegmentedButtonSizeItem xlarge MEMBER xlarge CONSTANT FINAL)
 
 public:
+    bool                    operator==(const SegmentedButtonSize&) const = default;
     SegmentedButtonSizeItem xsmall {
         32.0, // container_height
         20.0, // icon_size

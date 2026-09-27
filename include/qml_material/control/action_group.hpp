@@ -39,6 +39,7 @@ public:
     Q_SIGNAL void               triggered(Action* action);
 
 private:
+    friend class Action;
     void                                           update(Action* preferred = nullptr);
     void                                           clear();
     utils::SelectionSet<Action>                    m_selection;

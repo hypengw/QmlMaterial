@@ -23,10 +23,13 @@ class QML_MATERIAL_API AbstractButton : public Control {
     Q_PROPERTY(bool autoExclusive READ autoExclusive WRITE setAutoExclusive NOTIFY
                    autoExclusiveChanged FINAL)
     Q_PROPERTY(Display display READ display WRITE setDisplay NOTIFY displayChanged FINAL)
-    Q_PROPERTY(bool pressed READ isPressed NOTIFY pressedChanged FINAL)
-    Q_PROPERTY(bool down READ isDown WRITE setDown RESET resetDown NOTIFY downChanged FINAL)
-    Q_PROPERTY(bool checkable READ isCheckable WRITE setCheckable NOTIFY checkableChanged FINAL)
-    Q_PROPERTY(bool checked READ isChecked WRITE setChecked NOTIFY checkedChanged FINAL)
+    Q_PROPERTY(bool pressed READ isPressed NOTIFY pressedChanged BINDABLE bindablePressed FINAL)
+    Q_PROPERTY(bool down READ isDown WRITE setDown RESET resetDown NOTIFY downChanged BINDABLE
+                   bindableDown FINAL)
+    Q_PROPERTY(bool checkable READ isCheckable WRITE setCheckable NOTIFY checkableChanged BINDABLE
+                   bindableCheckable FINAL)
+    Q_PROPERTY(bool checked READ isChecked WRITE setChecked NOTIFY checkedChanged BINDABLE
+                   bindableChecked FINAL)
     Q_PROPERTY(qreal pressX READ pressX NOTIFY pressXChanged FINAL)
     Q_PROPERTY(qreal pressY READ pressY NOTIFY pressYChanged FINAL)
     Q_PROPERTY(bool autoRepeat READ autoRepeat WRITE setAutoRepeat NOTIFY autoRepeatChanged FINAL)
@@ -69,9 +72,13 @@ public:
     Display          display() const { return m_display; }
     void             setDisplay(Display value);
     bool             isPressed() const { return m_pressed; }
-    bool             isDown() const { return m_down.value_or(m_pressed); }
+    bool             isDown() const { return m_down.value(); }
     void             setDown(bool value);
     void             resetDown();
+    QBindable<bool>  bindablePressed() const { return QBindable<bool>(&m_pressed); }
+    QBindable<bool>  bindableDown() { return QBindable<bool>(&m_down); }
+    QBindable<bool>  bindableChecked() { return QBindable<bool>(&m_checked); }
+    QBindable<bool>  bindableCheckable() { return QBindable<bool>(&m_checkable); }
     bool             isCheckable() const { return m_checkable; }
     void             setCheckable(bool value);
     bool             isChecked() const { return m_checked; }
@@ -134,6 +141,8 @@ protected:
 
 private:
     friend class ButtonGroup;
+    void checkedChange();
+    void checkableChange();
     void enforceAutoExclusive();
     void activate(bool changed);
     enum class Input
@@ -166,26 +175,28 @@ private:
     QPointer<ButtonGroup>          m_group;
     QList<QMetaObject::Connection> m_action_connections;
     Display                        m_display = TextBesideIcon;
-    std::optional<bool>            m_down;
-    bool                           m_pressed         = false;
-    bool                           m_checked         = false;
-    bool                           m_checkable       = false;
-    bool                           m_auto_repeat     = false;
-    bool                           m_held            = false;
-    bool                           m_repeated        = false;
-    bool                           m_double_click    = false;
-    int                            m_repeat_delay    = 300;
-    int                            m_repeat_interval = 100;
-    int                            m_hold_interval;
-    int                            m_touch_id = -1;
-    int                            m_key      = 0;
-    quint64                        m_sequence = 0;
-    Input                          m_input    = Input::None;
-    QPointF                        m_point;
-    QPointF                        m_origin;
-    QTimer                         m_repeat_timer;
-    QTimer                         m_hold_timer;
-    QTimer                         m_animate_timer;
-    QMetaObject::Connection        m_window_connection;
+    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(AbstractButton, bool, m_down, false,
+                                         &AbstractButton::downChanged)
+    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(AbstractButton, bool, m_pressed, false,
+                                         &AbstractButton::pressedChanged)
+    Q_OBJECT_BINDABLE_PROPERTY(AbstractButton, bool, m_checked, &AbstractButton::checkedChange)
+    Q_OBJECT_BINDABLE_PROPERTY(AbstractButton, bool, m_checkable, &AbstractButton::checkableChange)
+    bool                    m_auto_repeat     = false;
+    bool                    m_held            = false;
+    bool                    m_repeated        = false;
+    bool                    m_double_click    = false;
+    int                     m_repeat_delay    = 300;
+    int                     m_repeat_interval = 100;
+    int                     m_hold_interval;
+    int                     m_touch_id = -1;
+    int                     m_key      = 0;
+    quint64                 m_sequence = 0;
+    Input                   m_input    = Input::None;
+    QPointF                 m_point;
+    QPointF                 m_origin;
+    QTimer                  m_repeat_timer;
+    QTimer                  m_hold_timer;
+    QTimer                  m_animate_timer;
+    QMetaObject::Connection m_window_connection;
 };
 } // namespace qml_material

@@ -102,6 +102,17 @@ private:
     std::optional<qreal>                     m_content_height;
 };
 
+class QML_MATERIAL_API MaterialContainer : public Container {
+    Q_OBJECT
+    QML_NAMED_ELEMENT(Container)
+    QML_ATTACHED(ContainerAttached)
+public:
+    using Container::Container;
+
+protected:
+    void classBegin() override;
+};
+
 class QML_MATERIAL_API ContainerAttached : public QObject {
     Q_OBJECT
     Q_PROPERTY(Container* container READ container NOTIFY containerChanged FINAL)
@@ -126,3 +137,4 @@ private:
 };
 } // namespace qml_material
 QML_DECLARE_TYPEINFO(qml_material::Container, QML_HAS_ATTACHED_PROPERTIES)
+QML_DECLARE_TYPEINFO(qml_material::MaterialContainer, QML_HAS_ATTACHED_PROPERTIES)

@@ -21,6 +21,8 @@ Item {
     readonly property bool hovered: m_area.containsMouse
     property MD.StateCarouselItem mdState: MD.StateCarouselItem {
         item: root
+        down: root.down
+        hovered: root.hovered
     }
 
     readonly property real visibleWidth: Math.max(0, width * (1 - maskStart - maskEnd))

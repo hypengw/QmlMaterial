@@ -269,32 +269,39 @@ void Control::resetBottomInset() { setBottomInset(0); }
 QQuickItem* Control::background() const { return m_background; }
 
 void Control::setBackground(QQuickItem* item) {
-    if (m_background == item) return;
-
-    auto* oldItem = m_background.data();
-    disconnectBackground();
-    m_background = nullptr;
-    if (oldItem && oldItem->parentItem() == this) oldItem->setParentItem(nullptr);
-
+    const QScopedPropertyUpdateGroup group;
     m_background = item;
+}
+
+void Control::backgroundChange() {
+    const QScopedPropertyUpdateGroup group;
+    const QPointer<Control>          guard(this);
+    const QPointer<QQuickItem>       item(background());
+    const QPointer<QQuickItem>       oldItem(m_managed_background);
+    disconnectBackground();
+    m_managed_background = item;
     if (item) {
-        if (! item->parentItem()) item->setParentItem(this);
         m_background_connections.append(connect(
             item, &QQuickItem::implicitWidthChanged, this, &Control::updateImplicitMetrics));
         m_background_connections.append(connect(
             item, &QQuickItem::implicitHeightChanged, this, &Control::updateImplicitMetrics));
         m_background_connections.append(connect(item, &QObject::destroyed, this, [this]() {
-            disconnectBackground();
-            m_background = nullptr;
-            updateImplicitMetrics();
-            Q_EMIT backgroundChanged();
+            const QScopedPropertyUpdateGroup group;
+            m_background.setValueBypassingBindings(nullptr);
+            m_background.notify();
         }));
     }
-
+    if (oldItem && oldItem != item && oldItem->parentItem() == this)
+        oldItem->setParentItem(nullptr);
+    if (! guard || background() != item) return;
+    if (item && ! item->parentItem()) item->setParentItem(this);
+    if (! guard || background() != item) return;
     orderManagedItems();
+    if (! guard || background() != item) return;
     updateImplicitMetrics();
+    if (! guard || background() != item) return;
     if (isComponentComplete()) layoutBackground();
-    Q_EMIT backgroundChanged();
+    if (guard && background() == item) Q_EMIT backgroundChanged();
 }
 
 QQuickItem* Control::contentItem() const { return m_content_item; }
@@ -686,13 +693,11 @@ void Control::updateVisualFocus() {
     const bool value    = hasFocus && utils::isKeyboardFocusReason(m_focus_reason);
     if (m_visual_focus == value) return;
     m_visual_focus = value;
-    Q_EMIT visualFocusChanged();
 }
 
 void Control::setHovered(bool value) {
     if (m_hovered == value) return;
     m_hovered = value;
-    Q_EMIT hoveredChanged();
 }
 
 void Control::layoutItems() {

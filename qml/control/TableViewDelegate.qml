@@ -24,6 +24,8 @@ MD.ItemDelegate {
     property int columns: TableView.view?.columns ?? 0
     property MD.StateTableViewDelegate mdState: MD.StateTableViewDelegate {
         item: control
+        itemSelected: control.selected
+        rowHovered: control.rowHovered
     }
     property int radius: mdTableView?.effectiveRadius ?? 0
     property MD.corners corners: mdTableView?.hasHeader ? MD.Util.tableWithHeaderCorners(row, column, rows, columns, radius) : MD.Util.tableCorners(row, column, rows, columns, radius)

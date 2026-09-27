@@ -95,14 +95,14 @@ Item {
                 anchors.centerIn: parent
                 text: Math.round(root.value)
                 typescale: MD.Token.typescale.label_medium
-                color: root.control ? root.control.mdState.ctx.color.inverse_on_surface : "transparent"
+                color: root.control?.mdState.colors?.inverse_on_surface ?? "transparent"
             }
         }
         background: MD.ElevationRectangle {
             implicitWidth: 32
             implicitHeight: 32
             radius: 16
-            color: root.control ? root.control.mdState.ctx.color.inverse_surface : "transparent"
+            color: root.control?.mdState.colors?.inverse_surface ?? "transparent"
             elevation: MD.Token.elevation.level2
         }
     }

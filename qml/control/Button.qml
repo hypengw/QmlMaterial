@@ -7,9 +7,14 @@ MD.ButtonBase {
 
     property int iconStyle: hasIcon ? MD.Enum.IconAndText : MD.Enum.TextOnly
     readonly property bool hasIcon: !icon.empty
-    property MD.StateButton mdState: MD.StateButton {
+    property MD.StateButtonBase mdState: MD.StateButton {
         item: control
     }
+
+    readonly property MD.ButtonMotion _motion: MD.ButtonMotion {
+        source: control.mdState
+    }
+    Component.onCompleted: _motion.enabled = true
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
@@ -27,7 +32,7 @@ MD.ButtonBase {
 
     icon.width: mdState.iconSize
     icon.height: mdState.iconSize
-    icon.color: control.mdState.textColor
+    icon.color: control._motion.textColor
 
     property MD.typescale typescale: MD.Token.typescale.label_large
     font.capitalization: Font.MixedCase // M3 uses mixed case for buttons
@@ -37,7 +42,7 @@ MD.ButtonBase {
 
     contentItem: Lite.Box {
         alignment: Qt.AlignCenter
-        opacity: control.mdState.contentOpacity
+        opacity: control._motion.contentOpacity
 
         Lite.Row {
             width: Math.min(implicitWidth, parent.width)
@@ -53,7 +58,7 @@ MD.ButtonBase {
             MD.Label {
                 visible: control.iconStyle != MD.Enum.IconOnly
                 text: control.text
-                color: control.mdState.textColor
+                color: control._motion.textColor
                 useTypescale: false
                 font: control.font
                 lineHeight: control.typescale.line_height
@@ -67,9 +72,9 @@ MD.ButtonBase {
         implicitWidth: 64
         implicitHeight: control.mdState.containerHeight
 
-        corners: control.mdState.corners
-        color: control.mdState.backgroundColor
-        opacity: control.mdState.backgroundOpacity
+        corners: control._motion.corners
+        color: control._motion.backgroundColor
+        opacity: control._motion.backgroundOpacity
 
         border.width: control.mdState.type == MD.Enum.BtOutlined ? 1 : 0
         border.color: control.enabled ? control.mdState.ctx.color.outline : control.mdState.ctx.color.on_surface

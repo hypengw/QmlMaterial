@@ -400,14 +400,12 @@ void ComboBox::attachEditor() {
     updateEditorState();
 }
 void ComboBox::updateEditorState() {
-    const bool acceptable        = ! m_editor || m_editor->hasAcceptableInput();
-    const bool composing         = m_editor && m_editor->isInputMethodComposing();
-    const bool acceptableChanged = m_acceptable != acceptable;
-    const bool composingChanged  = m_composing != composing;
-    m_acceptable                 = acceptable;
-    m_composing                  = composing;
+    const bool acceptable       = ! m_editor || m_editor->hasAcceptableInput();
+    const bool composing        = m_editor && m_editor->isInputMethodComposing();
+    const bool composingChanged = m_composing != composing;
+    m_composing                 = composing;
     QPointer<ComboBox> guard(this);
-    if (acceptableChanged) Q_EMIT acceptableInputChanged();
+    m_acceptable = acceptable;
     if (guard && composingChanged) Q_EMIT inputMethodComposingChanged();
 }
 void ComboBox::selectAll() {

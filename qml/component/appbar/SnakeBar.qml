@@ -12,6 +12,8 @@ MD.PanelBase {
     property alias text: label.text
     property MD.StateSnakeBar mdState: MD.StateSnakeBar {
         item: control
+        actionItem: btn_action
+        iconItem: btn_icon
     }
     property MD.StateSnakeBar mdStateAction: mdState
     property MD.StateSnakeBar mdStateIcon: mdState

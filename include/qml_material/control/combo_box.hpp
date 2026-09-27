@@ -24,7 +24,8 @@ class QML_MATERIAL_API ComboBox : public Control {
     Q_PROPERTY(bool editable READ editable WRITE setEditable NOTIFY editableChanged FINAL)
     Q_PROPERTY(QString editText READ editText WRITE setEditText RESET resetEditText NOTIFY
                    editTextChanged FINAL)
-    Q_PROPERTY(bool acceptableInput READ acceptableInput NOTIFY acceptableInputChanged FINAL)
+    Q_PROPERTY(bool acceptableInput READ acceptableInput NOTIFY acceptableInputChanged BINDABLE
+                   bindableAcceptableInput FINAL)
     Q_PROPERTY(bool inputMethodComposing READ inputMethodComposing NOTIFY
                    inputMethodComposingChanged FINAL)
     Q_PROPERTY(
@@ -82,6 +83,7 @@ public:
     void                 setEditText(const QString&);
     void                 resetEditText() { setEditText({}); }
     bool                 acceptableInput() const;
+    QBindable<bool>      bindableAcceptableInput() const { return QBindable<bool>(&m_acceptable); }
     bool                 inputMethodComposing() const;
     QValidator*          validator() const { return m_validator; }
     void                 setValidator(QValidator*);
@@ -199,8 +201,9 @@ private:
     bool                           m_editable        = false;
     bool                           m_select_by_mouse = false;
     bool                           m_accepting       = false;
-    bool                           m_acceptable      = true;
-    bool                           m_composing       = false;
+    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(ComboBox, bool, m_acceptable, true,
+                                         &ComboBox::acceptableInputChanged)
+    bool m_composing = false;
 };
 
 } // namespace qml_material

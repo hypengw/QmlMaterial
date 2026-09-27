@@ -24,7 +24,9 @@ MD.ButtonBase {
     verticalPadding: 0
     horizontalPadding: 16
 
-    contentItem: Item {}
+    contentItem: Item {
+        opacity: control.mdState.contentOpacity
+    }
 
     background: MD.ElevationRectangle {
         implicitWidth: 64

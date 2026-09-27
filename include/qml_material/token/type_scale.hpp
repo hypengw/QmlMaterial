@@ -3,6 +3,7 @@
 #include <QQmlEngine>
 #include <QFont>
 #include "qml_material/core.hpp"
+#include "qml_material/export.hpp"
 
 namespace qml_material::token
 {
@@ -33,7 +34,7 @@ namespace qml_material::token
  *
  */
 struct TypeScaleItem {
-    Q_GADGET
+    Q_GADGET_EXPORT(QML_MATERIAL_API)
     QML_ELEMENT
     QML_VALUE_TYPE(typescale)
 
@@ -55,6 +56,7 @@ public:
     QFont::Weight weight { QFont::Weight::Normal };
     QFont::Weight weight_prominent { QFont::Weight::Normal };
     qreal         tracking { 0 };
+    bool          operator==(const TypeScaleItem&) const = default;
 };
 
 /**
@@ -67,13 +69,11 @@ class TypeScale : public QObject {
 public:
     using QObject::QObject;
 
-#define X(NAME, ...)                                                             \
-    Q_PROPERTY(qml_material::token::TypeScaleItem NAME READ NAME CONSTANT FINAL) \
-public:                                                                          \
-    const TypeScaleItem& NAME() const noexcept { return m_##NAME; }              \
-                                                                                 \
-private:                                                                         \
-    TypeScaleItem m_##NAME { __VA_ARGS__ };
+#define X(NAME, ...)                                                                       \
+    Q_PROPERTY(qml_material::token::TypeScaleItem NAME READ NAME CONSTANT FINAL)           \
+public:                                                                                    \
+    const TypeScaleItem&                  NAME() const noexcept { return default_##NAME; } \
+    inline static constexpr TypeScaleItem default_##NAME { __VA_ARGS__ };
 
     // clang-format off
     /** @brief Used for the largest text on the screen, such as app name on splash screen */

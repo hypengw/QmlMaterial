@@ -1,4 +1,5 @@
 #include "qml_material/control/action_group.hpp"
+#include <QProperty>
 #include "qml_material/util/qt.hpp"
 
 namespace qml_material
@@ -27,15 +28,17 @@ QQmlListProperty<Action> ActionGroup::actions() {
              } };
 }
 void ActionGroup::clear() {
-    QPointer<ActionGroup> guard(this);
-    const auto            items = m_selection.snapshot();
+    const QScopedPropertyUpdateGroup group;
+    QPointer<ActionGroup>            guard(this);
+    const auto                       items = m_selection.snapshot();
     for (const auto& item : items) {
         if (item) removeAction(item);
         if (! guard) return;
     }
 }
 void ActionGroup::update(Action* preferred) {
-    QPointer<ActionGroup> guard(this);
+    const QScopedPropertyUpdateGroup group;
+    QPointer<ActionGroup>            guard(this);
     m_selection.normalize(this, preferred);
     if (! guard) return;
     if (m_notified_selected != m_selection.selected) {
@@ -45,6 +48,7 @@ void ActionGroup::update(Action* preferred) {
     }
 }
 void ActionGroup::setCheckedAction(Action* member) {
+    const QScopedPropertyUpdateGroup group;
     if (! isExclusive() || (member && ! m_selection.members.contains(member))) return;
     QPointer<ActionGroup> guard(this);
     if (member) {
@@ -61,6 +65,7 @@ void ActionGroup::setCheckedAction(Action* member) {
     }
 }
 void ActionGroup::setExclusive(bool value) {
+    const QScopedPropertyUpdateGroup group;
     if (isExclusive() == value) return;
     m_selection.exclusive = value;
     QPointer<ActionGroup> guard(this);
@@ -68,6 +73,7 @@ void ActionGroup::setExclusive(bool value) {
     if (guard) Q_EMIT exclusiveChanged();
 }
 void ActionGroup::addAction(Action* member) {
+    const QScopedPropertyUpdateGroup group;
     if (! member || m_destroying || m_selection.members.contains(member)) return;
     QPointer<ActionGroup> guard(this);
     QPointer<Action>      item(member);
@@ -77,9 +83,6 @@ void ActionGroup::addAction(Action* member) {
     m_selection.members.append(item);
     item->m_group     = this;
     auto& connections = m_connections[item];
-    connections.append(connect(item, &Action::checkedChanged, this, [this, member]() {
-        update(member);
-    }));
     connections.append(connect(item, &Action::triggered, this, [this, member]() {
         Q_EMIT triggered(member);
     }));
@@ -92,6 +95,7 @@ void ActionGroup::addAction(Action* member) {
     Q_EMIT actionsChanged();
 }
 void ActionGroup::removeAction(Action* member) {
+    const QScopedPropertyUpdateGroup group;
     if (! member || ! m_selection.members.removeOne(member)) return;
     QPointer<ActionGroup> guard(this);
     QPointer<Action>      item(member);

@@ -1,5 +1,7 @@
 #include "qml_material/control/page_stack.hpp"
 #include "page_stack_entries_p.hpp"
+#include "qml_material/token/token.hpp"
+#include <QtQuick/private/qquickanimator_p.h>
 #include <QtQuick/private/qquickitem_p.h>
 #include <QtQuick/private/qquicktransition_p.h>
 #include <QtQuick/private/qquicktransitionmanager_p_p.h>
@@ -12,6 +14,24 @@ namespace qml_material
 {
 namespace
 {
+QQuickTransition* fadeThrough(QObject* owner, bool entering) {
+    auto* transition = new QQuickTransition(owner);
+    auto* opacity    = new QQuickOpacityAnimator(transition);
+    auto* scale      = new QQuickScaleAnimator(transition);
+    opacity->setFrom(entering ? 0 : 1);
+    opacity->setTo(entering ? 1 : 0);
+    scale->setFrom(entering ? .92 : 1);
+    scale->setTo(entering ? 1 : .92);
+    auto animations = transition->animations();
+    for (QQuickAnimator* animator :
+         { static_cast<QQuickAnimator*>(opacity), static_cast<QQuickAnimator*>(scale) }) {
+        animator->setDuration(qRound(token::Duration {}.long1));
+        animator->setEasing(token::Easing {}.emphasized());
+        animator->componentComplete();
+        animations.append(&animations, animator);
+    }
+    return transition;
+}
 class StackMotion : public QQuickTransitionManager {
 public:
     std::function<void()> done;
@@ -76,6 +96,14 @@ PageStack::PageStack(QQuickItem* parent): Control(parent), m_state(std::make_sha
             &PageStackEntries::transitionRequested,
             this,
             &PageStack::startTransition);
+}
+MaterialPageStack::MaterialPageStack(QQuickItem* parent): PageStack(parent) {
+    setPushEnter(fadeThrough(this, true));
+    setPushExit(fadeThrough(this, false));
+    setPopEnter(fadeThrough(this, true));
+    setPopExit(fadeThrough(this, false));
+    setReplaceEnter(fadeThrough(this, true));
+    setReplaceExit(fadeThrough(this, false));
 }
 PageStack::~PageStack() {
     const auto state = m_state;

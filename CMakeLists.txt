@@ -70,6 +70,7 @@ endif()
 set(LIBNAME qml_material)
 
 set(SOURCES
+    include/qml_material/core/state_bindings.hpp
     include/qml_material/core/attached_property.hpp
     include/qml_material/core/helper.hpp
     include/qml_material/token/badge.hpp
@@ -101,6 +102,68 @@ set(SOURCES
     src/core/attached_property.cpp
     src/core/helper.cpp
     src/style/theme.cpp
+    src/style/common_state.cpp
+    include/qml_material/style/common_state.hpp
+    src/style/chip_state.cpp
+    include/qml_material/style/chip_state.hpp
+    src/style/check_box_state.cpp
+    include/qml_material/style/check_box_state.hpp
+    src/style/radio_button_state.cpp
+    include/qml_material/style/radio_button_state.hpp
+    src/style/button_interaction_state.cpp
+    include/qml_material/style/button_interaction_state.hpp
+    src/style/tab_button_state.cpp
+    include/qml_material/style/tab_button_state.hpp
+    src/style/bar_item_state.cpp
+    include/qml_material/style/bar_item_state.hpp
+    src/style/rail_item_state.cpp
+    include/qml_material/style/rail_item_state.hpp
+    src/style/drawer_item_state.cpp
+    include/qml_material/style/drawer_item_state.hpp
+    src/style/menu_item_state.cpp
+    include/qml_material/style/menu_item_state.hpp
+    src/style/list_item_state.cpp
+    include/qml_material/style/list_item_state.hpp
+    src/style/table_view_delegate_state.cpp
+    include/qml_material/style/table_view_delegate_state.hpp
+    src/style/card_state.cpp
+    include/qml_material/style/card_state.hpp
+    src/style/fab_state.cpp
+    include/qml_material/style/fab_state.hpp
+    src/style/segmented_button_state.cpp
+    include/qml_material/style/segmented_button_state.hpp
+    src/style/switch_state.cpp
+    include/qml_material/style/switch_state.hpp
+    src/style/slider_state.cpp
+    include/qml_material/style/slider_state.hpp
+    src/style/drag_handle_state.cpp
+    include/qml_material/style/drag_handle_state.hpp
+    src/style/search_bar_state.cpp
+    include/qml_material/style/search_bar_state.hpp
+    src/style/input_state.cpp
+    include/qml_material/style/input_state.hpp
+    src/style/text_field_state.cpp
+    include/qml_material/style/text_field_state.hpp
+    src/style/combo_box_state.cpp
+    include/qml_material/style/combo_box_state.hpp
+    src/style/standard_icon_button_state.cpp
+    include/qml_material/style/standard_icon_button_state.hpp
+    src/style/icon_button_state.cpp
+    include/qml_material/style/icon_button_state.hpp
+    src/style/button_state.cpp
+    src/style/app_bar_state.cpp
+    src/style/snake_bar_state.cpp
+    include/qml_material/style/snake_bar_state.hpp
+    src/style/carousel_item_state.cpp
+    include/qml_material/style/carousel_item_state.hpp
+    src/style/bottom_sheet_state.cpp
+    include/qml_material/style/bottom_sheet_state.hpp
+    include/qml_material/style/app_bar_state.hpp
+    include/qml_material/style/button_state.hpp
+    src/style/split_button_state.cpp
+    include/qml_material/style/split_button_state.hpp
+    src/style/split_button_indicator_state.cpp
+    include/qml_material/style/split_button_indicator_state.hpp
     src/anim/circular_indicator_updator.cpp
     src/anim/linear_indicator_updator.cpp
     src/anim/loading_indicator_updator.cpp
@@ -148,6 +211,7 @@ set(SOURCES
     include/qml_material/control/radio_button.hpp
     include/qml_material/control/switch.hpp
     include/qml_material/control/item_delegate.hpp
+    src/control/item_delegate.cpp
     include/qml_material/control/tab_button.hpp
     include/qml_material/control/tab_bar.hpp
     include/qml_material/control/container.hpp
@@ -248,8 +312,11 @@ set(SOURCES
     src/token/token.cpp
     src/token/type_scale.cpp
     src/item/item_proxy.cpp
+    src/item/item_holder.cpp
+    include/qml_material/item/item_holder.hpp
     src/item/round_item.cpp
-    src/item/state.cpp
+    src/style/material_state.cpp
+    include/qml_material/style/material_state.hpp
     src/item/rectangle.cpp
     src/item/rrect_shadow.cpp
     src/item/blur_mask.cpp
@@ -263,7 +330,6 @@ set(QML_FILES
     qml/Util.qml
     qml/control/Button.qml
     qml/control/Control.qml
-    qml/control/Container.qml
     qml/control/SegmentedButton.qml
     qml/control/SegmentedButtonGroup.qml
     qml/control/ComboBox.qml
@@ -272,7 +338,6 @@ set(QML_FILES
     qml/control/Dialog.qml
     qml/control/DialogButtonBox.qml
     qml/control/Drawer.qml
-    qml/control/PageStack.qml
     qml/control/SplitView.qml
     qml/control/Slider.qml
     qml/control/SliderM2.qml
@@ -293,7 +358,6 @@ set(QML_FILES
     qml/control/TableViewDelegate.qml
     qml/control/ScrollBar.qml
     qml/control/ScrollIndicator.qml
-    qml/control/ItemDelegate.qml
     qml/control/HorizontalHeaderView.qml
     qml/control/HorizontalHeaderViewDelegate.qml
     qml/control/VerticalHeaderView.qml
@@ -301,7 +365,6 @@ set(QML_FILES
     qml/control/Label.qml
     qml/control/BusyIndicator.qml
     qml/control/BusyIndicatorShape.qml
-    qml/component/MState.qml
     qml/component/Image.qml
     qml/component/Loader.qml
     qml/component/FontMetrics.qml
@@ -393,42 +456,10 @@ set(QML_FILES
     qml/scrollable/GridView.qml
     qml/scrollable/ListView.qml
     qml/motion/FadeInMotion.qml
+    qml/motion/ButtonMotion.qml
     qml/motion/FadeOutMotion.qml
     qml/motion/FadeInThroughMotion.qml
     qml/motion/FadeOutThroughMotion.qml
-    qml/state/StateAppBar.qml
-    qml/state/StateBottomSheet.qml
-    qml/state/StateSnakeBar.qml
-    qml/state/StateButton.qml
-    qml/state/StateSplitButton.qml
-    qml/state/StateSplitButtonIndicator.qml
-    qml/state/StateSegmentedButton.qml
-    qml/state/StateCard.qml
-    qml/state/StateCarouselItem.qml
-    qml/state/StateDragHandle.qml
-    qml/state/StateDrawerItem.qml
-    qml/state/StateTabButton.qml
-    qml/state/StateTableViewDelegate.qml
-    qml/state/StateListItem.qml
-    qml/state/StateSlider.qml
-    qml/state/StateSliderM2.qml
-    qml/state/StateSwitch.qml
-    qml/state/StateIconButton.qml
-    qml/state/StateStandardIconButton.qml
-    qml/state/StateFAB.qml
-    qml/state/StateAssistChip.qml
-    qml/state/StateFilterChip.qml
-    qml/state/StateInputChip.qml
-    qml/state/StateSuggestionChip.qml
-    qml/state/StateBarItem.qml
-    qml/state/StateSearchBar.qml
-    qml/state/StateTextField.qml
-    qml/state/StateRailItem.qml
-    qml/state/StateEmbedChip.qml
-    qml/state/StateComboBox.qml
-    qml/state/StateMenuItem.qml
-    qml/state/StateRadioButton.qml
-    qml/state/StateCheckBox.qml
     qml/component/basic/Ripple.qml
     qml/component/basic/RippleShape.qml
     qml/component/basic/RippleSkia.qml
@@ -446,7 +477,6 @@ set(QML_FILES
     qml/component/ListBusyFooter.qml
     qml/component/Changelog.qml
     qml/component/ChangelogDialog.qml
-    qml/component/helper/ItemHolder.qml
     qml/container/PageContainer.qml)
 
 set(RESOURCES assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2)

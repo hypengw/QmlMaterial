@@ -2,6 +2,7 @@
 
 #include <QtQml/QQmlEngine>
 #include <QtGui/QColor>
+#include <QProperty>
 
 #include "qml_material/core.hpp"
 #include "qml_material/core/enum.hpp"
@@ -16,7 +17,7 @@ namespace qml_material
  * Manages color schemes and theme modes for Material Design implementation.
  * @image html color-role.png
  */
-class MdColorMgr : public QObject {
+class QML_MATERIAL_API MdColorMgr : public QObject {
     Q_OBJECT
     QML_ELEMENT
 public:
@@ -60,7 +61,7 @@ public:
 
 #define X(_n_)                                           \
     Q_PROPERTY(QColor _n_ READ _n_ NOTIFY schemeChanged) \
-    QColor _n_() const { return m_scheme._n_; }
+    QColor _n_() const { return m_scheme.value()._n_; }
 
     /** @brief The primary color of the theme */
     X(primary)
@@ -170,15 +171,17 @@ public:
     X(surface_container_highest)
 #undef X
 
-#define X(_n_) \
-    Q_INVOKABLE QColor get_##_n_(double tone) const { return m_scheme._n_##_palette.get(tone); }
+#define X(_n_)                                           \
+    Q_INVOKABLE QColor get_##_n_(double tone) const {    \
+        return m_scheme.value()._n_##_palette.get(tone); \
+    }
 
     X(neutral)
 #undef X
 
 #define X(_n_, _tone_)                                                         \
     Q_PROPERTY(QColor _n_##_##_tone_ READ _n_##_##_tone_ NOTIFY schemeChanged) \
-    QColor _n_##_##_tone_() const { return m_scheme._n_##_palette.get(_tone_); }
+    QColor _n_##_##_tone_() const { return m_scheme.value()._n_##_palette.get(_tone_); }
 
     X(neutral, 10)
     X(neutral, 20)
@@ -223,13 +226,13 @@ public:
 private:
     void genSchemeImpl(Enum::ThemeMode);
 
-    QColor            m_accent_color;
-    Enum::ThemeMode   m_mode;
-    Enum::ThemeMode   m_last_mode;
-    Enum::PaletteType m_scheme_type;
-    MdScheme          m_scheme;
-    bool              m_use_sys_color_scheme;
-    bool              m_use_sys_accent_color;
+    QColor              m_accent_color;
+    Enum::ThemeMode     m_mode;
+    Enum::ThemeMode     m_last_mode;
+    Enum::PaletteType   m_scheme_type;
+    QProperty<MdScheme> m_scheme;
+    bool                m_use_sys_color_scheme;
+    bool                m_use_sys_accent_color;
 };
 
 void sysNotifyInit(MdColorMgr&);

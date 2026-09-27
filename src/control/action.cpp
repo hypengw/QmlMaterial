@@ -1,4 +1,5 @@
 #include "qml_material/control/action.hpp"
+#include <QProperty>
 #include "qml_material/control/action_group.hpp"
 
 namespace qml_material
@@ -7,46 +8,14 @@ Action::Action(QObject* parent): QObject(parent), m_icon(new ActionIcon(this)) {
 Action::~Action() {
     if (m_group) m_group->removeAction(this);
 }
-void Action::setText(const QString& value) {
-    if (m_text == value) return;
-    m_text = value;
-    Q_EMIT textChanged();
-}
-void Action::setVisible(bool value) {
-    if (m_visible == value) return;
-    m_visible = value;
-    Q_EMIT visibleChanged();
-}
-void Action::setDisplayHint(int value) {
-    if (m_displayHint == value) return;
-    m_displayHint = value;
-    Q_EMIT displayHintChanged();
-}
-void Action::setBusy(int value) {
-    if (m_busy == value) return;
-    m_busy = value;
-    Q_EMIT busyChanged();
-}
-void Action::setProgress(qreal value) {
-    if (m_progress == value) return;
-    m_progress = value;
-    Q_EMIT progressChanged();
-}
-void Action::setCloseMenu(bool value) {
-    if (m_closeMenu == value) return;
-    m_closeMenu = value;
-    Q_EMIT closeMenuChanged();
-}
-void Action::setSeparator(bool value) {
-    if (m_separator == value) return;
-    m_separator = value;
-    Q_EMIT separatorChanged();
-}
-void Action::setTooltip(const QString& value) {
-    if (m_tooltip == value) return;
-    m_tooltip = value;
-    Q_EMIT tooltipChanged();
-}
+void Action::setText(const QString& value) { m_text = value; }
+void Action::setVisible(bool value) { m_visible = value; }
+void Action::setDisplayHint(int value) { m_displayHint = value; }
+void Action::setBusy(int value) { m_busy = value; }
+void Action::setProgress(qreal value) { m_progress = value; }
+void Action::setCloseMenu(bool value) { m_closeMenu = value; }
+void Action::setSeparator(bool value) { m_separator = value; }
+void Action::setTooltip(const QString& value) { m_tooltip = value; }
 void Action::setDisplayComponent(QQmlComponent* value) {
     if (m_displayComponent == value) return;
     disconnect(m_displayComponentConnection);
@@ -101,14 +70,18 @@ void Action::setEnabled(bool value) {
     if (old != isEnabled()) Q_EMIT enabledChanged();
 }
 void Action::setCheckable(bool value) {
-    if (m_checkable == value) return;
+    const QScopedPropertyUpdateGroup group;
     m_checkable = value;
-    Q_EMIT checkableChanged();
 }
 void Action::setChecked(bool value) {
-    if (m_checked == value) return;
+    const QScopedPropertyUpdateGroup group;
     m_checked = value;
-    Q_EMIT checkedChanged();
+}
+void Action::checkedChange() {
+    const QScopedPropertyUpdateGroup group;
+    const QPointer<Action>           guard(this);
+    if (m_group) m_group->update(this);
+    if (guard) Q_EMIT checkedChanged();
 }
 ActionGroup* Action::group() const { return m_group; }
 void         Action::setGroup(ActionGroup* value) {

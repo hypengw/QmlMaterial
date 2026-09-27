@@ -27,15 +27,17 @@ QQmlListProperty<AbstractButton> ButtonGroup::buttons() {
              } };
 }
 void ButtonGroup::clear() {
-    QPointer<ButtonGroup> guard(this);
-    const auto            items = m_selection.snapshot();
+    const QScopedPropertyUpdateGroup group;
+    QPointer<ButtonGroup>            guard(this);
+    const auto                       items = m_selection.snapshot();
     for (const auto& item : items) {
         if (item) removeButton(item);
         if (! guard) return;
     }
 }
 void ButtonGroup::update(AbstractButton* preferred) {
-    QPointer<ButtonGroup> guard(this);
+    const QScopedPropertyUpdateGroup group;
+    QPointer<ButtonGroup>            guard(this);
     m_selection.normalize(this, preferred);
     if (! guard) return;
     if (m_notified_selected != m_selection.selected) {
@@ -50,6 +52,7 @@ void ButtonGroup::update(AbstractButton* preferred) {
     }
 }
 void ButtonGroup::setCheckedButton(AbstractButton* member) {
+    const QScopedPropertyUpdateGroup group;
     if (! isExclusive() || (member && ! m_selection.members.contains(member))) return;
     QPointer<ButtonGroup> guard(this);
     if (member) {
@@ -66,6 +69,7 @@ void ButtonGroup::setCheckedButton(AbstractButton* member) {
     }
 }
 void ButtonGroup::setExclusive(bool value) {
+    const QScopedPropertyUpdateGroup group;
     if (isExclusive() == value) return;
     m_selection.exclusive = value;
     QPointer<ButtonGroup> guard(this);
@@ -73,6 +77,7 @@ void ButtonGroup::setExclusive(bool value) {
     if (guard) Q_EMIT exclusiveChanged();
 }
 void ButtonGroup::addButton(AbstractButton* member) {
+    const QScopedPropertyUpdateGroup group;
     if (! member || m_destroying || m_selection.members.contains(member)) return;
     QPointer<ButtonGroup>    guard(this);
     QPointer<AbstractButton> item(member);
@@ -82,9 +87,6 @@ void ButtonGroup::addButton(AbstractButton* member) {
     m_selection.members.append(item);
     item->m_group     = this;
     auto& connections = m_connections[item];
-    connections.append(connect(item, &AbstractButton::checkedChanged, this, [this, member]() {
-        update(member);
-    }));
     connections.append(connect(item, &AbstractButton::clicked, this, [this, member]() {
         Q_EMIT clicked(member);
     }));
@@ -96,6 +98,7 @@ void ButtonGroup::addButton(AbstractButton* member) {
     Q_EMIT buttonsChanged();
 }
 void ButtonGroup::removeButton(AbstractButton* member) {
+    const QScopedPropertyUpdateGroup group;
     if (! member || ! m_selection.members.removeOne(member)) return;
     QPointer<ButtonGroup>    guard(this);
     QPointer<AbstractButton> item(member);
@@ -111,6 +114,7 @@ void ButtonGroup::removeButton(AbstractButton* member) {
     Q_EMIT buttonsChanged();
 }
 void ButtonGroup::setCheckState(Qt::CheckState state) {
+    const QScopedPropertyUpdateGroup group;
     if (state == Qt::PartiallyChecked || (isExclusive() && state != Qt::Unchecked)) return;
     QPointer<ButtonGroup> guard(this);
     const auto            items = m_selection.snapshot();

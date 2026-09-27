@@ -7,6 +7,7 @@ Item {
     height: 600
     MD.Action {
         id: shared
+        checked: true
         icon.name: "home"
     }
     MD.Button {
@@ -18,7 +19,6 @@ Item {
         id: iconButton
         action: shared
         mdState.size: MD.Enum.XL
-        checked: true
     }
     MD.StandardIconButton {
         id: standard

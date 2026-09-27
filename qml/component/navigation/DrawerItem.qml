@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Qcm.Material as MD
 
-MD.ItemDelegateBase {
+MD.ItemDelegate {
     id: control
 
     property alias mdState: item_state
@@ -31,6 +31,7 @@ MD.ItemDelegateBase {
     property alias trailing: item_holder_trailing.contentItem
 
     contentItem: RowLayout {
+        opacity: control.mdState.contentOpacity
         spacing: 12
 
         MD.IconView {
@@ -53,6 +54,7 @@ MD.ItemDelegateBase {
     }
 
     background: MD.ElevationRectangle {
+        opacity: control.mdState.backgroundOpacity
         implicitWidth: 336
         implicitHeight: 56
 

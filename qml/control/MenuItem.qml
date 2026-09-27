@@ -83,6 +83,7 @@ MD.ButtonBase {
 
     contentItem: Lite.Row {
         id: content_layout
+        opacity: control.mdState.contentOpacity
         alignment: Qt.AlignVCenter
         spacing: control.spacing
 

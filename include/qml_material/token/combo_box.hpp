@@ -8,7 +8,7 @@ namespace qml_material::token
 {
 
 struct ComboBoxSizeItem {
-    Q_GADGET
+    Q_GADGET_EXPORT(QML_MATERIAL_API)
     QML_ELEMENT
     QML_VALUE_TYPE(combo_box_size_item)
 
@@ -24,10 +24,11 @@ public:
     qreal         indicator_size;
     qreal         indicator_spacing;
     TypeScaleItem type_scale;
+    bool          operator==(const ComboBoxSizeItem&) const = default;
 };
 
 struct ComboBoxSize {
-    Q_GADGET
+    Q_GADGET_EXPORT(QML_MATERIAL_API)
     QML_ELEMENT
     QML_VALUE_TYPE(combo_box_size)
 
@@ -38,6 +39,7 @@ struct ComboBoxSize {
     Q_PROPERTY(qml_material::token::ComboBoxSizeItem xlarge MEMBER xlarge CONSTANT FINAL)
 
 public:
+    bool             operator==(const ComboBoxSize&) const = default;
     ComboBoxSizeItem xsmall {
         32.0, 8.0, 18.0, 0.0, { 12, 16, QFont::Normal, QFont::Normal, 0.4 },
     };

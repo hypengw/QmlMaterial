@@ -54,6 +54,7 @@ AbstractButton::AbstractButton(QQuickItem* parent)
     : Control(parent),
       m_icon(new IconSpec(this)),
       m_hold_interval(QGuiApplication::styleHints()->mousePressAndHoldInterval()) {
+    resetDown();
     setFocusPolicy(Qt::StrongFocus);
     setAcceptedMouseButtons(Qt::LeftButton);
     setAcceptTouchEvents(true);
@@ -114,10 +115,10 @@ void    AbstractButton::setAction(Action* value) {
             if (! m_explicit_text) Q_EMIT textChanged();
         }));
         m_action_connections.append(connect(value, &Action::checkedChanged, this, [this]() {
-            setChecked(m_action->isChecked());
+            if (isChecked() != m_action->isChecked()) setChecked(m_action->isChecked());
         }));
         m_action_connections.append(connect(value, &Action::checkableChanged, this, [this]() {
-            setCheckable(m_action->isCheckable());
+            if (isCheckable() != m_action->isCheckable()) setCheckable(m_action->isCheckable());
         }));
         m_action_connections.append(connect(value, &Action::enabledChanged, this, [this]() {
             setEnabled(m_action->isEnabled());
@@ -195,33 +196,35 @@ void AbstractButton::setDisplay(Display value) {
     m_display = value;
     Q_EMIT displayChanged();
 }
-void AbstractButton::setDown(bool value) {
-    const bool previous = isDown();
-    m_down              = value;
-    if (previous != isDown()) Q_EMIT downChanged();
-}
+void AbstractButton::setDown(bool value) { m_down = value; }
 void AbstractButton::resetDown() {
-    const bool previous = isDown();
-    m_down.reset();
-    if (previous != isDown()) Q_EMIT downChanged();
+    m_down.setBinding([this] {
+        return isPressed();
+    });
 }
 void AbstractButton::setChecked(bool value) {
-    if (m_checked == value) return;
-    QPointer<AbstractButton> guard(this);
+    const QScopedPropertyUpdateGroup group;
     m_checked = value;
-    if (m_action) m_action->setChecked(value);
+}
+void AbstractButton::checkedChange() {
+    const QScopedPropertyUpdateGroup group;
+    QPointer<AbstractButton>         guard(this);
+    if (m_action && m_action->isChecked() != isChecked()) m_action->setChecked(isChecked());
     if (! guard) return;
     enforceAutoExclusive();
     if (! guard) return;
-    Q_EMIT checkedChanged();
+    if (m_group) m_group->update(this);
+    if (guard) Q_EMIT checkedChanged();
 }
 void AbstractButton::setCheckable(bool value) {
-    if (m_checkable == value) return;
+    const QScopedPropertyUpdateGroup group;
     m_checkable = value;
-    QPointer<AbstractButton> guard(this);
-    if (m_action) m_action->setCheckable(value);
-    if (! guard) return;
-    Q_EMIT checkableChanged();
+}
+void AbstractButton::checkableChange() {
+    const QScopedPropertyUpdateGroup group;
+    QPointer<AbstractButton>         guard(this);
+    if (m_action && m_action->isCheckable() != isCheckable()) m_action->setCheckable(isCheckable());
+    if (guard) Q_EMIT checkableChanged();
 }
 void AbstractButton::setAutoRepeat(bool value) {
     if (m_auto_repeat == value) return;
@@ -252,15 +255,7 @@ bool AbstractButton::canActivate() const {
     return isEnabled() && isVisible() && (! m_action || m_action->canTrigger());
 }
 
-void AbstractButton::changePressed(bool value) {
-    if (m_pressed == value) return;
-    const bool               previousDown = isDown();
-    const auto               sequence     = m_sequence;
-    QPointer<AbstractButton> guard(this);
-    m_pressed = value;
-    Q_EMIT pressedChanged();
-    if (guard && sequence == m_sequence && previousDown != isDown()) Q_EMIT downChanged();
-}
+void AbstractButton::changePressed(bool value) { m_pressed = value; }
 
 void AbstractButton::changePoint(const QPointF& point) {
     const auto               previous = m_point;

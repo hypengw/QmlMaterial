@@ -2,6 +2,7 @@
 
 #include <QtCore/QObject>
 #include <QtQml/qqmlregistration.h>
+#include "qml_material/export.hpp"
 
 namespace qml_material::token
 {
@@ -11,7 +12,7 @@ namespace qml_material::token
  *
  */
 struct Duration {
-    Q_GADGET
+    Q_GADGET_EXPORT(QML_MATERIAL_API)
     QML_ANONYMOUS
     /// Extra short duration (50ms)
     Q_PROPERTY(qreal short1 MEMBER short1 CONSTANT FINAL)
@@ -47,6 +48,7 @@ struct Duration {
     Q_PROPERTY(qreal extra_long4 MEMBER extra_long4 CONSTANT FINAL)
 
 public:
+    bool  operator==(const Duration&) const = default;
     qreal short1 { 50 };
     qreal short2 { 100 };
     qreal short3 { 150 };

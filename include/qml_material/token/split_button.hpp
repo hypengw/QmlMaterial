@@ -2,6 +2,7 @@
 
 #include <QtQml/QQmlEngine>
 #include "qml_material/core.hpp"
+#include "qml_material/export.hpp"
 
 namespace qml_material::token
 {
@@ -10,7 +11,7 @@ namespace qml_material::token
  * @brief Split button size tokens for a specific size class
  */
 struct SplitButtonSizeItem {
-    Q_GADGET
+    Q_GADGET_EXPORT(QML_MATERIAL_API)
     QML_ELEMENT
     QML_VALUE_TYPE(split_button_size_item)
 
@@ -45,6 +46,7 @@ struct SplitButtonSizeItem {
                    trailing_button_inner_corner_selected_size CONSTANT FINAL)
 
 public:
+    bool  operator==(const SplitButtonSizeItem&) const = default;
     qreal container_height;
     qreal between_space;
     qreal inner_corner_size;
@@ -63,7 +65,7 @@ public:
  * @brief Collection of split button size tokens for different size classes
  */
 struct SplitButtonSize {
-    Q_GADGET
+    Q_GADGET_EXPORT(QML_MATERIAL_API)
     QML_ELEMENT
     QML_VALUE_TYPE(split_button_size)
 
@@ -79,6 +81,7 @@ struct SplitButtonSize {
     Q_PROPERTY(qml_material::token::SplitButtonSizeItem xlarge MEMBER xlarge CONSTANT FINAL)
 
 public:
+    bool operator==(const SplitButtonSize&) const = default;
     // md.comp.split-button.xsmall.* tokens
     SplitButtonSizeItem xsmall {
         32.0, // container.height

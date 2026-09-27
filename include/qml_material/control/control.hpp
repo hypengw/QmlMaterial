@@ -1,4 +1,5 @@
 #pragma once
+#include <QProperty>
 
 #include <QFont>
 #include <QLocale>
@@ -56,8 +57,8 @@ class QML_MATERIAL_API Control : public QQuickItem, public ControlEnvironment {
     Q_PROPERTY(qreal bottomInset READ bottomInset WRITE setBottomInset RESET resetBottomInset NOTIFY
                    bottomInsetChanged FINAL)
 
-    Q_PROPERTY(
-        QQuickItem* background READ background WRITE setBackground NOTIFY backgroundChanged FINAL)
+    Q_PROPERTY(QQuickItem* background READ background WRITE setBackground NOTIFY backgroundChanged
+                   BINDABLE bindableBackground FINAL)
     Q_PROPERTY(QQuickItem* contentItem READ contentItem WRITE setContentItem NOTIFY
                    contentItemChanged FINAL)
     Q_PROPERTY(LayoutFlags backgroundLayout READ backgroundLayout WRITE setBackgroundLayout RESET
@@ -86,10 +87,11 @@ class QML_MATERIAL_API Control : public QQuickItem, public ControlEnvironment {
                    resetBaselineOffset NOTIFY baselineOffsetChanged FINAL)
     Q_PROPERTY(bool hoverEnabled READ hoverEnabled WRITE setHoverEnabled RESET resetHoverEnabled
                    NOTIFY hoverEnabledChanged FINAL)
-    Q_PROPERTY(bool hovered READ hovered NOTIFY hoveredChanged FINAL)
+    Q_PROPERTY(bool hovered READ hovered NOTIFY hoveredChanged BINDABLE bindableHovered FINAL)
     Q_PROPERTY(Qt::FocusReason focusReason READ focusReason WRITE setFocusReason NOTIFY
                    focusReasonChanged FINAL)
-    Q_PROPERTY(bool visualFocus READ visualFocus NOTIFY visualFocusChanged FINAL)
+    Q_PROPERTY(bool visualFocus READ visualFocus NOTIFY visualFocusChanged BINDABLE
+                   bindableVisualFocus FINAL)
 
 public:
     enum LayoutFlag
@@ -182,8 +184,9 @@ public:
     void  setBottomInset(qreal value);
     void  resetBottomInset();
 
-    QQuickItem* background() const;
-    void        setBackground(QQuickItem* item);
+    QQuickItem*            background() const;
+    QBindable<QQuickItem*> bindableBackground() { return QBindable<QQuickItem*>(&m_background); }
+    void                   setBackground(QQuickItem* item);
 
     QQuickItem* contentItem() const;
     void        setContentItem(QQuickItem* item);
@@ -220,11 +223,13 @@ public:
     void                setHoverEnabled(bool value);
     void                resetHoverEnabled();
 
-    bool hovered() const;
+    bool            hovered() const;
+    QBindable<bool> bindableHovered() const { return QBindable<bool>(&m_hovered); }
 
     Qt::FocusReason focusReason() const;
     void            setFocusReason(Qt::FocusReason value);
     bool            visualFocus() const;
+    QBindable<bool> bindableVisualFocus() const { return QBindable<bool>(&m_visual_focus); }
 
     Q_SIGNAL void fontChanged();
     Q_SIGNAL void localeChanged();
@@ -309,6 +314,7 @@ private:
     void         layoutBackground();
     void         orderManagedItems();
     void         disconnectBackground();
+    void         backgroundChange();
     void         disconnectContentItem();
 
     qreal                m_padding { 0 };
@@ -324,7 +330,8 @@ private:
     qreal                m_right_inset { 0 };
     qreal                m_bottom_inset { 0 };
 
-    QPointer<QQuickItem>           m_background;
+    Q_OBJECT_BINDABLE_PROPERTY(Control, QQuickItem*, m_background, &Control::backgroundChange)
+    QPointer<QQuickItem>           m_managed_background;
     QPointer<QQuickItem>           m_content_item;
     QList<QMetaObject::Connection> m_control_connections;
     QList<QMetaObject::Connection> m_background_connections;
@@ -350,10 +357,11 @@ private:
     bool                m_locale_explicit { false };
     bool                m_layout_direction_explicit { false };
     bool                m_hover_enabled { false };
-    bool                m_hovered { false };
-    bool                m_baseline_explicit { false };
-    bool                m_visual_focus { false };
-    Qt::FocusReason     m_focus_reason { Qt::OtherFocusReason };
+    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(Control, bool, m_hovered, false, &Control::hoveredChanged)
+    bool m_baseline_explicit { false };
+    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(Control, bool, m_visual_focus, false,
+                                         &Control::visualFocusChanged)
+    Qt::FocusReason m_focus_reason { Qt::OtherFocusReason };
 };
 
 } // namespace qml_material

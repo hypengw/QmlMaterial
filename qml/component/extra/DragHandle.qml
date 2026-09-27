@@ -15,6 +15,8 @@ Rectangle {
     property alias mdState: m_state
 
     color: mdState.backgroundColor
+    implicitWidth: orientation === Qt.Horizontal ? 24 : controlWidth
+    implicitHeight: orientation === Qt.Horizontal ? controlHeight : 24
 
     containmentMask: Item {
         x: (root.width) / 2 - root.mdState.handlePressedWidth / 2
@@ -33,23 +35,12 @@ Rectangle {
     }
     onInteractiveChanged: MD.Util.setCursor(root, interactive && hovered ? Qt.OpenHandCursor : Qt.ArrowCursor)
 
-    Binding {
-        when: root.orientation === Qt.Horizontal
-        root.implicitWidth: 24
-        root.implicitHeight: root.controlHeight
-        m_bar.width: root.mdState.handleWidth
-        m_bar.height: root.mdState.handleHeight
-    }
-    Binding {
-        when: root.orientation === Qt.Vertical
-        root.implicitWidth: root.controlWidth
-        root.implicitHeight: 24
-        m_bar.width: root.mdState.handleHeight
-        m_bar.height: root.mdState.handleWidth
-    }
-
     Rectangle {
         id: m_bar
+        property int handleWidth: root.mdState.handleWidth
+        property int handleHeight: root.mdState.handleHeight
+        width: root.orientation === Qt.Horizontal ? handleWidth : handleHeight
+        height: root.orientation === Qt.Horizontal ? handleHeight : handleWidth
         color: root.mdState.textColor
         radius: root.mdState.radius
         anchors.centerIn: parent
@@ -60,12 +51,6 @@ Rectangle {
             color: root.mdState.stateLayerColor
             opacity: root.mdState.stateLayerOpacity
         }
-    }
-
-    MD.StateDragHandle {
-        id: m_state
-        item: root
-
         Behavior on handleHeight {
             NumberAnimation {
                 duration: MD.Token.duration.short2
@@ -78,5 +63,13 @@ Rectangle {
                 easing: MD.Token.easing.linear
             }
         }
+    }
+
+    MD.StateDragHandle {
+        id: m_state
+        item: root
+        pressed: root.pressed
+        hovered: root.hovered
+        visualFocus: root.visualFocus
     }
 }

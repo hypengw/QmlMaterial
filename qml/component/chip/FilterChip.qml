@@ -15,8 +15,7 @@ MD.ButtonBase {
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
     flat: true
-    checkable: !action
-    checked: action
+    checkable: true
     leftInset: 0
     rightInset: 0
     topInset: 0

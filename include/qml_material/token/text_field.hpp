@@ -8,7 +8,7 @@ namespace qml_material::token
 {
 
 struct TextFieldSizeItem {
-    Q_GADGET
+    Q_GADGET_EXPORT(QML_MATERIAL_API)
     QML_ELEMENT
     QML_VALUE_TYPE(text_field_size_item)
 
@@ -26,10 +26,11 @@ public:
     qreal         icon_size;
     qreal         icon_spacing;
     TypeScaleItem type_scale;
+    bool          operator==(const TextFieldSizeItem&) const = default;
 };
 
 struct TextFieldSize {
-    Q_GADGET
+    Q_GADGET_EXPORT(QML_MATERIAL_API)
     QML_ELEMENT
     QML_VALUE_TYPE(text_field_size)
 
@@ -40,6 +41,7 @@ struct TextFieldSize {
     Q_PROPERTY(qml_material::token::TextFieldSizeItem xlarge MEMBER xlarge CONSTANT FINAL)
 
 public:
+    bool              operator==(const TextFieldSize&) const = default;
     TextFieldSizeItem xsmall {
         40.0, 12.0, 8.0, 18.0, 8.0, { 12, 16, QFont::Normal, QFont::Normal, 0.4 },
     };

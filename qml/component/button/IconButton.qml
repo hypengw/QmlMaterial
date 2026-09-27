@@ -9,6 +9,11 @@ MD.ButtonBase {
         item: control
     }
 
+    readonly property MD.ButtonMotion _motion: MD.ButtonMotion {
+        source: control.mdState
+    }
+    Component.onCompleted: _motion.enabled = true
+
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
@@ -23,13 +28,13 @@ MD.ButtonBase {
 
     icon.width: mdState.iconSize
     icon.height: mdState.iconSize
-    icon.color: control.mdState.textColor
+    icon.color: control._motion.textColor
     icon.fill: control.checked
 
     contentItem: Item {
         implicitWidth: control.icon.width
         implicitHeight: control.icon.height
-        opacity: control.mdState.contentOpacity
+        opacity: control._motion.contentOpacity
 
         MD.IconView {
             anchors.centerIn: parent
@@ -41,9 +46,9 @@ MD.ButtonBase {
         implicitWidth: control.mdState.containerWidth
         implicitHeight: control.mdState.containerHeight
 
-        corners: control.mdState.corners
-        color: control.mdState.backgroundColor
-        opacity: control.mdState.backgroundOpacity
+        corners: control._motion.corners
+        color: control._motion.backgroundColor
+        opacity: control._motion.backgroundOpacity
 
         border.width: mdState.type == MD.Enum.IBtOutlined ? 1 : 0
         border.color: control.mdState.ctx.color.outline

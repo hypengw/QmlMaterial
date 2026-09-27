@@ -55,6 +55,12 @@ MD.ButtonBase {
 
     background: MD.ElevationRectangle {
         corners: control.mdState.corners
+        Behavior on corners {
+            PropertyAnimation {
+                duration: MD.Token.duration.short2
+                easing: MD.Token.easing.linear
+            }
+        }
         color: control.mdState.backgroundColor
         elevation: control.mdState.elevation
         opacity: control.mdState.backgroundOpacity

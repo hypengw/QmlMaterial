@@ -7,6 +7,7 @@
 #include <QtQuick/QQuickWindow>
 
 #include "qml_material/core.hpp"
+#include "qml_material/export.hpp"
 #include "qml_material/token/type_scale.hpp"
 #include "qml_material/token/duration.hpp"
 #include "qml_material/token/split_button.hpp"
@@ -103,7 +104,7 @@ public:
  * depth and hierarchy through shadow effects.
  */
 struct Elevation {
-    Q_GADGET
+    Q_GADGET_EXPORT(QML_MATERIAL_API)
     QML_ANONYMOUS
 
     /// No elevation (0dp)
@@ -119,12 +120,13 @@ struct Elevation {
     /// Maximum elevation for modal surfaces (12dp)
     Q_PROPERTY(qint32 level5 MEMBER level5 CONSTANT FINAL)
 public:
-    i32 level0 { 0 };
-    i32 level1 { 1 };
-    i32 level2 { 3 };
-    i32 level3 { 6 };
-    i32 level4 { 8 };
-    i32 level5 { 12 };
+    bool operator==(const Elevation&) const = default;
+    i32  level0 { 0 };
+    i32  level1 { 1 };
+    i32  level2 { 3 };
+    i32  level3 { 6 };
+    i32  level4 { 8 };
+    i32  level5 { 12 };
 };
 
 /**
@@ -132,7 +134,7 @@ public:
  *
  */
 struct Easing {
-    Q_GADGET
+    Q_GADGET_EXPORT(QML_MATERIAL_API)
     QML_ANONYMOUS
     /// Animation curve for emphasized
     Q_PROPERTY(QEasingCurve emphasized READ emphasized CONSTANT FINAL)
@@ -156,6 +158,7 @@ struct Easing {
     Q_PROPERTY(QEasingCurve linear READ linear CONSTANT FINAL)
 
 public:
+    bool operator==(const Easing&) const = default;
     auto emphasized() const noexcept -> QEasingCurve { return anim::emphasized(); }
     auto emphasized_accelerate() const noexcept -> QEasingCurve {
         return anim::emphasized_accelerate();
@@ -201,13 +204,14 @@ struct ShapeCorner {
     Q_PROPERTY(qint32 full MEMBER full CONSTANT FINAL)
 public:
     /// dp
-    i32 none { 0 };
-    i32 extra_small { 4 };
-    i32 small { 8 };
-    i32 medium { 12 };
-    i32 large { 16 };
-    i32 extra_large { 28 };
-    i32 full { 100 };
+    i32  none { 0 };
+    i32  extra_small { 4 };
+    i32  small { 8 };
+    i32  medium { 12 };
+    i32  large { 16 };
+    i32  extra_large { 28 };
+    i32  full { 100 };
+    bool operator==(const ShapeCorner&) const = default;
 };
 
 /**
@@ -221,6 +225,7 @@ struct Shape {
     Q_PROPERTY(qml_material::token::ShapeCorner corner MEMBER corner CONSTANT FINAL)
 public:
     ShapeCorner corner;
+    bool        operator==(const Shape&) const = default;
 };
 
 /**
@@ -235,6 +240,7 @@ struct StateItem {
     /// Opacity value for the state layer when element is in this state
     Q_PROPERTY(double state_layer_opacity MEMBER state_layer_opacity CONSTANT FINAL)
 public:
+    bool   operator==(const StateItem&) const = default;
     double state_layer_opacity;
 };
 
@@ -254,6 +260,7 @@ struct FocusRing {
     Q_PROPERTY(qreal inner_stroke_inset MEMBER inner_stroke_inset CONSTANT FINAL)
     Q_PROPERTY(qreal outer_offset MEMBER outer_offset CONSTANT FINAL)
 public:
+    bool  operator==(const FocusRing&) const = default;
     qreal outer_stroke_width { 2 };
     qreal inner_stroke_width { 3 };
     qreal inner_stroke_inset { 1 };
@@ -267,7 +274,7 @@ public:
  * like hover, pressed, and focus.
  */
 struct State {
-    Q_GADGET
+    Q_GADGET_EXPORT(QML_MATERIAL_API)
     QML_ANONYMOUS
     /// State appearance when element is hovered
     Q_PROPERTY(qml_material::token::StateItem hover MEMBER hover CONSTANT FINAL)
@@ -287,6 +294,7 @@ struct State {
     Q_PROPERTY(double disabled_container MEMBER disabled_container CONSTANT FINAL)
 
 public:
+    bool      operator==(const State&) const = default;
     StateItem hover { 0.08 };
     StateItem pressed { 0.1 };
     StateItem focus { 0.1 };

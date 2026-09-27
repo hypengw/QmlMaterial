@@ -23,7 +23,7 @@ class QML_MATERIAL_API TextField : public QQuickTextInput, public ControlEnviron
                    NOTIFY placeholderTextColorChanged FINAL)
     Q_PROPERTY(Qt::FocusReason focusReason READ focusReason WRITE setFocusReason NOTIFY
                    focusReasonChanged FINAL)
-    Q_PROPERTY(bool hovered READ hovered NOTIFY hoveredChanged FINAL)
+    Q_PROPERTY(bool hovered READ hovered NOTIFY hoveredChanged BINDABLE bindableHovered FINAL)
     Q_PROPERTY(bool hoverEnabled READ hoverEnabled WRITE setHoverEnabled RESET resetHoverEnabled
                    NOTIFY hoverEnabledChanged FINAL)
     QML_NAMED_ELEMENT(TextFieldBase)
@@ -85,6 +85,7 @@ public:
     Qt::FocusReason     focusReason() const { return m_focus_reason; }
     void                setFocusReason(Qt::FocusReason);
     bool                hovered() const { return m_hovered; }
+    QBindable<bool>     bindableHovered() const { return QBindable<bool>(&m_hovered); }
     bool                hoverEnabled() const { return acceptHoverEvents(); }
     void                setHoverEnabled(bool);
     void                resetHoverEnabled();
@@ -116,17 +117,18 @@ protected:
     void     geometryChange(const QRectF&, const QRectF&) override;
 
 private:
-    void                         setHovered(bool);
-    void                         resolveHoverEnabled();
-    void                         updateHoverEnabled(bool);
-    void                         cancelPress();
-    void                         deliverPress();
-    void                         holdTimeout();
-    QString                      m_placeholder;
-    QColor                       m_placeholder_color;
-    Qt::FocusReason              m_focus_reason = Qt::OtherFocusReason;
-    std::optional<bool>          m_requested_hover;
-    bool                         m_hovered = false;
+    void                setHovered(bool);
+    void                resolveHoverEnabled();
+    void                updateHoverEnabled(bool);
+    void                cancelPress();
+    void                deliverPress();
+    void                holdTimeout();
+    QString             m_placeholder;
+    QColor              m_placeholder_color;
+    Qt::FocusReason     m_focus_reason = Qt::OtherFocusReason;
+    std::optional<bool> m_requested_hover;
+    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(TextField, bool, m_hovered, false,
+                                         &TextField::hoveredChanged)
     bool                         m_pressed = false;
     bool                         m_held    = false;
     QPointF                      m_press_pos;

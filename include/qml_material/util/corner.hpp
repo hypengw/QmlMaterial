@@ -5,8 +5,8 @@
 
 namespace qml_material
 {
-class CornersGroup {
-    Q_GADGET_EXPORT(QML_MATERIAL_API)
+class QML_MATERIAL_API CornersGroup {
+    Q_GADGET
     QML_VALUE_TYPE(corners)
     QML_CONSTRUCTIBLE_VALUE
 
@@ -16,8 +16,9 @@ class CornersGroup {
     Q_PROPERTY(qreal bottomRight READ bottomRight WRITE setBottomRight FINAL)
 
 public:
-    QML_MATERIAL_API Q_INVOKABLE CornersGroup() noexcept;
-    QML_MATERIAL_API ~CornersGroup();
+    bool        operator==(const CornersGroup&) const = default;
+    Q_INVOKABLE CornersGroup() noexcept;
+    ~CornersGroup();
 
     Q_INVOKABLE CornersGroup(qreal) noexcept;
     Q_INVOKABLE CornersGroup(qreal bottomRight, qreal topRight, qreal bottomLeft,
@@ -60,10 +61,10 @@ public:
     Q_INVOKABLE QVector4D toVector4D() const noexcept;
     Q_INVOKABLE bool      isUniform() const noexcept;
 
-    QML_MATERIAL_API operator QVector4D() const noexcept;
+    operator QVector4D() const noexcept;
 
-    QML_MATERIAL_API static auto interpolated(const CornersGroup& from, const CornersGroup& to,
-                                              qreal progress) -> QVariant;
+    static auto interpolated(const CornersGroup& from, const CornersGroup& to, qreal progress)
+        -> QVariant;
 
 private:
     qreal m_bottomRight;

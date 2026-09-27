@@ -79,7 +79,14 @@ MD.SliderBase {
     }
     readonly property real __dotStep: control.__dotCount > 1 ? 1.0 / (control.__dotCount - 1) : 0
 
-    readonly property real __trackGapSize: MD.Token.slider.thumb_track_gap + control.mdState.handleLineWidth / 2
+    property real __handleLineWidth: control.mdState.handleLineWidth
+    Behavior on __handleLineWidth {
+        NumberAnimation {
+            duration: MD.Token.duration.short2
+            easing: MD.Token.easing.linear
+        }
+    }
+    readonly property real __trackGapSize: MD.Token.slider.thumb_track_gap + control.__handleLineWidth / 2
 
     readonly property real __activeTrackThickness: {
         switch (control.sliderSize) {
@@ -175,7 +182,7 @@ MD.SliderBase {
         horizontal: control.horizontal
         handleWidth: control.mdState.handleWidth
         handleHeight: control.mdState.handleHeight
-        handleLineWidth: control.mdState.handleLineWidth
+        handleLineWidth: control.__handleLineWidth
     }
 
     background: Item {

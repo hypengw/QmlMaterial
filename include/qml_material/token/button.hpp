@@ -2,6 +2,7 @@
 
 #include <QtQml/QQmlEngine>
 #include "qml_material/core.hpp"
+#include "qml_material/export.hpp"
 
 namespace qml_material::token
 {
@@ -10,7 +11,7 @@ namespace qml_material::token
  * @brief Button size tokens for a specific size class
  */
 struct ButtonSizeItem {
-    Q_GADGET
+    Q_GADGET_EXPORT(QML_MATERIAL_API)
     QML_ELEMENT
     QML_VALUE_TYPE(button_size_item)
 
@@ -30,6 +31,7 @@ struct ButtonSizeItem {
     Q_PROPERTY(qreal spacing MEMBER spacing CONSTANT FINAL)
 
 public:
+    bool  operator==(const ButtonSizeItem&) const = default;
     qreal container_height;
     qreal corner_size;
     qreal pressed_corner_size;
@@ -43,7 +45,7 @@ public:
  * @brief Collection of button size tokens for different size classes
  */
 struct ButtonSize {
-    Q_GADGET
+    Q_GADGET_EXPORT(QML_MATERIAL_API)
     QML_ELEMENT
     QML_VALUE_TYPE(button_size)
 
@@ -54,6 +56,7 @@ struct ButtonSize {
     Q_PROPERTY(qml_material::token::ButtonSizeItem xlarge MEMBER xlarge CONSTANT FINAL)
 
 public:
+    bool           operator==(const ButtonSize&) const = default;
     ButtonSizeItem xsmall {
         32.0, // container_height
         12.0, // corner_size
@@ -109,7 +112,7 @@ public:
  * @brief Icon button size tokens for a specific size class
  */
 struct IconButtonSizeItem {
-    Q_GADGET
+    Q_GADGET_EXPORT(QML_MATERIAL_API)
     QML_ELEMENT
     QML_VALUE_TYPE(icon_button_size_item)
 
@@ -129,6 +132,7 @@ struct IconButtonSizeItem {
     Q_PROPERTY(qreal pressed_corner_size MEMBER pressed_corner_size CONSTANT FINAL)
 
 public:
+    bool  operator==(const IconButtonSizeItem&) const = default;
     qreal icon_size;
     qreal container_height;
     qreal default_width;
@@ -142,7 +146,7 @@ public:
  * @brief Collection of icon button size tokens for different size classes
  */
 struct IconButtonSize {
-    Q_GADGET
+    Q_GADGET_EXPORT(QML_MATERIAL_API)
     QML_ELEMENT
     QML_VALUE_TYPE(icon_button_size)
 
@@ -153,6 +157,7 @@ struct IconButtonSize {
     Q_PROPERTY(qml_material::token::IconButtonSizeItem xlarge MEMBER xlarge CONSTANT FINAL)
 
 public:
+    bool               operator==(const IconButtonSize&) const = default;
     IconButtonSizeItem xsmall {
         20.0, // icon_size
         32.0, // container_height

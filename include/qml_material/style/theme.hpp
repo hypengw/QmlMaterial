@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <QProperty>
 #include <optional>
 
 #include <QtCore/QObject>
@@ -98,10 +99,39 @@ public:
         AttachProp(SigFunc s): value(), explicited(false), sig_func(s) {}
     };
 
-    ATTACH_PROPERTY(QColor, textColor)
-    ATTACH_PROPERTY(QColor, backgroundColor)
+    Q_PROPERTY(QColor textColor READ textColor WRITE set_textColor RESET reset_textColor NOTIFY
+                   textColorChanged BINDABLE bindableTextColor FINAL)
+    Q_PROPERTY(QColor backgroundColor READ backgroundColor WRITE set_backgroundColor RESET
+                   reset_backgroundColor NOTIFY backgroundColorChanged BINDABLE
+                       bindableBackgroundColor FINAL)
+    QColor            textColor() const;
+    void              set_textColor(QColor);
+    void              reset_textColor();
+    QBindable<QColor> bindableTextColor() { return QBindable<QColor>(&m_textColor); }
+    QColor            backgroundColor() const;
+    void              set_backgroundColor(QColor);
+    void              reset_backgroundColor();
+    QBindable<QColor> bindableBackgroundColor() { return QBindable<QColor>(&m_backgroundColor); }
+    Q_SIGNAL void     textColorChanged();
+    Q_SIGNAL void     backgroundColorChanged();
     ATTACH_PROPERTY(int, elevation)
-    ATTACH_PROPERTY(qml_material::MdColorMgr*, color)
+public:
+    Q_PROPERTY(qml_material::MdColorMgr* color READ color WRITE set_color RESET reset_color NOTIFY
+                   colorChanged BINDABLE bindableColor FINAL)
+    MdColorMgr*            color() const;
+    void                   set_color(MdColorMgr*);
+    void                   reset_color();
+    QBindable<MdColorMgr*> bindableColor() { return QBindable<MdColorMgr*>(&m_color); }
+    Q_SIGNAL void          colorChanged();
+
+private:
+    void                    colorChange();
+    QProperty<Theme*>       m_colorParent { nullptr };
+    QMetaObject::Connection m_colorParentDestroyed;
+    QMetaObject::Connection m_colorDestroyed;
+    Q_OBJECT_BINDABLE_PROPERTY(Theme, MdColorMgr*, m_color, &Theme::colorChange)
+    Q_OBJECT_BINDABLE_PROPERTY(Theme, QColor, m_textColor, &Theme::textColorChanged)
+    Q_OBJECT_BINDABLE_PROPERTY(Theme, QColor, m_backgroundColor, &Theme::backgroundColorChanged)
     ATTACH_PROPERTY(qml_material::ThemeSize*, size)
     ATTACH_PROPERTY(qml_material::PageContext*, page)
 

@@ -2,7 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Qcm.Material as MD
 
-MD.ItemDelegateBase {
+MD.ItemDelegate {
     id: control
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)

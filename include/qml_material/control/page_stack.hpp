@@ -101,6 +101,14 @@ private:
     void                   stopMotions();
 };
 
+class QML_MATERIAL_API MaterialPageStack : public PageStack {
+    Q_OBJECT
+    QML_NAMED_ELEMENT(PageStack)
+    QML_ATTACHED(PageStackAttached)
+public:
+    explicit MaterialPageStack(QQuickItem* parent = nullptr);
+};
+
 class QML_MATERIAL_API PageStackAttached : public QObject {
     Q_OBJECT
     Q_PROPERTY(PageStack* view READ view NOTIFY changed FINAL)
@@ -126,3 +134,4 @@ private:
 };
 } // namespace qml_material
 QML_DECLARE_TYPEINFO(qml_material::PageStack, QML_HAS_ATTACHED_PROPERTIES)
+QML_DECLARE_TYPEINFO(qml_material::MaterialPageStack, QML_HAS_ATTACHED_PROPERTIES)

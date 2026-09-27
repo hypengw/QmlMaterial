@@ -97,6 +97,7 @@ MD.ComboBoxBase {
     }
 
     contentItem: MD.TextInput {
+        opacity: control.mdState.contentOpacity
         typescale: control.mdState.typescale
         clip: true
 
@@ -148,6 +149,7 @@ MD.ComboBoxBase {
     }
 
     background: Item {
+        opacity: control.mdState.backgroundOpacity
         implicitWidth: 64
         implicitHeight: control.mdState.containerHeight
         MD.OutlineTextFieldShape {

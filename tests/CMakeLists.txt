@@ -1,4 +1,9 @@
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick Qml Test GuiPrivate QuickPrivate)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Quick Qml Test)
+foreach(component GuiPrivate QuickPrivate)
+  if(NOT TARGET Qt6::${component})
+    find_package(Qt6 REQUIRED COMPONENTS ${component})
+  endif()
+endforeach()
 enable_testing()
 
 set(QM_TEST_SOURCES

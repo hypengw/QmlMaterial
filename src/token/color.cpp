@@ -73,7 +73,7 @@ void MdColorMgr::setUseSysAccentColor(bool v) {
 }
 
 QColor MdColorMgr::getOn(QColor in) const {
-    const auto& s = m_scheme;
+    const auto& s = m_scheme.value();
     const QRgb  v = in.rgb();
 
     if (v == s.primary) return s.on_primary;
@@ -96,14 +96,13 @@ QColor MdColorMgr::getOn(QColor in) const {
 }
 
 void MdColorMgr::genSchemeImpl(Enum::ThemeMode mode) {
-    if (mode == Enum::ThemeMode::Light)
-        m_scheme = material_light_color_scheme(m_accent_color.rgb(), paletteType());
-    else
-        m_scheme = material_dark_color_scheme(m_accent_color.rgb(), paletteType());
-
+    auto scheme = mode == Enum::ThemeMode::Light
+                      ? material_light_color_scheme(m_accent_color.rgb(), paletteType())
+                      : material_dark_color_scheme(m_accent_color.rgb(), paletteType());
     m_last_mode = mode;
-
-    Q_EMIT schemeChanged();
+    const QPointer<MdColorMgr> guard(this);
+    m_scheme = std::move(scheme);
+    if (guard) Q_EMIT schemeChanged();
 }
 
 void MdColorMgr::genScheme() {

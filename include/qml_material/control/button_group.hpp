@@ -40,6 +40,7 @@ public:
     Q_SIGNAL void                    clicked(AbstractButton* button);
 
 private:
+    friend class AbstractButton;
     void                                update(AbstractButton* preferred = nullptr);
     void                                clear();
     utils::SelectionSet<AbstractButton> m_selection;

@@ -89,7 +89,8 @@ public:
         FABColorPrimary = 0, ///< Primary color
         FABColorSurfaec,     ///< Surface color
         FABColorSecondary,   ///< Secondary color
-        FABColorTertiary     ///< Tertiary color
+        FABColorTertiary,    ///< Tertiary color
+        FABColorSurface = FABColorSurfaec
     };
     Q_ENUM(FABColor)
 

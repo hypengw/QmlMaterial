@@ -81,11 +81,7 @@ void Slider::setSnapMode(SnapMode value) {
     m_snap = value;
     Q_EMIT snapModeChanged();
 }
-void Slider::setPressed(bool value) {
-    if (m_pressed == value) return;
-    m_pressed = value;
-    Q_EMIT pressedChanged();
-}
+void Slider::setPressed(bool value) { m_pressed = value; }
 void Slider::setLive(bool value) {
     if (m_live == value) return;
     m_live = value;

@@ -74,6 +74,7 @@ MD.ButtonBase {
 
         radius: height / 2
         color: control.mdState.backgroundColor
+        opacity: control.mdState.backgroundOpacity
         elevation: control.mdState.elevation
 
         MD.Ripple {

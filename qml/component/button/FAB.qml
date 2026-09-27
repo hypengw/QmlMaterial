@@ -50,6 +50,12 @@ MD.ButtonBase {
         implicitHeight: control._size(control.mdState.type, 40, 56, 96)
 
         radius: control.mdState.corner
+        Behavior on radius {
+            NumberAnimation {
+                duration: MD.Token.duration.short2
+                easing: MD.Token.easing.standard
+            }
+        }
         color: control.mdState.backgroundColor
 
         border.width: control.mdState.type == MD.Enum.BtOutlined ? 1 : 0

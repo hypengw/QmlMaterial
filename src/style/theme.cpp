@@ -35,9 +35,15 @@ GlobalTheme* theGlobalTheme() {
 } // namespace
 
 Theme::Theme(QObject* parent): AttachedPropertyNode(parent, &Theme::staticMetaObject) {
+    reset_color();
+    reset_textColor();
+    reset_backgroundColor();
     initializeAttachedProperty();
 }
-Theme::~Theme() {}
+Theme::~Theme() {
+    disconnect(m_colorDestroyed);
+    disconnect(m_colorParentDestroyed);
+}
 
 Theme* Theme::qmlAttachedProperties(QObject* object) { return new Theme(object); }
 
@@ -50,10 +56,48 @@ Theme* Theme::qmlAttachedProperties(QObject* object) { return new Theme(object);
         resetProp(_prop_, attached ? attached->_name_() : theGlobalTheme()->_name_);         \
     }
 
-IMPL_ATTACH_PROP(QColor, textColor, m_textColor)
-IMPL_ATTACH_PROP(QColor, backgroundColor, m_backgroundColor)
+QColor Theme::textColor() const { return m_textColor.value(); }
+void   Theme::set_textColor(QColor value) { m_textColor = value; }
+void   Theme::reset_textColor() {
+    m_textColor.setBinding([this] {
+        auto* parent = m_colorParent.value();
+        return parent ? parent->textColor() : theGlobalTheme()->textColor;
+    });
+}
+QColor Theme::backgroundColor() const { return m_backgroundColor.value(); }
+void   Theme::set_backgroundColor(QColor value) { m_backgroundColor = value; }
+void   Theme::reset_backgroundColor() {
+    m_backgroundColor.setBinding([this] {
+        auto* parent = m_colorParent.value();
+        return parent ? parent->backgroundColor() : theGlobalTheme()->backgroundColor;
+    });
+}
 IMPL_ATTACH_PROP(int, elevation, m_elevation)
-IMPL_ATTACH_PROP(MdColorMgr*, color, m_color)
+MdColorMgr* Theme::color() const { return m_color.value(); }
+void        Theme::set_color(MdColorMgr* value) { m_color = value; }
+void        Theme::reset_color() {
+    m_color.setBinding([this] {
+        auto* parent = m_colorParent.value();
+        return parent ? parent->color() : theGlobalTheme()->color;
+    });
+}
+void Theme::colorChange() {
+    disconnect(m_colorDestroyed);
+    auto* value = color();
+    if (value) {
+        m_colorDestroyed = connect(value, &QObject::destroyed, this, [this] {
+            const QScopedPropertyUpdateGroup group;
+            m_color.setValueBypassingBindings(nullptr);
+            m_color.notify();
+        });
+        const QPointer<Theme> guard(this);
+        auto*                 parent    = m_colorParent.value();
+        auto*                 inherited = parent ? parent->color() : theGlobalTheme()->color;
+        if (value != inherited && ! value->parent()) value->setParent(this);
+        if (! guard || color() != value) return;
+    }
+    Q_EMIT colorChanged();
+}
 IMPL_ATTACH_PROP(ThemeSize*, size, m_size)
 IMPL_ATTACH_PROP(PageContext*, page, m_page)
 
@@ -88,31 +132,29 @@ bool Theme::inheritProp(AttachProp<V>& property, const V& value) {
 }
 
 void Theme::updateInheritedValues() {
-    auto* attached = qobject_cast<Theme*>(attachedParent());
+    const QScopedPropertyUpdateGroup group;
+    auto*                            attached = qobject_cast<Theme*>(attachedParent());
+    if (m_colorParent != attached) {
+        disconnect(m_colorParentDestroyed);
+        if (attached) {
+            m_colorParentDestroyed = connect(attached, &QObject::destroyed, this, [this] {
+                m_colorParent = nullptr;
+            });
+        }
+        m_colorParent = attached;
+    }
 
-    const auto textColorChanged =
-        inheritProp(m_textColor, attached ? attached->textColor() : theGlobalTheme()->textColor);
-    const auto backgroundColorChanged =
-        inheritProp(m_backgroundColor,
-                    attached ? attached->backgroundColor() : theGlobalTheme()->backgroundColor);
     const auto elevationChanged =
         inheritProp(m_elevation, attached ? attached->elevation() : theGlobalTheme()->elevation);
-    const auto colorChanged =
-        inheritProp(m_color, attached ? attached->color() : theGlobalTheme()->color);
     const auto sizeChanged =
         inheritProp(m_size, attached ? attached->size() : theGlobalTheme()->size);
     const auto pageChanged =
         inheritProp(m_page, attached ? attached->page() : theGlobalTheme()->page);
 
-    if (! textColorChanged && ! backgroundColorChanged && ! elevationChanged && ! colorChanged &&
-        ! sizeChanged && ! pageChanged)
-        return;
+    if (! elevationChanged && ! sizeChanged && ! pageChanged) return;
 
     propagateAttachedValues();
-    if (textColorChanged) std::invoke(m_textColor.sig_func, this);
-    if (backgroundColorChanged) std::invoke(m_backgroundColor.sig_func, this);
     if (elevationChanged) std::invoke(m_elevation.sig_func, this);
-    if (colorChanged) std::invoke(m_color.sig_func, this);
     if (sizeChanged) std::invoke(m_size.sig_func, this);
     if (pageChanged) std::invoke(m_page.sig_func, this);
 }

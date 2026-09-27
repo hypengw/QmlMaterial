@@ -138,6 +138,8 @@ void ActionIcon::refresh() {
                                                                 : m_local_renderType.value_or(2);
     m_resolved_source = resolvedSource();
     QPointer<ActionIcon> guard(this);
+    m_empty = m_name.isEmpty() && m_source.isEmpty();
+    if (! guard) return;
     if (old_name != m_name) Q_EMIT nameChanged();
     if (! guard) return;
     if (old_source != m_source || old_resolved_source != m_resolved_source) Q_EMIT sourceChanged();

@@ -9,17 +9,13 @@ CheckBox::CheckBox(QQuickItem* parent): AbstractButton(parent) {
         if (! m_syncing) setCheckState(isChecked() ? Qt::Checked : Qt::Unchecked);
     });
 }
-void CheckBox::setTristate(bool value) {
-    if (m_tristate == value) return;
-    m_tristate = value;
-    Q_EMIT tristateChanged();
-}
+void CheckBox::setTristate(bool value) { m_tristate = value; }
 void CheckBox::setCheckState(Qt::CheckState value) {
     if (value < Qt::Unchecked || value > Qt::Checked || m_state == value) return;
     m_state = value;
     QPointer<CheckBox> guard(this);
     m_syncing = true;
-    setChecked(value == Qt::Checked);
+    if (isChecked() != (value == Qt::Checked)) setChecked(value == Qt::Checked);
     if (! guard) return;
     m_syncing = false;
     if (isChecked() != (m_state == Qt::Checked))

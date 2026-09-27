@@ -163,11 +163,7 @@ void TextField::focusOutEvent(QFocusEvent* event) {
     QQuickTextInput::focusOutEvent(event);
     setFocusReason(event->reason());
 }
-void TextField::setHovered(bool value) {
-    if (m_hovered == value) return;
-    m_hovered = value;
-    Q_EMIT hoveredChanged();
-}
+void TextField::setHovered(bool value) { m_hovered = value; }
 void TextField::resolveHoverEnabled() {
     if (! utils::canUpdateControlEnvironment() || m_requested_hover) return;
     inheritHoverEnabled(utils::inheritedHoverEnabled(this));
