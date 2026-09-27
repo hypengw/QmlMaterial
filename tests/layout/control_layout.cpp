@@ -5,13 +5,17 @@
 #include <QGuiApplication>
 #include <QQmlComponent>
 #include <QQmlEngine>
+#include <QQmlProperty>
 #include <QQuickItem>
 #include <QQuickWindow>
 #include <QStandardItemModel>
 #include <QtTest>
+#include <algorithm>
 #include <memory>
 
 #include "qml_material/control/tool_tip.hpp"
+#include "qml_material/core/enum.hpp"
+#include "qml_material/control/tab_bar.hpp"
 #include "qml_material/control/popup.hpp"
 #include "qml_material/control/panel.hpp"
 #include "qml_material/control/dialog.hpp"
@@ -554,6 +558,207 @@ private Q_SLOTS:
         chip->setProperty("edit", true);
         settle(chip);
         QVERIFY(chip->contentItem()->hasActiveFocus());
+    }
+
+    void tabBarLayoutModes() {
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            MD.TabBar {
+                width: 500
+                spacing: 0
+                edgePadding: 20
+                MD.TabButton { implicitWidth: 120; text: "First" }
+                MD.TabButton { implicitWidth: 160; text: "Second" }
+            }
+        )",
+                          QUrl("qrc:/tests/tab-modes.qml"));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* bar = qobject_cast<qml_material::TabBar*>(object.get());
+        QVERIFY(bar);
+        bar->setParentItem(m_window.contentItem());
+        settle(bar);
+        auto* first  = bar->itemAt(0);
+        auto* second = bar->itemAt(1);
+        QVERIFY(first && second);
+        QCOMPARE(first->width(), 250);
+        QCOMPARE(second->width(), 250);
+        bar->setMode(qml_material::TabBar::Scrollable);
+        settle(bar);
+        QCOMPARE(first->width(), 120);
+        QCOMPARE(second->width(), 160);
+        QCOMPARE(first->x(), 20);
+        QCOMPARE(bar->contentHost()->width(), 320);
+        bar->setMode(qml_material::TabBar::Auto);
+        settle(bar);
+        QCOMPARE(first->width(), 160);
+        QCOMPARE(second->width(), 160);
+        QCOMPARE(first->x(), 90);
+        QCOMPARE(bar->contentHost()->width(), 500);
+        bar->setWidth(250);
+        settle(bar);
+        QCOMPARE(first->width(), 120);
+        QCOMPARE(second->width(), 160);
+        QCOMPARE(first->x(), 20);
+        QCOMPARE(bar->contentHost()->width(), 320);
+        bar->setLayoutDirection(Qt::RightToLeft);
+        settle(bar);
+        QCOMPARE(first->x(), 180);
+        QCOMPARE(second->x(), 20);
+        first->setFillWidth(false);
+        first->setWidth(70);
+        bar->setMode(qml_material::TabBar::Fixed);
+        settle(bar);
+        QCOMPARE(first->width(), 70);
+        QCOMPARE(second->width(), 180);
+        bar->setMode(qml_material::TabBar::Scrollable);
+        bar->setMinimumTabWidth(180);
+        settle(bar);
+        QCOMPARE(first->width(), 70);
+        QCOMPARE(second->width(), 180);
+        QCOMPARE(bar->contentHost()->width(), 290);
+    }
+
+    void tabButtonStackedContent() {
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            MD.TabButton {
+                width: 120
+                text: "Label"
+                icon.name: MD.Token.icon.add
+            }
+        )",
+                          QUrl("qrc:/tests/tab-stacked.qml"));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* button = qobject_cast<qml_material::TabButton*>(object.get());
+        QVERIFY(button);
+        button->setParentItem(m_window.contentItem());
+        settle(button);
+        QCOMPARE(button->implicitHeight(), 48);
+        const qreal inlineWidth = button->implicitWidth();
+        button->setProperty("inlineLabel", false);
+        settle(button);
+        QCOMPARE(button->implicitHeight(), 72);
+        QVERIFY(button->implicitWidth() < inlineWidth);
+        auto* label = itemWithText(button->contentItem(), QStringLiteral("Label"));
+        QVERIFY(label);
+        QVERIFY(qobject_cast<qml_material::Column*>(label->parentItem()));
+        QVERIFY(label->width() > 0);
+        button->setProperty("inlineLabel", true);
+        settle(button);
+        QCOMPARE(button->implicitHeight(), 48);
+        QVERIFY(qobject_cast<qml_material::Row*>(label->parentItem()));
+        button->setProperty("inlineLabel", false);
+        button->setProperty("iconStyle", int(qml_material::Enum::IconLabelStyle::TextOnly));
+        settle(button);
+        QCOMPARE(button->implicitHeight(), 48);
+    }
+
+    void tabBarMotionGeometry_data() {
+        QTest::addColumn<bool>("secondary");
+        QTest::addColumn<bool>("mirrored");
+        QTest::newRow("primary") << false << false;
+        QTest::newRow("secondary") << true << false;
+        QTest::newRow("primary-rtl") << false << true;
+        QTest::newRow("secondary-rtl") << true << true;
+    }
+
+    void tabBarMotionGeometry() {
+        QFETCH(bool, secondary);
+        QFETCH(bool, mirrored);
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            MD.TabBar {
+                width: 160
+                currentIndex: 1
+                MD.TabButton { width: 80; fillWidth: false; text: "A" }
+                MD.TabButton { width: 120; fillWidth: false; text: "Second" }
+                MD.TabButton { width: 100; fillWidth: false; text: "Third" }
+            }
+        )",
+                          QUrl("qrc:/tests/tab-motion.qml"));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* bar = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(bar);
+        if (secondary) bar->setProperty("type", int(qml_material::Enum::TabType::SecondaryTab));
+        QVERIFY(bar->setProperty("layoutDirection", mirrored ? Qt::RightToLeft : Qt::LeftToRight));
+        bar->setParentItem(m_window.contentItem());
+        settle(bar);
+        QCOMPARE(bar->property("mirrored").toBool(), mirrored);
+        auto* view = bar->property("contentItem").value<QQuickItem*>();
+        QVERIFY(view);
+        auto* scrollingContent = view->property("contentItem").value<QQuickItem*>();
+        QVERIFY(scrollingContent);
+        QQuickItem* indicator = nullptr;
+        for (auto* child : scrollingContent->childItems())
+            if (child->z() == 2) indicator = child;
+        QVERIFY(indicator);
+        QObject* scrollAnimation = nullptr;
+        QVERIFY(bar->clip());
+        QVERIFY(! indicator->clip());
+        QCOMPARE(indicator->property("topLeftRadius").toReal(), secondary ? 0.0 : 3.0);
+        QCOMPARE(indicator->property("bottomLeftRadius").toReal(), 0.0);
+        bar->setProperty("position", int(qml_material::TabBar::Footer));
+        QCOMPARE(indicator->y(), 0.0);
+        QCOMPARE(indicator->property("topLeftRadius").toReal(), 0.0);
+        QCOMPARE(indicator->property("bottomLeftRadius").toReal(), secondary ? 0.0 : 3.0);
+        bar->setProperty("position", int(qml_material::TabBar::Header));
+        for (auto* child : view->findChildren<QObject*>())
+            if (child->property("property").toString() == QStringLiteral("contentX"))
+                scrollAnimation = child;
+        QVERIFY(scrollAnimation);
+        QVERIFY(! scrollAnimation->property("running").toBool());
+        QVERIFY(view->clip());
+        QCOMPARE(QQmlProperty(bar, "layer.enabled").read().toBool(), false);
+        bar->setProperty("radius", 12);
+        QCOMPARE(QQmlProperty(bar, "layer.enabled").read().toBool(), false);
+        bar->setProperty("radius", 0);
+        bar->setProperty("currentIndex", 0);
+        settle(bar);
+        scrollAnimation->setProperty("running", true);
+        QVERIFY(QMetaObject::invokeMethod(view, "movementStarted"));
+        QVERIFY(! scrollAnimation->property("running").toBool());
+        bar->setProperty("currentIndex", 2);
+        settle(bar);
+        for (int index : { 1, 2, 0, 1 }) {
+            bar->setProperty("currentIndex", index);
+            settle(bar);
+            auto* item = bar->property("currentItem").value<QQuickItem*>();
+            QVERIFY(item);
+            const qreal expectedWidth =
+                secondary ? item->width()
+                          : std::min(item->width(),
+                                     std::max(qreal(24),
+                                              item->property("implicitContentWidth").toReal()));
+            QTRY_VERIFY(qAbs(indicator->width() - expectedWidth) < 0.01);
+            QTRY_VERIFY(qAbs(indicator->x() - (item->x() + (item->width() - expectedWidth) / 2)) <
+                        0.01);
+            const qreal scrollX = std::clamp(
+                item->x() + item->width() / 2 - view->width() / 2,
+                qreal(0),
+                std::max(qreal(0), view->property("contentWidth").toReal() - view->width()));
+            QTRY_VERIFY(qAbs(view->property("contentX").toReal() - scrollX) < 0.01);
+        }
+        bar->setWidth(400);
+        settle(bar);
+        QTRY_VERIFY(qAbs(view->property("contentX").toReal()) < 0.01);
+        bar->setProperty("currentIndex", -1);
+        settle(bar);
+        QVERIFY(! indicator->isVisible());
+        bar->setProperty("currentIndex", 2);
+        settle(bar);
+        QVERIFY(indicator->isVisible());
     }
 
     void constrainedTextElides_data() {

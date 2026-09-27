@@ -13,7 +13,20 @@ class QML_MATERIAL_API TabBar : public Container {
     Q_PROPERTY(
         qml_material::TabButton* currentItem READ currentItem NOTIFY currentItemChanged FINAL)
     Q_PROPERTY(Position position READ position WRITE setPosition NOTIFY positionChanged FINAL)
+    Q_PROPERTY(Mode mode READ mode WRITE setMode NOTIFY modeChanged FINAL)
+    Q_PROPERTY(qreal minimumTabWidth READ minimumTabWidth WRITE setMinimumTabWidth NOTIFY
+                   minimumTabWidthChanged FINAL)
+    Q_PROPERTY(
+        qreal edgePadding READ edgePadding WRITE setEdgePadding NOTIFY edgePaddingChanged FINAL)
+    Q_PROPERTY(qreal autoGutter READ autoGutter WRITE setAutoGutter NOTIFY autoGutterChanged FINAL)
 public:
+    enum Mode
+    {
+        Fixed,
+        Scrollable,
+        Auto
+    };
+    Q_ENUM(Mode)
     enum Position
     {
         Header,
@@ -23,9 +36,21 @@ public:
     explicit TabBar(QQuickItem* parent = nullptr);
     ~TabBar() override;
     static TabBarAttached* qmlAttachedProperties(QObject*);
-    TabButton* currentItem() const { return qobject_cast<TabButton*>(Container::currentItem()); }
-    Position   position() const { return m_position; }
-    void       setPosition(Position);
+    TabButton*    currentItem() const { return qobject_cast<TabButton*>(Container::currentItem()); }
+    Position      position() const { return m_position; }
+    void          setPosition(Position);
+    Mode          mode() const { return m_mode; }
+    void          setMode(Mode);
+    qreal         minimumTabWidth() const { return m_minimumTabWidth; }
+    void          setMinimumTabWidth(qreal);
+    qreal         edgePadding() const { return m_edgePadding; }
+    void          setEdgePadding(qreal);
+    qreal         autoGutter() const { return m_autoGutter; }
+    void          setAutoGutter(qreal);
+    Q_SIGNAL void modeChanged();
+    Q_SIGNAL void minimumTabWidthChanged();
+    Q_SIGNAL void edgePaddingChanged();
+    Q_SIGNAL void autoGutterChanged();
     Q_INVOKABLE TabButton* itemAt(int index) const {
         return qobject_cast<TabButton*>(Container::itemAt(index));
     }
@@ -48,6 +73,10 @@ private:
     ButtonGroup*                                       m_group;
     QHash<QQuickItem*, QList<QMetaObject::Connection>> m_connections;
     Position                                           m_position        = Header;
+    Mode                                               m_mode            = Fixed;
+    qreal                                              m_minimumTabWidth = 90;
+    qreal                                              m_edgePadding     = 52;
+    qreal                                              m_autoGutter      = 16;
     bool                                               m_selecting       = false;
     bool                                               m_selection_dirty = false;
 };

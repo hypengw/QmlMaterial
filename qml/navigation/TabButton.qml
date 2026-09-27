@@ -7,11 +7,26 @@ MD.TabButtonBase {
 
     property int type: MD.TabBar.tabBar?.type ?? MD.Enum.PrimaryTab
     property int iconStyle: hasIcon ? MD.Enum.IconAndText : MD.Enum.TextOnly
+    property bool inlineLabel: true
+    readonly property bool _stacked: !inlineLabel && iconStyle === MD.Enum.IconAndText && hasIcon && text.length > 0
     readonly property bool hasIcon: !icon.empty
 
     property MD.StateTabButton mdState: MD.StateTabButton {
         item: control
     }
+
+    readonly property QtObject _motion: QtObject {
+        property bool enabled: false
+        property color textColor: control.mdState.textColor
+        Behavior on textColor {
+            enabled: control._motion.enabled
+            ColorAnimation {
+                duration: control.checked ? MD.Token.duration.short4 : MD.Token.duration.short2
+                easing: MD.Token.easing.standard
+            }
+        }
+    }
+    Component.onCompleted: _motion.enabled = true
 
     Binding {
         control.mdState.type: control.type
@@ -24,16 +39,16 @@ MD.TabButtonBase {
     bottomInset: 0
     leftInset: 0
     rightInset: 0
-    spacing: 8
+    spacing: _stacked ? 4 : 8
 
-    leftPadding: 12
-    rightPadding: 12
+    leftPadding: 16
+    rightPadding: 16
 
     icon.width: 24
     icon.height: 24
-    icon.color: control.mdState.textColor
+    icon.color: control._motion.textColor
 
-    property MD.typescale typescale: MD.Token.typescale.label_medium
+    property MD.typescale typescale: MD.Token.typescale.title_small
     font.capitalization: Font.MixedCase
     font.pixelSize: typescale.size
     font.weight: typescale.weight
@@ -44,20 +59,24 @@ MD.TabButtonBase {
         opacity: control.mdState.contentOpacity
 
         Lite.Row {
+            id: m_row
+            visible: !control._stacked
             width: Math.min(implicitWidth, parent.width)
             height: Math.min(implicitHeight, parent.height)
             alignment: Qt.AlignHCenter | Qt.AlignVCenter
             spacing: control.spacing
 
             MD.IconView {
+                parent: control._stacked ? m_column : m_row
                 visible: control.iconStyle != MD.Enum.TextOnly && control.hasIcon
                 icon: control.icon
             }
 
             MD.Label {
+                parent: control._stacked ? m_column : m_row
                 visible: control.iconStyle != MD.Enum.IconOnly
                 text: control.text
-                color: control.mdState.textColor
+                color: control._motion.textColor
                 useTypescale: false
                 font: control.font
                 lineHeight: control.typescale.line_height
@@ -65,10 +84,18 @@ MD.TabButtonBase {
                 Lite.Layout.fillWidth: true
             }
         }
+        Lite.Column {
+            id: m_column
+            visible: control._stacked
+            width: Math.min(implicitWidth, parent.width)
+            height: Math.min(implicitHeight, parent.height)
+            alignment: Qt.AlignHCenter | Qt.AlignVCenter
+            spacing: control.spacing
+        }
     }
 
     background: MD.Ripple {
-        implicitHeight: 48
+        implicitHeight: control._stacked ? 72 : 48
 
         pressX: control.pressX
         pressY: control.pressY

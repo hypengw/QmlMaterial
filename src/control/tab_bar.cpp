@@ -102,6 +102,36 @@ void TabBar::setPosition(Position value) {
         if (! guard) return;
     }
 }
+void TabBar::setMode(Mode value) {
+    if (m_mode == value) return;
+    m_mode = value;
+    polish();
+    Q_EMIT modeChanged();
+}
+void TabBar::setMinimumTabWidth(qreal value) {
+    if (! qIsFinite(value)) return;
+    value = std::max(qreal(0), value);
+    if (m_minimumTabWidth == value) return;
+    m_minimumTabWidth = value;
+    polish();
+    Q_EMIT minimumTabWidthChanged();
+}
+void TabBar::setEdgePadding(qreal value) {
+    if (! qIsFinite(value)) return;
+    value = std::max(qreal(0), value);
+    if (m_edgePadding == value) return;
+    m_edgePadding = value;
+    polish();
+    Q_EMIT edgePaddingChanged();
+}
+void TabBar::setAutoGutter(qreal value) {
+    if (! qIsFinite(value)) return;
+    value = std::max(qreal(0), value);
+    if (m_autoGutter == value) return;
+    m_autoGutter = value;
+    polish();
+    Q_EMIT autoGutterChanged();
+}
 void TabBar::updatePolish() {
     QPointer<TabBar> guard(this);
     Container::updatePolish();
@@ -111,9 +141,12 @@ void TabBar::updatePolish() {
     for (auto item : items()) buttons.append(qobject_cast<TabButton*>(item.data()));
     qreal preferred = std::max(0, count() - 1) * spacing(), reserved = preferred, height = 0;
     int   flexible = 0;
+    qreal largest  = 0;
     for (auto button : buttons)
         if (button) {
-            preferred += button->fillWidth() ? button->implicitWidth() : button->width();
+            const qreal natural = button->fillWidth() ? button->implicitWidth() : button->width();
+            preferred += natural;
+            largest = std::max(largest, natural);
             if (button->fillWidth())
                 ++flexible;
             else
@@ -121,12 +154,28 @@ void TabBar::updatePolish() {
             height = std::max(height,
                               button->fillHeight() ? button->implicitHeight() : button->height());
         }
-    const qreal width = std::max<qreal>(0, (availableWidth() - reserved) / std::max(1, flexible));
-    qreal       total = reserved + flexible * width;
-    qreal       x     = mirrored() ? total : 0;
+    largest                     = std::max(largest, minimumTabWidth());
+    const qreal equalWidthTotal = reserved + flexible * largest;
+    const bool  centered = mode() == Auto && equalWidthTotal <= availableWidth() - 2 * autoGutter();
+    const bool  scrollable = mode() == Scrollable || (mode() == Auto && ! centered);
+    const qreal width =
+        centered ? largest
+                 : std::max<qreal>(0, (availableWidth() - reserved) / std::max(1, flexible));
+    qreal total = reserved;
+    for (auto button : buttons)
+        if (button && button->fillWidth())
+            total += scrollable ? std::max(minimumTabWidth(), button->implicitWidth()) : width;
+    const qreal padding = buttons.isEmpty() ? 0
+                          : centered        ? (availableWidth() - total) / 2
+                          : scrollable      ? edgePadding()
+                                            : 0;
+    total += 2 * padding;
+    qreal x = mirrored() ? total - padding : padding;
     for (auto button : buttons)
         if (button) {
-            if (button->fillWidth()) button->setWidth(width);
+            if (button->fillWidth())
+                button->setWidth(scrollable ? std::max(minimumTabWidth(), button->implicitWidth())
+                                            : width);
             if (! guard) return;
             if (layoutRevision != revision()) {
                 polish();
@@ -152,6 +201,10 @@ void TabBar::updatePolish() {
         }
     contentHost()->setSize(QSizeF(total, height));
     if (! guard) return;
+    if (mode() == Scrollable)
+        preferred = total;
+    else if (mode() == Auto && ! buttons.isEmpty())
+        preferred = equalWidthTotal + 2 * autoGutter();
     setImplicitContentSize(QSizeF(preferred, height));
 }
 void TabBar::navigate(int delta) {

@@ -11,6 +11,7 @@ MD.TabBarBase {
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)
 
     spacing: 1
+    clip: true
 
     contentItem: Flickable {
         id: m_view
@@ -19,14 +20,57 @@ MD.TabBarBase {
         clip: true
         flickableDirection: Flickable.AutoFlickIfNeeded
         boundsBehavior: Flickable.StopAtBounds
-        function revealCurrent() {
-            const item = control.currentItem;
-            if (!item)
+        property bool _ready: false
+        property bool _hasSelection: false
+        function synchronizeCurrent() {
+            if (!_ready)
                 return;
-            const target = item.x < contentX ? item.x : item.x + item.width > contentX + width ? item.x + item.width - width : contentX;
-            contentX = Math.max(0, Math.min(Math.max(0, contentWidth - width), target));
+            const item = control.currentItem;
+            if (!item) {
+                indicatorAnimation.stop();
+                scrollAnimation.stop();
+                _hasSelection = false;
+                return;
+            }
+            const indicatorWidth = control.type === MD.Enum.PrimaryTab ? Math.min(item.width, Math.max(24, item.implicitContentWidth)) : item.width;
+            const indicatorX = item.x + (item.width - indicatorWidth) / 2;
+            const scrollX = Math.max(0, Math.min(Math.max(0, contentWidth - width), item.x + item.width / 2 - width / 2));
+            if (!_hasSelection) {
+                indicatorPosition.to = indicatorX;
+                indicatorSize.to = indicatorWidth;
+                m_indicator.x = indicatorX;
+                m_indicator.width = indicatorWidth;
+                contentX = scrollX;
+                _hasSelection = true;
+                return;
+            }
+            if (indicatorPosition.to !== indicatorX || indicatorSize.to !== indicatorWidth) {
+                indicatorAnimation.stop();
+                indicatorPosition.to = indicatorX;
+                indicatorSize.to = indicatorWidth;
+                indicatorAnimation.start();
+            }
+            if (!moving && !dragging && (!scrollAnimation.running || scrollAnimation.to !== scrollX)) {
+                scrollAnimation.stop();
+                scrollAnimation.to = scrollX;
+                if (contentX !== scrollX)
+                    scrollAnimation.start();
+            }
         }
-        onContentWidthChanged: Qt.callLater(revealCurrent)
+        Component.onCompleted: {
+            _ready = true;
+            Qt.callLater(synchronizeCurrent);
+        }
+        onContentWidthChanged: Qt.callLater(synchronizeCurrent)
+        onWidthChanged: Qt.callLater(synchronizeCurrent)
+        onMovementStarted: scrollAnimation.stop()
+        NumberAnimation {
+            id: scrollAnimation
+            target: m_view
+            property: "contentX"
+            duration: MD.Token.duration.medium1
+            easing: MD.Token.easing.standard
+        }
         Binding {
             target: control.contentHost
             property: "parent"
@@ -35,41 +79,52 @@ MD.TabBarBase {
         Connections {
             target: control
             function onCurrentItemChanged() {
-                Qt.callLater(m_view.revealCurrent);
+                Qt.callLater(m_view.synchronizeCurrent);
+            }
+            function onTypeChanged() {
+                Qt.callLater(m_view.synchronizeCurrent);
             }
         }
-        Item {
-            x: control.currentItem?.x ?? 0
-            width: control.currentItem?.width ?? 0
-            height: m_view.height
+        Connections {
+            target: control.currentItem
+            function onXChanged() {
+                Qt.callLater(m_view.synchronizeCurrent);
+            }
+            function onWidthChanged() {
+                Qt.callLater(m_view.synchronizeCurrent);
+            }
+            function onImplicitContentWidthChanged() {
+                Qt.callLater(m_view.synchronizeCurrent);
+            }
+        }
+        ParallelAnimation {
+            id: indicatorAnimation
+            NumberAnimation {
+                id: indicatorPosition
+                target: m_indicator
+                property: "x"
+                duration: MD.Token.duration.medium1
+                easing: MD.Token.easing.standard
+            }
+            NumberAnimation {
+                id: indicatorSize
+                target: m_indicator
+                property: "width"
+                duration: MD.Token.duration.medium1
+                easing: MD.Token.easing.standard
+            }
+        }
+        Rectangle {
+            id: m_indicator
+            y: control.position === MD.TabBar.Footer ? 0 : m_view.height - height
+            height: control.type == MD.Enum.PrimaryTab ? 3 : 2
             visible: control.currentItem !== null
             z: 2
-            Behavior on x {
-                NumberAnimation {
-                    duration: MD.Token.duration.medium1
-                    easing: MD.Token.easing.linear
-                }
-            }
-            Item {
-                x: control.type == MD.Enum.PrimaryTab ? (parent.width - width) / 2 : 0
-                y: control.position === MD.TabBar.Footer ? 0 : parent.height - height
-                height: control.type == MD.Enum.PrimaryTab ? 3 : 2
-                width: control.type == MD.Enum.PrimaryTab ? (control.currentItem?.implicitContentWidth ?? 0) : parent.width
-                clip: true
-
-                Behavior on width {
-                    NumberAnimation {
-                        duration: MD.Token.duration.medium1
-                        easing: MD.Token.easing.linear
-                    }
-                }
-                Rectangle {
-                    height: parent.height * 2
-                    width: parent.width
-                    radius: control.type == MD.Enum.PrimaryTab ? 3 : 0
-                    color: MD.Token.color.primary
-                }
-            }
+            color: MD.Token.color.primary
+            topLeftRadius: control.type === MD.Enum.PrimaryTab && control.position !== MD.TabBar.Footer ? 3 : 0
+            topRightRadius: topLeftRadius
+            bottomLeftRadius: control.type === MD.Enum.PrimaryTab && control.position === MD.TabBar.Footer ? 3 : 0
+            bottomRightRadius: bottomLeftRadius
         }
     }
 
@@ -77,28 +132,8 @@ MD.TabBarBase {
         color: control.MD.MProp.backgroundColor
         corners: control.corners
 
-        //layer.enabled: control.Material.elevation > 0
-        //layer.effect: MD.ElevationEffect {
-        //    elevation: control.Material.elevation
-        //    fullWidth: true
-        //}
-
         MD.AutoDivider {
             anchors.bottom: parent.bottom
-        }
-    }
-
-    layer.enabled: true
-    //layer.sourceRect: Qt.rect(0, 0, control.width, control.height + 8)
-    //layer.textureSize: Qt.size(control.width, control.height + 8)
-    layer.effect: Item {
-        property var source
-        MD.RoundClip {
-            source: parent.source
-            width: parent.width
-            height: parent.height
-            corners: control.corners
-            size: Qt.vector2d(control.width, control.height)
         }
     }
 }
