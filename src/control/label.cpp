@@ -23,8 +23,8 @@ Label::Label(QQuickItem* parent): QQuickText(parent), m_background(this) {
         case Qt::BottomEdge: Q_EMIT bottomInsetChanged(); break;
         }
     });
-    updateFont();
-    connect(qGuiApp, &QGuiApplication::fontChanged, this, &Label::refreshInheritedEnvironment);
+    resolveFont();
+    connect(qGuiApp, &QGuiApplication::fontChanged, this, &Label::resolveFont);
 }
 
 Label::~Label() = default;
@@ -38,22 +38,27 @@ QFont Label::font() const {
 void Label::setFont(const QFont& font) {
     if (m_requested_font == font && m_requested_font.resolveMask() == font.resolveMask()) return;
     m_requested_font = font;
-    refreshInheritedEnvironment();
+    resolveFont();
 }
 
 void Label::resetFont() { setFont(QFont()); }
 
-void Label::updateFont() {
-    const auto resolved = utils::resolveFont(m_requested_font, utils::inheritedFont(this));
+void Label::inheritFont(const QFont& inherited) {
+    if (! utils::canUpdateControlEnvironment()) return;
+    const auto resolved = utils::resolveFont(m_requested_font, inherited);
     const bool changed  = m_effective_font != resolved;
-    m_effective_font    = resolved;
+    if (! changed && m_effective_font.resolveMask() == resolved.resolveMask()) return;
+    m_effective_font = resolved;
+    QPointer<Label> guard(this);
     QQuickText::setFont(resolved);
-    if (changed) Q_EMIT fontChanged();
+    if (! guard) return;
+    utils::propagateFont(this, resolved);
+    if (guard && changed) Q_EMIT fontChanged();
 }
 
-void Label::refreshInheritedEnvironment() {
-    updateFont();
-    utils::propagateControlEnvironment(this);
+void Label::resolveFont() {
+    if (! utils::canUpdateControlEnvironment()) return;
+    inheritFont(utils::inheritedFont(this));
 }
 
 qreal Label::implicitBackgroundWidth() const { return m_background.implicitWidth(); }
@@ -62,12 +67,13 @@ void  Label::setBackground(QQuickItem* item) { m_background.setItem(item); }
 
 void Label::componentComplete() {
     QQuickText::componentComplete();
-    refreshInheritedEnvironment();
+    resolveFont();
     m_background.complete();
 }
 void Label::itemChange(ItemChange change, const ItemChangeData& data) {
     QQuickText::itemChange(change, data);
-    if (change == ItemParentHasChanged || change == ItemSceneChange) refreshInheritedEnvironment();
+    if ((change == ItemParentHasChanged && data.item) || (change == ItemSceneChange && data.window))
+        resolveFont();
 }
 void Label::geometryChange(const QRectF& geometry, const QRectF& oldGeometry) {
     QQuickText::geometryChange(geometry, oldGeometry);

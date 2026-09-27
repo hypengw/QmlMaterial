@@ -97,8 +97,9 @@ Popup::Popup(Panel* surface, QObject* parent)
     connect(m_surface, &Panel::localeChanged, this, &Popup::localeChanged);
     connect(m_surface, &Panel::widthChanged, this, &Popup::reposition);
     connect(m_surface, &Panel::heightChanged, this, &Popup::reposition);
-    connect(qGuiApp, &QGuiApplication::fontChanged, this, &Popup::refreshEnvironment);
-    connect(qGuiApp, &QGuiApplication::layoutDirectionChanged, this, &Popup::refreshEnvironment);
+    connect(qGuiApp, &QGuiApplication::fontChanged, this, &Popup::resolveFont);
+    connect(
+        qGuiApp, &QGuiApplication::layoutDirectionChanged, this, &Popup::resolveLayoutDirection);
 }
 Popup::~Popup() {
     m_dismissing = true;
@@ -182,6 +183,7 @@ void Popup::observePositioningItem() {
 }
 void Popup::observeParent() {
     utils::disconnectAll(m_parentConnections);
+    m_environmentParent = nullptr;
     for (auto item = m_parent.data(); item; item = item->parentItem()) {
         if (auto popup = qobject_cast<Popup*>(item->parent());
             popup && popup != this && popup->surfaceItem() == item) {
@@ -199,15 +201,16 @@ void Popup::observeParent() {
             connect(item, &QQuickItem::parentChanged, this, &Popup::observeParent));
         m_parentConnections.append(
             connect(item, &QQuickItem::transformOriginChanged, this, &Popup::reposition));
-        if (auto control = qobject_cast<Control*>(item)) {
+        if (auto control = qobject_cast<Control*>(item); control && ! m_environmentParent) {
+            m_environmentParent = control;
             m_parentConnections.append(
-                connect(control, &Control::fontChanged, this, &Popup::refreshEnvironment));
+                connect(control, &Control::fontChanged, this, &Popup::resolveFont));
             m_parentConnections.append(
-                connect(control, &Control::localeChanged, this, &Popup::refreshEnvironment));
+                connect(control, &Control::localeChanged, this, &Popup::resolveLocale));
             m_parentConnections.append(connect(
-                control, &Control::layoutDirectionChanged, this, &Popup::refreshEnvironment));
+                control, &Control::layoutDirectionChanged, this, &Popup::resolveLayoutDirection));
             m_parentConnections.append(
-                connect(control, &Control::hoverEnabledChanged, this, &Popup::refreshEnvironment));
+                connect(control, &Control::hoverEnabledChanged, this, &Popup::resolveHoverEnabled));
         }
     }
     if (m_parent) {
@@ -220,7 +223,9 @@ void Popup::observeParent() {
             if (m_parent && ! m_parent->isVisible()) dismissImmediately();
         }));
         m_parentConnections.append(connect(m_parent, &QObject::destroyed, this, [this] {
-            m_parent = nullptr;
+            utils::disconnectAll(m_parentConnections);
+            m_environmentParent = nullptr;
+            m_parent            = nullptr;
             QPointer<Popup> guard(this);
             dismissImmediately();
             if (! guard) return;
@@ -231,7 +236,7 @@ void Popup::observeParent() {
     QPointer<Popup> guard(this);
     refreshInheritedZ();
     if (! guard) return;
-    refreshEnvironment();
+    if (m_parent) refreshEnvironment();
     updateOverlay();
     reposition();
 }
@@ -251,42 +256,56 @@ void Popup::refreshInheritedZ() {
     if (guard) Q_EMIT zChanged();
 }
 void Popup::refreshEnvironment() {
-    QFont   inherited = QGuiApplication::font();
-    QLocale locale;
-    auto    direction = QGuiApplication::layoutDirection();
-    bool    hover     = QGuiApplication::styleHints()->useHoverEffects();
-    for (auto item = m_parent.data(); item; item = item->parentItem()) {
-        if (auto control = qobject_cast<Control*>(item)) {
-            inherited = control->effectiveFont();
-            locale    = control->locale();
-            direction = control->layoutDirection();
-            hover     = control->hoverEnabled();
-            break;
-        }
-    }
+    QPointer<Popup> guard(this);
+    resolveFont();
+    if (! guard) return;
+    resolveLocale();
+    if (! guard) return;
+    resolveLayoutDirection();
+    if (! guard) return;
+    resolveHoverEnabled();
+}
+void Popup::resolveFont() {
+    if (! utils::canUpdateControlEnvironment()) return;
+    const auto inherited =
+        m_environmentParent ? m_environmentParent->effectiveFont() : QGuiApplication::font();
     auto resolved = utils::resolveFont(m_font, inherited);
     // The surface is reparented visually, but its environment belongs to the logical parent.
     resolved.setResolveMask(QFont::AllPropertiesResolved);
     m_surface->setFont(resolved);
-    m_surface->setLocale(m_locale.value_or(locale));
-    m_surface->setLayoutDirection(direction);
-    m_surface->setHoverEnabled(inheritsHoverEnabled() && hover);
+}
+void Popup::resolveLocale() {
+    if (! utils::canUpdateControlEnvironment()) return;
+    m_surface->setLocale(
+        m_locale ? *m_locale : (m_environmentParent ? m_environmentParent->locale() : QLocale()));
+}
+void Popup::resolveLayoutDirection() {
+    if (! utils::canUpdateControlEnvironment()) return;
+    m_surface->setLayoutDirection(m_environmentParent ? m_environmentParent->layoutDirection()
+                                                      : QGuiApplication::layoutDirection());
+}
+void Popup::resolveHoverEnabled() {
+    if (! utils::canUpdateControlEnvironment()) return;
+    m_surface->setHoverEnabled(inheritsHoverEnabled() &&
+                               (m_environmentParent
+                                    ? m_environmentParent->hoverEnabled()
+                                    : QGuiApplication::styleHints()->useHoverEffects()));
 }
 void Popup::setFont(const QFont& value) {
     m_font = value;
-    refreshEnvironment();
+    resolveFont();
 }
 void Popup::resetFont() {
     m_font = QFont();
-    refreshEnvironment();
+    resolveFont();
 }
 void Popup::setLocale(const QLocale& value) {
     m_locale = value;
-    refreshEnvironment();
+    resolveLocale();
 }
 void Popup::resetLocale() {
     m_locale.reset();
-    refreshEnvironment();
+    resolveLocale();
 }
 void Popup::updateOverlay() {
     // Let Qt detach the item tree before the overlay closes its popups on destruction.

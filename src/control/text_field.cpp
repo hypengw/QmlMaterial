@@ -38,7 +38,7 @@ TextField::TextField(QQuickItem* parent)
     connect(QGuiApplication::styleHints(),
             &QStyleHints::useHoverEffectsChanged,
             this,
-            &TextField::refreshInheritedEnvironment);
+            &TextField::resolveHoverEnabled);
     connect(
         &m_background, &TextControlBackground::itemChanged, this, &TextField::backgroundChanged);
     connect(&m_background,
@@ -57,8 +57,9 @@ TextField::TextField(QQuickItem* parent)
         case Qt::BottomEdge: Q_EMIT bottomInsetChanged(); break;
         }
     });
-    updateFont();
-    connect(qGuiApp, &QGuiApplication::fontChanged, this, &TextField::refreshInheritedEnvironment);
+    resolveFont();
+    resolveHoverEnabled();
+    connect(qGuiApp, &QGuiApplication::fontChanged, this, &TextField::resolveFont);
 }
 
 TextField::~TextField() = default;
@@ -72,23 +73,27 @@ QFont TextField::font() const {
 void TextField::setFont(const QFont& font) {
     if (m_requested_font == font && m_requested_font.resolveMask() == font.resolveMask()) return;
     m_requested_font = font;
-    refreshInheritedEnvironment();
+    resolveFont();
 }
 
 void TextField::resetFont() { setFont(QFont()); }
 
-void TextField::updateFont() {
-    const auto resolved = utils::resolveFont(m_requested_font, utils::inheritedFont(this));
+void TextField::inheritFont(const QFont& inherited) {
+    if (! utils::canUpdateControlEnvironment()) return;
+    const auto resolved = utils::resolveFont(m_requested_font, inherited);
     const bool changed  = m_effective_font != resolved;
-    m_effective_font    = resolved;
+    if (! changed && m_effective_font.resolveMask() == resolved.resolveMask()) return;
+    m_effective_font = resolved;
+    QPointer<TextField> guard(this);
     QQuickTextInput::setFont(resolved);
-    if (changed) Q_EMIT fontChanged();
+    if (! guard) return;
+    utils::propagateFont(this, resolved);
+    if (guard && changed) Q_EMIT fontChanged();
 }
 
-void TextField::refreshInheritedEnvironment() {
-    updateFont();
-    updateHover();
-    utils::propagateControlEnvironment(this);
+void TextField::resolveFont() {
+    if (! utils::canUpdateControlEnvironment()) return;
+    inheritFont(utils::inheritedFont(this));
 }
 
 qreal TextField::implicitBackgroundWidth() const { return m_background.implicitWidth(); }
@@ -97,14 +102,20 @@ void  TextField::setBackground(QQuickItem* item) { m_background.setItem(item); }
 
 void TextField::componentComplete() {
     QQuickTextInput::componentComplete();
-    refreshInheritedEnvironment();
+    resolveFont();
+    resolveHoverEnabled();
     m_background.complete();
 }
 void TextField::itemChange(ItemChange change, const ItemChangeData& data) {
     QQuickTextInput::itemChange(change, data);
     if (change == ItemParentHasChanged || change == ItemSceneChange) {
         cancelPress();
-        refreshInheritedEnvironment();
+        if ((change == ItemParentHasChanged && data.item) ||
+            (change == ItemSceneChange && data.window)) {
+            QPointer<TextField> guard(this);
+            resolveFont();
+            if (guard) resolveHoverEnabled();
+        }
     }
     if ((change == ItemEnabledHasChanged && ! isEnabled()) ||
         (change == ItemVisibleHasChanged && ! isVisible())) {
@@ -156,20 +167,29 @@ void TextField::setHovered(bool value) {
     m_hovered = value;
     Q_EMIT hoveredChanged();
 }
-void TextField::updateHover() {
-    const bool value = m_requested_hover.value_or(utils::inheritedHoverEnabled(this));
-    if (value == hoverEnabled()) return;
+void TextField::resolveHoverEnabled() {
+    if (! utils::canUpdateControlEnvironment() || m_requested_hover) return;
+    inheritHoverEnabled(utils::inheritedHoverEnabled(this));
+}
+void TextField::inheritHoverEnabled(bool value) {
+    if (! m_requested_hover) updateHoverEnabled(value);
+}
+void TextField::updateHoverEnabled(bool value) {
+    if (! utils::canUpdateControlEnvironment() || value == hoverEnabled()) return;
     setAcceptHoverEvents(value);
+    QPointer<TextField> guard(this);
     if (! value) setHovered(false);
-    Q_EMIT hoverEnabledChanged();
+    if (! guard) return;
+    utils::propagateHoverEnabled(this, value);
+    if (guard) Q_EMIT hoverEnabledChanged();
 }
 void TextField::setHoverEnabled(bool value) {
     m_requested_hover = value;
-    refreshInheritedEnvironment();
+    updateHoverEnabled(value);
 }
 void TextField::resetHoverEnabled() {
     m_requested_hover.reset();
-    refreshInheritedEnvironment();
+    resolveHoverEnabled();
 }
 void TextField::hoverEnterEvent(QHoverEvent* event) {
     QQuickTextInput::hoverEnterEvent(event);

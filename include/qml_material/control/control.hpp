@@ -109,11 +109,18 @@ public:
     explicit Control(QQuickItem* parent = nullptr);
     ~Control() override;
 
-    QFont font() const;
-    QFont effectiveFont() const override { return m_font; }
-    void  refreshInheritedEnvironment() override;
-    void  setFont(const QFont& value);
-    void  resetFont();
+    QFont                              font() const;
+    QFont                              effectiveFont() const override { return m_font; }
+    void                               inheritFont(const QFont&) override;
+    void                               inheritLocale(const QLocale&) override;
+    void                               inheritLayoutDirection(Qt::LayoutDirection) override;
+    void                               inheritHoverEnabled(bool) override;
+    std::optional<QLocale>             effectiveLocale() const override { return m_locale; }
+    std::optional<Qt::LayoutDirection> effectiveLayoutDirection() const override {
+        return m_layout_direction;
+    }
+    void setFont(const QFont& value);
+    void resetFont();
 
     QLocale locale() const;
     void    setLocale(const QLocale& value);
@@ -288,7 +295,14 @@ private:
     void         finishPaddingChange(const PaddingState& oldState);
     void         finishInsetChange(qreal oldImplicitWidth, qreal oldImplicitHeight);
     void         updateBaselineOffset();
-    void         updateEnvironment(bool propagate = true);
+    void         resolveEnvironment();
+    void         resolveFont();
+    void         resolveLocale();
+    void         resolveLayoutDirection();
+    void         resolveHoverEnabled();
+    void         updateLocale(const QLocale&);
+    void         updateLayoutDirection(Qt::LayoutDirection);
+    void         updateHoverEnabled(bool);
     void         updateVisualFocus();
     void         setHovered(bool value);
     void         layoutItems();
@@ -296,8 +310,6 @@ private:
     void         orderManagedItems();
     void         disconnectBackground();
     void         disconnectContentItem();
-    Control*     parentControl() const;
-    void         updateDescendantControls();
 
     qreal                m_padding { 0 };
     std::optional<qreal> m_horizontal_padding;

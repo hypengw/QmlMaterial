@@ -388,12 +388,17 @@ private:
     void                           observeParent();
     void                           observePositioningItem();
     void                           refreshEnvironment();
+    void                           resolveFont();
+    void                           resolveLocale();
+    void                           resolveLayoutDirection();
+    void                           resolveHoverEnabled();
     void                           refreshInheritedZ();
     void                           updateOverlay();
     void                           finishClose();
     void                           startTransition(bool);
     Panel*                         m_surface;
     QPointer<QQuickItem>           m_parent, m_hitItem, m_positioningItem;
+    QPointer<Control>              m_environmentParent;
     QPointer<OverlayManager>       m_overlay;
     QList<QMetaObject::Connection> m_parentConnections, m_overlayConnections;
     QList<QMetaObject::Connection> m_positioningConnections;

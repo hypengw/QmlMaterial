@@ -14,9 +14,9 @@ namespace qml_material
 
 Control::Control(QQuickItem* parent): QQuickItem(parent) {
     setFocusPolicy(Qt::NoFocus);
-    updateEnvironment(false);
-    m_control_connections.append(connect(
-        qGuiApp, &QGuiApplication::fontChanged, this, &Control::refreshInheritedEnvironment));
+    resolveEnvironment();
+    m_control_connections.append(
+        connect(qGuiApp, &QGuiApplication::fontChanged, this, &Control::resolveFont));
 
     m_control_connections.append(
         connect(this, &QQuickItem::activeFocusChanged, this, &Control::updateVisualFocus));
@@ -25,7 +25,7 @@ Control::Control(QQuickItem* parent): QQuickItem(parent) {
     }));
     m_control_connections.append(
         connect(qGuiApp, &QGuiApplication::layoutDirectionChanged, this, [this]() {
-            if (! m_layout_direction_explicit) updateEnvironment();
+            if (! m_layout_direction_explicit) resolveLayoutDirection();
         }));
 }
 
@@ -41,21 +41,19 @@ QFont Control::font() const {
     return font;
 }
 
-void Control::refreshInheritedEnvironment() { updateEnvironment(); }
-
 void Control::setFont(const QFont& value) {
     if (m_font_explicit && m_requested_font == value &&
         m_requested_font.resolveMask() == value.resolveMask())
         return;
     m_requested_font = value;
     m_font_explicit  = true;
-    updateEnvironment();
+    resolveFont();
 }
 
 void Control::resetFont() {
     if (! m_font_explicit) return;
     m_font_explicit = false;
-    updateEnvironment();
+    resolveFont();
 }
 
 QLocale Control::locale() const { return m_locale; }
@@ -64,13 +62,13 @@ void Control::setLocale(const QLocale& value) {
     if (m_locale_explicit && m_requested_locale == value) return;
     m_requested_locale = value;
     m_locale_explicit  = true;
-    updateEnvironment();
+    updateLocale(value);
 }
 
 void Control::resetLocale() {
     if (! m_locale_explicit) return;
     m_locale_explicit = false;
-    updateEnvironment();
+    resolveLocale();
 }
 
 Qt::LayoutDirection Control::layoutDirection() const { return m_layout_direction; }
@@ -79,13 +77,13 @@ void Control::setLayoutDirection(Qt::LayoutDirection value) {
     if (m_layout_direction_explicit && m_requested_layout_direction == value) return;
     m_requested_layout_direction = value;
     m_layout_direction_explicit  = true;
-    updateEnvironment();
+    updateLayoutDirection(value);
 }
 
 void Control::resetLayoutDirection() {
     if (! m_layout_direction_explicit) return;
     m_layout_direction_explicit = false;
-    updateEnvironment();
+    resolveLayoutDirection();
 }
 
 bool Control::mirrored() const { return m_layout_direction == Qt::RightToLeft; }
@@ -422,13 +420,13 @@ bool Control::hoverEnabled() const { return m_hover_enabled; }
 void Control::setHoverEnabled(bool value) {
     if (m_requested_hover_enabled && *m_requested_hover_enabled == value) return;
     m_requested_hover_enabled = value;
-    updateEnvironment();
+    updateHoverEnabled(value);
 }
 
 void Control::resetHoverEnabled() {
     if (! m_requested_hover_enabled) return;
     m_requested_hover_enabled.reset();
-    updateEnvironment();
+    resolveHoverEnabled();
 }
 
 bool Control::hovered() const { return m_hovered; }
@@ -446,7 +444,7 @@ bool Control::visualFocus() const { return m_visual_focus; }
 
 void Control::componentComplete() {
     QQuickItem::componentComplete();
-    updateEnvironment();
+    resolveEnvironment();
     updateImplicitMetrics();
     layoutItems();
     updateBaselineOffset();
@@ -464,7 +462,11 @@ void Control::itemChange(ItemChange change, const ItemChangeData& value) {
     QQuickItem::itemChange(change, value);
     switch (change) {
     case ItemParentHasChanged:
-    case ItemSceneChange: updateEnvironment(); break;
+    case ItemSceneChange:
+        if ((change == ItemParentHasChanged && value.item) ||
+            (change == ItemSceneChange && value.window))
+            resolveEnvironment();
+        break;
     case ItemVisibleHasChanged:
         if (! value.boolValue) setHovered(false);
         break;
@@ -593,49 +595,90 @@ void Control::updateBaselineOffset() {
     QQuickItem::setBaselineOffset(value);
 }
 
-void Control::updateEnvironment(bool propagate) {
-    const auto* parent = parentControl();
+void Control::resolveEnvironment() {
+    QPointer<Control> guard(this);
+    resolveFont();
+    if (! guard) return;
+    resolveLocale();
+    if (! guard) return;
+    resolveLayoutDirection();
+    if (! guard) return;
+    resolveHoverEnabled();
+}
 
-    const QFont parentFont = utils::inheritedFont(this);
-    const QFont newFont =
-        m_font_explicit ? utils::resolveFont(m_requested_font, parentFont) : parentFont;
-    const QLocale newLocale =
-        m_locale_explicit ? m_requested_locale : (parent ? parent->locale() : QLocale());
-    const auto newLayoutDirection =
-        m_layout_direction_explicit
-            ? m_requested_layout_direction
-            : (parent ? parent->layoutDirection() : QGuiApplication::layoutDirection());
-    const bool newHoverEnabled =
-        m_requested_hover_enabled ? *m_requested_hover_enabled : utils::inheritedHoverEnabled(this);
+void Control::resolveFont() {
+    if (! utils::canUpdateControlEnvironment()) return;
+    inheritFont(utils::inheritedFont(this));
+}
 
-    bool changed = false;
-    if (m_font != newFont || m_font.resolveMask() != newFont.resolveMask()) {
-        const bool fontChangedValue = m_font != newFont;
-        m_font                      = newFont;
-        changed                     = true;
-        if (fontChangedValue) Q_EMIT fontChanged();
-    }
-    if (m_locale != newLocale) {
-        m_locale = newLocale;
-        changed  = true;
-        Q_EMIT localeChanged();
-    }
-    if (m_layout_direction != newLayoutDirection) {
-        const auto wasMirrored = mirrored();
-        m_layout_direction     = newLayoutDirection;
-        changed                = true;
-        Q_EMIT layoutDirectionChanged();
-        if (wasMirrored != mirrored()) Q_EMIT mirroredChanged();
-    }
-    if (m_hover_enabled != newHoverEnabled) {
-        m_hover_enabled = newHoverEnabled;
-        setAcceptHoverEvents(newHoverEnabled);
-        if (! newHoverEnabled) setHovered(false);
-        changed = true;
-        Q_EMIT hoverEnabledChanged();
-    }
+void Control::inheritFont(const QFont& inherited) {
+    if (! utils::canUpdateControlEnvironment()) return;
+    const auto resolved =
+        m_font_explicit ? utils::resolveFont(m_requested_font, inherited) : inherited;
+    const bool changed = m_font != resolved;
+    if (! changed && m_font.resolveMask() == resolved.resolveMask()) return;
+    m_font = resolved;
+    QPointer<Control> guard(this);
+    utils::propagateFont(this, resolved);
+    if (guard && changed) Q_EMIT fontChanged();
+}
 
-    if (changed && propagate) updateDescendantControls();
+void Control::resolveLocale() {
+    if (! utils::canUpdateControlEnvironment() || m_locale_explicit) return;
+    inheritLocale(utils::inheritedLocale(this));
+}
+
+void Control::inheritLocale(const QLocale& value) {
+    if (! m_locale_explicit) updateLocale(value);
+}
+
+void Control::updateLocale(const QLocale& value) {
+    if (! utils::canUpdateControlEnvironment() || m_locale == value) return;
+    const auto resolved = value;
+    m_locale            = resolved;
+    QPointer<Control> guard(this);
+    utils::propagateLocale(this, resolved);
+    if (guard) Q_EMIT localeChanged();
+}
+
+void Control::resolveLayoutDirection() {
+    if (! utils::canUpdateControlEnvironment() || m_layout_direction_explicit) return;
+    inheritLayoutDirection(utils::inheritedLayoutDirection(this));
+}
+
+void Control::inheritLayoutDirection(Qt::LayoutDirection value) {
+    if (! m_layout_direction_explicit) updateLayoutDirection(value);
+}
+
+void Control::updateLayoutDirection(Qt::LayoutDirection value) {
+    if (! utils::canUpdateControlEnvironment() || m_layout_direction == value) return;
+    const auto wasMirrored = mirrored();
+    m_layout_direction     = value;
+    QPointer<Control> guard(this);
+    utils::propagateLayoutDirection(this, value);
+    if (! guard) return;
+    Q_EMIT layoutDirectionChanged();
+    if (guard && wasMirrored != mirrored()) Q_EMIT mirroredChanged();
+}
+
+void Control::resolveHoverEnabled() {
+    if (! utils::canUpdateControlEnvironment() || m_requested_hover_enabled) return;
+    inheritHoverEnabled(utils::inheritedHoverEnabled(this));
+}
+
+void Control::inheritHoverEnabled(bool value) {
+    if (! m_requested_hover_enabled) updateHoverEnabled(value);
+}
+
+void Control::updateHoverEnabled(bool value) {
+    if (! utils::canUpdateControlEnvironment() || m_hover_enabled == value) return;
+    m_hover_enabled = value;
+    setAcceptHoverEvents(value);
+    QPointer<Control> guard(this);
+    if (! value) setHovered(false);
+    if (! guard) return;
+    utils::propagateHoverEnabled(this, value);
+    if (guard) Q_EMIT hoverEnabledChanged();
 }
 
 void Control::updateVisualFocus() {
@@ -694,14 +737,5 @@ void Control::disconnectContentItem() {
     if (m_content_item) m_content_item->removeEventFilter(this);
     utils::disconnectAll(m_content_connections);
 }
-
-Control* Control::parentControl() const {
-    for (auto* item = parentItem(); item; item = item->parentItem()) {
-        if (auto* control = qobject_cast<Control*>(item)) return control;
-    }
-    return nullptr;
-}
-
-void Control::updateDescendantControls() { utils::propagateControlEnvironment(this); }
 
 } // namespace qml_material

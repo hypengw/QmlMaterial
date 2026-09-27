@@ -34,7 +34,7 @@ public:
     void          setFont(const QFont&);
     void          resetFont();
     QFont         effectiveFont() const override { return m_effective_font; }
-    void          refreshInheritedEnvironment() override;
+    void          inheritFont(const QFont&) override;
     QQuickItem*   background() const { return m_background.item(); }
     void          setBackground(QQuickItem*);
     qreal         implicitBackgroundWidth() const;
@@ -67,7 +67,7 @@ protected:
     void geometryChange(const QRectF&, const QRectF&) override;
 
 private:
-    void                  updateFont();
+    void                  resolveFont();
     QFont                 m_requested_font;
     QFont                 m_effective_font;
     TextControlBackground m_background;

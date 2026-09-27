@@ -27,6 +27,7 @@ set(QM_TEST_SOURCES
   integration/adaptive_presenter.cpp
   layout/control_layout.cpp
   integration/dynamic_creation.cpp
+  integration/application_lifetime.cpp
   integration/attached_property_propagation.cpp
   layout/page_layout.cpp)
 
@@ -57,7 +58,7 @@ else()
 endif()
 qt_import_qml_plugins(qm_tests)
 
-set(QM_APPLESS_TESTS viewport_controller linear_layout carousel_engine_defaults)
+set(QM_APPLESS_TESTS viewport_controller linear_layout carousel_engine_defaults application_lifetime)
 set(QM_CORE_TESTS hero_center_end fullscreen_layout multi_browse_layout
   uncontained_layout hero_start_layout appstream_release_model)
 set(QM_TEST_GROUPS "")
@@ -75,7 +76,7 @@ foreach(source IN LISTS QM_TEST_SOURCES)
 endforeach()
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/test_groups.inc" CONTENT "${QM_TEST_GROUPS}")
 
-set_tests_properties(lazy_list scroll_motion lazy_data icon_spec toolbar_dynamic_visibility
+set_tests_properties(lazy_list scroll_motion lazy_data icon_spec toolbar_dynamic_visibility application_lifetime
   PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 set_tests_properties(lite_layout control_layout dynamic_creation attached_property_propagation
   page_layout split_view item_proxy nested_scroll adaptive_presenter PROPERTIES ENVIRONMENT
