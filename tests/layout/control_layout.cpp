@@ -15,6 +15,7 @@
 #include "qml_material/control/popup.hpp"
 #include "qml_material/control/dialog.hpp"
 #include "qml_material/control/icon_spec.hpp"
+#include "qml_material/control/abstract_button.hpp"
 #include "qml_material/layout/layout_container.hpp"
 #include "qml_material/view/lazy_list.hpp"
 #include "qml_material/model/item_source.hpp"
@@ -510,6 +511,48 @@ private Q_SLOTS:
         }
         m_window.setGeometry(0, 0, 800, 600);
         m_window.create();
+    }
+
+    void inputChipActionClick() {
+        QQuickWindow window;
+        window.resize(400, 200);
+        window.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        window.requestActivate();
+        QTRY_VERIFY(window.isActive());
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            MD.InputChip {
+                id: chip
+                property int triggerCount: 0
+                editDelegate: TextInput {}
+                action: MD.Action {
+                    text: "Rainbow"
+                    checkable: true
+                    onTriggered: ++chip.triggerCount
+                }
+            }
+        )",
+                          QUrl());
+        QVERIFY2(component.isReady(), qPrintable(component.errorString()));
+        std::unique_ptr<QObject> object(component.create());
+        auto*                    chip = qobject_cast<qml_material::AbstractButton*>(object.get());
+        QVERIFY(chip);
+        chip->setParentItem(window.contentItem());
+        settle(chip);
+        QTest::mouseClick(
+            &window, Qt::LeftButton, Qt::NoModifier, QPoint(chip->width() / 2, chip->height() / 2));
+        QCOMPARE(chip->property("triggerCount").toInt(), 1);
+        QVERIFY(chip->hasActiveFocus());
+        chip->click();
+        QCOMPARE(chip->property("triggerCount").toInt(), 2);
+        QTest::keyClick(&window, Qt::Key_Space);
+        QCOMPARE(chip->property("triggerCount").toInt(), 3);
+        chip->setProperty("edit", true);
+        settle(chip);
+        QVERIFY(chip->contentItem()->hasActiveFocus());
     }
 
     void constrainedTextElides_data() {

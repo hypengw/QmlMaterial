@@ -6,7 +6,7 @@ MD.Page {
     id: root
     property int pageIndex: 0
     padding: 8
-    title: 'Material 3'
+    leftPadding: 0
 
     readonly property bool isCompact: MD.MProp.size.isCompact
 
@@ -51,8 +51,7 @@ MD.Page {
 
     MD.PageContext {
         id: m_page_ctx
-        showHeader: true
-        headerBackgroundOpacity: 0
+        showHeader: false
     }
 
     contentItem: ColumnLayout {

@@ -107,7 +107,7 @@ MD.ButtonBase {
     }
 
     onFocusChanged: {
-        if (focus)
+        if (focus && edit && control.contentItem !== control.contentItemRO)
             control.contentItem.focus = true;
     }
 
