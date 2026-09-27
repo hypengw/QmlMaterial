@@ -248,6 +248,7 @@ MD.Page {
                     MD.ComboBox {
                         objectName: 'fromShape'
                         width: (parent.width - parent.spacing * (parent.columns - 1)) / parent.columns
+                        popupMaximumHeight: Math.max(1, Math.min(320, morphFlick.height - 24))
                         label: 'From'
                         model: root.shapes
                         textRole: 'name'
@@ -257,6 +258,7 @@ MD.Page {
                     MD.ComboBox {
                         objectName: 'toShape'
                         width: (parent.width - parent.spacing * (parent.columns - 1)) / parent.columns
+                        popupMaximumHeight: Math.max(1, Math.min(320, morphFlick.height - 24))
                         label: 'To'
                         model: root.shapes
                         textRole: 'name'
