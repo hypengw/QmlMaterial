@@ -5,10 +5,11 @@ import "../../../example" as Demo
 Rectangle {
     id: root
     width: 780
-    height: 640
+    height: 720
     color: "#fffbfe"
 
     Demo.ButtonGroups {
+        id: ltrGroups
         x: 24
         y: 24
         width: Math.min(340, root.width - 48)
@@ -22,8 +23,9 @@ Rectangle {
         LayoutMirroring.childrenInherit: true
     }
     MD.ButtonGroupContainer {
+        id: pressedGroup
         x: 24
-        y: 520
+        y: ltrGroups.y + ltrGroups.height + 32
         MD.Button {
             text: "First"
             mdState.type: MD.Enum.BtFilled
@@ -40,17 +42,17 @@ Rectangle {
     }
     MD.ButtonGroupContainer {
         x: 24
-        y: 584
+        y: pressedGroup.y + pressedGroup.height + 24
         variant: MD.ButtonGroupContainer.Connected
         MD.Button {
             text: "Disabled"
             enabled: false
-            mdState.type: MD.Enum.BtTonal
+            mdState.type: MD.Enum.BtFilledTonal
         }
         MD.Button {
             id: focusButton
             text: "Focus"
-            mdState.type: MD.Enum.BtTonal
+            mdState.type: MD.Enum.BtFilledTonal
             MD.FocusIndicator {
                 parent: focusButton.background
                 corners: focusButton.background.corners

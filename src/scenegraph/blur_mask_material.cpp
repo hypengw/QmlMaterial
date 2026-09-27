@@ -46,7 +46,10 @@ int BlurMaskMaterial::compare(const QSGMaterial* other) const {
         return a == b ? 0 : (a < b ? -1 : 1);
     };
     if (int c = cmp_ptr(m_profile_texture, o->m_profile_texture); c != 0) return c;
-    if (int c = cmp_ptr(m_corner_texture, o->m_corner_texture); c != 0) return c;
+    for (int i = 0; i < 4; ++i) {
+        if (int c = cmp_ptr(m_corner_textures[i].texture, o->m_corner_textures[i].texture); c != 0)
+            return c;
+    }
     if (style != o->style) return int(style) < int(o->style) ? -1 : 1;
     if (sigma != o->sigma) return sigma < o->sigma ? -1 : 1;
     if (rect_size.x() != o->rect_size.x()) return rect_size.x() < o->rect_size.x() ? -1 : 1;
@@ -58,14 +61,18 @@ int BlurMaskMaterial::compare(const QSGMaterial* other) const {
 }
 
 auto BlurMaskMaterial::profile_texture() -> QSGTexture* { return m_profile_texture; }
-auto BlurMaskMaterial::corner_texture() -> QSGTexture* { return m_corner_texture; }
+const CornerCutoutTexture& BlurMaskMaterial::corner_texture(int index) const {
+    return m_corner_textures[index];
+}
 
 void BlurMaskMaterial::init_profile_texture(QQuickWindow* win) {
     m_profile_texture = shared_blur_profile_texture(win);
 }
 
-void BlurMaskMaterial::init_corner_texture(QQuickWindow* win, float sigma_, float radius_) {
-    m_corner_texture = shared_rrect_corner_blur_texture(win, sigma_, radius_);
+void BlurMaskMaterial::init_corner_textures(QQuickWindow* win) {
+    for (int i = 0; i < 4; ++i) {
+        m_corner_textures[i] = shared_rrect_corner_cutout_texture(win, sigma, radius[i]);
+    }
 }
 
 BlurMaskShader::BlurMaskShader() {
@@ -73,11 +80,9 @@ BlurMaskShader::BlurMaskShader() {
     setShaderFileName(QSGMaterialShader::FragmentStage, QLatin1String(kFragPath));
 }
 
-bool BlurMaskShader::updateUniformData(RenderState& state, QSGMaterial* newMaterial,
-                                       QSGMaterial* oldMaterial) {
-    auto*       mat     = static_cast<BlurMaskMaterial*>(newMaterial);
-    bool        changed = false;
-    QByteArray* buf     = state.uniformData();
+bool BlurMaskShader::updateUniformData(RenderState& state, QSGMaterial* newMaterial, QSGMaterial*) {
+    auto*       mat = static_cast<BlurMaskMaterial*>(newMaterial);
+    QByteArray* buf = state.uniformData();
     // std140 block:
     //   mat4  qt_Matrix  @ 0   (64)
     //   float qt_Opacity @ 64  (4)
@@ -89,45 +94,52 @@ bool BlurMaskShader::updateUniformData(RenderState& state, QSGMaterial* newMater
     //   float radius_tr  @ 92  (4)
     //   float radius_bl  @ 96  (4)
     //   float radius_br  @ 100 (4)
-    Q_ASSERT(buf->size() >= 104);
+    //   vec4 corner_uv[4] @ 112 (64): margin, extent, unused, unused
+    Q_ASSERT(buf->size() >= 176);
 
     if (state.isMatrixDirty()) {
         const QMatrix4x4 m = state.combinedMatrix();
         memcpy(buf->data(), m.constData(), 64);
-        changed = true;
     }
     if (state.isOpacityDirty()) {
         const float opacity = state.opacity();
         memcpy(buf->data() + 64, &opacity, 4);
-        changed = true;
     }
 
-    // Per-instance uniforms only need re-uploading when Qt rebinds a different
-    // material. RequiresFullMatrix forces a draw call per node so this still
-    // runs every frame in practice, but the check is essentially free and
-    // correctly handles the rare case where Qt reuses the same material.
-    if (newMaterial != oldMaterial) {
-        memcpy(buf->data() + 68, &mat->sigma, 4);
-        const float rect_w = mat->rect_size.x();
-        const float rect_h = mat->rect_size.y();
-        memcpy(buf->data() + 72, &rect_w, 4);
-        memcpy(buf->data() + 76, &rect_h, 4);
-        const int style_i = static_cast<int>(mat->style);
-        memcpy(buf->data() + 80, &style_i, 4);
-        const float r = mat->effective_radius();
-        memcpy(buf->data() + 84, &r, 4);
-
-        const float r_tl = mat->radius.x();
-        const float r_tr = mat->radius.y();
-        const float r_bl = mat->radius.z();
-        const float r_br = mat->radius.w();
-        memcpy(buf->data() + 88, &r_tl, 4);
-        memcpy(buf->data() + 92, &r_tr, 4);
-        memcpy(buf->data() + 96, &r_bl, 4);
-        memcpy(buf->data() + 100, &r_br, 4);
-        changed = true;
+    // The same material can be mutated between frames during corner animations.
+    // The rectangle and its cutouts must use the same quantised Gaussian.
+    float blur_sigma = mat->sigma;
+    for (int i = 0; i < 4; ++i) {
+        const auto& corner = mat->corner_texture(i);
+        if (corner.texture) {
+            blur_sigma = corner.sigma;
+            break;
+        }
     }
-    return changed;
+    memcpy(buf->data() + 68, &blur_sigma, 4);
+    const float rect_w = mat->rect_size.x();
+    const float rect_h = mat->rect_size.y();
+    memcpy(buf->data() + 72, &rect_w, 4);
+    memcpy(buf->data() + 76, &rect_h, 4);
+    const int style_i = static_cast<int>(mat->style);
+    memcpy(buf->data() + 80, &style_i, 4);
+    const float r = mat->effective_radius();
+    memcpy(buf->data() + 84, &r, 4);
+
+    const float r_tl = mat->radius.x();
+    const float r_tr = mat->radius.y();
+    const float r_bl = mat->radius.z();
+    const float r_br = mat->radius.w();
+    memcpy(buf->data() + 88, &r_tl, 4);
+    memcpy(buf->data() + 92, &r_tr, 4);
+    memcpy(buf->data() + 96, &r_bl, 4);
+    memcpy(buf->data() + 100, &r_br, 4);
+    for (int i = 0; i < 4; ++i) {
+        const auto& corner = mat->corner_texture(i);
+        const float mapping[] { corner.margin, corner.texture ? corner.extent : 0.0f, 0, 0 };
+        memcpy(buf->data() + 112 + i * 16, mapping, sizeof(mapping));
+    }
+    return true;
 }
 
 void BlurMaskShader::updateSampledImage(RenderState& state, int binding, QSGTexture** texture,
@@ -136,8 +148,8 @@ void BlurMaskShader::updateSampledImage(RenderState& state, int binding, QSGText
     QSGTexture* t   = nullptr;
     if (binding == 1) {
         t = mat->profile_texture();
-    } else if (binding == 2) {
-        t = mat->corner_texture();
+    } else if (binding >= 2 && binding <= 5) {
+        t = mat->corner_texture(binding - 2).texture;
         if (! t) t = mat->profile_texture(); // dummy fallback to keep the pipeline happy
     }
     if (t) {

@@ -47,84 +47,57 @@ void fill_gaussian_kernel_1d(std::span<float> out, scalar sigma) {
     for (auto& v : out) v *= inv_sum;
 }
 
-int rrect_corner_blur_size(scalar sigma, scalar radius) {
-    if (sigma < 0.5f || radius < 0.5f) return 0;
-    const int margin = static_cast<int>(std::ceil(3.0f * sigma));
-    const int r_i    = static_cast<int>(std::ceil(radius));
-    return r_i + margin;
+int rrect_corner_cutout_size(scalar sigma, scalar radius) {
+    if (sigma <= 0.0f || radius <= 0.0f) return 0;
+    return static_cast<int>(std::ceil(radius)) + 2 * gaussian_kernel_radius(sigma);
 }
 
-void fill_rrect_corner_blur(std::span<std::uint8_t> out, scalar sigma, scalar radius) {
-    assert(sigma >= 0.5f && radius >= 0.5f);
-    const int margin = static_cast<int>(std::ceil(3.0f * sigma));
-    const int r_i    = static_cast<int>(std::ceil(radius));
-    const int N      = r_i + margin;
-    assert(static_cast<int>(out.size()) == N * N);
+void fill_rrect_corner_cutout(std::span<std::uint8_t> out, scalar sigma, scalar radius) {
+    assert(sigma > 0.0f && radius > 0.0f);
+    const int margin = gaussian_kernel_radius(sigma);
+    const int n      = rrect_corner_cutout_size(sigma, radius);
+    assert(static_cast<int>(out.size()) == n * n);
 
-    // Extended mask frame: pixels at integer positions p = (mx + i, my + j) for
-    // (i, j) in [0, Mw). We need p ∈ [-margin, r+margin] on both axes so that
-    // convolving with a 1D kernel of radius `margin` produces valid output across
-    // the desired window [-margin, r].
-    const int Mx0 = -margin;
-    const int Mx1 = r_i + margin;
-    const int Mw  = Mx1 - Mx0; // = r_i + 2*margin
-    const int My0 = Mx0;
-    const int Mh  = Mw;
-
-    std::vector<float> mask(static_cast<std::size_t>(Mw) * Mh);
-    const float        r2 = radius * radius;
-    for (int j = 0; j < Mh; ++j) {
-        const float y = static_cast<float>(j + My0) + 0.5f;
-        for (int i = 0; i < Mw; ++i) {
-            const float x = static_cast<float>(i + Mx0) + 0.5f;
-            bool        inside;
-            if (x < 0.0f || y < 0.0f) {
-                inside = false;
-            } else if (x >= radius && y >= radius) {
-                inside = true;
-            } else if (x >= radius) {
-                inside = true; // right strip
-            } else if (y >= radius) {
-                inside = true; // bottom strip
-            } else {
-                const float dx = x - radius;
-                const float dy = y - radius;
-                inside         = (dx * dx + dy * dy) <= r2;
+    std::vector<float> mask(static_cast<std::size_t>(n) * n, 0.0f);
+    // Subpixel coverage keeps fractional radii from snapping at pixel centers.
+    constexpr int samples = 4;
+    const int     end     = margin + static_cast<int>(std::ceil(radius));
+    for (int j = margin; j < end; ++j) {
+        for (int i = margin; i < end; ++i) {
+            int covered = 0;
+            for (int sy = 0; sy < samples; ++sy) {
+                for (int sx = 0; sx < samples; ++sx) {
+                    const float x  = i - margin + (sx + 0.5f) / samples;
+                    const float y  = j - margin + (sy + 0.5f) / samples;
+                    const float dx = x - radius;
+                    const float dy = y - radius;
+                    covered += x < radius && y < radius && dx * dx + dy * dy > radius * radius;
+                }
             }
-            mask[static_cast<std::size_t>(j) * Mw + i] = inside ? 1.0f : 0.0f;
+            mask[static_cast<std::size_t>(j) * n + i] = float(covered) / (samples * samples);
         }
     }
 
     std::vector<float> kernel(static_cast<std::size_t>(2 * margin + 1));
     fill_gaussian_kernel_1d(kernel, sigma);
 
-    // Horizontal pass
-    std::vector<float> tmp(static_cast<std::size_t>(Mw) * Mh, 0.0f);
-    for (int j = 0; j < Mh; ++j) {
-        for (int i = 0; i < Mw; ++i) {
+    std::vector<float> tmp(static_cast<std::size_t>(n) * n, 0.0f);
+    for (int j = margin; j < end; ++j) {
+        for (int i = 0; i < n; ++i) {
             float acc = 0.0f;
-            for (int k = -margin; k <= margin; ++k) {
-                const int ii = std::clamp(i + k, 0, Mw - 1);
-                acc += mask[static_cast<std::size_t>(j) * Mw + ii] * kernel[k + margin];
+            for (int k = std::max(-margin, -i); k <= std::min(margin, n - 1 - i); ++k) {
+                acc += mask[static_cast<std::size_t>(j) * n + i + k] * kernel[k + margin];
             }
-            tmp[static_cast<std::size_t>(j) * Mw + i] = acc;
+            tmp[static_cast<std::size_t>(j) * n + i] = acc;
         }
     }
 
-    // Vertical pass + extract. Output covers the window [-margin, r] on both
-    // axes to match the shader's corner_sample UV mapping (UV=0 → local=-margin,
-    // UV=1 → local=r). That means output (i, j) corresponds to mask index
-    // (i, j) itself — NOT (i + margin, j + margin) — since mask index 0 is
-    // already at grid position -margin + 0.5.
-    for (int j = 0; j < N; ++j) {
-        const int     mj  = j;
-        std::uint8_t* row = out.data() + static_cast<std::size_t>(j) * N;
-        for (int i = 0; i < N; ++i) {
-            const int mi  = i;
-            float     acc = 0.0f;
-            for (int k = -margin; k <= margin; ++k) {
-                const int jj = std::clamp(mj + k, 0, Mh - 1);
-                acc += tmp[static_cast<std::size_t>(jj) * Mw + mi] * kernel[k + margin];
+    for (int j = 0; j < n; ++j) {
+        std::uint8_t* row = out.data() + static_cast<std::size_t>(j) * n;
+        for (int i = 0; i < n; ++i) {
+            float acc = 0.0f;
+            for (int k = std::max(-margin, -j); k <= std::min(margin, n - 1 - j); ++k) {
+                acc += tmp[static_cast<std::size_t>(j + k) * n + i] * kernel[k + margin];
             }
             row[i] = static_cast<std::uint8_t>(std::clamp(round_to_int(acc * 255.0f), 0, 255));
         }

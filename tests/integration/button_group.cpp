@@ -46,6 +46,77 @@ void setup(TestGroup& group, Button& button, qreal width = 100) {
 class ButtonGroupTest : public QObject {
     Q_OBJECT
 private slots:
+    void qmlBindings_data() {
+        QTest::addColumn<QString>("source");
+        QTest::newRow("example") << QFINDTESTDATA("../../example/ButtonGroups.qml");
+        QTest::newRow("visual") << QFINDTESTDATA("../visual/scenes/button_group.qml");
+    }
+    void qmlBindings() {
+        QFETCH(QString, source);
+        QVERIFY(! source.isEmpty());
+        QTest::failOnWarning(QRegularExpression(".*"));
+        QQmlEngine engine;
+        engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));
+        QQmlComponent component(&engine, QUrl::fromLocalFile(source));
+        QVERIFY2(component.isReady(), qPrintable(component.errorString()));
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        QCoreApplication::processEvents();
+    }
+    void exampleSingleSelection() {
+        QTest::failOnWarning(QRegularExpression(".*"));
+        QQmlEngine engine;
+        engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));
+        QQmlComponent component(
+            &engine, QUrl::fromLocalFile(QFINDTESTDATA("../../example/ButtonGroups.qml")));
+        QVERIFY2(component.isReady(), qPrintable(component.errorString()));
+        QQuickWindow window;
+        window.resize(400, 720);
+        std::unique_ptr<QObject> object(component.create());
+        auto*                    root = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(root);
+        root->setWidth(340);
+        root->setParentItem(window.contentItem());
+        auto* group = root->findChild<ButtonGroupContainer*>("fileButtons");
+        QVERIFY(group);
+        QCOMPARE(group->count(), 3);
+        QVERIFY(! group->animateWidth());
+        auto* first  = qobject_cast<Button*>(group->itemAt(0));
+        auto* second = qobject_cast<Button*>(group->itemAt(1));
+        auto* last   = qobject_cast<Button*>(group->itemAt(2));
+        QVERIFY(first && second && last);
+        QVERIFY(first->isChecked());
+        QVERIFY(! second->isChecked() && ! last->isChecked());
+        QVERIFY(first->group()->isExclusive());
+        window.show();
+
+        for (const qreal width : { 340.0, 288.0 }) {
+            root->setWidth(width);
+            QTRY_VERIFY(std::abs(first->width() * 3 + group->spacing() * 2 - width) < .001);
+            QCOMPARE(first->width(), second->width());
+            QCOMPARE(first->width(), last->width());
+            const QList<qreal> positions { first->x(), second->x(), last->x() };
+            const qreal        buttonWidth = first->width();
+            for (auto* target : { second, last, first }) {
+                target->setDown(true);
+                QCOMPARE(target->width(), buttonWidth);
+                QCOMPARE(info(target)->pressProgress(), 0);
+                target->setDown(false);
+                target->click();
+                QCOMPARE(first->group()->checkedButton(), target);
+                for (auto* button : { first, second, last }) {
+                    QCOMPARE(button->isChecked(), button == target);
+                    QCOMPARE(button->width(), buttonWidth);
+                }
+                QCOMPARE(QList<qreal>({ first->x(), second->x(), last->x() }), positions);
+                const auto* state = target->findChild<ButtonState*>();
+                QVERIFY(state);
+                QCOMPARE(state->corners(), CornersGroup(target->height() / 2));
+                target->click();
+                QVERIFY(target->isChecked());
+            }
+        }
+    }
     void defaults() {
         TestGroup group;
         group.updatePolish();

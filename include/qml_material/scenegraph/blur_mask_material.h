@@ -1,8 +1,10 @@
 #pragma once
 
+#include <array>
 #include <QSGMaterial>
 #include <QVector2D>
 #include <QVector4D>
+#include "qml_material/scenegraph/texture_cache.h"
 
 namespace qml_material::sg
 {
@@ -35,10 +37,8 @@ public:
     void init_profile_texture(QQuickWindow* win);
     auto profile_texture() -> QSGTexture*;
 
-    /// Resolve a (sigma, radius)-keyed corner blur texture from the per-window
-    /// shared cache. No-op below the analytic-path threshold.
-    void init_corner_texture(QQuickWindow* win, float sigma, float radius);
-    auto corner_texture() -> QSGTexture*;
+    void                       init_corner_textures(QQuickWindow* win);
+    const CornerCutoutTexture& corner_texture(int index) const;
 
     // Uniform state (populated by the owning node each frame).
     float     sigma { 0.0f };
@@ -50,9 +50,9 @@ public:
     [[nodiscard]] float effective_radius() const;
 
 private:
-    // Not owned — both pointers come from the per-window texture cache.
-    QSGTexture* m_profile_texture { nullptr };
-    QSGTexture* m_corner_texture { nullptr };
+    // Not owned; textures come from the per-window cache.
+    QSGTexture*                        m_profile_texture { nullptr };
+    std::array<CornerCutoutTexture, 4> m_corner_textures {};
 };
 
 class BlurMaskShader : public QSGMaterialShader {

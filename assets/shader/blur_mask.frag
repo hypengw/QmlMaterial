@@ -8,7 +8,10 @@ layout(location = 0) out vec4 fragColor;
 layout(location = 0) noperspective in vec2 v_pos;
 layout(location = 1) noperspective in vec4 v_color;
 layout(binding = 1) uniform sampler2D profile_tex;
-layout(binding = 2) uniform sampler2D corner_tex;
+layout(binding = 2) uniform sampler2D corner_tl;
+layout(binding = 3) uniform sampler2D corner_tr;
+layout(binding = 4) uniform sampler2D corner_bl;
+layout(binding = 5) uniform sampler2D corner_br;
 
 layout(std140, binding = 0) uniform buf {
     mat4  qt_Matrix;
@@ -16,11 +19,12 @@ layout(std140, binding = 0) uniform buf {
     float sigma;
     vec2  rect_size;
     int   style;
-    float radius;           // max of the four, used for blurred corner_sample
+    float radius;
     float radius_tl;
     float radius_tr;
     float radius_bl;
     float radius_br;
+    vec4 corner_uv[4];
 };
 
 // Unit-sigma cumulative normal: sample Φ(u) with u ∈ [-3, 3] mapped to [0, 1].
@@ -38,15 +42,11 @@ float coverage_1d(float x, float w, float s) {
     return cdf(x / s) - cdf((x - w) / s);
 }
 
-// Sample the pre-convolved rrect-quarter corner texture.
-// `local` is the fragment position in the corner's local frame whose origin is the
-// corner's outer rrect corner (arc center at (radius, radius)). Texture spans
-// [-3σ, radius]² mapped to [0, 1]² UV.
-float corner_sample(vec2 local, float r, float s) {
-    float margin = 3.0 * s;
-    float bound  = r + margin;
-    vec2  uv     = (local + vec2(margin)) / bound;
-    return texture(corner_tex, uv).r;
+float corner_sample(sampler2D tex, vec2 local, vec4 mapping) {
+    if (mapping.y <= 0.0) return 0.0;
+    vec2 uv = (local + vec2(mapping.x)) / mapping.y;
+    if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) return 0.0;
+    return texture(tex, uv).r;
 }
 
 float separable_alpha(vec2 p, float s) {
@@ -59,39 +59,6 @@ void main() {
     float s = sigma;
     vec2  p = v_pos;
     float r = radius;
-
-    float blurred;
-    if (r < 0.5 || s < 1e-4) {
-        // Rect-only path (iter 4).
-        blurred = separable_alpha(p, s);
-    } else {
-        // Corner-zone dispatch. Only rounded corners (>= 0.5 px) sample the
-        // pre-convolved corner texture; square corners fall through to the
-        // separable gaussian so they render a straight rect-edge blur rather
-        // than a rounded one. The corner texture is shared and sized for the
-        // MAX radius, so rounded corners smaller than `r` pick up an
-        // approximation — acceptable for typical asymmetric shapes.
-        bool in_tl = radius_tl >= 0.5
-                     && p.x < radius_tl && p.y < radius_tl;
-        bool in_tr = radius_tr >= 0.5
-                     && p.x > rect_size.x - radius_tr && p.y < radius_tr;
-        bool in_bl = radius_bl >= 0.5
-                     && p.x < radius_bl && p.y > rect_size.y - radius_bl;
-        bool in_br = radius_br >= 0.5
-                     && p.x > rect_size.x - radius_br
-                     && p.y > rect_size.y - radius_br;
-        if (in_tl) {
-            blurred = corner_sample(p, r, s);
-        } else if (in_tr) {
-            blurred = corner_sample(vec2(rect_size.x - p.x, p.y), r, s);
-        } else if (in_bl) {
-            blurred = corner_sample(vec2(p.x, rect_size.y - p.y), r, s);
-        } else if (in_br) {
-            blurred = corner_sample(vec2(rect_size.x - p.x, rect_size.y - p.y), r, s);
-        } else {
-            blurred = separable_alpha(p, s);
-        }
-    }
 
     // Inside mask: per-quadrant SDF rounded rectangle (handles non-uniform corners).
     float inside;
@@ -109,6 +76,18 @@ void main() {
         vec2  q   = abs(ctr) - (hs - vec2(r_q));
         float sdf = min(max(q.x, q.y), 0.0) + length(max(q, vec2(0.0))) - r_q;
         inside    = 1.0 - clamp(sdf, 0.0, 1.0);
+    }
+
+    // Gaussian convolution is linear: subtract all four finite corner cutouts.
+    // Their blur tails overlap edge regions, so do not switch at the arc radius.
+    float blurred = inside;
+    if (s >= 0.5) {
+        blurred = separable_alpha(p, s)
+            - corner_sample(corner_tl, p, corner_uv[0])
+            - corner_sample(corner_tr, vec2(rect_size.x - p.x, p.y), corner_uv[1])
+            - corner_sample(corner_bl, vec2(p.x, rect_size.y - p.y), corner_uv[2])
+            - corner_sample(corner_br, rect_size - p, corner_uv[3]);
+        blurred = clamp(blurred, 0.0, 1.0);
     }
 
     float alpha;

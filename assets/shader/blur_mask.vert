@@ -20,6 +20,7 @@ layout(std140, binding = 0) uniform buf {
     float radius_tr;
     float radius_bl;
     float radius_br;
+    vec4 corner_uv[4];
 };
 
 void main() {

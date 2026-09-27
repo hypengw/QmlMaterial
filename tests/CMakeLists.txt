@@ -7,6 +7,7 @@ endforeach()
 enable_testing()
 
 set(QM_TEST_SOURCES
+  visual/visual_blur_mask.cpp
   integration/button_group.cpp
   integration/material_shapes.cpp
   integration/lazy_list.cpp
@@ -106,7 +107,7 @@ if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
 endif()
 qt_import_qml_plugins(lazy_list_benchmark)
 
-set(VISUAL_SCENES button_group material_shapes button action_progress elevation shape ripple ripple_phases loading_indicator_shapes tooltip wave_progress snackbar
+set(VISUAL_SCENES button_group material_shapes button action_progress elevation elevation_corners shape ripple ripple_phases loading_indicator_shapes tooltip wave_progress snackbar
     icon_artifacts icon_spec
     focus_button focus_iconbutton focus_fab focus_chip
     focus_switch focus_checkbox focus_radio

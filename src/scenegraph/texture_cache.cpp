@@ -33,9 +33,9 @@ inline std::size_t qHash(const CornerKey& k, std::size_t seed = 0) noexcept {
 }
 
 struct WindowEntry {
-    QSGTexture*                   profile = nullptr;
-    QSGTexture*                   fadeoff = nullptr;
-    QHash<CornerKey, QSGTexture*> corners;
+    QSGTexture*                           profile = nullptr;
+    QSGTexture*                           fadeoff = nullptr;
+    QHash<CornerKey, CornerCutoutTexture> corners;
 };
 
 QMutex& cache_mutex() {
@@ -56,7 +56,7 @@ void release_textures_locked(WindowEntry* e) {
     e->profile = nullptr;
     delete e->fadeoff;
     e->fadeoff = nullptr;
-    for (auto* t : std::as_const(e->corners)) delete t;
+    for (const auto& corner : std::as_const(e->corners)) delete corner.texture;
     e->corners.clear();
 }
 
@@ -108,7 +108,9 @@ QSGTexture* build_profile_texture(QQuickWindow* win) {
     QImage image(kProfileSize, 1, QImage::Format_Grayscale8);
     math::fill_unit_cdf_profile(
         std::span<std::uint8_t> { image.scanLine(0), static_cast<std::size_t>(kProfileSize) });
-    return win->createTextureFromImage(image);
+    auto* texture = win->createTextureFromImage(image);
+    if (texture) texture->setFiltering(QSGTexture::Linear);
+    return texture;
 }
 
 QSGTexture* build_fadeoff_texture(QQuickWindow* win) {
@@ -121,18 +123,20 @@ QSGTexture* build_fadeoff_texture(QQuickWindow* win) {
     return win->createTextureFromImage(image);
 }
 
-QSGTexture* build_corner_texture(QQuickWindow* win, float sigma, float radius) {
-    const int n = math::rrect_corner_blur_size(sigma, radius);
-    if (n <= 0) return nullptr;
+CornerCutoutTexture build_corner_texture(QQuickWindow* win, float sigma, float radius) {
+    const int n = math::rrect_corner_cutout_size(sigma, radius);
+    if (n <= 0) return {};
     QImage                    image(n, n, QImage::Format_Grayscale8);
     std::vector<std::uint8_t> buf(static_cast<std::size_t>(n) * n);
-    math::fill_rrect_corner_blur(buf, sigma, radius);
+    math::fill_rrect_corner_cutout(buf, sigma, radius);
     for (int j = 0; j < n; ++j) {
         std::memcpy(image.scanLine(j),
                     buf.data() + static_cast<std::size_t>(j) * n,
                     static_cast<std::size_t>(n));
     }
-    return win->createTextureFromImage(image);
+    auto* texture = win->createTextureFromImage(image);
+    if (texture) texture->setFiltering(QSGTexture::Linear);
+    return { texture, float(math::gaussian_kernel_radius(sigma)), float(n), sigma };
 }
 
 } // namespace
@@ -153,9 +157,10 @@ QSGTexture* shared_shadow_fadeoff_texture(QQuickWindow* win) {
     return e->fadeoff;
 }
 
-QSGTexture* shared_rrect_corner_blur_texture(QQuickWindow* win, float sigma, float radius) {
-    if (! win) return nullptr;
-    if (sigma < kMinSigma || radius < kMinRadius) return nullptr;
+CornerCutoutTexture shared_rrect_corner_cutout_texture(QQuickWindow* win, float sigma,
+                                                       float radius) {
+    if (! win) return {};
+    if (sigma < kMinSigma || radius < kMinRadius) return {};
     const CornerKey key {
         .sigma_q  = static_cast<int>(std::round(sigma * 2.0f)),
         .radius_q = static_cast<int>(std::round(radius * 2.0f)),
@@ -164,7 +169,7 @@ QSGTexture* shared_rrect_corner_blur_texture(QQuickWindow* win, float sigma, flo
     auto*        e  = ensure_entry_locked(win);
     auto         it = e->corners.find(key);
     if (it != e->corners.end()) return *it;
-    QSGTexture* t = build_corner_texture(win, sigma, radius);
+    const auto t = build_corner_texture(win, key.sigma_q * 0.5f, key.radius_q * 0.5f);
     e->corners.insert(key, t);
     return t;
 }

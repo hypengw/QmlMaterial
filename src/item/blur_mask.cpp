@@ -40,7 +40,7 @@ public:
         mat->rect_size = new_rect_size;
         mat->radius    = radius;
         mat->style     = style;
-        mat->init_corner_texture(item->window(), mat->sigma, mat->effective_radius());
+        mat->init_corner_textures(item->window());
 
         if (geometry_changed) {
             auto* verts = static_cast<BasicVertex*>(geometry()->vertexData());

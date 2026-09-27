@@ -41,7 +41,7 @@ Column {
         anchors.horizontalCenter: parent.horizontalCenter
         MD.Button {
             text: "Label"
-            mdState.type: MD.Enum.BtTonal
+            mdState.type: MD.Enum.BtFilledTonal
         }
         MD.Button {
             text: "Edit"
@@ -69,6 +69,36 @@ Column {
     MD.Label {
         text: "Connected"
         typescale: MD.Token.typescale.title_medium
+    }
+    MD.ButtonGroup {
+        id: fileSelection
+    }
+    MD.ButtonGroupContainer {
+        objectName: "fileButtons"
+        width: Math.max(0, root.width)
+        variant: MD.ButtonGroupContainer.Connected
+        MD.Button {
+            text: "My files"
+            checkable: true
+            checked: true
+            mdState.type: MD.Enum.BtFilledTonal
+            MD.ButtonGroup.group: fileSelection
+            MD.ButtonGroupContainer.weight: 1
+        }
+        MD.Button {
+            text: "Shared"
+            checkable: true
+            mdState.type: MD.Enum.BtFilledTonal
+            MD.ButtonGroup.group: fileSelection
+            MD.ButtonGroupContainer.weight: 1
+        }
+        MD.Button {
+            text: "Computers"
+            checkable: true
+            mdState.type: MD.Enum.BtFilledTonal
+            MD.ButtonGroup.group: fileSelection
+            MD.ButtonGroupContainer.weight: 1
+        }
     }
     MD.ButtonGroup {
         id: singleSelection
@@ -104,7 +134,7 @@ Column {
             text: "One"
             icon.name: MD.Token.icon.star
             checkable: true
-            mdState.type: MD.Enum.BtTonal
+            mdState.type: MD.Enum.BtFilledTonal
             MD.ButtonGroup.group: multipleSelection
         }
         MD.Button {
@@ -112,13 +142,13 @@ Column {
             icon.name: MD.Token.icon.star
             checkable: true
             checked: true
-            mdState.type: MD.Enum.BtTonal
+            mdState.type: MD.Enum.BtFilledTonal
             MD.ButtonGroup.group: multipleSelection
         }
         MD.Button {
             text: "Three"
             checkable: true
-            mdState.type: MD.Enum.BtTonal
+            mdState.type: MD.Enum.BtFilledTonal
             MD.ButtonGroup.group: multipleSelection
         }
     }
