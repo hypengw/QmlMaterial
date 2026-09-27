@@ -1,4 +1,16 @@
 <releases>
+  <release version="0.4.2" date="2026-09-27">
+    <description>
+      <ul>
+        <li>Add adaptive presenters and shared item proxies.</li>
+        <li>Add SplitView transitions and fixed panes, and improve clipping.</li>
+        <li>Add navigation drawer morph transitions and nested scrolling.</li>
+        <li>Improve sheet drag dismissal, dim transitions, and popup stacking.</li>
+        <li>Unify animation duration and easing tokens.</li>
+        <li>Fix InputChip clicks and table corners.</li>
+      </ul>
+    </description>
+  </release>
   <release version="0.4.1" date="2026-09-25">
     <description>
       <ul>
