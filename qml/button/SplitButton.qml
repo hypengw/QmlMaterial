@@ -16,7 +16,6 @@ MD.Control {
         control.indicatorMdState.type: control.mdState.type
         control.indicatorMdState.size: control.mdState.size
         control.indicatorMdState.isRound: control.mdState.isRound
-        control.indicatorMdState.corners: control.mdState.trailingCorners
     }
 
     property alias action: m_button.action
@@ -29,7 +28,7 @@ MD.Control {
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
     hoverEnabled: control.enabled
 
-    spacing: 2
+    spacing: mdState.betweenSpace
 
     contentItem: Item {
         implicitHeight: Math.max(m_button.implicitHeight, m_indicator.implicitHeight)

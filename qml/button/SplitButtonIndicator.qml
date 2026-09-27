@@ -10,16 +10,16 @@ MD.ButtonBase {
 
     property MD.MenuBase menu: null
 
-    implicitWidth: 32
-    implicitHeight: 40
+    implicitWidth: mdState.sizeToken.trailing_button_leading_space + icon.width + mdState.sizeToken.trailing_button_trailing_space
+    implicitHeight: mdState.sizeToken.container_height
 
-    icon.width: 18
-    icon.height: 18
+    icon.width: mdState.sizeToken.trailing_button_icon_size
+    icon.height: mdState.sizeToken.trailing_button_icon_size
     icon.color: control.mdState.textColor
 
     checkable: true
     checked: control.menu ? control.menu.visible : false
-    icon.name: checked ? MD.Token.icon.expand_less : MD.Token.icon.expand_more
+    icon.name: MD.Token.icon.expand_more
 
     onClicked: {
         if (!control.enabled)
@@ -48,9 +48,24 @@ MD.ButtonBase {
     }
 
     contentItem: MD.IconView {
+        property real opticalOffset: control.checked && !control.down ? 0 : control.mdState.sizeToken.trailing_button_optical_offset
         icon: control.icon
         anchors.centerIn: parent
+        anchors.horizontalCenterOffset: -opticalOffset
+        Behavior on opticalOffset {
+            NumberAnimation {
+                duration: MD.Token.duration.short2
+                easing: MD.Token.easing.standard
+            }
+        }
         opacity: control.mdState.contentOpacity
+        rotation: control.checked ? 180 : 0
+        Behavior on rotation {
+            NumberAnimation {
+                duration: MD.Token.duration.short2
+                easing: MD.Token.easing.standard
+            }
+        }
     }
 
     background: MD.ElevationRectangle {
@@ -58,7 +73,7 @@ MD.ButtonBase {
         Behavior on corners {
             PropertyAnimation {
                 duration: MD.Token.duration.short2
-                easing: MD.Token.easing.linear
+                easing: MD.Token.easing.standard
             }
         }
         color: control.mdState.backgroundColor

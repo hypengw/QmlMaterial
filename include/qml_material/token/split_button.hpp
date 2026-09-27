@@ -44,6 +44,8 @@ struct SplitButtonSizeItem {
     /// Inner corner radius for trailing button when selected (dp)
     Q_PROPERTY(qreal trailing_button_inner_corner_selected_size MEMBER
                    trailing_button_inner_corner_selected_size CONSTANT FINAL)
+    Q_PROPERTY(
+        qreal trailing_button_optical_offset MEMBER trailing_button_optical_offset CONSTANT FINAL)
 
 public:
     bool  operator==(const SplitButtonSizeItem&) const = default;
@@ -59,6 +61,7 @@ public:
     qreal inner_corner_hovered_size;
     qreal inner_corner_pressed_size;
     qreal trailing_button_inner_corner_selected_size;
+    qreal trailing_button_optical_offset;
 };
 
 /**
@@ -95,7 +98,8 @@ public:
         13.0, // trailing-button.trailing-space
         8.0,  // inner-corner.hovered.corner-size
         8.0,  // inner-corner.pressed.corner-size
-        16.0  // trailing-button.inner-corner.selected.corner-size (50% of 32)
+        16.0, // trailing-button.inner-corner.selected.corner-size (50% of 32)
+        1.0   // trailing-button optical offset
     };
 
     // md.comp.split-button.small.* tokens
@@ -111,7 +115,8 @@ public:
         13.0, // trailing-button.trailing-space
         12.0, // inner-corner.hovered.corner-size
         12.0, // inner-corner.pressed.corner-size
-        20.0  // trailing-button.inner-corner.selected.corner-size (50% of 40)
+        20.0, // trailing-button.inner-corner.selected.corner-size (50% of 40)
+        1.0   // trailing-button optical offset
     };
 
     // md.comp.split-button.medium.* tokens
@@ -127,7 +132,8 @@ public:
         15.0, // trailing-button.trailing-space
         12.0, // inner-corner.hovered.corner-size
         12.0, // inner-corner.pressed.corner-size
-        28.0  // trailing-button.inner-corner.selected.corner-size (50% of 56)
+        28.0, // trailing-button.inner-corner.selected.corner-size (50% of 56)
+        2.0   // trailing-button optical offset
     };
 
     // md.comp.split-button.large.* tokens
@@ -143,7 +149,8 @@ public:
         29.0, // trailing-button.trailing-space
         20.0, // inner-corner.hovered.corner-size
         20.0, // inner-corner.pressed.corner-size
-        48.0  // trailing-button.inner-corner.selected.corner-size (50% of 96)
+        48.0, // trailing-button.inner-corner.selected.corner-size (50% of 96)
+        3.0   // trailing-button optical offset
     };
 
     // md.comp.split-button.xlarge.* tokens
@@ -159,7 +166,8 @@ public:
         43.0,  // trailing-button.trailing-space
         20.0,  // inner-corner.hovered.corner-size
         20.0,  // inner-corner.pressed.corner-size
-        68.0   // trailing-button.inner-corner.selected.corner-size (50% of 136)
+        68.0,  // trailing-button.inner-corner.selected.corner-size (50% of 136)
+        6.0    // trailing-button optical offset
     };
 };
 

@@ -10,7 +10,16 @@ using Size = Enum::ButtonSize;
 SplitButtonIndicatorState::SplitButtonIndicatorState(QObject* parent): CommonState(parent) {
     initializeAppearance(m_bindings);
     m_baseCorner.setBinding([this] {
+        if (auto* target = item(); target && ! target->isDown() && target->isChecked())
+            return m_backgroundHeight.value().value_or(sizeToken().container_height) / 2;
         return calcRadius(size(), isRound(), false);
+    });
+    m_innerCorner.setBinding([this] {
+        const auto token  = sizeToken();
+        auto*      target = item();
+        if (target && target->isDown()) return token.inner_corner_pressed_size;
+        if (target && target->isChecked()) return baseCorner();
+        return token.inner_corner_size;
     });
     auto base = m_bindings.base();
     base.bind(m_appearance.elevation, [this]() -> qreal {
@@ -158,6 +167,16 @@ qreal SplitButtonIndicatorState::calcRadius(int size, bool round, bool pressed) 
     }
 }
 qreal SplitButtonIndicatorState::baseCorner() const { return m_baseCorner.value(); }
+token::SplitButtonSizeItem SplitButtonIndicatorState::sizeToken() const {
+    const token::SplitButtonSize tokens;
+    switch (Size(size())) {
+    case Size::XS: return tokens.xsmall;
+    case Size::M: return tokens.medium;
+    case Size::L: return tokens.large;
+    case Size::XL: return tokens.xlarge;
+    default: return tokens.small;
+    }
+}
 #define INPUT(Type, Name, Setter, Bindable)                                              \
     Type            SplitButtonIndicatorState::Name() const { return m_##Name.value(); } \
     void            SplitButtonIndicatorState::Setter(Type value) { m_##Name = value; }  \
