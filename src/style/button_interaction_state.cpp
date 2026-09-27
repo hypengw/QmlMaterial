@@ -1,5 +1,6 @@
 #include "qml_material/style/button_interaction_state.hpp"
 #include "qml_material/control/abstract_button.hpp"
+#include "qml_material/control/button_group_container.hpp"
 #include "qml_material/util/qt.hpp"
 namespace qml_material
 {
@@ -44,7 +45,64 @@ QString ButtonInteractionState::stateName(Interaction state) {
 }
 ButtonInteractionState::~ButtonInteractionState() {
     stopBindings();
+    utils::disconnectAll(m_groupConnections);
     utils::disconnectAll(m_connections);
+}
+void ButtonInteractionState::enableGroupShape() {
+    connect(this,
+            &ButtonInteractionState::itemChanged,
+            this,
+            &ButtonInteractionState::updateGroupContext);
+    baseBindings().bind(m_appearance.corners, [this] {
+        return groupCorners();
+    });
+    updateGroupContext();
+}
+void ButtonInteractionState::updateGroupContext() {
+    utils::disconnectAll(m_groupConnections);
+    if (auto* item = inputItem()) {
+        auto* info = qobject_cast<ButtonGroupContainerAttached*>(
+            qmlAttachedPropertiesObject<ButtonGroupContainer>(item, true));
+        const auto changed = [this] {
+            m_groupRevision = m_groupRevision.value() + 1;
+        };
+        m_groupConnections.append(
+            connect(info, &ButtonGroupContainerAttached::contextChanged, this, changed));
+        m_groupConnections.append(connect(item, &Control::mirroredChanged, this, changed));
+        m_groupConnections.append(connect(item, &QQuickItem::heightChanged, this, changed));
+        m_groupConnections.append(connect(item, &Control::topInsetChanged, this, changed));
+        m_groupConnections.append(connect(item, &Control::bottomInsetChanged, this, changed));
+    }
+    m_groupRevision = m_groupRevision.value() + 1;
+}
+int ButtonInteractionState::groupSize() const {
+    (void)m_groupRevision.value();
+    auto* info = inputItem()
+                     ? qobject_cast<ButtonGroupContainerAttached*>(
+                           qmlAttachedPropertiesObject<ButtonGroupContainer>(inputItem(), false))
+                     : nullptr;
+    return info ? info->buttonSize() : int(Enum::ButtonSize::S);
+}
+CornersGroup ButtonInteractionState::groupCorners() const {
+    (void)m_groupRevision.value();
+    auto* item = inputItem();
+    auto* info = item ? qobject_cast<ButtonGroupContainerAttached*>(
+                            qmlAttachedPropertiesObject<ButtonGroupContainer>(item, false))
+                      : nullptr;
+    if (! info || ! info->connected()) return CornersGroup(corner());
+    const qreal full =
+        std::max(qreal(0), item->height() - item->topInset() - item->bottomInset()) / 2;
+    const auto pos = Enum::ItemPosition(info->position());
+    if (pos == Enum::ItemPosition::PosSingle || (! down() && checked())) return CornersGroup(full);
+    const qreal inner = std::min(
+        full, down() ? token::ButtonGroup::pressedInnerCorner : token::ButtonGroup::innerCorner);
+    if (pos == Enum::ItemPosition::PosMiddle) return CornersGroup(inner);
+    const bool left = (pos == Enum::ItemPosition::PosFirst) != item->mirrored();
+    return left ? CornersGroup(inner, inner, full, full) : CornersGroup(full, full, inner, inner);
+}
+qreal ButtonInteractionState::groupOpticalOffset(const CornersGroup& corners) const {
+    return .055 *
+           (corners.topLeft() + corners.bottomLeft() - corners.topRight() - corners.bottomRight());
 }
 AbstractButton* ButtonInteractionState::inputItem() const { return m_item.value(); }
 bool            ButtonInteractionState::checked() const {

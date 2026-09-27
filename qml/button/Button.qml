@@ -29,6 +29,8 @@ MD.ButtonBase {
     leftPadding: mdState.leadingSpace
     rightPadding: mdState.trailingSpace
     spacing: mdState.spacing
+    MD.ButtonGroupContainer.defaultCompressionLimit: Math.min(leftPadding, rightPadding)
+    MD.ButtonGroupContainer.defaultMinimumWidth: implicitContentWidth
 
     icon.width: mdState.iconSize
     icon.height: mdState.iconSize
@@ -45,7 +47,10 @@ MD.ButtonBase {
         opacity: control._motion.contentOpacity
 
         Lite.Row {
-            width: Math.min(implicitWidth, parent.width)
+            transform: Translate {
+                x: control.MD.ButtonGroupContainer.connected ? control.mdState.groupOpticalOffset(control._motion.corners) : 0
+            }
+            width: control.MD.ButtonGroupContainer.grouped ? implicitWidth : Math.min(implicitWidth, parent.width)
             height: Math.min(implicitHeight, parent.height)
             alignment: Qt.AlignHCenter | Qt.AlignVCenter
             spacing: control.spacing

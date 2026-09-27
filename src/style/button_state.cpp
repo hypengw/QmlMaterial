@@ -17,6 +17,10 @@ void           ButtonAppearanceState::setType(int value) { m_type = value; }
 QBindable<int> ButtonAppearanceState::bindableType() { return QBindable<int>(&m_type); }
 
 ButtonState::ButtonState(QObject* parent): ButtonAppearanceState(parent) {
+    enableGroupShape();
+    bindableSize().setBinding([this] {
+        return groupSize();
+    });
     connect(this, &ButtonState::sizeTokenChanged, this, &ButtonState::geometryChanged);
     bindTargets();
 }

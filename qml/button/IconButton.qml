@@ -18,13 +18,15 @@ MD.ButtonBase {
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
     flat: mdState.type == MD.Enum.IBtStandard || (mdState.type == MD.Enum.IBtOutlined && !control.checked)
-    topInset: 4
-    bottomInset: 4
-    leftInset: 4
-    rightInset: 4
+    topInset: MD.ButtonGroupContainer.connected ? 0 : 4
+    bottomInset: MD.ButtonGroupContainer.connected ? 0 : 4
+    leftInset: MD.ButtonGroupContainer.connected ? 0 : 4
+    rightInset: MD.ButtonGroupContainer.connected ? 0 : 4
 
     padding: 8
     spacing: 0
+    MD.ButtonGroupContainer.defaultCompressionLimit: Math.max(0, (mdState.containerWidth - mdState.iconSize) / 2)
+    MD.ButtonGroupContainer.defaultMinimumWidth: mdState.iconSize + leftInset + rightInset
 
     icon.width: mdState.iconSize
     icon.height: mdState.iconSize
@@ -38,6 +40,7 @@ MD.ButtonBase {
 
         MD.IconView {
             anchors.centerIn: parent
+            anchors.horizontalCenterOffset: control.MD.ButtonGroupContainer.connected ? control.mdState.groupOpticalOffset(control._motion.corners) : 0
             icon: control.icon
         }
     }

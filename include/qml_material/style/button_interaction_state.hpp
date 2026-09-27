@@ -9,9 +9,12 @@ class QML_MATERIAL_API ButtonInteractionState : public CommonState {
     QML_ANONYMOUS
 public:
     ~ButtonInteractionState() override;
-    Q_SIGNAL void itemChanged();
+    Q_INVOKABLE qreal groupOpticalOffset(const qml_material::CornersGroup&) const;
+    Q_SIGNAL void     itemChanged();
 
 protected:
+    void enableGroupShape();
+    int  groupSize() const;
     enum class Interaction
     {
         Base,
@@ -56,8 +59,12 @@ protected:
     void                 bindStateLayerOpacity();
 
 private:
-    static QString stateName(Interaction);
-    BindingSet     m_bindings { Interaction::Base };
+    void                           updateGroupContext();
+    CornersGroup                   groupCorners() const;
+    QList<QMetaObject::Connection> m_groupConnections;
+    QProperty<quint64>             m_groupRevision { 0 };
+    static QString                 stateName(Interaction);
+    BindingSet                     m_bindings { Interaction::Base };
     struct Selection {
         Interaction state                              = Interaction::Base;
         quint64     generation                         = 0;

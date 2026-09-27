@@ -8,7 +8,13 @@ namespace qml_material
 using ButtonType = Enum::IconButtonType;
 using ButtonSize = Enum::ButtonSize;
 
-IconButtonState::IconButtonState(QObject* parent): ButtonInteractionState(parent) { bindTargets(); }
+IconButtonState::IconButtonState(QObject* parent): ButtonInteractionState(parent) {
+    enableGroupShape();
+    m_size.setBinding([this] {
+        return groupSize();
+    });
+    bindTargets();
+}
 
 Button* IconButtonState::item() const { return static_cast<Button*>(inputItem()); }
 void    IconButtonState::setItem(Button* item) { setInputItem(item); }

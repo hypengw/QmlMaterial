@@ -217,6 +217,9 @@ set(SOURCES
     src/control/split_layout.cpp
     include/qml_material/control/split_view.hpp
     src/control/segmented_button_group.cpp
+    src/control/button_group_container.cpp
+    include/qml_material/control/button_group_container.hpp
+    include/qml_material/token/button_group.hpp
     include/qml_material/control/check_box.hpp
     include/qml_material/control/radio_button.hpp
     include/qml_material/control/switch.hpp

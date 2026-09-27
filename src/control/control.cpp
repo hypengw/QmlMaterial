@@ -232,15 +232,19 @@ void Control::resetBottomPadding() {
     finishPaddingChange(oldState);
 }
 
-qreal Control::spacing() const { return m_spacing; }
+qreal Control::spacing() const { return m_spacing.value_or(defaultSpacing()); }
 
 void Control::setSpacing(qreal value) {
-    if (qFuzzyCompare(m_spacing, value)) return;
-    m_spacing = value;
-    Q_EMIT spacingChanged();
+    const auto old = spacing();
+    m_spacing      = value;
+    if (! qFuzzyCompare(old, spacing())) Q_EMIT spacingChanged();
 }
 
-void Control::resetSpacing() { setSpacing(0); }
+void Control::resetSpacing() {
+    const auto old = spacing();
+    m_spacing.reset();
+    if (! qFuzzyCompare(old, spacing())) Q_EMIT spacingChanged();
+}
 
 qreal Control::topInset() const { return m_top_inset; }
 

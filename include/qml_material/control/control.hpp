@@ -268,6 +268,7 @@ public:
     Q_SIGNAL void visualFocusChanged();
 
 protected:
+    virtual qreal  defaultSpacing() const { return 0; }
     virtual QRectF contentRect() const;
     void           layoutContentItem();
     virtual QSizeF measureImplicitContent() const;
@@ -325,7 +326,7 @@ private:
     std::optional<qreal> m_left_padding;
     std::optional<qreal> m_right_padding;
     std::optional<qreal> m_bottom_padding;
-    qreal                m_spacing { 0 };
+    std::optional<qreal> m_spacing;
     qreal                m_top_inset { 0 };
     qreal                m_left_inset { 0 };
     qreal                m_right_inset { 0 };

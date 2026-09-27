@@ -165,6 +165,15 @@ MD.Page {
                         }
 
                         ComponentCard {
+                            title: 'Button groups'
+
+                            ButtonGroups {
+                                Layout.preferredWidth: 340
+                                Layout.alignment: Qt.AlignHCenter
+                            }
+                        }
+
+                        ComponentCard {
                             title: 'Segmented buttons'
 
                             MD.SegmentedButtonGroup {
