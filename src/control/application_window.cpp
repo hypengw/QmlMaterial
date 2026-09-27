@@ -1,5 +1,11 @@
 #include "qml_material/control/application_window.hpp"
 #include "qml_material/util/qml_util.hpp"
+#include "qml_material/style/theme.hpp"
+#include <QQmlEngine>
+#include <QQmlProperty>
+#include <QtQml/private/qqmlanybinding_p.h>
+#include <QtQml/private/qqmlcontextdata_p.h>
+#include <QtQml/private/qqmlpropertytopropertybinding_p.h>
 
 namespace qml_material
 {
@@ -38,6 +44,37 @@ ApplicationWindow::ApplicationWindow(QWindow* parent): QQuickWindowQmlImpl(paren
             &ApplicationWindow::updateActiveFocusControl);
 
     relayout();
+}
+
+void ApplicationWindow::classBegin() {
+    QQuickWindowQmlImpl::classBegin();
+    auto*              theme = qobject_cast<Theme*>(qmlAttachedPropertiesObject<Theme>(this, true));
+    const QQmlProperty source(theme, QStringLiteral("backgroundColor"));
+    const QQmlProperty target(this, QStringLiteral("color"));
+#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
+    auto binding = QQmlPropertyToPropertyBinding::create(qmlEngine(this), source, target);
+#else
+    QQmlAnyBinding binding;
+    binding = new QQmlPropertyToPropertyBinding(qmlEngine(this),
+                                                source.object(),
+#    if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+                                                QQmlPropertyIndex(source.index()),
+#    else
+                                                source.index(),
+#    endif
+                                                target.object(),
+                                                target.index());
+#endif
+    binding.installOn(target);
+    const auto context = QQmlContextData::get(qmlContext(this));
+    for (const auto& property : { std::pair { "font.pixelSize", "typescale.size" },
+                                  std::pair { "font.weight", "typescale.weight" },
+                                  std::pair { "font.letterSpacing", "typescale.tracking" } }) {
+        const QQmlProperty fontProperty(this, QString::fromLatin1(property.first));
+        auto               fontBinding = QQmlAnyBinding::createFromCodeString(
+            fontProperty, QString::fromLatin1(property.second), this, context, QString(), 0);
+        fontBinding.installOn(fontProperty);
+    }
 }
 
 QQuickItem* ApplicationWindow::contentItem() const { return m_body->contentItem(); }

@@ -18,7 +18,7 @@ MD.SliderBase {
     topPadding: 0
     bottomPadding: 0
     clip: false
-    backgroundLayout: MD.ControlBase.LayoutNone
+    backgroundLayout: MD.Control.LayoutNone
 
     property vector2d overlay: Qt.vector2d(0, 0)
 

@@ -28,9 +28,6 @@ Item {
     MD.BusyIconButton {
         action: shared
     }
-    MD.SmallIconButton {
-        action: shared
-    }
     MD.TabButton {
         action: shared
     }

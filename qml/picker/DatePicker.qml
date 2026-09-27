@@ -2,7 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Qcm.Material as MD
 
-MD.ControlBase {
+MD.Control {
     id: control
 
     enum SelectionMode {

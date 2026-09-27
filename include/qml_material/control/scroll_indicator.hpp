@@ -12,7 +12,7 @@ class ScrollViewport;
 /** @ingroup control */
 class QML_MATERIAL_API ScrollIndicator : public Control {
     Q_OBJECT
-    QML_NAMED_ELEMENT(ScrollIndicatorBase)
+    QML_NAMED_ELEMENT(ScrollIndicator)
     QML_ATTACHED(ScrollIndicatorAttached)
     Q_PROPERTY(qreal size READ size WRITE setSize NOTIFY sizeChanged FINAL)
     Q_PROPERTY(qreal position READ position WRITE setPosition NOTIFY positionChanged FINAL)

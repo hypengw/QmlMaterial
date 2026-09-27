@@ -6,6 +6,10 @@
 #include <QGuiApplication>
 #include <QHoverEvent>
 #include <QStyleHints>
+#include <QQmlEngine>
+#include <QQmlProperty>
+#include <QtQml/private/qqmlanybinding_p.h>
+#include <QtQml/private/qqmlpropertytopropertybinding_p.h>
 
 #include <algorithm>
 
@@ -27,6 +31,30 @@ Control::Control(QQuickItem* parent): QQuickItem(parent) {
         connect(qGuiApp, &QGuiApplication::layoutDirectionChanged, this, [this]() {
             if (! m_layout_direction_explicit) resolveLayoutDirection();
         }));
+}
+
+void Control::classBegin() {
+    QQuickItem::classBegin();
+    for (const auto& names : { std::pair { "implicitLayoutWidth", "implicitWidth" },
+                               std::pair { "implicitLayoutHeight", "implicitHeight" } }) {
+        const QQmlProperty source(this, QString::fromLatin1(names.first));
+        const QQmlProperty target(this, QString::fromLatin1(names.second));
+#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
+        auto binding = QQmlPropertyToPropertyBinding::create(qmlEngine(this), source, target);
+#else
+        QQmlAnyBinding binding;
+        binding = new QQmlPropertyToPropertyBinding(qmlEngine(this),
+                                                    source.object(),
+#    if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+                                                    QQmlPropertyIndex(source.index()),
+#    else
+                                                    source.index(),
+#    endif
+                                                    target.object(),
+                                                    target.index());
+#endif
+        binding.installOn(target);
+    }
 }
 
 Control::~Control() {

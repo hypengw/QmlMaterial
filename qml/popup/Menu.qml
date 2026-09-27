@@ -204,7 +204,7 @@ MD.MenuBase {
         }
         interactive: contentHeight + control.topPadding + control.bottomPadding > control.height
         keyNavigationEnabled: false
-        MD.ScrollIndicatorBase.vertical: MD.ScrollIndicator {}
+        MD.ScrollIndicator.vertical: MD.ScrollIndicator {}
     }
 
     Instantiator {

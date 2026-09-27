@@ -8,7 +8,7 @@ import Qcm.Material as MD
 // expanded (220-360dp, horizontal items) share the same RailItem and transition
 // into each other. When embedded it occupies layout space; otherwise the
 // expanded rail is shown as a modal/modeless overlay (ModalWideNavigationRail).
-MD.ControlBase {
+MD.Control {
     id: control
     focusPolicy: Qt.NoFocus
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, (useModal || drawerOpened ? 0 : implicitContentWidth) + leftPadding + rightPadding)

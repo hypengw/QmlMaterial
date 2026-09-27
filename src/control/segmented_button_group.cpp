@@ -4,7 +4,8 @@
 namespace qml_material
 {
 SegmentedButtonGroup::SegmentedButtonGroup(QQuickItem* parent)
-    : Container(parent), m_group(new ButtonGroup(this)) {
+    : MaterialContainer(parent), m_group(new ButtonGroup(this)) {
+    setSpacing(-1);
     connect(m_group, &ButtonGroup::exclusiveChanged, this, &SegmentedButtonGroup::exclusiveChanged);
     connect(this, &Control::spacingChanged, this, &QQuickItem::polish);
     connect(this, &Control::mirroredChanged, this, &QQuickItem::polish);

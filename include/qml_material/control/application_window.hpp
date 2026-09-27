@@ -1,6 +1,8 @@
 #pragma once
 
 #include "qml_material/control/page.hpp"
+#include "qml_material/token/type_scale.hpp"
+#include <QProperty>
 
 #include <QQmlListProperty>
 #include <QtQuick/private/qquickwindowmodule_p.h>
@@ -10,7 +12,7 @@ namespace qml_material
 
 class QML_MATERIAL_API ApplicationWindow : public QQuickWindowQmlImpl {
     Q_OBJECT
-    QML_NAMED_ELEMENT(ApplicationWindowBase)
+    QML_NAMED_ELEMENT(ApplicationWindow)
     Q_CLASSINFO("DefaultProperty", "contentData")
     Q_PROPERTY(QQuickItem* contentItem READ contentItem CONSTANT FINAL)
     Q_PROPERTY(QQmlListProperty<QObject> contentData READ contentData FINAL)
@@ -22,6 +24,8 @@ class QML_MATERIAL_API ApplicationWindow : public QQuickWindowQmlImpl {
     Q_PROPERTY(QQuickItem* activeFocusControl READ activeFocusControl NOTIFY
                    activeFocusControlChanged FINAL)
     Q_PROPERTY(QFont font READ font WRITE setFont RESET resetFont NOTIFY fontChanged FINAL)
+    Q_PROPERTY(qml_material::token::TypeScaleItem typescale READ typescale WRITE setTypescale NOTIFY
+                   typescaleChanged BINDABLE bindableTypescale FINAL)
     Q_PROPERTY(
         QLocale locale READ locale WRITE setLocale RESET resetLocale NOTIFY localeChanged FINAL)
     Q_PROPERTY(qreal topPadding READ topPadding WRITE setTopPadding RESET resetTopPadding NOTIFY
@@ -51,9 +55,14 @@ public:
 
     QQuickItem* activeFocusControl() const;
 
-    QFont font() const;
-    void  setFont(const QFont& font);
-    void  resetFont();
+    QFont                font() const;
+    void                 setFont(const QFont& font);
+    void                 resetFont();
+    token::TypeScaleItem typescale() const { return m_typescale.value(); }
+    void                 setTypescale(const token::TypeScaleItem& value) { m_typescale = value; }
+    QBindable<token::TypeScaleItem> bindableTypescale() {
+        return QBindable<token::TypeScaleItem>(&m_typescale);
+    }
 
     QLocale locale() const;
     void    setLocale(const QLocale& locale);
@@ -81,11 +90,15 @@ public:
     Q_SIGNAL void footerChanged();
     Q_SIGNAL void activeFocusControlChanged();
     Q_SIGNAL void fontChanged();
+    Q_SIGNAL void typescaleChanged();
     Q_SIGNAL void localeChanged();
     Q_SIGNAL void topPaddingChanged();
     Q_SIGNAL void leftPaddingChanged();
     Q_SIGNAL void rightPaddingChanged();
     Q_SIGNAL void bottomPaddingChanged();
+
+protected:
+    void classBegin() override;
 
 private:
     void relayout();
@@ -94,6 +107,9 @@ private:
     Page*                m_frame { nullptr };
     Page*                m_body { nullptr };
     QPointer<QQuickItem> m_activeFocusControl;
+    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(ApplicationWindow, token::TypeScaleItem, m_typescale,
+                                         token::TypeScale::default_body_medium,
+                                         &ApplicationWindow::typescaleChanged)
 };
 
 } // namespace qml_material

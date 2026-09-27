@@ -3,7 +3,7 @@ import QtQuick
 
 import Qcm.Material as MD
 
-MD.ControlBase {
+MD.Control {
     id: control
     focusPolicy: Qt.NoFocus
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)

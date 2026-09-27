@@ -1,37 +1,11 @@
 #include "qml_material/control/container.hpp"
 #include <QQmlEngine>
-#include <QQmlProperty>
-#include <QtQml/private/qqmlanybinding_p.h>
-#include <QtQml/private/qqmlpropertytopropertybinding_p.h>
 #include "qml_material/util/qt.hpp"
 #include <QtQml/qqml.h>
 #include <algorithm>
 
 namespace qml_material
 {
-void MaterialContainer::classBegin() {
-    Container::classBegin();
-    for (const auto& names : { std::pair { "implicitLayoutWidth", "implicitWidth" },
-                               std::pair { "implicitLayoutHeight", "implicitHeight" } }) {
-        const QQmlProperty source(this, QString::fromLatin1(names.first));
-        const QQmlProperty target(this, QString::fromLatin1(names.second));
-#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
-        auto binding = QQmlPropertyToPropertyBinding::create(qmlEngine(this), source, target);
-#else
-        QQmlAnyBinding binding;
-        binding = new QQmlPropertyToPropertyBinding(qmlEngine(this),
-                                                    source.object(),
-#    if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
-                                                    QQmlPropertyIndex(source.index()),
-#    else
-                                                    source.index(),
-#    endif
-                                                    target.object(),
-                                                    target.index());
-#endif
-        binding.installOn(target);
-    }
-}
 namespace
 {
 ContainerAttached* attached(QQuickItem* item) {

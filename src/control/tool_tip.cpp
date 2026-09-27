@@ -16,7 +16,7 @@ namespace qml_material
 namespace
 {
 constexpr auto managerPropertyName = "_qcm_material_tool_tip_manager";
-constexpr auto plainToolTipUrl     = "qrc:/Qcm/Material/qml/control/PlainToolTip.qml";
+constexpr auto plainToolTipUrl     = "qrc:/Qcm/Material/qml/misc/PlainToolTip.qml";
 
 } // namespace
 

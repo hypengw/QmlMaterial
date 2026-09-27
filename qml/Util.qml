@@ -64,8 +64,8 @@ MD.UtilCpp {
     }
 
     function applyTypescale(item: Item, typescale: MD.typescale, prominent: bool) {
-        if (item instanceof MD.ControlBase) {
-            const c = item as MD.ControlBase;
+        if (item instanceof MD.Control) {
+            const c = item as MD.Control;
             c.font.pixelSize = typescale.size;
             c.font.weight = prominent ? typescale.weight_prominent : typescale.weight;
             c.font.letterSpacing = typescale.tracking;

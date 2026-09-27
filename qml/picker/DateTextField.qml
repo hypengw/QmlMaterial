@@ -42,7 +42,10 @@ MD.TextField {
         }
     }
 
-    trailing: MD.SmallIconButton {
+    trailing: MD.StandardIconButton {
+        icon.width: 22
+        icon.height: 22
+        implicitBackgroundSize: 0
         anchors.right: parent?.right
         anchors.verticalCenter: parent?.verticalCenter
         anchors.rightMargin: 8

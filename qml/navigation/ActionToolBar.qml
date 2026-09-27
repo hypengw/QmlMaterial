@@ -4,7 +4,7 @@ import QtQuick.Layouts
 
 import Qcm.Material as MD
 
-MD.ControlBase {
+MD.Control {
     id: root
 
     property alias maxShowActionNum: m_layout.maxShowActionNum

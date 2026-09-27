@@ -20,7 +20,7 @@ namespace qml_material
 
 class QML_MATERIAL_API Control : public QQuickItem, public ControlEnvironment {
     Q_OBJECT
-    QML_NAMED_ELEMENT(ControlBase)
+    QML_NAMED_ELEMENT(Control)
 
     Q_PROPERTY(QFont font READ font WRITE setFont RESET resetFont NOTIFY fontChanged FINAL)
     Q_PROPERTY(
@@ -272,6 +272,7 @@ protected:
     void           layoutContentItem();
     virtual QSizeF measureImplicitContent() const;
     void           updateImplicitMetrics();
+    void           classBegin() override;
     void           componentComplete() override;
     void           geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry) override;
     void           itemChange(ItemChange change, const ItemChangeData& value) override;

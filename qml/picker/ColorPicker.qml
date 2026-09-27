@@ -3,7 +3,7 @@ import QtQuick
 import QtQuick.Layouts
 import Qcm.Material as MD
 
-MD.ControlBase {
+MD.Control {
     id: control
 
     property color color

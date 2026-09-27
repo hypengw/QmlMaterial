@@ -108,9 +108,6 @@ class QML_MATERIAL_API MaterialContainer : public Container {
     QML_ATTACHED(ContainerAttached)
 public:
     using Container::Container;
-
-protected:
-    void classBegin() override;
 };
 
 class QML_MATERIAL_API ContainerAttached : public QObject {
