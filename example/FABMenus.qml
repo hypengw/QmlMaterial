@@ -2,17 +2,13 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Qcm.Material as MD
 
-Column {
+Row {
     id: root
     spacing: 16
 
-    MD.Label {
-        text: "FAB menu"
-        typescale: MD.Token.typescale.title_medium
-    }
     Item {
-        width: root.width
-        height: 240
+        width: Math.max(0, (root.width - root.spacing) / 2)
+        height: 280
         MD.FABMenu {
             id: menu
             anchors.right: parent.right
@@ -32,12 +28,8 @@ Column {
             }
         }
     }
-    MD.Label {
-        text: "Scrollable FAB menu"
-        typescale: MD.Token.typescale.title_medium
-    }
     Item {
-        width: root.width
+        width: Math.max(0, (root.width - root.spacing) / 2)
         height: 280
         MD.FABMenu {
             id: scrollMenu

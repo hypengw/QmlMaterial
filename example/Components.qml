@@ -325,10 +325,6 @@ MD.Page {
                                     icon.name: MD.Token.icon.add
                                 }
                             }
-                        }
-
-                        ComponentCard {
-                            title: 'Extended floating action buttons'
                             Column {
                                 spacing: 16
                                 MD.ExtendedFAB {
@@ -340,10 +336,6 @@ MD.Page {
                                     text: 'Compose'
                                 }
                             }
-                        }
-
-                        ComponentCard {
-                            title: 'Floating action button menus'
                             FABMenus {
                                 Layout.fillWidth: true
                             }

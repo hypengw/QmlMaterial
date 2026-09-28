@@ -118,7 +118,7 @@ MD.ProgressBarBase {
         to: 1
         duration: control.waveCycleDuration
         easing.type: Easing.Linear
-        running: control.wavy && control.enabled && (control.indeterminate || (control.value < control.to && control.value > control.from))
+        running: control.wavy && control.enabled && (control.indeterminate ? control.animationState !== LinearIndicator.Stopped : (control.value < control.to && control.value > control.from))
     }
     property real __phase: 0
 
