@@ -328,6 +328,13 @@ MD.Page {
                         }
 
                         ComponentCard {
+                            title: 'Floating action button menus'
+                            FABMenus {
+                                Layout.fillWidth: true
+                            }
+                        }
+
+                        ComponentCard {
                             title: 'Icon buttons'
 
                             RowLayout {

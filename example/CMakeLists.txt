@@ -8,6 +8,7 @@ qt_add_resources(
   FILES
   Components.qml
   ButtonGroups.qml
+  FABMenus.qml
   carousel/CarouselDemoData.qml
   Color.qml
   Shape.qml

@@ -16,6 +16,7 @@
 #include "qml_material/token/combo_box.hpp"
 #include "qml_material/token/text_field.hpp"
 #include "qml_material/token/badge.hpp"
+#include "qml_material/token/fab_menu.hpp"
 #include "qml_material/anim/interpolator.hpp"
 #include "qml_material/core/enum.hpp"
 Q_MOC_INCLUDE("qml_material/token/icon.hpp")
@@ -516,11 +517,13 @@ class Token : public QObject {
     Q_PROPERTY(qml_material::token::TextFieldSize text_field READ text_field CONSTANT FINAL)
     /// Badge size settings
     Q_PROPERTY(qml_material::token::BadgeSize badge READ badge CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::FABMenu fab_menu READ fab_menu CONSTANT FINAL)
     /// Carousel layout tokens
     Q_PROPERTY(qml_material::token::Carousel carousel READ carousel CONSTANT FINAL)
     Q_PROPERTY(qml_material::token::Slider slider READ slider CONSTANT FINAL)
 public:
     Token(QObject* = nullptr);
+    FABMenu fab_menu() const { return {}; }
     ~Token();
 
     auto version() const -> QString;

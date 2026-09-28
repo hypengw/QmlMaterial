@@ -7,6 +7,9 @@ MD.UtilCpp {
     function lerp(from: real, to: real, progress: real): real {
         return from + (to - from) * progress;
     }
+    function mixColor(from: color, to: color, progress: real): color {
+        return Qt.rgba(lerp(from.r, to.r, progress), lerp(from.g, to.g, progress), lerp(from.b, to.b, progress), lerp(from.a, to.a, progress));
+    }
     function epsilonEqual(x: real, y: real): real {
         return Math.abs(x - y) < Number.EPSILON;
     }
