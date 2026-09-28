@@ -971,6 +971,24 @@ MD.Page {
                                 placeholderText: 'Outlined'
                             }
 
+                            MD.TextField {
+                                Layout.fillWidth: true
+                                type: MD.Enum.TextFieldFilled
+                                placeholderText: 'Amount'
+                                prefix: '$'
+                                suffix: 'USD'
+                                text: '25'
+                                supportingText: 'Enter the amount before tax.'
+                            }
+                            MD.TextField {
+                                Layout.fillWidth: true
+                                placeholderText: 'Username'
+                                supportingText: 'Use at most 10 characters.'
+                                error: text.length > 10
+                                errorText: 'The username is too long.'
+                                text: 'A long username'
+                            }
+
                             MD.Label {
                                 text: "Sizes"
                                 Layout.alignment: Qt.AlignHCenter

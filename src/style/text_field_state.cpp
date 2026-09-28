@@ -42,6 +42,15 @@ TextFieldState::TextFieldState(QObject* parent): InputState(parent) {
         return 1;
     });
     base.bind(m_indicatorColorKey, colorBinding(&MdColorMgr::on_surface_variant));
+    for (auto state : { Interaction::Error, Interaction::ErrorHover }) {
+        auto error = m_bindings.state(state);
+        error.bind(m_indicatorColorKey,
+                   colorBinding(state == Interaction::Error ? &MdColorMgr::error
+                                                            : &MdColorMgr::on_error_container));
+        error.bind(m_indicatorHeightKey, [this] {
+            return m_focused.value() ? 2 : 1;
+        });
+    }
     m_bindings.state(Interaction::Focus).bind(m_indicatorHeightKey, [] {
         return 2;
     });

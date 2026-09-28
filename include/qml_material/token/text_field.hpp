@@ -33,6 +33,8 @@ struct TextFieldSize {
     Q_GADGET_EXPORT(QML_MATERIAL_API)
     QML_ELEMENT
     QML_VALUE_TYPE(text_field_size)
+    Q_PROPERTY(qreal affix_spacing READ affixSpacing CONSTANT FINAL)
+    Q_PROPERTY(qreal supporting_top_padding READ supportingTopPadding CONSTANT FINAL)
 
     Q_PROPERTY(qml_material::token::TextFieldSizeItem xsmall MEMBER xsmall CONSTANT FINAL)
     Q_PROPERTY(qml_material::token::TextFieldSizeItem small MEMBER small CONSTANT FINAL)
@@ -41,6 +43,8 @@ struct TextFieldSize {
     Q_PROPERTY(qml_material::token::TextFieldSizeItem xlarge MEMBER xlarge CONSTANT FINAL)
 
 public:
+    qreal             affixSpacing() const { return 2; }
+    qreal             supportingTopPadding() const { return 4; }
     bool              operator==(const TextFieldSize&) const = default;
     TextFieldSizeItem xsmall {
         40.0, 12.0, 8.0, 18.0, 8.0, { 12, 16, QFont::Normal, QFont::Normal, 0.4 },

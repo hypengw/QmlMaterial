@@ -5,10 +5,11 @@ namespace qml_material
 {
 InputState::InputState(QObject* parent): CommonState(parent) {
     initializeAppearance(m_bindings);
+    resetError();
     m_selection.setBinding([this] {
         const auto generation = targetGeneration();
         return Selection { m_disabled.value() ? Interaction::Disabled
-                           : ! m_acceptable.value()
+                           : m_error.value()
                                ? (m_hovered.value() ? Interaction::ErrorHover : Interaction::Error)
                            : m_focused.value() ? Interaction::Focus
                            : m_hovered.value() ? Interaction::Hovered
@@ -21,8 +22,16 @@ InputState::~InputState() {
     m_bindings.abandon();
     utils::disconnectAll(m_connections);
 }
-void InputState::bindInputAppearance(const PropertyKey<QColor>& label,
-                                     const PropertyKey<qreal>&  opacity) {
+bool InputState::error() const { return m_error.value(); }
+void InputState::setError(bool value) { m_error = value; }
+void InputState::resetError() {
+    m_error.setBinding([this] {
+        return ! m_acceptable.value();
+    });
+}
+QBindable<bool> InputState::bindableError() { return QBindable<bool>(&m_error); }
+void            InputState::bindInputAppearance(const PropertyKey<QColor>& label,
+                                                const PropertyKey<qreal>&  opacity) {
     auto base = m_bindings.base();
     base.bind(m_appearance.elevation, [this]() -> qreal {
         return elevationTokens().level0;

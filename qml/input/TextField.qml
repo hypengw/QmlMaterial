@@ -10,34 +10,46 @@ MD.TextFieldEmbed {
     property int type: MD.Enum.TextFieldOutlined
     property string leadingIcon
     property string trailingIcon
+    property bool error: !acceptableInput
+    property string supportingText
+    property string errorText
+    property string prefix
+    property string suffix
+    readonly property bool mirrored: LayoutMirroring.enabled
+    readonly property real supportingHeight: support.text.length > 0 ? support.implicitHeight + mdState.sizeTokens.supporting_top_padding : 0
+    readonly property real containerHeight: Math.max(0, height - supportingHeight)
+    readonly property real __leadingPadding: leading && leading.visible ? mdState.horizontalPadding + mdState.spacing + leading.implicitWidth : mdState.horizontalPadding
+    readonly property real __trailingPadding: trailing && trailing.visible ? mdState.horizontalPadding + mdState.spacing + trailing.implicitWidth : mdState.horizontalPadding
+    readonly property bool __showPrefix: prefix.length > 0 && (placeholderText.length === 0 || m_placeholder.floated)
+    readonly property bool __showSuffix: suffix.length > 0 && (placeholderText.length === 0 || m_placeholder.floated)
+    readonly property real __affixAvailableWidth: Math.max(0, width - __leadingPadding - __trailingPadding - ((__showPrefix ? 1 : 0) + (__showSuffix ? 1 : 0)) * mdState.sizeTokens.affix_spacing)
+    readonly property real __prefixWidth: __showPrefix ? prefixLabel.width + mdState.sizeTokens.affix_spacing : 0
+    readonly property real __suffixWidth: __showSuffix ? suffixLabel.width + mdState.sizeTokens.affix_spacing : 0
+    readonly property real __inputBottomPadding: mdState.type === MD.Enum.TextFieldFilled ? mdState.verticalPadding / 2 : mdState.verticalPadding
     property MD.StateTextField mdState: MD.StateTextField {
         item: control
     }
     Binding {
         control.mdState.type: control.type
+        control.mdState.error: control.error
     }
 
     font.capitalization: Font.MixedCase
     typescale: control.mdState.typescale
-    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, Math.max(contentWidth, m_placeholder.restImplicitWidth) + leftPadding + rightPadding)
-    implicitHeight: mdState.containerHeight
+    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, Math.max(contentWidth + (__showPrefix ? prefixLabel.implicitWidth + mdState.sizeTokens.affix_spacing : 0) + (__showSuffix ? suffixLabel.implicitWidth + mdState.sizeTokens.affix_spacing : 0), m_placeholder.restImplicitWidth) + __leadingPadding + __trailingPadding)
+    implicitHeight: mdState.containerHeight + supportingHeight
 
     // If we're clipped, set topInset to half the height of the placeholder text to avoid it being clipped.
     topInset: clip ? m_placeholder.largestHeight / 2 : 0
-    bottomInset: 0
+    bottomInset: supportingHeight
 
-    leftPadding: leading.visible ? mdState.horizontalPadding + mdState.spacing + leading.implicitWidth : mdState.horizontalPadding
-    rightPadding: trailing.visible ? mdState.horizontalPadding + mdState.spacing + trailing.implicitWidth : mdState.horizontalPadding
+    leftPadding: mirrored ? __trailingPadding + __suffixWidth : __leadingPadding + __prefixWidth
+    rightPadding: mirrored ? __leadingPadding + __prefixWidth : __trailingPadding + __suffixWidth
 
-    bottomPadding: {
-        if (mdState.type === MD.Enum.TextFieldFilled)
-            return mdState.verticalPadding / 2;
-        else
-            return mdState.verticalPadding;
-    }
+    bottomPadding: __inputBottomPadding + supportingHeight
     topPadding: {
         if (mdState.type === MD.Enum.TextFieldFilled) {
-            return mdState.containerHeight - contentHeight - bottomPadding;
+            return mdState.containerHeight - contentHeight - __inputBottomPadding;
         } else {
             return mdState.verticalPadding;
         }
@@ -46,8 +58,9 @@ MD.TextFieldEmbed {
     MD.FloatingPlaceholderText {
         id: m_placeholder
         animationsEnabled: control.__labelAnimationsEnabled
-        x: control.leftPadding
-        width: control.width - (control.leftPadding + control.rightPadding)
+        x: control.mirrored ? control.__trailingPadding : control.__leadingPadding
+        width: Math.max(0, control.width - control.__leadingPadding - control.__trailingPadding)
+        horizontalAlignment: control.mirrored ? Text.AlignRight : Text.AlignLeft
         text: control.placeholderText
         sourceFont: control.font
         color: control.mdState.placeholderColor
@@ -56,7 +69,7 @@ MD.TextFieldEmbed {
         renderType: control.renderType
 
         controlFocus: control.activeFocus
-        controlHeight: control.height
+        controlHeight: control.containerHeight
         verticalPadding: control.mdState.verticalPadding / 2
 
         filled: control.type === MD.Enum.TextFieldFilled
@@ -66,26 +79,75 @@ MD.TextFieldEmbed {
     }
 
     property Item leading: MD.Icon {
-        anchors.left: parent?.left
+        x: control.mirrored ? control.width - control.mdState.horizontalPadding - width : control.mdState.horizontalPadding
         anchors.verticalCenter: parent?.verticalCenter
-        anchors.leftMargin: control.mdState.horizontalPadding
         name: control.leadingIcon
         visible: name
         size: control.mdState.iconSize
     }
 
     property Item trailing: MD.Icon {
-        anchors.right: parent?.right
+        x: control.mirrored ? control.mdState.horizontalPadding : control.width - control.mdState.horizontalPadding - width
         anchors.verticalCenter: parent?.verticalCenter
-        anchors.rightMargin: control.mdState.horizontalPadding
         visible: name
         name: control.trailingIcon
         size: control.mdState.iconSize
+        color: control.enabled && control.error ? control.mdState.placeholderColor : MD.MProp.color.on_surface_variant
     }
 
     Item {
-        anchors.fill: parent
+        width: control.width
+        height: control.containerHeight
         data: [m_placeholder, control.leading, control.trailing]
+    }
+
+    MD.Label {
+        id: prefixLabel
+        text: control.prefix
+        textFormat: Text.PlainText
+        useTypescale: false
+        font: control.font
+        color: MD.MProp.color.on_surface_variant
+        opacity: control.enabled ? 1 : MD.Token.state.disabled_content
+        visible: control.__showPrefix
+        width: Math.min(implicitWidth, control.__affixAvailableWidth)
+        wrapMode: Text.NoWrap
+        elide: Text.ElideRight
+        x: control.mirrored ? control.width - control.__leadingPadding - width : control.__leadingPadding
+        y: control.baselineOffset - baselineOffset
+    }
+    MD.Label {
+        id: suffixLabel
+        text: control.suffix
+        textFormat: Text.PlainText
+        useTypescale: false
+        font: control.font
+        color: MD.MProp.color.on_surface_variant
+        opacity: control.enabled ? 1 : MD.Token.state.disabled_content
+        visible: control.__showSuffix
+        width: Math.min(implicitWidth, Math.max(0, control.__affixAvailableWidth - (control.__showPrefix ? prefixLabel.width : 0)))
+        wrapMode: Text.NoWrap
+        elide: Text.ElideRight
+        x: control.mirrored ? control.__trailingPadding : control.width - control.__trailingPadding - width
+        y: control.baselineOffset - baselineOffset
+    }
+    MD.Label {
+        id: support
+        x: control.mdState.horizontalPadding
+        y: control.containerHeight + control.mdState.sizeTokens.supporting_top_padding
+        width: Math.max(0, control.width - 2 * control.mdState.horizontalPadding)
+        text: control.error && control.errorText.length > 0 ? control.errorText : control.supportingText
+        textFormat: Text.PlainText
+        visible: text.length > 0
+        typescale: MD.Token.typescale.body_small
+        color: control.mdState.supportTextColor
+        opacity: control.enabled ? 1 : MD.Token.state.disabled_content
+        horizontalAlignment: control.mirrored ? Text.AlignRight : Text.AlignLeft
+        wrapMode: Text.Wrap
+    }
+
+    cursorDelegate: MD.CursorDelegate {
+        color: control.error ? MD.MProp.color.error : MD.MProp.color.primary
     }
 
     background: Item {
@@ -112,7 +174,7 @@ MD.TextFieldEmbed {
                 borderColor: control.mdState.outlineColor
                 radius: MD.Token.shape.corner.extra_small
                 floatWidth: m_placeholder.implicitWidth + 8
-                floatX: m_placeholder.x - 4
+                floatX: (control.mirrored ? m_placeholder.x + m_placeholder.width - m_placeholder.implicitWidth : m_placeholder.x) - 4
                 open: m_placeholder.text.length > 0 && m_placeholder.floated
             }
         }

@@ -6,9 +6,16 @@ namespace qml_material
 class QML_MATERIAL_API InputState : public CommonState {
     Q_OBJECT
     QML_ANONYMOUS
+    Q_PROPERTY(bool error READ error WRITE setError RESET resetError NOTIFY errorChanged BINDABLE
+                   bindableError)
 public:
     ~InputState() override;
-    Q_SIGNAL void itemChanged();
+    bool            error() const;
+    void            setError(bool);
+    void            resetError();
+    QBindable<bool> bindableError();
+    Q_SIGNAL void   errorChanged();
+    Q_SIGNAL void   itemChanged();
 
 protected:
     explicit InputState(QObject* parent = nullptr);
@@ -38,6 +45,8 @@ private:
     QProperty<bool>                m_disabled { false };
     QList<QMetaObject::Connection> m_connections;
     bool                           m_ready = false;
+    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(InputState, bool, m_error, false,
+                                         &InputState::errorChanged)
     Q_OBJECT_BINDABLE_PROPERTY(InputState, Selection, m_selection, &InputState::selectionChanged)
 };
 } // namespace qml_material
