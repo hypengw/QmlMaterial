@@ -1,19 +1,22 @@
 #include "qml_material/style/slider_state.hpp"
 #include "qml_material/control/slider.hpp"
+#include "qml_material/control/range_slider.hpp"
 #include "qml_material/token/color.hpp"
 #include "qml_material/util/qt.hpp"
 namespace qml_material
 {
-SliderM2State::SliderM2State(QObject* parent): CommonState(parent) {
+SliderAppearance::SliderAppearance(QObject* parent): CommonState(parent) {
     initializeAppearance(m_bindings);
-    m_trackColorKey         = m_bindings.property<&SliderM2State::bindableTrackColor>(this);
-    m_trackOverlayColorKey  = m_bindings.property<&SliderM2State::bindableTrackOverlayColor>(this);
-    m_trackInactiveColorKey = m_bindings.property<&SliderM2State::bindableTrackInactiveColor>(this);
+    m_trackColorKey = m_bindings.property<&SliderAppearance::bindableTrackColor>(this);
+    m_trackOverlayColorKey =
+        m_bindings.property<&SliderAppearance::bindableTrackOverlayColor>(this);
+    m_trackInactiveColorKey =
+        m_bindings.property<&SliderAppearance::bindableTrackInactiveColor>(this);
     m_trackMarkInactiveColorKey =
-        m_bindings.property<&SliderM2State::bindableTrackMarkInactiveColor>(this);
-    m_trackMarkColorKey = m_bindings.property<&SliderM2State::bindableTrackMarkColor>(this);
+        m_bindings.property<&SliderAppearance::bindableTrackMarkInactiveColor>(this);
+    m_trackMarkColorKey = m_bindings.property<&SliderAppearance::bindableTrackMarkColor>(this);
     m_trackOverlayOpacityKey =
-        m_bindings.property<&SliderM2State::bindableTrackOverlayOpacity>(this);
+        m_bindings.property<&SliderAppearance::bindableTrackOverlayOpacity>(this);
     auto base = m_bindings.base();
     base.bind(m_appearance.elevation, [this]() -> qreal {
         return elevationTokens().level0;
@@ -53,20 +56,19 @@ SliderM2State::SliderM2State(QObject* parent): CommonState(parent) {
         const auto generation = targetGeneration();
         if (m_disabled.value()) return Selection { Interaction::Disabled, generation };
         if (active()) return Selection { Interaction::Pressed, generation };
-        if (item() && item()->hovered()) return Selection { Interaction::Hovered, generation };
+        if (control() && control()->hovered())
+            return Selection { Interaction::Hovered, generation };
         return Selection { Interaction::Base, generation };
     });
     m_ready = true;
 }
-SliderM2State::~SliderM2State() {
+SliderAppearance::~SliderAppearance() {
     m_bindings.abandon();
     utils::disconnectAll(m_connections);
 }
-Slider* SliderM2State::item() const { return m_item.value(); }
-bool    SliderM2State::active() const {
-    return item() && (item()->pressed() || item()->visualFocus());
-}
-void SliderM2State::selectionChanged() {
+Control* SliderAppearance::control() const { return m_control.value(); }
+bool     SliderAppearance::active() const { return control() && m_pressed.value(); }
+void     SliderAppearance::selectionChanged() {
     if (! m_ready) return;
     const auto selection = m_selection.value();
     QString    name;
@@ -80,39 +82,43 @@ void SliderM2State::selectionChanged() {
         m_bindings.select(next);
     });
 }
-void SliderM2State::setItem(Slider* value) {
-    if (m_item == value) return;
-    QPointer<SliderM2State> guard(this);
+void SliderAppearance::setControl(Control* value, std::function<bool()> pressed) {
+    if (m_control == value) return;
+    QPointer<SliderAppearance> guard(this);
     {
         const QScopedPropertyUpdateGroup group;
         utils::disconnectAll(m_connections);
-        m_item = value;
+        m_control = value;
+        m_pressed.setBinding([this, pressed = std::move(pressed)] {
+            return control() && pressed();
+        });
         if (value) {
             m_connections.append(connect(value, &QQuickItem::enabledChanged, this, [this] {
-                m_disabled = item() && ! item()->isEnabled();
+                m_disabled = control() && ! control()->isEnabled();
             }));
             m_connections.append(connect(value, &QObject::destroyed, this, [this] {
                 utils::disconnectAll(m_connections);
-                QPointer<SliderM2State> guard(this);
+                QPointer<SliderAppearance> guard(this);
                 {
                     const QScopedPropertyUpdateGroup group;
-                    m_item     = nullptr;
+                    m_control  = nullptr;
                     m_disabled = false;
                 }
-                if (guard) Q_EMIT itemChanged();
+                if (guard) Q_EMIT controlChanged();
             }));
         }
         setTarget(value);
         if (! guard) return;
         m_disabled = value && ! value->isEnabled();
     }
-    if (guard) Q_EMIT itemChanged();
+    if (guard) Q_EMIT controlChanged();
 }
-SliderState::SliderState(QObject* parent): SliderM2State(parent) {
-    m_handleLineWidthKey = m_bindings.property<&SliderState::bindableHandleLineWidth>(this);
-    m_handleWidthKey     = m_bindings.property<&SliderState::bindableHandleWidth>(this);
-    m_handleHeightKey    = m_bindings.property<&SliderState::bindableHandleHeight>(this);
-    auto base            = m_bindings.base();
+SliderHandleAppearance::SliderHandleAppearance(QObject* parent): SliderAppearance(parent) {
+    m_handleLineWidthKey =
+        m_bindings.property<&SliderHandleAppearance::bindableHandleLineWidth>(this);
+    m_handleWidthKey  = m_bindings.property<&SliderHandleAppearance::bindableHandleWidth>(this);
+    m_handleHeightKey = m_bindings.property<&SliderHandleAppearance::bindableHandleHeight>(this);
+    auto base         = m_bindings.base();
     base.bind(m_handleLineWidthKey, [this] {
         return active() ? 2 : 4;
     });
@@ -123,52 +129,91 @@ SliderState::SliderState(QObject* parent): SliderM2State(parent) {
         return int(token::Slider {}.handle_height);
     });
 }
-QColor            SliderM2State::trackColor() const { return m_trackColor.value(); }
-void              SliderM2State::setTrackColor(const QColor& value) { m_trackColor = value; }
-void              SliderM2State::resetTrackColor() { m_trackColorKey.reset(); }
-QBindable<QColor> SliderM2State::bindableTrackColor() { return QBindable<QColor>(&m_trackColor); }
-QColor            SliderM2State::trackOverlayColor() const { return m_trackOverlayColor.value(); }
-void SliderM2State::setTrackOverlayColor(const QColor& value) { m_trackOverlayColor = value; }
-void SliderM2State::resetTrackOverlayColor() { m_trackOverlayColorKey.reset(); }
-QBindable<QColor> SliderM2State::bindableTrackOverlayColor() {
+QColor            SliderAppearance::trackColor() const { return m_trackColor.value(); }
+void              SliderAppearance::setTrackColor(const QColor& value) { m_trackColor = value; }
+void              SliderAppearance::resetTrackColor() { m_trackColorKey.reset(); }
+QBindable<QColor> SliderAppearance::bindableTrackColor() {
+    return QBindable<QColor>(&m_trackColor);
+}
+QColor SliderAppearance::trackOverlayColor() const { return m_trackOverlayColor.value(); }
+void   SliderAppearance::setTrackOverlayColor(const QColor& value) { m_trackOverlayColor = value; }
+void   SliderAppearance::resetTrackOverlayColor() { m_trackOverlayColorKey.reset(); }
+QBindable<QColor> SliderAppearance::bindableTrackOverlayColor() {
     return QBindable<QColor>(&m_trackOverlayColor);
 }
-QColor SliderM2State::trackInactiveColor() const { return m_trackInactiveColor.value(); }
-void   SliderM2State::setTrackInactiveColor(const QColor& value) { m_trackInactiveColor = value; }
-void   SliderM2State::resetTrackInactiveColor() { m_trackInactiveColorKey.reset(); }
-QBindable<QColor> SliderM2State::bindableTrackInactiveColor() {
+QColor SliderAppearance::trackInactiveColor() const { return m_trackInactiveColor.value(); }
+void SliderAppearance::setTrackInactiveColor(const QColor& value) { m_trackInactiveColor = value; }
+void SliderAppearance::resetTrackInactiveColor() { m_trackInactiveColorKey.reset(); }
+QBindable<QColor> SliderAppearance::bindableTrackInactiveColor() {
     return QBindable<QColor>(&m_trackInactiveColor);
 }
-QColor SliderM2State::trackMarkInactiveColor() const { return m_trackMarkInactiveColor.value(); }
-void   SliderM2State::setTrackMarkInactiveColor(const QColor& value) {
+QColor SliderAppearance::trackMarkInactiveColor() const { return m_trackMarkInactiveColor.value(); }
+void   SliderAppearance::setTrackMarkInactiveColor(const QColor& value) {
     m_trackMarkInactiveColor = value;
 }
-void SliderM2State::resetTrackMarkInactiveColor() { m_trackMarkInactiveColorKey.reset(); }
-QBindable<QColor> SliderM2State::bindableTrackMarkInactiveColor() {
+void SliderAppearance::resetTrackMarkInactiveColor() { m_trackMarkInactiveColorKey.reset(); }
+QBindable<QColor> SliderAppearance::bindableTrackMarkInactiveColor() {
     return QBindable<QColor>(&m_trackMarkInactiveColor);
 }
-QColor SliderM2State::trackMarkColor() const { return m_trackMarkColor.value(); }
-void   SliderM2State::setTrackMarkColor(const QColor& value) { m_trackMarkColor = value; }
-void   SliderM2State::resetTrackMarkColor() { m_trackMarkColorKey.reset(); }
-QBindable<QColor> SliderM2State::bindableTrackMarkColor() {
+QColor SliderAppearance::trackMarkColor() const { return m_trackMarkColor.value(); }
+void   SliderAppearance::setTrackMarkColor(const QColor& value) { m_trackMarkColor = value; }
+void   SliderAppearance::resetTrackMarkColor() { m_trackMarkColorKey.reset(); }
+QBindable<QColor> SliderAppearance::bindableTrackMarkColor() {
     return QBindable<QColor>(&m_trackMarkColor);
 }
-qreal SliderM2State::trackOverlayOpacity() const { return m_trackOverlayOpacity.value(); }
-void  SliderM2State::setTrackOverlayOpacity(const qreal& value) { m_trackOverlayOpacity = value; }
-void  SliderM2State::resetTrackOverlayOpacity() { m_trackOverlayOpacityKey.reset(); }
-QBindable<qreal> SliderM2State::bindableTrackOverlayOpacity() {
+qreal SliderAppearance::trackOverlayOpacity() const { return m_trackOverlayOpacity.value(); }
+void SliderAppearance::setTrackOverlayOpacity(const qreal& value) { m_trackOverlayOpacity = value; }
+void SliderAppearance::resetTrackOverlayOpacity() { m_trackOverlayOpacityKey.reset(); }
+QBindable<qreal> SliderAppearance::bindableTrackOverlayOpacity() {
     return QBindable<qreal>(&m_trackOverlayOpacity);
 }
-int            SliderState::handleLineWidth() const { return m_handleLineWidth.value(); }
-void           SliderState::setHandleLineWidth(const int& value) { m_handleLineWidth = value; }
-void           SliderState::resetHandleLineWidth() { m_handleLineWidthKey.reset(); }
-QBindable<int> SliderState::bindableHandleLineWidth() { return QBindable<int>(&m_handleLineWidth); }
-int            SliderState::handleWidth() const { return m_handleWidth.value(); }
-void           SliderState::setHandleWidth(const int& value) { m_handleWidth = value; }
-void           SliderState::resetHandleWidth() { m_handleWidthKey.reset(); }
-QBindable<int> SliderState::bindableHandleWidth() { return QBindable<int>(&m_handleWidth); }
-int            SliderState::handleHeight() const { return m_handleHeight.value(); }
-void           SliderState::setHandleHeight(const int& value) { m_handleHeight = value; }
-void           SliderState::resetHandleHeight() { m_handleHeightKey.reset(); }
-QBindable<int> SliderState::bindableHandleHeight() { return QBindable<int>(&m_handleHeight); }
+int  SliderHandleAppearance::handleLineWidth() const { return m_handleLineWidth.value(); }
+void SliderHandleAppearance::setHandleLineWidth(const int& value) { m_handleLineWidth = value; }
+void SliderHandleAppearance::resetHandleLineWidth() { m_handleLineWidthKey.reset(); }
+QBindable<int> SliderHandleAppearance::bindableHandleLineWidth() {
+    return QBindable<int>(&m_handleLineWidth);
+}
+int            SliderHandleAppearance::handleWidth() const { return m_handleWidth.value(); }
+void           SliderHandleAppearance::setHandleWidth(const int& value) { m_handleWidth = value; }
+void           SliderHandleAppearance::resetHandleWidth() { m_handleWidthKey.reset(); }
+QBindable<int> SliderHandleAppearance::bindableHandleWidth() {
+    return QBindable<int>(&m_handleWidth);
+}
+int            SliderHandleAppearance::handleHeight() const { return m_handleHeight.value(); }
+void           SliderHandleAppearance::setHandleHeight(const int& value) { m_handleHeight = value; }
+void           SliderHandleAppearance::resetHandleHeight() { m_handleHeightKey.reset(); }
+QBindable<int> SliderHandleAppearance::bindableHandleHeight() {
+    return QBindable<int>(&m_handleHeight);
+}
+SliderM2State::SliderM2State(QObject* parent): SliderAppearance(parent) {
+    connect(this, &SliderM2State::controlChanged, this, &SliderM2State::itemChanged);
+}
+Slider* SliderM2State::item() const { return static_cast<Slider*>(control()); }
+void    SliderM2State::setItem(Slider* value) {
+    setControl(value, [this] {
+        return item()->pressed() || item()->visualFocus();
+    });
+}
+SliderState::SliderState(QObject* parent): SliderHandleAppearance(parent) {
+    connect(this, &SliderState::controlChanged, this, &SliderState::itemChanged);
+}
+Slider* SliderState::item() const { return static_cast<Slider*>(control()); }
+void    SliderState::setItem(Slider* value) {
+    setControl(value, [this] {
+        return item()->pressed() || item()->visualFocus();
+    });
+}
+RangeSliderState::RangeSliderState(QObject* parent): SliderHandleAppearance(parent) {
+    connect(this, &RangeSliderState::controlChanged, this, &RangeSliderState::itemChanged);
+}
+RangeSlider* RangeSliderState::item() const { return static_cast<RangeSlider*>(control()); }
+void         RangeSliderState::setItem(RangeSlider* value) {
+    setControl(value, [this] {
+        if (handleIndex() == 0 || handleIndex() == 1) {
+            const auto node = handleIndex() == 0 ? item()->first() : item()->second();
+            return node->pressed() || node->focused();
+        }
+        return item()->pressed() || item()->visualFocus();
+    });
+}
 } // namespace qml_material

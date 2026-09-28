@@ -7,6 +7,7 @@ endforeach()
 enable_testing()
 
 set(QM_TEST_SOURCES
+  integration/range_slider.cpp
   integration/fab_menu.cpp
   integration/extended_fab.cpp
   integration/floating_toolbar.cpp
@@ -89,7 +90,7 @@ foreach(source IN LISTS QM_TEST_SOURCES)
 endforeach()
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/test_groups.inc" CONTENT "${QM_TEST_GROUPS}")
 
-set_tests_properties(floating_toolbar date_input text_field_form extended_fab fab_menu button_group material_shapes lazy_list scroll_motion lazy_data icon_spec toolbar_dynamic_visibility application_lifetime
+set_tests_properties(range_slider floating_toolbar date_input text_field_form extended_fab fab_menu button_group material_shapes lazy_list scroll_motion lazy_data icon_spec toolbar_dynamic_visibility application_lifetime
   PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 set_tests_properties(lite_layout control_layout dynamic_creation attached_property_propagation
   page_layout split_view item_proxy nested_scroll adaptive_presenter PROPERTIES ENVIRONMENT
@@ -113,7 +114,7 @@ endif()
 qt_import_qml_plugins(lazy_list_benchmark)
 
 set(VISUAL_SCENES floating_toolbar date_modes list_item date_locale text_field_form extended_fab fab_menu button_group material_shapes button action_progress elevation elevation_corners shape ripple ripple_phases loading_indicator_shapes tooltip wave_progress snackbar
-    icon_artifacts icon_spec
+    icon_artifacts icon_spec range_slider
     focus_button focus_iconbutton focus_fab focus_chip
     focus_switch focus_checkbox focus_radio
     datepicker colorpicker colorpicker_button

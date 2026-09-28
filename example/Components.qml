@@ -1606,6 +1606,33 @@ MD.Page {
                                             labelBehavior: MD.Enum.SliderLabelVisible
                                         }
                                         MD.Text {
+                                            text: 'Range'
+                                            typescale: MD.Token.typescale.label_medium
+                                            opacity: 0.8
+                                        }
+                                        MD.RangeSlider {
+                                            Layout.fillWidth: true
+                                            from: 0
+                                            to: 100
+                                            first.value: 20
+                                            second.value: 80
+                                        }
+                                        MD.Text {
+                                            text: 'Discrete range · minimum 20'
+                                            typescale: MD.Token.typescale.label_medium
+                                            opacity: 0.8
+                                        }
+                                        MD.RangeSlider {
+                                            Layout.fillWidth: true
+                                            from: 0
+                                            to: 100
+                                            first.value: 20
+                                            second.value: 80
+                                            stepSize: 10
+                                            minimumRange: 20
+                                            snapMode: MD.RangeSliderBase.SnapAlways
+                                        }
+                                        MD.Text {
                                             text: 'Inset icon'
                                             typescale: MD.Token.typescale.label_medium
                                             opacity: 0.8

@@ -1,13 +1,16 @@
 #pragma once
+#include <functional>
 #include "qml_material/style/common_state.hpp"
 Q_MOC_INCLUDE("qml_material/control/slider.hpp")
+Q_MOC_INCLUDE("qml_material/control/range_slider.hpp")
 namespace qml_material
 {
 class Slider;
-class QML_MATERIAL_API SliderM2State : public CommonState {
+class RangeSlider;
+class Control;
+class QML_MATERIAL_API SliderAppearance : public CommonState {
     Q_OBJECT
-    QML_NAMED_ELEMENT(StateSliderM2)
-    Q_PROPERTY(qml_material::Slider* item READ item WRITE setItem NOTIFY itemChanged FINAL)
+    QML_ANONYMOUS
     Q_PROPERTY(QColor trackColor READ trackColor WRITE setTrackColor RESET resetTrackColor NOTIFY
                    trackColorChanged BINDABLE bindableTrackColor)
     Q_PROPERTY(QColor trackOverlayColor READ trackOverlayColor WRITE setTrackOverlayColor RESET
@@ -25,11 +28,8 @@ class QML_MATERIAL_API SliderM2State : public CommonState {
                    resetTrackOverlayOpacity NOTIFY trackOverlayOpacityChanged BINDABLE
                        bindableTrackOverlayOpacity)
 public:
-    explicit SliderM2State(QObject* parent = nullptr);
-    ~SliderM2State() override;
-    Slider*           item() const;
-    void              setItem(Slider*);
-    Q_SIGNAL void     itemChanged();
+    explicit SliderAppearance(QObject* parent = nullptr);
+    ~SliderAppearance() override;
     QColor            trackColor() const;
     void              setTrackColor(const QColor&);
     void              resetTrackColor();
@@ -71,6 +71,9 @@ protected:
     };
     StateBindingSet<Interaction> m_bindings { Interaction::Base };
     bool                         active() const;
+    Control*                     control() const;
+    void                         setControl(Control*, std::function<bool()> pressed);
+    Q_SIGNAL void                controlChanged();
 
 private:
     void selectionChanged();
@@ -79,35 +82,36 @@ private:
         quint64     generation                         = 0;
         bool        operator==(const Selection&) const = default;
     };
-    QProperty<Slider*>             m_item { nullptr };
+    QProperty<Control*>            m_control { nullptr };
+    QProperty<bool>                m_pressed { false };
     QProperty<bool>                m_disabled { false };
     QList<QMetaObject::Connection> m_connections;
     bool                           m_ready = false;
-    Q_OBJECT_BINDABLE_PROPERTY(SliderM2State, Selection, m_selection,
-                               &SliderM2State::selectionChanged)
-    Q_OBJECT_BINDABLE_PROPERTY(SliderM2State, QColor, m_trackColor,
-                               &SliderM2State::trackColorChanged)
+    Q_OBJECT_BINDABLE_PROPERTY(SliderAppearance, Selection, m_selection,
+                               &SliderAppearance::selectionChanged)
+    Q_OBJECT_BINDABLE_PROPERTY(SliderAppearance, QColor, m_trackColor,
+                               &SliderAppearance::trackColorChanged)
     PropertyKey<QColor> m_trackColorKey;
-    Q_OBJECT_BINDABLE_PROPERTY(SliderM2State, QColor, m_trackOverlayColor,
-                               &SliderM2State::trackOverlayColorChanged)
+    Q_OBJECT_BINDABLE_PROPERTY(SliderAppearance, QColor, m_trackOverlayColor,
+                               &SliderAppearance::trackOverlayColorChanged)
     PropertyKey<QColor> m_trackOverlayColorKey;
-    Q_OBJECT_BINDABLE_PROPERTY(SliderM2State, QColor, m_trackInactiveColor,
-                               &SliderM2State::trackInactiveColorChanged)
+    Q_OBJECT_BINDABLE_PROPERTY(SliderAppearance, QColor, m_trackInactiveColor,
+                               &SliderAppearance::trackInactiveColorChanged)
     PropertyKey<QColor> m_trackInactiveColorKey;
-    Q_OBJECT_BINDABLE_PROPERTY(SliderM2State, QColor, m_trackMarkInactiveColor,
-                               &SliderM2State::trackMarkInactiveColorChanged)
+    Q_OBJECT_BINDABLE_PROPERTY(SliderAppearance, QColor, m_trackMarkInactiveColor,
+                               &SliderAppearance::trackMarkInactiveColorChanged)
     PropertyKey<QColor> m_trackMarkInactiveColorKey;
-    Q_OBJECT_BINDABLE_PROPERTY(SliderM2State, QColor, m_trackMarkColor,
-                               &SliderM2State::trackMarkColorChanged)
+    Q_OBJECT_BINDABLE_PROPERTY(SliderAppearance, QColor, m_trackMarkColor,
+                               &SliderAppearance::trackMarkColorChanged)
     PropertyKey<QColor> m_trackMarkColorKey;
-    Q_OBJECT_BINDABLE_PROPERTY(SliderM2State, qreal, m_trackOverlayOpacity,
-                               &SliderM2State::trackOverlayOpacityChanged)
+    Q_OBJECT_BINDABLE_PROPERTY(SliderAppearance, qreal, m_trackOverlayOpacity,
+                               &SliderAppearance::trackOverlayOpacityChanged)
     PropertyKey<qreal>                     m_trackOverlayOpacityKey;
     StateBindingSet<Interaction>::Lifetime m_lifetime { m_bindings.lifetime() };
 };
-class QML_MATERIAL_API SliderState : public SliderM2State {
+class QML_MATERIAL_API SliderHandleAppearance : public SliderAppearance {
     Q_OBJECT
-    QML_NAMED_ELEMENT(StateSlider)
+    QML_ANONYMOUS
     Q_PROPERTY(
         int handleLineWidth READ handleLineWidth WRITE setHandleLineWidth RESET resetHandleLineWidth
             NOTIFY handleLineWidthChanged BINDABLE bindableHandleLineWidth)
@@ -116,7 +120,7 @@ class QML_MATERIAL_API SliderState : public SliderM2State {
     Q_PROPERTY(int handleHeight READ handleHeight WRITE setHandleHeight RESET resetHandleHeight
                    NOTIFY handleHeightChanged BINDABLE bindableHandleHeight)
 public:
-    explicit SliderState(QObject* parent = nullptr);
+    explicit SliderHandleAppearance(QObject* parent = nullptr);
     int            handleLineWidth() const;
     void           setHandleLineWidth(const int&);
     void           resetHandleLineWidth();
@@ -134,13 +138,55 @@ public:
     Q_SIGNAL void  handleHeightChanged();
 
 private:
-    Q_OBJECT_BINDABLE_PROPERTY(SliderState, int, m_handleLineWidth,
-                               &SliderState::handleLineWidthChanged)
+    Q_OBJECT_BINDABLE_PROPERTY(SliderHandleAppearance, int, m_handleLineWidth,
+                               &SliderHandleAppearance::handleLineWidthChanged)
     PropertyKey<int> m_handleLineWidthKey;
-    Q_OBJECT_BINDABLE_PROPERTY(SliderState, int, m_handleWidth, &SliderState::handleWidthChanged)
+    Q_OBJECT_BINDABLE_PROPERTY(SliderHandleAppearance, int, m_handleWidth,
+                               &SliderHandleAppearance::handleWidthChanged)
     PropertyKey<int> m_handleWidthKey;
-    Q_OBJECT_BINDABLE_PROPERTY(SliderState, int, m_handleHeight, &SliderState::handleHeightChanged)
+    Q_OBJECT_BINDABLE_PROPERTY(SliderHandleAppearance, int, m_handleHeight,
+                               &SliderHandleAppearance::handleHeightChanged)
     PropertyKey<int>                       m_handleHeightKey;
     StateBindingSet<Interaction>::Lifetime m_lifetime { m_bindings.lifetime() };
+};
+class QML_MATERIAL_API SliderM2State : public SliderAppearance {
+    Q_OBJECT
+    QML_NAMED_ELEMENT(StateSliderM2)
+    Q_PROPERTY(qml_material::Slider* item READ item WRITE setItem NOTIFY itemChanged FINAL)
+public:
+    explicit SliderM2State(QObject* parent = nullptr);
+    Slider*       item() const;
+    void          setItem(Slider*);
+    Q_SIGNAL void itemChanged();
+};
+class QML_MATERIAL_API SliderState : public SliderHandleAppearance {
+    Q_OBJECT
+    QML_NAMED_ELEMENT(StateSlider)
+    Q_PROPERTY(qml_material::Slider* item READ item WRITE setItem NOTIFY itemChanged FINAL)
+public:
+    explicit SliderState(QObject* parent = nullptr);
+    Slider*       item() const;
+    void          setItem(Slider*);
+    Q_SIGNAL void itemChanged();
+};
+class QML_MATERIAL_API RangeSliderState : public SliderHandleAppearance {
+    Q_OBJECT
+    QML_NAMED_ELEMENT(StateRangeSlider)
+    Q_PROPERTY(qml_material::RangeSlider* item READ item WRITE setItem NOTIFY itemChanged FINAL)
+    Q_PROPERTY(int handleIndex READ handleIndex WRITE setHandleIndex NOTIFY handleIndexChanged
+                   BINDABLE bindableHandleIndex FINAL)
+public:
+    explicit RangeSliderState(QObject* parent = nullptr);
+    RangeSlider*   item() const;
+    void           setItem(RangeSlider*);
+    Q_SIGNAL void  itemChanged();
+    int            handleIndex() const { return m_handleIndex.value(); }
+    void           setHandleIndex(int value) { m_handleIndex = value; }
+    QBindable<int> bindableHandleIndex() { return QBindable<int>(&m_handleIndex); }
+    Q_SIGNAL void  handleIndexChanged();
+
+private:
+    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(RangeSliderState, int, m_handleIndex, -1,
+                                         &RangeSliderState::handleIndexChanged)
 };
 } // namespace qml_material

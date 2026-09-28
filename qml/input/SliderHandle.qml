@@ -17,6 +17,7 @@ Item {
     property int handleLineWidth: 4
 
     readonly property var control: parent
+    property MD.CommonState appearance: control?.mdState ?? null
 
     readonly property bool __valueIndicatorActive: {
         if (root.labelBehavior === MD.Enum.SliderLabelGone)
@@ -95,14 +96,14 @@ Item {
                 anchors.centerIn: parent
                 text: Math.round(root.value)
                 typescale: MD.Token.typescale.label_medium
-                color: root.control?.mdState.colors?.inverse_on_surface ?? "transparent"
+                color: root.appearance?.colors?.inverse_on_surface ?? "transparent"
             }
         }
         background: MD.ElevationRectangle {
             implicitWidth: 32
             implicitHeight: 32
             radius: 16
-            color: root.control?.mdState.colors?.inverse_surface ?? "transparent"
+            color: root.appearance?.colors?.inverse_surface ?? "transparent"
             elevation: MD.Token.elevation.level2
         }
     }
@@ -116,7 +117,7 @@ Item {
         height: root.horizontal ? root.handleHeight : root.handleLineWidth
 
         radius: MD.Token.slider.track_inside_corner
-        color: root.control ? root.control.mdState.backgroundColor : "transparent"
+        color: root.appearance?.backgroundColor ?? "transparent"
     }
 
     // The "pill" outline handle shown when pressed/focused to emphasize
@@ -127,7 +128,7 @@ Item {
         height: (root.horizontal ? root.handleHeight : root.handleLineWidth) + 12
         radius: ((root.horizontal ? root.handleLineWidth : root.handleLineWidth) + 12) / 2
         color: "transparent"
-        border.color: root.control ? root.control.mdState.backgroundColor : "transparent"
+        border.color: root.appearance?.backgroundColor ?? "transparent"
         border.width: 4
         visible: root.handleHasFocus
 

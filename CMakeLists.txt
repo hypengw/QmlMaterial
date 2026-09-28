@@ -189,6 +189,9 @@ set(SOURCES
     include/qml_material/control/application_window.hpp
     src/control/control.cpp
     src/control/slider.cpp
+    src/control/range_slider.cpp
+    src/control/range_slider_input.cpp
+    include/qml_material/control/range_slider.hpp
     src/control/scroll_indicator.cpp
     src/control/scroll_bar.cpp
     include/qml_material/control/scroll_bar.hpp
@@ -396,6 +399,7 @@ set(QML_FILES
     qml/input/RadioIndicatorShape.qml
     qml/input/SearchBar.qml
     qml/input/Slider.qml
+    qml/input/RangeSlider.qml
     qml/input/SliderHandle.qml
     qml/input/SliderHandleM2.qml
     qml/input/SliderM2.qml
