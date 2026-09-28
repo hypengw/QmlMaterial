@@ -1778,6 +1778,8 @@ MD.Page {
                                 MD.DateTextField {
                                     Layout.alignment: Qt.AlignHCenter
                                     Layout.preferredWidth: 200
+                                    locale: m_date_picker.locale
+                                    dateFormat: ""
                                     value: m_date_picker.selectedDate
                                     onModified: function (d) {
                                         m_date_picker.selectedDate = d;
@@ -1789,7 +1791,6 @@ MD.Page {
                                 MD.DatePicker {
                                     id: m_date_picker
                                     Layout.alignment: Qt.AlignHCenter
-                                    showHeader: false
                                     selectionMode: MD.DatePicker.SelectionMode.Single
                                     selectedDate: new Date()
                                 }

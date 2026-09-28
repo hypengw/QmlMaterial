@@ -27,6 +27,7 @@ void CalendarMonthModel::setMonth(int value) {
     QPointer<CalendarMonthModel> guard(this);
     Q_EMIT dataChanged(index(0), index(41));
     if (guard) Q_EMIT monthChanged();
+    if (guard) Q_EMIT firstDateChanged();
 }
 void CalendarMonthModel::setYear(int value) {
     if (value == 0 || value < -271820 || value > 275759 || m_year == value) return;
@@ -35,6 +36,7 @@ void CalendarMonthModel::setYear(int value) {
     QPointer<CalendarMonthModel> guard(this);
     Q_EMIT dataChanged(index(0), index(41));
     if (guard) Q_EMIT yearChanged();
+    if (guard) Q_EMIT firstDateChanged();
 }
 void CalendarMonthModel::setLocale(const QLocale& value) {
     if (m_locale == value) return;
@@ -43,6 +45,12 @@ void CalendarMonthModel::setLocale(const QLocale& value) {
     QPointer<CalendarMonthModel> guard(this);
     Q_EMIT dataChanged(index(0), index(41));
     if (guard) Q_EMIT localeChanged();
+}
+QStringList CalendarMonthModel::monthNames() const {
+    QStringList result;
+    for (int month = 1; month <= 12; ++month)
+        result.append(m_locale.standaloneMonthName(month, QLocale::LongFormat));
+    return result;
 }
 QVariantList CalendarMonthModel::weekDays() const {
     QVariantList result;
@@ -62,6 +70,9 @@ int CalendarMonthModel::rowCount(const QModelIndex& parent) const {
 }
 QDateTime CalendarMonthModel::dateAt(int row) const {
     return row >= 0 && row < 42 ? m_date_times[row] : QDateTime();
+}
+QDateTime CalendarMonthModel::firstDate() const {
+    return QDate(m_year, m_month + 1, 1).startOfDay();
 }
 QVariant CalendarMonthModel::data(const QModelIndex& index, int role) const {
     if (! index.isValid() || index.model() != this || index.column() != 0 || index.row() < 0 ||

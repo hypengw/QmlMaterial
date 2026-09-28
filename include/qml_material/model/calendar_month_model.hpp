@@ -16,6 +16,8 @@ class QML_MATERIAL_API CalendarMonthModel : public QAbstractListModel {
     Q_PROPERTY(int year READ year WRITE setYear NOTIFY yearChanged FINAL)
     Q_PROPERTY(QLocale locale READ locale WRITE setLocale NOTIFY localeChanged FINAL)
     Q_PROPERTY(QVariantList weekDays READ weekDays NOTIFY localeChanged FINAL)
+    Q_PROPERTY(QStringList monthNames READ monthNames NOTIFY localeChanged FINAL)
+    Q_PROPERTY(QDateTime firstDate READ firstDate NOTIFY firstDateChanged FINAL)
 public:
     enum Role
     {
@@ -32,6 +34,7 @@ public:
     int                    year() const { return m_year; }
     QLocale                locale() const { return m_locale; }
     QVariantList           weekDays() const;
+    QStringList            monthNames() const;
     void                   setMonth(int);
     void                   setYear(int);
     void                   setLocale(const QLocale&);
@@ -39,6 +42,8 @@ public:
     QVariant               data(const QModelIndex&, int role = Qt::DisplayRole) const override;
     QHash<int, QByteArray> roleNames() const override;
     Q_INVOKABLE QDateTime  dateAt(int index) const;
+    QDateTime              firstDate() const;
+    Q_SIGNAL void          firstDateChanged();
     Q_SIGNAL void          monthChanged();
     Q_SIGNAL void          yearChanged();
     Q_SIGNAL void          localeChanged();
