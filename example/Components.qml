@@ -1216,6 +1216,68 @@ MD.Page {
                                     }
                                 }
                             }
+                            ComponentCard {
+                                title: 'Side sheets'
+                                RowLayout {
+                                    MD.Button {
+                                        text: 'Standard'
+                                        onClicked: m_side_sheet.open()
+                                    }
+                                    MD.Button {
+                                        text: 'Modal'
+                                        onClicked: m_side_dialog.open()
+                                    }
+                                    MD.CheckBox {
+                                        text: 'Detached'
+                                        onToggled: {
+                                            m_side_sheet.detached = checked;
+                                            m_side_dialog.detached = checked;
+                                        }
+                                    }
+                                }
+                                MD.SideSheet {
+                                    id: m_side_sheet
+                                    Layout.fillWidth: true
+                                    implicitHeight: 240
+                                    coplanar: true
+                                    mainContent: Rectangle {
+                                        color: MD.Token.color.surface_container_high
+                                        MD.Text {
+                                            anchors.fill: parent
+                                            padding: 16
+                                            text: 'Main content'
+                                            elide: Text.ElideRight
+                                        }
+                                    }
+                                    Column {
+                                        anchors.fill: parent
+                                        anchors.margins: 16
+                                        spacing: 16
+                                        MD.Text {
+                                            text: 'Supporting content'
+                                        }
+                                        MD.Button {
+                                            text: 'Close'
+                                            onClicked: m_side_sheet.close()
+                                        }
+                                    }
+                                }
+                                MD.SideSheetDialog {
+                                    id: m_side_dialog
+                                    Column {
+                                        anchors.fill: parent
+                                        anchors.margins: 16
+                                        spacing: 16
+                                        MD.Text {
+                                            text: 'Supporting content'
+                                        }
+                                        MD.Button {
+                                            text: 'Close'
+                                            onClicked: m_side_dialog.close()
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                     MD.Pane {

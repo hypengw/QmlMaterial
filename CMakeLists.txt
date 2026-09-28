@@ -283,6 +283,8 @@ set(SOURCES
     include/qml_material/control/tool_tip_popup.hpp
     src/control/drawer.cpp
     include/qml_material/control/drawer.hpp
+    src/control/side_sheet.cpp
+    include/qml_material/control/side_sheet.hpp
     include/qml_material/control/tool_tip.hpp
     src/layout/width_provider.cpp
     src/layout/toolbar_layout.cpp
@@ -472,6 +474,8 @@ set(QML_FILES
     qml/picker/HueChannelSlider.qml
     qml/popup/ActionMenu.qml
     qml/popup/BottomSheet.qml
+    qml/popup/SideSheet.qml
+    qml/popup/SideSheetDialog.qml
     qml/popup/Dialog.qml
     qml/popup/DialogButtonBox.qml
     qml/popup/DialogHeader.qml

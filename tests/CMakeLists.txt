@@ -7,6 +7,7 @@ endforeach()
 enable_testing()
 
 set(QM_TEST_SOURCES
+  integration/side_sheet.cpp
   integration/swipe_to_dismiss.cpp
   integration/pull_to_refresh.cpp
   integration/search_view.cpp
@@ -94,7 +95,7 @@ foreach(source IN LISTS QM_TEST_SOURCES)
 endforeach()
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/test_groups.inc" CONTENT "${QM_TEST_GROUPS}")
 
-set_tests_properties(swipe_to_dismiss pull_to_refresh search_view time_input range_slider floating_toolbar date_input text_field_form extended_fab fab_menu button_group material_shapes lazy_list scroll_motion lazy_data icon_spec toolbar_dynamic_visibility application_lifetime
+set_tests_properties(side_sheet swipe_to_dismiss pull_to_refresh search_view time_input range_slider floating_toolbar date_input text_field_form extended_fab fab_menu button_group material_shapes lazy_list scroll_motion lazy_data icon_spec toolbar_dynamic_visibility application_lifetime
   PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 set_tests_properties(lite_layout control_layout dynamic_creation attached_property_propagation
   page_layout split_view item_proxy nested_scroll adaptive_presenter PROPERTIES ENVIRONMENT
@@ -122,7 +123,7 @@ set(VISUAL_SCENES floating_toolbar date_modes list_item date_locale text_field_f
     focus_button focus_iconbutton focus_fab focus_chip
     focus_switch focus_checkbox focus_radio
     datepicker colorpicker colorpicker_button
-    navigation_rail navigation_drawer bottom_sheet scrollable carousel table)
+    navigation_rail navigation_drawer bottom_sheet side_sheet scrollable carousel table)
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/out)
 
 foreach(scene ${VISUAL_SCENES})
