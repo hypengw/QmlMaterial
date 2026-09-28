@@ -81,7 +81,8 @@ public:
         m_dragging                            = false;
         m_motionX.stop();
         m_motionY.stop();
-        const auto chain = std::exchange(m_chain, {});
+        const auto chain     = std::exchange(m_chain, {});
+        const auto behaviors = std::exchange(m_behaviors, {});
         for (const auto& c : std::exchange(m_connections, {})) disconnect(c);
         if (m_window) m_window->removeEventFilter(this);
         m_window = nullptr;
@@ -100,6 +101,11 @@ public:
             finished.append(config);
         }
         m_wheel    = false;
+        m_applying = false;
+        for (auto behavior : behaviors) {
+            if (behavior) behavior->end(cancelled);
+            if (! guard) return;
+        }
         m_stopping = false;
         for (auto config : finished) {
             if (config) emit config->scrollFinished(cancelled);
@@ -291,6 +297,18 @@ private:
             m_connections << connect(config, &NestedScroll::restoreOnReverseChanged, this, [this] {
                 stop();
             });
+            m_connections << connect(config, &NestedScroll::connectionChanged, this, [this] {
+                stop();
+            });
+            if (auto* connection = config->connection()) {
+                m_connections << connect(
+                    connection, &NestedScrollConnection::invalidated, this, [this] {
+                        stop();
+                    });
+                m_connections << connect(connection, &QObject::destroyed, this, [this] {
+                    stop();
+                });
+            }
             for (auto* p = item; p; p = p->parentItem()) {
                 m_connections << connect(p, &QQuickItem::parentChanged, this, [this] {
                     stop();
@@ -320,6 +338,7 @@ private:
         m_applying       = true;
         const auto chain = m_chain;
         m_origins.clear();
+        bool connectionAllowed = true;
         for (auto config : chain) {
             if (! config) {
                 stop();
@@ -331,6 +350,13 @@ private:
             m_origins.insert(config, ScrollParticipant(config->item()).position());
             ScrollParticipant(config->item()).begin();
             if (! guard || m_chain.isEmpty()) return false;
+            if (m_wheel && ! config->m_wheelEnabled) connectionAllowed = false;
+            if (auto* connection = config->connection(); connection && connectionAllowed) {
+                m_behaviors.append(connection);
+                connection->begin(m_wheel ? NestedScrollConnection::Wheel
+                                          : NestedScrollConnection::Drag);
+                if (! guard || m_chain.isEmpty()) return false;
+            }
         }
         m_applying          = false;
         const auto revision = m_revision;
@@ -345,7 +371,12 @@ private:
             if (! config || ! config->item()) return false;
             ScrollParticipant participant(config->item());
             auto              local = vectorFromScene(config->item(), sceneDelta);
-            const auto        axes  = config->axes() & participant.axes();
+            if (! config->axes().testFlag(Qt::Horizontal)) local.setX(0);
+            if (! config->axes().testFlag(Qt::Vertical)) local.setY(0);
+            if (finite(local) && config->connection() &&
+                config->connection()->canConsume(local, NestedScrollConnection::Drag))
+                return true;
+            const auto axes = config->axes() & participant.axes();
             if (! axes.testFlag(Qt::Horizontal)) local.setX(0);
             if (! axes.testFlag(Qt::Vertical)) local.setY(0);
             if (finite(local) &&
@@ -358,9 +389,63 @@ private:
                     QPointF velocity = {}) {
         QPointF                       remaining = sceneDelta;
         QPointer<NestedScrollHandler> guard(this);
-        const auto                    chain    = m_chain;
+        auto                          chain    = m_chain;
         const auto                    revision = m_revision;
-        auto                          order    = chain;
+        if (activity == ScrollParticipant::Activity::Scroll) {
+            for (qsizetype i = 0; i < chain.size(); ++i) {
+                if (! chain[i] || ! chain[i]->m_wheelEnabled) {
+                    chain = chain.first(i);
+                    break;
+                }
+            }
+        }
+        const auto source =
+            activity == ScrollParticipant::Activity::Drag     ? NestedScrollConnection::Drag
+            : activity == ScrollParticipant::Activity::Scroll ? NestedScrollConnection::Wheel
+                                                              : NestedScrollConnection::Fling;
+        QHash<NestedScroll*, QPointF> afterPre;
+        auto                          current = [&] {
+            return guard && m_revision == revision && ! m_chain.isEmpty();
+        };
+        auto applyConnection = [&](QPointer<NestedScroll> config, bool pre) {
+            if (! config || ! config->item()) {
+                stop();
+                return false;
+            }
+            if (! config->connection()) return current();
+            auto* item  = config->item();
+            auto  local = vectorFromScene(item, remaining);
+            if (! config->axes().testFlag(Qt::Horizontal)) local.setX(0);
+            if (! config->axes().testFlag(Qt::Vertical)) local.setY(0);
+            const auto basisX = vectorToScene(item, { 1, 0 });
+            const auto basisY = vectorToScene(item, { 0, 1 });
+            if (! finite(local) || ! finite(basisX) || ! finite(basisY) ||
+                std::abs(basisX.x() * basisY.y() - basisX.y() * basisY.x()) < 1e-9) {
+                stop();
+                return false;
+            }
+            const auto consumed  = vectorFromScene(item, afterPre.value(config) - remaining);
+            m_applying           = true;
+            const auto requested = pre ? config->connection()->preScroll(local, source)
+                                       : config->connection()->postScroll(consumed, local, source);
+            const auto bounded   = [](qreal value, qreal available) {
+                return std::isfinite(value) ? std::clamp(value,
+                                                         std::min(qreal(0), available),
+                                                         std::max(qreal(0), available))
+                                            : 0;
+            };
+            const QPointF used(bounded(requested.x(), local.x()),
+                               bounded(requested.y(), local.y()));
+            remaining -= basisX * used.x() + basisY * used.y();
+            if (! current()) return false;
+            m_applying = false;
+            return true;
+        };
+        for (auto it = chain.crbegin(); it != chain.crend(); ++it) {
+            if (! applyConnection(*it, true)) return sceneDelta - remaining;
+            if ((*it)->connection()) afterPre.insert(*it, remaining);
+        }
+        auto order = chain;
         if (activity == ScrollParticipant::Activity::Drag) {
             for (auto config : chain)
                 if (config && config->m_restoreOnReverse) order.prepend(config);
@@ -410,6 +495,8 @@ private:
             m_applying = false;
             if (config && ! used.isNull()) emit config->scrollConsumed(used);
             if (! guard || m_revision != revision || m_chain.isEmpty())
+                return sceneDelta - remaining;
+            if (index >= restoreCount && ! applyConnection(config, false))
                 return sceneDelta - remaining;
         }
         return sceneDelta - remaining;
@@ -487,14 +574,15 @@ private:
             m_motionY.stop();
         if (! m_motionX.active() && ! m_motionY.active()) stop(false);
     }
-    QPointer<NestedScroll>          m_config;
-    QList<QPointer<NestedScroll>>   m_chain;
-    QHash<NestedScroll*, QPointF>   m_origins;
-    QList<QMetaObject::Connection>  m_connections;
-    QPointer<const QPointingDevice> m_device;
-    QPointer<QQuickWindow>          m_window;
-    QPointer<ScrollFrameItem>       m_frame;
-    int                             m_pointId = -1;
+    QPointer<NestedScroll>                  m_config;
+    QList<QPointer<NestedScroll>>           m_chain;
+    QList<QPointer<NestedScrollConnection>> m_behaviors;
+    QHash<NestedScroll*, QPointF>           m_origins;
+    QList<QMetaObject::Connection>          m_connections;
+    QPointer<const QPointingDevice>         m_device;
+    QPointer<QQuickWindow>                  m_window;
+    QPointer<ScrollFrameItem>               m_frame;
+    int                                     m_pointId = -1;
     bool          m_pressed = false, m_dragging = false, m_wheel = false, m_stopping = false,
                   m_started  = false;
     bool          m_applying = false;
@@ -507,7 +595,39 @@ private:
 
 NestedScroll::NestedScroll(QObject* parent)
     : QObject(parent), m_item(qobject_cast<QQuickItem*>(parent)) {}
-NestedScroll::~NestedScroll() { delete m_handler; }
+NestedScroll::~NestedScroll() {
+    if (m_controller) m_controller->stop();
+    if (m_connection) m_connection->m_attachment = nullptr;
+    delete m_handler;
+}
+void NestedScroll::setConnection(NestedScrollConnection* connection) {
+    if (m_connection == connection) return;
+    if (connection && connection->m_attachment && connection->m_attachment != this) {
+        qWarning("NestedScrollConnection is already attached to another viewport");
+        return;
+    }
+    QPointer<NestedScroll>           guard(this);
+    QPointer<NestedScrollConnection> next(connection);
+    const auto                       previous = m_connection;
+    if (m_controller) m_controller->stop();
+    if (! guard || m_connection != previous) return;
+    if (next && next->m_attachment && next->m_attachment != this) {
+        qWarning("NestedScrollConnection is already attached to another viewport");
+        return;
+    }
+    disconnect(m_connectionDestroyed);
+    if (m_connection) m_connection->m_attachment = nullptr;
+    m_connection = next;
+    if (next) {
+        next->m_attachment    = this;
+        m_connectionDestroyed = connect(next, &QObject::destroyed, this, [this] {
+            QPointer<NestedScroll> guard(this);
+            if (m_controller) m_controller->stop();
+            if (guard) emit connectionChanged();
+        });
+    }
+    emit connectionChanged();
+}
 NestedScroll* NestedScroll::qmlAttachedProperties(QObject* item) { return new NestedScroll(item); }
 void          NestedScroll::setEnabled(bool enabled) {
     if (m_enabled == enabled) return;

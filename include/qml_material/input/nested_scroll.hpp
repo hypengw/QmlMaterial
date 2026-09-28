@@ -4,6 +4,7 @@
 #include <QQuickItem>
 #include <qqmlregistration.h>
 #include "qml_material/export.hpp"
+#include "qml_material/input/nested_scroll_connection.hpp"
 
 namespace qml_material
 {
@@ -18,20 +19,25 @@ class QML_MATERIAL_API NestedScroll : public QObject {
     Q_PROPERTY(Qt::Orientations axes READ axes WRITE setAxes NOTIFY axesChanged FINAL)
     Q_PROPERTY(bool wheelEnabled MEMBER m_wheelEnabled NOTIFY wheelEnabledChanged FINAL)
     Q_PROPERTY(bool restoreOnReverse MEMBER m_restoreOnReverse NOTIFY restoreOnReverseChanged FINAL)
+    Q_PROPERTY(NestedScrollConnection* connection READ connection WRITE setConnection NOTIFY
+                   connectionChanged FINAL)
 public:
     explicit NestedScroll(QObject* parent);
     ~NestedScroll() override;
-    static NestedScroll* qmlAttachedProperties(QObject*);
-    static bool          coordinates(QQuickItem* receiver, QQuickItem* ancestor);
-    bool                 enabled() const { return m_enabled; }
-    void                 setEnabled(bool);
-    Qt::Orientations     axes() const { return m_axes; }
-    void                 setAxes(Qt::Orientations);
-    QQuickItem*          item() const { return m_item; }
-    Q_SIGNAL void        enabledChanged();
-    Q_SIGNAL void        axesChanged();
-    Q_SIGNAL void        wheelEnabledChanged();
-    Q_SIGNAL void        restoreOnReverseChanged();
+    static NestedScroll*    qmlAttachedProperties(QObject*);
+    static bool             coordinates(QQuickItem* receiver, QQuickItem* ancestor);
+    bool                    enabled() const { return m_enabled; }
+    void                    setEnabled(bool);
+    Qt::Orientations        axes() const { return m_axes; }
+    void                    setAxes(Qt::Orientations);
+    QQuickItem*             item() const { return m_item; }
+    NestedScrollConnection* connection() const { return m_connection; }
+    void                    setConnection(NestedScrollConnection*);
+    Q_SIGNAL void           connectionChanged();
+    Q_SIGNAL void           enabledChanged();
+    Q_SIGNAL void           axesChanged();
+    Q_SIGNAL void           wheelEnabledChanged();
+    Q_SIGNAL void           restoreOnReverseChanged();
     // Actual content displacement in this participant's local coordinates, excluding overscroll.
     Q_SIGNAL void scrollConsumed(QPointF delta);
     Q_SIGNAL void scrollStarted();
@@ -39,13 +45,15 @@ public:
 
 private:
     friend class NestedScrollHandler;
-    QPointer<QQuickItem>          m_item;
-    QPointer<NestedScrollHandler> m_handler;
-    QPointer<NestedScrollHandler> m_controller;
-    bool                          m_enabled          = false;
-    bool                          m_wheelEnabled     = true;
-    bool                          m_restoreOnReverse = false;
-    Qt::Orientations              m_axes             = Qt::Horizontal | Qt::Vertical;
+    QPointer<QQuickItem>             m_item;
+    QPointer<NestedScrollHandler>    m_handler;
+    QPointer<NestedScrollHandler>    m_controller;
+    QPointer<NestedScrollConnection> m_connection;
+    QMetaObject::Connection          m_connectionDestroyed;
+    bool                             m_enabled          = false;
+    bool                             m_wheelEnabled     = true;
+    bool                             m_restoreOnReverse = false;
+    Qt::Orientations                 m_axes             = Qt::Horizontal | Qt::Vertical;
 };
 } // namespace qml_material
 

@@ -305,12 +305,15 @@ set(SOURCES
     include/qml_material/token/time_picker.hpp
     include/qml_material/input/date_validator.hpp
     src/input/nested_scroll.cpp
+    src/input/app_bar_scroll.cpp
     src/input/floating_toolbar_scroll.cpp
     include/qml_material/input/floating_toolbar_scroll.hpp
     src/input/floating_toolbar_exit.cpp
     include/qml_material/input/floating_toolbar_exit.hpp
     src/input/scroll_participant.cpp
     include/qml_material/input/nested_scroll.hpp
+    include/qml_material/input/app_bar_scroll.hpp
+    include/qml_material/input/nested_scroll_connection.hpp
     include/qml_material/input/wheel_handler.hpp
     src/carousel/carousel_attached.cpp
     src/carousel/carousel_view.cpp

@@ -1,5 +1,6 @@
 #include "qml_material/scrollable/flickable.hpp"
 #include "qml_material/input/nested_scroll.hpp"
+#include "qml_material/input/app_bar_scroll.hpp"
 #include "qml_material/input/floating_toolbar_scroll.hpp"
 #include "qml_material/control/popup.hpp"
 #include <QQmlComponent>
@@ -13,6 +14,25 @@
 #include <QtTest>
 
 using namespace qml_material;
+
+class TestScrollConnection : public NestedScrollConnection {
+public:
+    std::function<QPointF(QPointF)> pre = [](QPointF) {
+        return QPointF();
+    };
+    std::function<QPointF(QPointF, QPointF)> post = [](QPointF, QPointF) {
+        return QPointF();
+    };
+    int         starts = 0;
+    QList<bool> endings;
+    QPointF     preScroll(QPointF available, Source) override { return pre(available); }
+    QPointF     postScroll(QPointF consumed, QPointF available, Source) override {
+        return post(consumed, available);
+    }
+    bool canConsume(QPointF, Source) const override { return true; }
+    void begin(Source) override { ++starts; }
+    void end(bool cancelled) override { endings.append(cancelled); }
+};
 
 class NestedScrollTest : public QObject {
     Q_OBJECT
@@ -43,6 +63,360 @@ class NestedScrollTest : public QObject {
         QCoreApplication::sendEvent(&window, &event);
     }
 private slots:
+    void appBarInitialGeometry() {
+        QQmlComponent component(&engine);
+        component.setData(R"(
+import QtQuick
+import Qcm.Material as MD
+MD.AppBar {
+    width: 320
+    type: MD.Enum.AppBarLarge
+    title: "A long app bar title"
+    animationsEnabled: false
+    scrollBehavior: MD.AppBarScroll {
+        heightOffset: -44
+        collapseDistance: 88
+    }
+})",
+                          QUrl("qrc:/app-bar-scroll-test.qml"));
+        QVERIFY2(component.isReady(), qPrintable(component.errorString()));
+        std::unique_ptr<QQuickItem> bar(qobject_cast<QQuickItem*>(component.create()));
+        QVERIFY2(bar, qPrintable(component.errorString()));
+        QCOMPARE(bar->implicitHeight(), 108);
+        QCOMPARE(bar->property("collapsedFraction").toReal(), 0.5);
+        auto* behavior = bar->property("scrollBehavior").value<AppBarScroll*>();
+        QVERIFY(behavior);
+        behavior->begin(NestedScrollConnection::Drag);
+        behavior->preScroll({ 0, 44 }, NestedScrollConnection::Drag);
+        QCOMPARE(bar->implicitHeight(), 64);
+        behavior->end(false);
+        behavior->reset();
+        QCOMPARE(bar->implicitHeight(), 152);
+    }
+    void appBarConsumption() {
+        AppBarScroll bar;
+        bar.setCollapseDistance(88);
+        bar.begin(NestedScrollConnection::Drag);
+        QVERIFY(bar.active());
+        QCOMPARE(bar.preScroll({ 10, 60 }, NestedScrollConnection::Drag), QPointF(0, 60));
+        QCOMPARE(bar.heightOffset(), -60);
+        QCOMPARE(bar.preScroll({ 0, 50 }, NestedScrollConnection::Drag), QPointF(0, 28));
+        QCOMPARE(bar.collapsedFraction(), 1);
+        QCOMPARE(bar.preScroll({ 0, -40 }, NestedScrollConnection::Drag), QPointF());
+        QCOMPARE(bar.postScroll({ 0, -100 }, { 0, -40 }, NestedScrollConnection::Drag),
+                 QPointF(0, -40));
+        QCOMPARE(bar.heightOffset(), -48);
+        bar.end(false);
+        QCOMPARE(bar.heightOffset(), -88);
+        QVERIFY(! bar.active());
+        bar.setMode(AppBarScroll::EnterAlways);
+        QCOMPARE(bar.preScroll({ 0, -60 }, NestedScrollConnection::Drag), QPointF(0, -60));
+        bar.end(false);
+        QCOMPARE(bar.heightOffset(), 0);
+        bar.setMode(AppBarScroll::Pinned);
+        QCOMPARE(bar.preScroll({ 0, 100 }, NestedScrollConnection::Drag), QPointF());
+        bar.setContentAtStart(false);
+        QVERIFY(bar.overlapped());
+        bar.setEnabled(false);
+        QVERIFY(! bar.overlapped());
+    }
+    void appBarSnapInterrupted() {
+        QQmlComponent component(&engine);
+        component.setData(R"(
+import QtQuick
+import Qcm.Material as MD
+MD.AppBar {
+    width: 320
+    type: MD.Enum.AppBarLarge
+    scrollBehavior: MD.AppBarScroll { collapseDistance: 88 }
+})",
+                          QUrl("qrc:/app-bar-snap.qml"));
+        std::unique_ptr<QQuickItem> bar(qobject_cast<QQuickItem*>(component.create()));
+        QVERIFY2(bar, qPrintable(component.errorString()));
+        auto* behavior = bar->property("scrollBehavior").value<AppBarScroll*>();
+        QVERIFY(behavior);
+        QQuickNumberAnimation* snap = nullptr;
+        for (auto* animation : bar->findChildren<QQuickNumberAnimation*>())
+            if (animation->property() == "__offset") snap = animation;
+        QVERIFY(snap);
+        behavior->begin(NestedScrollConnection::Drag);
+        behavior->preScroll({ 0, 60 }, NestedScrollConnection::Drag);
+        behavior->end(false);
+        QVERIFY(snap->isRunning());
+        snap->setCurrentTime(snap->duration() / 2);
+        const auto presented = bar->property("__offset").toReal();
+        QVERIFY(presented < -60 && presented > -88);
+        behavior->begin(NestedScrollConnection::Drag);
+        QVERIFY(! snap->isRunning());
+        QCOMPARE(behavior->heightOffset(), presented);
+        behavior->postScroll({}, { 0, -10 }, NestedScrollConnection::Drag);
+        QCOMPARE(bar->property("__offset").toReal(), presented + 10);
+        behavior->end(false);
+        QVERIFY(snap->isRunning());
+        behavior->setEnabled(false);
+        QVERIFY(! snap->isRunning());
+        QCOMPARE(bar->implicitHeight(), 152);
+        behavior->setEnabled(true);
+        behavior->setHeightOffset(-44);
+        QVERIFY(snap->isRunning());
+        delete behavior;
+        QVERIFY(! snap->isRunning());
+        QCOMPARE(bar->implicitHeight(), 152);
+    }
+    void appBarReverseAndCancellation() {
+        AppBarScroll bar;
+        bar.setCollapseDistance(80);
+        bar.setReverseLayout(true);
+        QCOMPARE(bar.preScroll({ 0, -50 }, NestedScrollConnection::Drag), QPointF(0, -50));
+        bar.end(true);
+        QCOMPARE(bar.heightOffset(), -50);
+        bar.setCollapseDistance(160);
+        QCOMPARE(bar.heightOffset(), -100);
+        QCOMPARE(bar.postScroll({}, { 0, 40 }, NestedScrollConnection::Drag), QPointF(0, 40));
+        QCOMPARE(bar.heightOffset(), -60);
+        bar.setCollapseDistance(0);
+        QCOMPARE(bar.collapsedFraction(), 0);
+        QVERIFY(! bar.canConsume({ 0, -100 }, NestedScrollConnection::Drag));
+    }
+    void appBarWheelBeforeContent() {
+        AppBarScroll bar;
+        bar.setCollapseDistance(40);
+        auto* config =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(inner));
+        config->setConnection(&bar);
+        wheel({ 0, -60 }, Qt::ScrollBegin);
+        QCOMPARE(bar.heightOffset(), -40);
+        QCOMPARE(inner->contentY(), 20);
+        wheel({ 0, 30 });
+        QCOMPARE(inner->contentY(), 0);
+        QCOMPARE(bar.heightOffset(), -30);
+        wheel({}, Qt::ScrollEnd);
+        QCOMPARE(bar.heightOffset(), -40);
+        QVERIFY(! bar.active());
+    }
+    void appBarWheelModes_data() {
+        QTest::addColumn<int>("mode");
+        QTest::addColumn<qreal>("offset");
+        QTest::addColumn<qreal>("position");
+        QTest::newRow("pinned") << int(AppBarScroll::Pinned) << 0. << 80.;
+        QTest::newRow("enter-always") << int(AppBarScroll::EnterAlways) << -20. << 100.;
+        QTest::newRow("exit-until-collapsed")
+            << int(AppBarScroll::ExitUntilCollapsed) << -40. << 80.;
+    }
+    void appBarWheelModes() {
+        QFETCH(int, mode);
+        QFETCH(qreal, offset);
+        QFETCH(qreal, position);
+        AppBarScroll bar;
+        bar.setMode(AppBarScroll::Mode(mode));
+        bar.setCollapseDistance(40);
+        bar.setHeightOffset(-40);
+        inner->setContentY(100);
+        auto* config =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(inner));
+        config->setConnection(&bar);
+        wheel({ 0, 20 }, Qt::ScrollBegin);
+        QCOMPARE(bar.heightOffset(), offset);
+        QCOMPARE(inner->contentY(), position);
+        wheel({ 20, 0 });
+        QCOMPARE(bar.heightOffset(), offset);
+        wheel({}, Qt::ScrollEnd);
+    }
+    void connectionWheelBarrier() {
+        AppBarScroll bar;
+        bar.setCollapseDistance(80);
+        bar.setHeightOffset(-30);
+        auto* config =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(inner));
+        config->setConnection(&bar);
+        config->setProperty("wheelEnabled", false);
+        wheel({ 0, -40 }, Qt::ScrollBegin);
+        QVERIFY(! bar.active());
+        wheel({}, Qt::ScrollEnd);
+        QCOMPARE(bar.heightOffset(), -30);
+        QCOMPARE(inner->contentY(), 0);
+        QCOMPARE(outer->contentY(), 0);
+    }
+    void connectionHasOneAttachment() {
+        TestScrollConnection connection;
+        auto* child = qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(inner));
+        auto* parent =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(outer));
+        child->setConnection(&connection);
+        QTest::ignoreMessage(QtWarningMsg,
+                             "NestedScrollConnection is already attached to another viewport");
+        parent->setConnection(&connection);
+        QCOMPARE(parent->connection(), nullptr);
+        QCOMPARE(child->connection(), &connection);
+        child->setConnection(nullptr);
+        parent->setConnection(&connection);
+        QCOMPARE(parent->connection(), &connection);
+    }
+    void appBarShortContent_data() {
+        QTest::addColumn<bool>("owned");
+        QTest::addColumn<bool>("touch");
+        QTest::newRow("qt-mouse") << false << false;
+        QTest::newRow("qt-touch") << false << true;
+        QTest::newRow("owned-mouse") << true << false;
+        QTest::newRow("owned-touch") << true << true;
+    }
+    void appBarTransformedDrag() {
+        AppBarScroll bar;
+        bar.setCollapseDistance(80);
+        inner->setTransformOrigin(QQuickItem::TopLeft);
+        inner->setScale(2);
+        auto* config =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(inner));
+        config->setConnection(&bar);
+        mouse(QEvent::MouseButtonPress, { 100, 150 }, 1000);
+        mouse(QEvent::MouseMove, { 100, 110 }, 1020);
+        QCOMPARE(bar.heightOffset(), -20);
+        QCOMPARE(inner->contentY(), 0);
+        mouse(QEvent::MouseButtonRelease, { 100, 110 }, 1220);
+        QCOMPARE(bar.heightOffset(), 0);
+    }
+    void appBarShortContent() {
+        QFETCH(bool, owned);
+        QFETCH(bool, touch);
+        AppBarScroll bar;
+        bar.setCollapseDistance(80);
+        outer->setContentHeight(outer->height());
+        inner->setProperty("model", 0);
+        QMetaObject::invokeMethod(inner, "forceLayout");
+        if (owned) inner->setVisible(false);
+        auto* item   = owned ? static_cast<QQuickItem*>(outer) : static_cast<QQuickItem*>(inner);
+        auto* config = qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(item));
+        config->setConnection(&bar);
+        if (touch) {
+            static auto* device = QTest::createTouchDevice();
+            QTest::touchEvent(&window, device).press(0, { 100, 150 }).commit();
+            QTest::touchEvent(&window, device).move(0, { 100, 110 }).commit();
+            QQuickWindowPrivate::get(&window)->deliveryAgentPrivate()->flushFrameSynchronousEvents(
+                &window);
+        } else {
+            mouse(QEvent::MouseButtonPress, { 100, 150 }, 1000);
+            mouse(QEvent::MouseMove, { 100, 110 }, 1020);
+        }
+        QCOMPARE(bar.heightOffset(), -40);
+        QCOMPARE(inner->contentY(), 0);
+        QCOMPARE(outer->contentY(), 0);
+        config->setEnabled(false);
+        QVERIFY(! bar.active());
+        QCOMPARE(bar.heightOffset(), -40);
+    }
+    void connectionConsumption() {
+        TestScrollConnection child, parent;
+        auto*                childConfig =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(inner));
+        auto* parentConfig =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(outer));
+        childConfig->setConnection(&child);
+        parentConfig->setConnection(&parent);
+        QStringList    calls;
+        QList<QPointF> values;
+        parent.pre = [&](QPointF delta) {
+            calls << "parent-pre";
+            values << delta;
+            return QPointF(0, 10);
+        };
+        child.pre = [&](QPointF delta) {
+            calls << "child-pre";
+            values << delta;
+            return QPointF(0, 20);
+        };
+        child.post = [&](QPointF consumed, QPointF delta) {
+            calls << "child-post";
+            values << consumed << delta;
+            return QPointF(0, 30);
+        };
+        parent.post = [&](QPointF consumed, QPointF delta) {
+            calls << "parent-post";
+            values << consumed << delta;
+            return QPointF();
+        };
+        inner->setContentY(390);
+        QSignalSpy childConsumed(childConfig, &NestedScroll::scrollConsumed);
+        wheel({ 0, -100 }, Qt::ScrollBegin);
+        QCOMPARE(calls, QStringList({ "parent-pre", "child-pre", "child-post", "parent-post" }));
+        QCOMPARE(
+            values,
+            QList<QPointF>({ { 0, 100 }, { 0, 90 }, { 0, 10 }, { 0, 60 }, { 0, 90 }, { 0, 0 } }));
+        QCOMPARE(inner->contentY(), 400);
+        QCOMPARE(outer->contentY(), 30);
+        QCOMPARE(childConsumed.size(), 1);
+        QCOMPARE(childConsumed.first().first().toPointF(), QPointF(0, 10));
+        wheel({}, Qt::ScrollEnd);
+        QCOMPARE(child.starts, 1);
+        QCOMPARE(child.endings, QList<bool>({ false }));
+        QCOMPARE(parent.endings, QList<bool>({ false }));
+    }
+    void connectionReplacementCancels() {
+        TestScrollConnection first, second;
+        auto*                config =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(inner));
+        config->setConnection(&first);
+        wheel({ 0, -10 }, Qt::ScrollBegin);
+        config->setConnection(&second);
+        QCOMPARE(first.endings, QList<bool>({ true }));
+        QCOMPARE(second.starts, 0);
+        wheel({ 0, -10 }, Qt::ScrollBegin);
+        QCOMPARE(second.starts, 1);
+        config->setConnection(nullptr);
+        QCOMPARE(second.endings, QList<bool>({ true }));
+    }
+    void connectionConsumptionBounds() {
+        TestScrollConnection connection;
+        auto*                config =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(inner));
+        config->setConnection(&connection);
+        connection.pre = [](QPointF) {
+            return QPointF(100, -100);
+        };
+        wheel({ 0, -20 }, Qt::ScrollBegin);
+        QCOMPARE(inner->contentY(), 20);
+        connection.pre = [](QPointF) {
+            return QPointF(0, 100);
+        };
+        wheel({ 0, -20 });
+        QCOMPARE(inner->contentY(), 20);
+        wheel({}, Qt::ScrollEnd);
+    }
+    void connectionReplacementDuringConsumption() {
+        TestScrollConnection first, second;
+        auto*                config =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(inner));
+        config->setConnection(&first);
+        first.pre = [&](QPointF delta) {
+            config->setConnection(&second);
+            return delta;
+        };
+        wheel({ 0, -20 }, Qt::ScrollBegin);
+        QCOMPARE(first.endings, QList<bool>({ true }));
+        QCOMPARE(second.starts, 0);
+        QCOMPARE(inner->contentY(), 0);
+        QCOMPARE(outer->contentY(), 0);
+        wheel({ 0, -20 }, Qt::ScrollBegin);
+        QCOMPARE(second.starts, 1);
+        QCOMPARE(inner->contentY(), 20);
+        wheel({}, Qt::ScrollEnd);
+    }
+    void connectionDestroyedDuringSession() {
+        auto                 child = std::make_unique<TestScrollConnection>();
+        TestScrollConnection parent;
+        auto*                childConfig =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(inner));
+        auto* parentConfig =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(outer));
+        childConfig->setConnection(child.get());
+        parentConfig->setConnection(&parent);
+        wheel({ 0, -20 }, Qt::ScrollBegin);
+        child.reset();
+        QCOMPARE(childConfig->connection(), nullptr);
+        QCOMPARE(parent.endings, QList<bool>({ true }));
+        wheel({ 0, -20 }, Qt::ScrollBegin);
+        QCOMPARE(parent.starts, 2);
+        wheel({}, Qt::ScrollEnd);
+    }
     void initTestCase() {
         QTest::failOnWarning(QRegularExpression(".*(Binding loop|TypeError|ReferenceError).*"));
     }

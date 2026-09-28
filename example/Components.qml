@@ -1501,6 +1501,57 @@ MD.Page {
                                     ]
                                 }
                             }
+                            ComponentCard {
+                                title: 'Scrolling app bar'
+                                MD.ComboBox {
+                                    id: m_app_bar_mode
+                                    Layout.fillWidth: true
+                                    model: ['Pinned', 'Enter always', 'Exit until collapsed']
+                                    currentIndex: 2
+                                }
+                                Item {
+                                    Layout.fillWidth: true
+                                    implicitHeight: 360
+                                    clip: true
+                                    MD.AppBar {
+                                        id: m_scrolling_app_bar
+                                        width: parent.width
+                                        type: MD.Enum.AppBarLarge
+                                        title: 'Library'
+                                        scrollBehavior: MD.AppBarScroll {
+                                            mode: m_app_bar_mode.currentIndex
+                                            collapseDistance: m_scrolling_app_bar.expandedHeight - m_scrolling_app_bar.collapsedHeight
+                                            contentAtStart: m_app_bar_list.atYBeginning
+                                        }
+                                        actions: [
+                                            MD.Action {
+                                                icon.name: 'refresh'
+                                                onTriggered: {
+                                                    m_app_bar_list.positionViewAtBeginning();
+                                                    m_scrolling_app_bar.scrollBehavior.reset();
+                                                }
+                                            }
+                                        ]
+                                    }
+                                    ListView {
+                                        id: m_app_bar_list
+                                        y: m_scrolling_app_bar.height
+                                        width: parent.width
+                                        height: parent.height - y
+                                        clip: true
+                                        boundsBehavior: Flickable.StopAtBounds
+                                        MD.NestedScroll.enabled: true
+                                        MD.NestedScroll.axes: Qt.Vertical
+                                        MD.NestedScroll.connection: m_scrolling_app_bar.scrollBehavior
+                                        model: 24
+                                        delegate: MD.ItemDelegate {
+                                            required property int index
+                                            width: ListView.view.width
+                                            text: 'Library item ' + (index + 1)
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 
