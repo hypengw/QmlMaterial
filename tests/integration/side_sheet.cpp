@@ -231,11 +231,13 @@ Item {
         dialog->close();
         QVERIFY(dialog->closing());
         QCOMPARE(dialog->property("position").toReal(), position);
+        dialog->setProperty("edge", SideSheet::Left);
         dialog->open();
         animation->setCurrentTime(animation->duration());
         QVERIFY(dialog->isOpened());
         auto* sheet = dialog->findChild<SideSheet*>();
         QVERIFY(sheet);
+        QCOMPARE(sheet->effectiveEdge(), Qt::RightEdge);
         QVERIFY(sheet->beginDrag());
         sheet->setPosition(0.2);
         sheet->releaseDrag({ 600, 0 });
@@ -243,6 +245,11 @@ Item {
         QVERIFY(dialog->isVisible());
         animation->setCurrentTime(animation->duration());
         QVERIFY(! dialog->isVisible());
+        dialog->open();
+        QCOMPARE(sheet->effectiveEdge(), Qt::LeftEdge);
+        animation->setCurrentTime(animation->duration());
+        dialog->close();
+        animation->setCurrentTime(animation->duration());
     }
     void geometry_data() {
         QTest::addColumn<bool>("left");

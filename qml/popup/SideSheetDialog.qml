@@ -14,6 +14,8 @@ MD.PopupBase {
     readonly property alias sheetItem: m_sheet.sheetItem
     readonly property alias position: m_sheet.position
     property int __edge: MD.SideSheetBase.End
+    property int __layoutDirection: Qt.LeftToRight
+    property bool __session: false
 
     x: 0
     y: 0
@@ -28,7 +30,11 @@ MD.PopupBase {
     popupItem: m_sheet.sheetItem
     closePolicy: MD.PopupBase.CloseOnEscape | MD.PopupBase.CloseOnPressOutside
     onAboutToShow: {
-        __edge = edge;
+        if (!__session) {
+            __edge = edge;
+            __layoutDirection = mirrored ? Qt.RightToLeft : Qt.LeftToRight;
+            __session = true;
+        }
         m_sheet.open();
         if (m_sheet.state === MD.SideSheetBase.Expanded)
             completeEnter();
@@ -38,10 +44,12 @@ MD.PopupBase {
         if (m_sheet.state === MD.SideSheetBase.Hidden)
             completeExit();
     }
+    onClosed: __session = false
 
     contentItem: MD.SideSheet {
         id: m_sheet
         edge: control.__edge
+        layoutDirection: control.__layoutDirection
         radius: MD.Token.shape.corner.large
         color: MD.Token.color.surface_container_low
         elevation: MD.Token.elevation.level1
