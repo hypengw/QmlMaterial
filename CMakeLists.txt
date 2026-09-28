@@ -292,6 +292,8 @@ set(SOURCES
     src/input/date_validator.cpp
     include/qml_material/input/date_validator.hpp
     src/input/nested_scroll.cpp
+    src/input/floating_toolbar_scroll.cpp
+    include/qml_material/input/floating_toolbar_scroll.hpp
     src/input/scroll_participant.cpp
     include/qml_material/input/nested_scroll.hpp
     include/qml_material/input/wheel_handler.hpp

@@ -3,18 +3,119 @@
 #include <QQmlEngine>
 #include <QQuickItem>
 #include "qml_material/control/control.hpp"
+#include "qml_material/input/floating_toolbar_scroll.hpp"
+#include "qml_material/input/nested_scroll.hpp"
+#include <limits>
 
 class FloatingToolbarTest : public QObject {
     Q_OBJECT
     QQmlEngine m_engine;
 private slots:
     void initTestCase() { m_engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH)); }
+    void scrollThresholds() {
+        qml_material::FloatingToolbarScroll behavior;
+        QSignalSpy collapse(&behavior, &qml_material::FloatingToolbarScroll::collapseRequested);
+        QSignalSpy expand(&behavior, &qml_material::FloatingToolbarScroll::expandRequested);
+        connect(&behavior, &qml_material::FloatingToolbarScroll::collapseRequested, &behavior, [&] {
+            behavior.setExpanded(false);
+        });
+        connect(&behavior, &qml_material::FloatingToolbarScroll::expandRequested, &behavior, [&] {
+            behavior.setExpanded(true);
+        });
+        behavior.scrollBy({ 100, 0 });
+        behavior.scrollBy({ 0, 39 });
+        QCOMPARE(collapse.size(), 0);
+        behavior.scrollBy({ 0, 1 });
+        QCOMPARE(collapse.size(), 1);
+        QVERIFY(! behavior.expanded());
+        behavior.scrollBy({ 0, 300 });
+        QCOMPARE(collapse.size(), 1);
+        behavior.scrollBy({ 0, -20 });
+        behavior.scrollBy({ 0, 10 });
+        behavior.scrollBy({ 0, -39 });
+        QCOMPARE(expand.size(), 0);
+        behavior.scrollBy({ 0, -1 });
+        QCOMPARE(expand.size(), 1);
+        behavior.setCollapseScrollThreshold(60);
+        behavior.setExpandScrollThreshold(20);
+        behavior.scrollBy({ 0, 59 });
+        behavior.setEnabled(false);
+        behavior.scrollBy({ 0, 100 });
+        behavior.setEnabled(true);
+        behavior.scrollBy({ 0, 59 });
+        QVERIFY(behavior.expanded());
+        behavior.scrollBy({ 0, 1 });
+        QVERIFY(! behavior.expanded());
+        behavior.scrollBy({ 0, -20 });
+        QVERIFY(behavior.expanded());
+        behavior.setReverseLayout(true);
+        behavior.scrollBy({ 0, -60 });
+        QVERIFY(! behavior.expanded());
+        behavior.scrollBy({ 0, 20 });
+        QVERIFY(behavior.expanded());
+        behavior.scrollBy({ 0, -59 });
+        behavior.reset();
+        behavior.scrollBy({ 0, -1 });
+        QVERIFY(behavior.expanded());
+        behavior.setExpanded(false);
+        behavior.scrollBy({ 0, 19 });
+        QVERIFY(! behavior.expanded());
+        behavior.scrollBy({ 0, std::numeric_limits<qreal>::quiet_NaN() });
+        behavior.setExpandScrollThreshold(-1);
+        QCOMPARE(behavior.expandScrollThreshold(), 20.);
+        behavior.scrollBy({ 0, 1 });
+        QVERIFY(behavior.expanded());
+    }
     void geometry_data() {
         QTest::addColumn<bool>("vertical");
         QTest::addColumn<bool>("mirrored");
         QTest::newRow("horizontal") << false << false;
         QTest::newRow("rtl") << false << true;
         QTest::newRow("vertical") << true << false;
+    }
+    void scrollBinding() {
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+import QtQuick
+import Qcm.Material as MD
+MD.FloatingToolbar {
+    id: bar
+    animationsEnabled: false
+    property MD.FloatingToolbarScroll behavior: MD.FloatingToolbarScroll {
+        expanded: bar.expanded
+        onCollapseRequested: bar.expanded = false
+        onExpandRequested: bar.expanded = true
+    }
+    property MD.Scrollable scrollSource: MD.Scrollable {
+        MD.NestedScroll.enabled: true
+        MD.NestedScroll.onScrollConsumed: delta => bar.behavior.scrollBy(delta)
+    }
+    mainContent: Item { implicitWidth: 48; implicitHeight: 48 }
+    trailingContent: Item { implicitWidth: 48; implicitHeight: 48 }
+}
+)",
+                          QUrl());
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* behavior =
+            qvariant_cast<qml_material::FloatingToolbarScroll*>(object->property("behavior"));
+        QVERIFY(behavior);
+        auto* source = qvariant_cast<QObject*>(object->property("scrollSource"));
+        QVERIFY(source);
+        auto* nested = qobject_cast<qml_material::NestedScroll*>(
+            qmlAttachedPropertiesObject<qml_material::NestedScroll>(source));
+        QVERIFY(nested);
+        emit nested->scrollConsumed({ 0, 40 });
+        QVERIFY(! object->property("expanded").toBool());
+        QVERIFY(! behavior->expanded());
+        QCOMPARE(object->property("width").toReal(), 64.);
+        object->setProperty("expanded", true);
+        QVERIFY(behavior->expanded());
+        behavior->scrollBy({ 0, 40 });
+        QVERIFY(! behavior->expanded());
+        behavior->scrollBy({ 0, -40 });
+        QVERIFY(object->property("expanded").toBool());
+        QCOMPARE(object->property("width").toReal(), 112.);
     }
     void geometry() {
         QFETCH(bool, vertical);

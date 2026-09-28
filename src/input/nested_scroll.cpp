@@ -144,7 +144,7 @@ protected:
         }
         if (! ScrollParticipant(m_config->item()).accepts(event->point(0).scenePosition()))
             return false;
-        return chainFor(m_config->item()).size() > 1;
+        return ! chainFor(m_config->item()).isEmpty();
     }
 
     void handlePointerEventImpl(QPointerEvent* event) override {
@@ -396,10 +396,16 @@ private:
             if (! guard || m_revision != revision || m_chain.isEmpty())
                 return sceneDelta - remaining;
             m_applying = false;
+            if (config && ! used.isNull()) emit config->scrollConsumed(used);
+            if (! guard || m_revision != revision || m_chain.isEmpty())
+                return sceneDelta - remaining;
         }
         return sceneDelta - remaining;
     }
     void handleWheel(QWheelEvent* event) {
+        // Quick must not deliver to the old item after a callback destroys it.
+        event->point(0).setAccepted();
+        event->accept();
         QPointer<NestedScrollHandler> guard(this);
         if (! m_wheel) {
             stop();
@@ -509,7 +515,6 @@ void NestedScroll::setAxes(Qt::Orientations axes) {
 }
 bool NestedScroll::coordinates(QQuickItem* receiver, QQuickItem* ancestor) {
     const auto chain = chainFor(receiver);
-    if (chain.size() < 2) return false;
     for (auto config : chain)
         if (config && config->item() == ancestor) return true;
     return false;

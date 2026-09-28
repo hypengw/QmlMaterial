@@ -1351,6 +1351,32 @@ MD.Page {
                             }
                             ComponentCard {
                                 title: 'Floating toolbars'
+                                MD.FloatingToolbarScroll {
+                                    id: m_toolbar_scroll
+                                    expanded: m_floating_toolbar.expanded
+                                    onExpandRequested: m_floating_toolbar.expanded = true
+                                    onCollapseRequested: m_floating_toolbar.expanded = false
+                                }
+                                MD.Scrollable {
+                                    Layout.fillWidth: true
+                                    implicitHeight: 120
+                                    contentHeight: 400
+                                    clip: true
+                                    MD.NestedScroll.enabled: true
+                                    MD.NestedScroll.onScrollConsumed: delta => m_toolbar_scroll.scrollBy(delta)
+                                    Column {
+                                        width: parent.width
+                                        Repeater {
+                                            model: 8
+                                            MD.Label {
+                                                required property int index
+                                                width: parent.width
+                                                height: 50
+                                                text: 'Scroll to expand or collapse · ' + (index + 1)
+                                            }
+                                        }
+                                    }
+                                }
                                 MD.FloatingToolbar {
                                     id: m_floating_toolbar
                                     Layout.alignment: Qt.AlignHCenter

@@ -1,5 +1,6 @@
 #include "qml_material/scrollable/flickable.hpp"
 #include "qml_material/input/nested_scroll.hpp"
+#include "qml_material/input/floating_toolbar_scroll.hpp"
 #include "qml_material/control/popup.hpp"
 #include <QQmlComponent>
 #include <QQmlEngine>
@@ -99,6 +100,56 @@ MD.Scrollable {
         wheel({}, Qt::ScrollEnd);
         QVERIFY(! inner->isMoving());
         QVERIFY(! outer->isMoving());
+    }
+    void consumedNotification() {
+        auto* child = qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(inner));
+        auto* parent =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(outer));
+        QSignalSpy childScroll(child, &NestedScroll::scrollConsumed);
+        QSignalSpy parentScroll(parent, &NestedScroll::scrollConsumed);
+        inner->setContentY(390);
+        QCOMPARE(childScroll.size(), 0);
+        wheel({ 0, -40 }, Qt::ScrollBegin);
+        QCOMPARE(childScroll.size(), 1);
+        QCOMPARE(childScroll.at(0).at(0).toPointF(), QPointF(0, 10));
+        QCOMPARE(parentScroll.size(), 1);
+        QCOMPARE(parentScroll.at(0).at(0).toPointF(), QPointF(0, 30));
+        wheel({}, Qt::ScrollEnd);
+        inner->setContentY(400);
+        outer->setContentY(600);
+        wheel({ 0, -40 }, Qt::ScrollBegin);
+        QCOMPARE(childScroll.size(), 1);
+        QCOMPARE(parentScroll.size(), 1);
+        wheel({}, Qt::ScrollEnd);
+    }
+    void consumedNotificationDestroysView() {
+        auto* child = qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(inner));
+        connect(child, &NestedScroll::scrollConsumed, this, [&] {
+            root.reset();
+        });
+        wheel({ 0, -40 }, Qt::ScrollBegin);
+        QVERIFY(! root);
+    }
+    void singleParticipantNotification() {
+        inner->setParentItem(nullptr);
+        auto* config =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(outer));
+        FloatingToolbarScroll behavior;
+        connect(config, &NestedScroll::scrollConsumed, &behavior, &FloatingToolbarScroll::scrollBy);
+        connect(&behavior, &FloatingToolbarScroll::collapseRequested, &behavior, [&] {
+            behavior.setExpanded(false);
+        });
+        connect(&behavior, &FloatingToolbarScroll::expandRequested, &behavior, [&] {
+            behavior.setExpanded(true);
+        });
+        wheel({ 0, -39 }, Qt::ScrollBegin);
+        QVERIFY(behavior.expanded());
+        wheel({ 0, -1 });
+        QVERIFY(! behavior.expanded());
+        wheel({ 0, 40 });
+        QVERIFY(behavior.expanded());
+        QCOMPARE(outer->contentY(), 0.);
+        wheel({}, Qt::ScrollEnd);
     }
     void smoothWheelRemainder() {
         inner->setContentY(390);
