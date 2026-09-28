@@ -155,51 +155,17 @@ MD.Control {
             }
 
             // built-in morphing FAB (icon-only -> extended)
-            MD.ButtonBase {
+            MD.ExtendedFAB {
                 id: m_fab
-                clip: true
                 action: control.fabAction
-                icon.width: 24
-                icon.height: 24
-                icon.color: MD.MProp.color.on_primary_container
+                flat: true
+                animationsEnabled: false
+                minimumExpandedWidth: 0
+                expansionProgress: control.expansionProgress
+                labelOpacity: control.expansionProgress
                 visible: !control.fab && control.fabAction
-                // expanded x=16 aligns the FAB indicator left edge with the nav item indicators;
-                // collapsed target uses the final collapsed width (56) so x and width animate together
                 x: MD.Util.lerp((control.collapsedWidth - 56) / 2, 16, control.expansionProgress)
                 y: m_menu_btn.y + m_menu_btn.height + 12
-                height: 56
-                width: MD.Util.lerp(56, 16 + m_fab_icon.width + 12 + m_fab_label.implicitWidth + 20, control.expansionProgress)
-                background: MD.ElevationRectangle {
-                    radius: MD.Token.shape.corner.large
-                    color: MD.MProp.color.primary_container
-                    elevationVisible: false
-                }
-
-                MD.IconView {
-                    id: m_fab_icon
-                    icon: m_fab.icon
-                    x: MD.Util.lerp((56 - width) / 2, 16, control.expansionProgress)
-                    y: (parent.height - height) / 2
-                }
-                MD.Text {
-                    id: m_fab_label
-                    text: control.fabAction?.text ?? ''
-                    visible: opacity > 0
-                    opacity: control.expansionProgress
-                    typescale: MD.Token.typescale.label_large
-                    color: MD.MProp.color.on_primary_container
-                    x: m_fab_icon.x + m_fab_icon.width + 12
-                    y: (parent.height - height) / 2
-                }
-                MD.Ripple {
-                    anchors.fill: parent
-                    radius: MD.Token.shape.corner.large
-                    color: MD.MProp.color.on_primary_container
-                    pressed: m_fab.pressed
-                    pressX: m_fab.pressX
-                    pressY: m_fab.pressY
-                    stateOpacity: m_fab.pressed ? MD.Token.state.pressed.state_layer_opacity : 0
-                }
             }
 
             // custom FAB slot

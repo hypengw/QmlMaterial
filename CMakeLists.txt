@@ -221,6 +221,7 @@ set(SOURCES
     src/control/fab_menu.cpp
     include/qml_material/control/fab_menu.hpp
     include/qml_material/token/fab_menu.hpp
+    include/qml_material/token/extended_fab.hpp
     include/qml_material/control/button_group_container.hpp
     include/qml_material/token/button_group.hpp
     include/qml_material/control/check_box.hpp
@@ -350,6 +351,7 @@ set(QML_FILES
     qml/button/BusyIconButton.qml
     qml/button/Button.qml
     qml/button/FAB.qml
+    qml/button/ExtendedFAB.qml
     qml/button/FABMenu.qml
     qml/button/FABMenuItem.qml
     qml/button/ToggleFAB.qml
