@@ -2332,6 +2332,32 @@ private Q_SLOTS:
         auto* icon = itemWithIcon(content);
         QVERIFY(icon);
         QCOMPARE(icon->property("size").toInt(), qRound(iconSize));
+
+        QVERIFY(mdState->setProperty("size", int(qml_material::Enum::ButtonSize::XS)));
+        settle(button);
+        QCOMPARE(mdState->property("iconSize").toReal(), 22.0);
+        QCOMPARE(button->property("padding").toReal(), 8.0);
+        QCOMPARE(button->implicitWidth(), 38.0);
+        QCOMPARE(button->implicitHeight(), 38.0);
+        auto* background = qvariant_cast<QQuickItem*>(button->property("background"));
+        QVERIFY(background);
+        QCOMPARE(background->implicitWidth(), 0.0);
+        QCOMPARE(background->implicitHeight(), 0.0);
+        QCOMPARE(background->width(), 30.0);
+        QCOMPARE(background->height(), 30.0);
+        QCOMPARE(icon->property("size").toInt(), 22);
+
+        QVERIFY(button->setProperty("padding", 4.0));
+        settle(button);
+        QCOMPARE(button->implicitWidth(), 30.0);
+        QCOMPARE(button->implicitHeight(), 30.0);
+
+        QVERIFY(button->setProperty("padding", 8.0));
+        QVERIFY(mdState->setProperty("size", int(qml_material::Enum::ButtonSize::S)));
+        settle(button);
+        QCOMPARE(button->implicitWidth(), 48.0);
+        QCOMPARE(button->implicitHeight(), 48.0);
+        QCOMPARE(icon->property("size").toInt(), 24);
     }
 
     void carouselSupportsCompactEmbedding() {

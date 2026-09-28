@@ -159,11 +159,11 @@ struct IconButtonSize {
 public:
     bool               operator==(const IconButtonSize&) const = default;
     IconButtonSizeItem xsmall {
-        20.0, // icon_size
-        32.0, // container_height
-        32.0, // default_width
-        28.0, // narrow_width
-        40.0, // wide_width
+        22.0, // icon_size
+        0.0,  // container_height
+        0.0,  // default_width
+        0.0,  // narrow_width
+        0.0,  // wide_width
         12.0, // corner_size
         8.0   // pressed_corner_size
     };
