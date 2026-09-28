@@ -242,6 +242,106 @@ private Q_SLOTS:
         }
     }
 
+    void staticListItem() {
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            MD.ListItem {
+                width: 320
+                text: "Static item"
+                icon.name: "home"
+            }
+        )",
+                          QUrl("qrc:/tests/static-list-item.qml"));
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* item = qobject_cast<QQuickItem*>(object.get());
+        item->setParentItem(m_window.contentItem());
+        settle(item);
+        QCOMPARE(item->property("index").toInt(), -1);
+        QCOMPARE(item->property("count").toInt(), 0);
+        QVERIFY(! item->property("showDivider").toBool());
+        QVERIFY(! item->property("prevSameSection").toBool());
+        QVERIFY(! item->property("nextSameSection").toBool());
+        QCOMPARE(item->implicitHeight(), 56.0);
+        QVERIFY(item->setProperty("supportText", "Supporting text"));
+        settle(item);
+        QCOMPARE(item->implicitHeight(), 72.0);
+        QVERIFY(item->setProperty("showDivider", true));
+        QVERIFY(item->property("showDivider").toBool());
+    }
+
+    void listItemModel_data() {
+        QTest::addColumn<QByteArray>("viewType");
+        QTest::newRow("list") << QByteArray("ListView");
+        QTest::newRow("grid") << QByteArray("GridView");
+    }
+
+    void listItemModel() {
+        QFETCH(QByteArray, viewType);
+        QQmlComponent component(&m_engine);
+        component.setData("import QtQuick\nimport Qcm.Material as MD\n" + viewType + R"( {
+            id: view
+            width: 320; height: 400
+            model: ListModel {
+                id: rows
+                ListElement { label: "First"; group: "A" }
+                ListElement { label: "Second"; group: "A" }
+                ListElement { label: "Third"; group: "B" }
+            }
+            delegate: MD.ListItem {
+                required index
+                required model
+                objectName: "row" + index
+                width: 100; height: 56
+                text: model.label
+            }
+            function configureSections() {
+                if (view instanceof ListView)
+                    view.section.property = "group";
+            }
+            function removeFirst() { rows.remove(0); }
+            function removeLast() { rows.remove(rows.count - 1); }
+            function rowAt(index) { return view.itemAtIndex(index); }
+        })",
+                          QUrl("qrc:/tests/list-item-model.qml"));
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* view = qobject_cast<QQuickItem*>(object.get());
+        view->setParentItem(m_window.contentItem());
+        settle(view);
+        auto row = [&](int index) {
+            QVariant result;
+            QMetaObject::invokeMethod(
+                view, "rowAt", Q_RETURN_ARG(QVariant, result), Q_ARG(QVariant, index));
+            return qvariant_cast<QQuickItem*>(result);
+        };
+        QTRY_VERIFY(row(0) && row(1) && row(2));
+        QCOMPARE(row(0)->property("text").toString(), "First");
+        QCOMPARE(row(1)->property("index").toInt(), 1);
+        QCOMPARE(row(2)->property("count").toInt(), 3);
+        QVERIFY(row(0)->property("showDivider").toBool());
+        QVERIFY(row(1)->property("showDivider").toBool());
+        QVERIFY(! row(2)->property("showDivider").toBool());
+        QVERIFY(QMetaObject::invokeMethod(view, "configureSections"));
+        settle(view);
+        if (viewType == "ListView") {
+            QVERIFY(row(0)->property("nextSameSection").toBool());
+            QVERIFY(row(1)->property("prevSameSection").toBool());
+            QVERIFY(! row(1)->property("showDivider").toBool());
+        }
+        QVERIFY(QMetaObject::invokeMethod(view, "removeFirst"));
+        settle(view);
+        QTRY_VERIFY(row(0));
+        QCOMPARE(row(0)->property("text").toString(), "Second");
+        QCOMPARE(row(0)->property("count").toInt(), 2);
+        QVERIFY(QMetaObject::invokeMethod(view, "removeLast"));
+        settle(view);
+        QCOMPARE(row(0)->property("count").toInt(), 1);
+        QVERIFY(! row(0)->property("showDivider").toBool());
+    }
+
     void contentGeometry() {
         QQmlComponent component(&m_engine);
         component.setData(R"(
@@ -263,6 +363,7 @@ private Q_SLOTS:
                     busy: true
                     model: 20
                     delegate: MD.ListItem {
+                        required index
                         width: ListView.view.contentWidth; height: 40
                         leftMargin: 16; rightMargin: 16
                     }

@@ -23,17 +23,18 @@ MD.ItemDelegate {
     icon.height: 24
     icon.color: control.MD.MProp.color.on_background
 
-    required property int index
-    required property var model
+    // Delegates opt into model injection with `required index` / `required model`.
+    property int index: -1
+    property var model: null
 
     property int leftMargin: 0
     property int rightMargin: 0
 
     property int count: (ListView.view?.count ?? GridView.view?.count) ?? 0
 
-    readonly property bool prevSameSection: ListView.section == ListView.previousSection
-    readonly property bool nextSameSection: ListView.section == ListView.nextSection
-    property bool showDivider: nextSameSection && index + 1 !== count
+    readonly property bool prevSameSection: ListView.view !== null && ListView.section == ListView.previousSection
+    readonly property bool nextSameSection: ListView.view !== null && ListView.section == ListView.nextSection
+    property bool showDivider: index >= 0 && index + 1 < count && (!ListView.view || nextSameSection)
 
     property MD.StateListItem mdState: MD.StateListItem {
         item: control

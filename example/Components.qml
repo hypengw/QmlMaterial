@@ -765,6 +765,27 @@ MD.Page {
                         }
 
                         ComponentCard {
+                            title: 'List items'
+                            spacing: 0
+
+                            MD.ListItem {
+                                Layout.fillWidth: true
+                                text: 'Notifications'
+                                icon.name: 'notifications'
+                                checkable: true
+                                trailing: MD.Icon {
+                                    name: 'chevron_right'
+                                }
+                            }
+                            MD.ListItem {
+                                Layout.fillWidth: true
+                                text: 'Downloads'
+                                supportText: 'Files available offline'
+                                icon.name: 'download'
+                            }
+                        }
+
+                        ComponentCard {
                             title: 'Checkboxes'
                             spacing: 12
 

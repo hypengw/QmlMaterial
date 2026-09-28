@@ -71,8 +71,6 @@ Item {
     MD.SplitButtonIndicator {}
     MD.ListItem {
         action: shared
-        index: 0
-        model: null
     }
     MD.SheetActionBar {
         actions: [shared]
