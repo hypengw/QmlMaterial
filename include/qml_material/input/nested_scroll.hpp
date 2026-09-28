@@ -34,6 +34,8 @@ public:
     Q_SIGNAL void        restoreOnReverseChanged();
     // Actual content displacement in this participant's local coordinates, excluding overscroll.
     Q_SIGNAL void scrollConsumed(QPointF delta);
+    Q_SIGNAL void scrollStarted();
+    Q_SIGNAL void scrollFinished(bool cancelled);
 
 private:
     friend class NestedScrollHandler;

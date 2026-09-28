@@ -122,6 +122,48 @@ MD.Scrollable {
         QCOMPARE(parentScroll.size(), 1);
         wheel({}, Qt::ScrollEnd);
     }
+    void sessionNotifications() {
+        auto* config =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(inner));
+        QSignalSpy started(config, &NestedScroll::scrollStarted);
+        QSignalSpy finished(config, &NestedScroll::scrollFinished);
+        wheel({ 0, -40 }, Qt::ScrollBegin);
+        QCOMPARE(started.size(), 1);
+        QVERIFY(finished.isEmpty());
+        wheel({}, Qt::ScrollEnd);
+        QCOMPARE(finished.size(), 1);
+        QCOMPARE(finished.last().first().toBool(), false);
+        wheel({ 0, -40 }, Qt::ScrollBegin);
+        QCOMPARE(started.size(), 2);
+        config->setEnabled(false);
+        QCOMPARE(finished.size(), 2);
+        QCOMPARE(finished.last().first().toBool(), true);
+    }
+    void sessionFinishedReentry() {
+        auto* config =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(inner));
+        QSignalSpy started(config, &NestedScroll::scrollStarted);
+        QSignalSpy finished(config, &NestedScroll::scrollFinished);
+        const auto connection = connect(config, &NestedScroll::scrollFinished, this, [&] {
+            wheel({ 0, -10 }, Qt::ScrollBegin);
+        });
+        wheel({ 0, -10 }, Qt::ScrollBegin);
+        wheel({}, Qt::ScrollEnd);
+        QCOMPARE(started.size(), 2);
+        QCOMPARE(finished.size(), 1);
+        disconnect(connection);
+        wheel({}, Qt::ScrollEnd);
+        QCOMPARE(finished.size(), 2);
+    }
+    void sessionStartedDestroysView() {
+        auto* config =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(inner));
+        connect(config, &NestedScroll::scrollStarted, this, [&] {
+            root.reset();
+        });
+        wheel({ 0, -10 }, Qt::ScrollBegin);
+        QVERIFY(! root);
+    }
     void consumedNotificationDestroysView() {
         auto* child = qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(inner));
         connect(child, &NestedScroll::scrollConsumed, this, [&] {

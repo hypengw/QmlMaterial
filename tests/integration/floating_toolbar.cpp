@@ -2,8 +2,14 @@
 #include <QQmlComponent>
 #include <QQmlEngine>
 #include <QQuickItem>
+#include <QQuickWindow>
+#include <QtQuick/private/qquickdraghandler_p.h>
+#include <QtQuick/private/qquickwindow_p.h>
+#include <QtQuick/private/qquickdeliveryagent_p_p.h>
+#include <QtQuick/private/qquickanimation_p.h>
 #include "qml_material/control/control.hpp"
 #include "qml_material/input/floating_toolbar_scroll.hpp"
+#include "qml_material/input/floating_toolbar_exit.hpp"
 #include "qml_material/input/nested_scroll.hpp"
 #include <limits>
 
@@ -65,6 +71,264 @@ private slots:
         QCOMPARE(behavior.expandScrollThreshold(), 20.);
         behavior.scrollBy({ 0, 1 });
         QVERIFY(behavior.expanded());
+    }
+    void exitState() {
+        qml_material::FloatingToolbarExit state;
+        state.setDistance(100);
+        state.scrollBy({ 0, 49 });
+        QVERIFY(state.active());
+        state.settle();
+        QCOMPARE(state.offset(), 0.);
+        QVERIFY(! state.active());
+        state.scrollBy({ 0, 50 });
+        state.settle();
+        QCOMPARE(state.offset(), 100.);
+        state.setDistance(200);
+        QCOMPARE(state.offset(), 200.);
+        state.scrollBy({ 0, -100 });
+        QCOMPARE(state.offset(), 100.);
+        state.setDistance(100);
+        QCOMPARE(state.offset(), 50.);
+        state.setEnabled(false);
+        QCOMPARE(state.offset(), 0.);
+        state.scrollBy({ 0, 100 });
+        QVERIFY(! state.active());
+        state.setEnabled(true);
+        state.setReverseLayout(true);
+        state.scrollBy({ 0, -30 });
+        QCOMPARE(state.offset(), 30.);
+        state.scrollBy({ 100, 0 });
+        state.scrollBy({ 0, std::numeric_limits<qreal>::quiet_NaN() });
+        QCOMPARE(state.offset(), 30.);
+        state.reset();
+        QCOMPARE(state.offset(), 0.);
+    }
+    void exitFling() {
+        QTest::failOnWarning(QRegularExpression(".*"));
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+import QtQuick
+import Qcm.Material as MD
+MD.FloatingToolbar {
+    exitBehavior: MD.FloatingToolbarExit { distance: 100 }
+    mainContent: Item { implicitWidth: 48; implicitHeight: 48 }
+})",
+                          QUrl());
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* state =
+            qvariant_cast<qml_material::FloatingToolbarExit*>(object->property("exitBehavior"));
+        QVERIFY(state);
+        QQuickNumberAnimation* fling = nullptr;
+        for (auto* animation : object->findChildren<QQuickNumberAnimation*>())
+            if (animation->property() == "__flingOffset") fling = animation;
+        QVERIFY(fling);
+        state->begin();
+        state->setOffset(30);
+        QVERIFY(QMetaObject::invokeMethod(object.get(), "__releaseExit", Q_ARG(QVariant, 300.)));
+        QVERIFY(fling->isRunning());
+        QCOMPARE(fling->duration(), 200);
+        fling->setCurrentTime(100);
+        QCOMPARE(state->offset(), 52.5);
+        QCOMPARE(object->property("presentedExitOffset").toReal(), 52.5);
+        state->begin();
+        QVERIFY(! fling->isRunning());
+        QCOMPARE(state->offset(), 52.5);
+        QVERIFY(QMetaObject::invokeMethod(object.get(), "__releaseExit", Q_ARG(QVariant, 1000.)));
+        fling->setCurrentTime(200);
+        QVERIFY(! fling->isRunning());
+        QCOMPARE(state->offset(), 100.);
+        QVERIFY(! state->active());
+        state->begin();
+        state->setOffset(30);
+        QVERIFY(QMetaObject::invokeMethod(object.get(), "__releaseExit", Q_ARG(QVariant, -150.)));
+        fling->setCurrentTime(fling->duration());
+        QTRY_VERIFY(! object->property("exitTransitioning").toBool());
+        QCOMPARE(state->offset(), 0.);
+        state->begin();
+        state->setOffset(30);
+        QVERIFY(QMetaObject::invokeMethod(object.get(), "__releaseExit", Q_ARG(QVariant, 300.)));
+        state->setEnabled(false);
+        QVERIFY(! fling->isRunning());
+        QCOMPARE(object->property("presentedExitOffset").toReal(), 0.);
+    }
+    void exitDrag_data() {
+        QTest::addColumn<int>("edge");
+        QTest::addColumn<bool>("touch");
+        for (bool touch : { false, true }) {
+            QTest::newRow(touch ? "touch-left" : "mouse-left") << int(Qt::LeftEdge) << touch;
+            QTest::newRow(touch ? "touch-right" : "mouse-right") << int(Qt::RightEdge) << touch;
+            QTest::newRow(touch ? "touch-top" : "mouse-top") << int(Qt::TopEdge) << touch;
+            QTest::newRow(touch ? "touch-bottom" : "mouse-bottom") << int(Qt::BottomEdge) << touch;
+        }
+    }
+    void exitDrag() {
+        QFETCH(int, edge);
+        QFETCH(bool, touch);
+        QTest::failOnWarning(QRegularExpression(".*"));
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+import QtQuick
+import Qcm.Material as MD
+MD.FloatingToolbar {
+    id: bar; x: 100; y: 100
+    property int clicks: 0
+    animationsEnabled: false
+    exitBehavior: MD.FloatingToolbarExit { distance: 200 }
+    mainContent: MD.IconButton { icon.name: "edit"; onClicked: bar.clicks++ }
+})",
+                          QUrl());
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* bar = qobject_cast<QQuickItem*>(object.get());
+        bar->setProperty("exitEdge", edge);
+        auto* state =
+            qvariant_cast<qml_material::FloatingToolbarExit*>(bar->property("exitBehavior"));
+        auto* handler = bar->findChild<QQuickDragHandler*>();
+        QVERIFY(state && handler);
+        QQuickWindow window;
+        window.resize(500, 500);
+        bar->setParentItem(window.contentItem());
+        window.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        const QPointF start(132, 132);
+        const QPointF direction = edge == Qt::LeftEdge    ? QPointF(-1, 0)
+                                  : edge == Qt::RightEdge ? QPointF(1, 0)
+                                  : edge == Qt::TopEdge   ? QPointF(0, -1)
+                                                          : QPointF(0, 1);
+        auto          mouse     = [&](QEvent::Type type, QPointF position, ulong time) {
+            if (touch) {
+                static auto* device   = QTest::createTouchDevice();
+                auto         sequence = QTest::touchEvent(&window, device);
+                if (type == QEvent::MouseButtonPress)
+                    sequence.press(0, position.toPoint());
+                else if (type == QEvent::MouseButtonRelease)
+                    sequence.release(0, position.toPoint());
+                else
+                    sequence.move(0, position.toPoint());
+                sequence.commit();
+                QQuickWindowPrivate::get(&window)
+                    ->deliveryAgentPrivate()
+                    ->flushFrameSynchronousEvents(&window);
+                return;
+            }
+            QMouseEvent event(type,
+                              position,
+                              window.mapToGlobal(position.toPoint()),
+                              type == QEvent::MouseMove ? Qt::NoButton : Qt::LeftButton,
+                              type == QEvent::MouseButtonRelease ? Qt::NoButton : Qt::LeftButton,
+                              Qt::NoModifier);
+            event.setTimestamp(time);
+            QCoreApplication::sendEvent(&window, &event);
+        };
+        mouse(QEvent::MouseButtonPress, start, 1000);
+        mouse(QEvent::MouseButtonRelease, start, 1020);
+        QCOMPARE(bar->property("clicks").toInt(), 1);
+        mouse(QEvent::MouseButtonPress, start, 1100);
+        mouse(QEvent::MouseMove, start + direction * 40, 1120);
+        mouse(QEvent::MouseMove, start + direction * 60, 1140);
+        QVERIFY(handler->active());
+        QVERIFY(state->offset() > 0);
+        const auto previous = state->offset();
+        mouse(QEvent::MouseMove, start + direction * 40, 1160);
+        QCOMPARE(state->offset(), previous - 20);
+        mouse(QEvent::MouseButtonRelease, start + direction * 40, 1400);
+        QVERIFY(! handler->active());
+        QVERIFY(! state->active());
+        QCOMPARE(state->offset(), 0.);
+        QCOMPARE(bar->property("clicks").toInt(), 1);
+        mouse(QEvent::MouseButtonPress, start, 1500);
+        mouse(QEvent::MouseMove, start + direction * 40, 1520);
+        mouse(QEvent::MouseMove, start + direction * 60, 1540);
+        bar->setProperty("dragToHide", false);
+        QVERIFY(! state->active());
+        QCOMPARE(state->offset(), 0.);
+        mouse(QEvent::MouseButtonRelease, start + direction * 60, 1800);
+        bar->setParentItem(nullptr);
+    }
+    void exitPresentation_data() {
+        QTest::addColumn<int>("edge");
+        QTest::newRow("left") << int(Qt::LeftEdge);
+        QTest::newRow("right") << int(Qt::RightEdge);
+        QTest::newRow("top") << int(Qt::TopEdge);
+        QTest::newRow("bottom") << int(Qt::BottomEdge);
+    }
+    void exitInitiallyHidden() {
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+import QtQuick
+import Qcm.Material as MD
+MD.FloatingToolbar {
+    exitBehavior: MD.FloatingToolbarExit { distance: 100; offset: 100 }
+    mainContent: Item { implicitWidth: 48; implicitHeight: 48 }
+})",
+                          QUrl());
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        QCOMPARE(object->property("presentedExitOffset").toReal(), 100.);
+        QVERIFY(! object->property("exitTransitioning").toBool());
+        object->setProperty("exitBehavior",
+                            QVariant::fromValue<qml_material::FloatingToolbarExit*>(nullptr));
+        QCOMPARE(object->property("presentedExitOffset").toReal(), 0.);
+        QVERIFY(! object->property("exitTransitioning").toBool());
+    }
+    void exitPresentation() {
+        QFETCH(int, edge);
+        QTest::failOnWarning(QRegularExpression(".*"));
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+import QtQuick
+import Qcm.Material as MD
+Item {
+    width: 300; height: 300
+    MD.FloatingToolbar {
+        id: bar; objectName: "bar"
+        x: parent.width / 10; y: parent.height / 10
+        animationsEnabled: false
+        exitBehavior: MD.FloatingToolbarExit { distance: bar.exitDistance }
+        mainContent: Item { implicitWidth: 48; implicitHeight: 48 }
+    }
+})",
+                          QUrl());
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* bar = object->findChild<QQuickItem*>("bar");
+        QVERIFY(bar);
+        bar->setProperty("exitEdge", edge);
+        auto* state =
+            qvariant_cast<qml_material::FloatingToolbarExit*>(bar->property("exitBehavior"));
+        QVERIFY(state);
+        const bool negative   = edge == Qt::LeftEdge || edge == Qt::TopEdge;
+        const bool horizontal = edge == Qt::LeftEdge || edge == Qt::RightEdge;
+        QCOMPARE(state->distance(), negative ? 94. : 270.);
+        state->scrollBy({ 0, state->distance() / 2 });
+        auto point = bar->mapToItem(bar->parentItem(), QPointF());
+        QCOMPARE(horizontal ? point.x() : point.y(), 30 + (negative ? -1 : 1) * state->offset());
+        QCOMPARE(bar->position(), QPointF(30, 30));
+        state->settle();
+        QCOMPARE(state->offset(), state->distance());
+        object->setProperty("width", 400);
+        QCOMPARE(bar->x(), 40.);
+        QCOMPARE(state->offset(), state->distance());
+        bar->setProperty("animationsEnabled", true);
+        state->reset();
+        // Seek the actual animation rather than guessing a frame with a timed wait.
+        QQuickNumberAnimation* animation = nullptr;
+        for (auto* candidate : bar->findChildren<QQuickNumberAnimation*>())
+            if (candidate->property() == "__exitOffset") animation = candidate;
+        QVERIFY(animation);
+        animation->setCurrentTime(bar->property("duration").toInt() / 2);
+        const auto presented = bar->property("presentedExitOffset").toReal();
+        state->begin();
+        QCOMPARE(state->offset(), presented);
+        QVERIFY(! bar->property("exitTransitioning").toBool());
+        state->scrollBy({ 0, -10 });
+        QCOMPARE(bar->property("presentedExitOffset").toReal(), std::max(0., presented - 10));
+        state->settle();
+        QTRY_VERIFY(! bar->property("exitTransitioning").toBool());
+        QCOMPARE(bar->property("presentedExitOffset").toReal(), state->offset());
+        state->setEnabled(false);
+        QCOMPARE(bar->mapToItem(bar->parentItem(), QPointF()), bar->position());
     }
     void geometry_data() {
         QTest::addColumn<bool>("vertical");

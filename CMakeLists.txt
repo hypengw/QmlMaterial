@@ -294,6 +294,8 @@ set(SOURCES
     src/input/nested_scroll.cpp
     src/input/floating_toolbar_scroll.cpp
     include/qml_material/input/floating_toolbar_scroll.hpp
+    src/input/floating_toolbar_exit.cpp
+    include/qml_material/input/floating_toolbar_exit.hpp
     src/input/scroll_participant.cpp
     include/qml_material/input/nested_scroll.hpp
     include/qml_material/input/wheel_handler.hpp

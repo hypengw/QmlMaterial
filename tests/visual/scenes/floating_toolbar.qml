@@ -50,4 +50,22 @@ Rectangle {
         width: 100
         elevation: 2
     }
+    Rectangle {
+        x: 360
+        y: 200
+        width: 176
+        height: 88
+        color: MD.Token.color.surface_container_low
+        clip: true
+        Toolbar {
+            id: exitingToolbar
+            x: 8
+            y: 12
+            exitEdge: Qt.RightEdge
+            exitBehavior: MD.FloatingToolbarExit {
+                distance: exitingToolbar.exitDistance
+                offset: distance / 2
+            }
+        }
+    }
 }

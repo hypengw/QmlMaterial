@@ -71,7 +71,7 @@ public:
         delete m_frame;
     }
 
-    void stop() {
+    void stop(bool cancelled = true) {
         if (m_stopping) return;
         ++m_revision;
         m_stopping = true;
@@ -90,15 +90,21 @@ public:
                 ->removeGrabber(this, true);
         if (! guard) return;
         m_device = nullptr;
+        QList<QPointer<NestedScroll>> finished;
         for (auto config : chain) {
             if (! config || ! started) continue;
             if (config->m_controller != this) continue;
             config->m_controller = nullptr;
             ScrollParticipant(config->item()).end();
             if (! guard) return;
+            finished.append(config);
         }
         m_wheel    = false;
         m_stopping = false;
+        for (auto config : finished) {
+            if (config) emit config->scrollFinished(cancelled);
+            if (! guard) return;
+        }
     }
 
 protected:
@@ -112,7 +118,8 @@ protected:
             auto* wheel = static_cast<QWheelEvent*>(event);
             // Only finish state here. Updates still go through Quick hit testing
             // and popup filters, even when a previous wheel stream is active.
-            if (wheel->phase() == Qt::ScrollBegin || wheel->phase() == Qt::ScrollEnd) stop();
+            if (wheel->phase() == Qt::ScrollBegin || wheel->phase() == Qt::ScrollEnd)
+                stop(wheel->phase() != Qt::ScrollEnd);
         }
         return false;
     }
@@ -223,7 +230,7 @@ protected:
             if (m_velocity.x()) m_motionX.fling(0, m_velocity.x(), first.deceleration(), now());
             if (m_velocity.y()) m_motionY.fling(0, m_velocity.y(), first.deceleration(), now());
             requestFrame();
-            if (! m_motionX.active() && ! m_motionY.active()) stop();
+            if (! m_motionX.active() && ! m_motionY.active()) stop(false);
             point.setAccepted();
         }
     }
@@ -325,7 +332,12 @@ private:
             ScrollParticipant(config->item()).begin();
             if (! guard || m_chain.isEmpty()) return false;
         }
-        m_applying = false;
+        m_applying          = false;
+        const auto revision = m_revision;
+        for (auto config : chain) {
+            if (config) emit config->scrollStarted();
+            if (! guard || m_revision != revision || m_chain.isEmpty()) return false;
+        }
         return true;
     }
     bool canConsume(QPointF sceneDelta) const {
@@ -443,7 +455,7 @@ private:
             QPointer<NestedScrollHandler> guard(this);
             consume(delta, ScrollParticipant::Activity::Scroll);
             if (! guard) return;
-            if (event->phase() == Qt::ScrollEnd || event->phase() == Qt::NoScrollPhase) stop();
+            if (event->phase() == Qt::ScrollEnd || event->phase() == Qt::NoScrollPhase) stop(false);
         }
         event->point(0).setAccepted();
         event->accept();
@@ -473,7 +485,7 @@ private:
             m_motionX.stop();
         if (y.finished || (std::abs(delta.y()) > 0.001 && std::abs(used.y()) < 0.001))
             m_motionY.stop();
-        if (! m_motionX.active() && ! m_motionY.active()) stop();
+        if (! m_motionX.active() && ! m_motionY.active()) stop(false);
     }
     QPointer<NestedScroll>          m_config;
     QList<QPointer<NestedScroll>>   m_chain;

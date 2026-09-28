@@ -1393,21 +1393,51 @@ MD.Page {
                                         ]
                                     }
                                 }
-                                MD.FloatingToolbar {
-                                    id: m_vertical_toolbar
-                                    Layout.alignment: Qt.AlignHCenter
-                                    orientation: Qt.Vertical
-                                    mainContent: MD.IconButton {
-                                        icon.name: 'add'
-                                        mdState.type: MD.Enum.IBtFilledTonal
-                                        onClicked: m_vertical_toolbar.expanded = !m_vertical_toolbar.expanded
-                                    }
-                                    trailingContent: Column {
-                                        MD.IconButton {
-                                            icon.name: 'photo'
+                                Item {
+                                    Layout.fillWidth: true
+                                    implicitHeight: 240
+                                    clip: true
+                                    MD.Scrollable {
+                                        anchors.fill: parent
+                                        contentHeight: 800
+                                        MD.NestedScroll.enabled: true
+                                        MD.NestedScroll.onScrollStarted: m_toolbar_exit.begin()
+                                        MD.NestedScroll.onScrollConsumed: delta => m_toolbar_exit.scrollBy(delta)
+                                        MD.NestedScroll.onScrollFinished: cancelled => cancelled ? m_toolbar_exit.reset() : m_toolbar_exit.settle()
+                                        Column {
+                                            Repeater {
+                                                model: 16
+                                                MD.Label {
+                                                    required property int index
+                                                    height: 50
+                                                    text: 'Scroll to hide toolbar · ' + (index + 1)
+                                                }
+                                            }
                                         }
-                                        MD.IconButton {
-                                            icon.name: 'videocam'
+                                    }
+                                    MD.FloatingToolbar {
+                                        id: m_vertical_toolbar
+                                        anchors.right: parent.right
+                                        anchors.rightMargin: 16
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        orientation: Qt.Vertical
+                                        exitEdge: Qt.RightEdge
+                                        exitBehavior: MD.FloatingToolbarExit {
+                                            id: m_toolbar_exit
+                                            distance: m_vertical_toolbar.exitDistance
+                                        }
+                                        mainContent: MD.IconButton {
+                                            icon.name: 'add'
+                                            mdState.type: MD.Enum.IBtFilledTonal
+                                            onClicked: m_vertical_toolbar.expanded = !m_vertical_toolbar.expanded
+                                        }
+                                        trailingContent: Column {
+                                            MD.IconButton {
+                                                icon.name: 'photo'
+                                            }
+                                            MD.IconButton {
+                                                icon.name: 'videocam'
+                                            }
                                         }
                                     }
                                 }
