@@ -1350,6 +1350,51 @@ MD.Page {
                                 }
                             }
                             ComponentCard {
+                                title: 'Floating toolbars'
+                                MD.FloatingToolbar {
+                                    id: m_floating_toolbar
+                                    Layout.alignment: Qt.AlignHCenter
+                                    mainContent: MD.IconButton {
+                                        icon.name: 'edit'
+                                        mdState.type: MD.Enum.IBtFilledTonal
+                                        onClicked: m_floating_toolbar.expanded = !m_floating_toolbar.expanded
+                                    }
+                                    leadingContent: MD.IconButton {
+                                        icon.name: 'undo'
+                                    }
+                                    trailingContent: MD.ActionToolBar {
+                                        actions: [
+                                            MD.Action {
+                                                icon.name: 'share'
+                                                tooltip: 'Share'
+                                            },
+                                            MD.Action {
+                                                icon.name: 'download'
+                                                tooltip: 'Download'
+                                            }
+                                        ]
+                                    }
+                                }
+                                MD.FloatingToolbar {
+                                    id: m_vertical_toolbar
+                                    Layout.alignment: Qt.AlignHCenter
+                                    orientation: Qt.Vertical
+                                    mainContent: MD.IconButton {
+                                        icon.name: 'add'
+                                        mdState.type: MD.Enum.IBtFilledTonal
+                                        onClicked: m_vertical_toolbar.expanded = !m_vertical_toolbar.expanded
+                                    }
+                                    trailingContent: Column {
+                                        MD.IconButton {
+                                            icon.name: 'photo'
+                                        }
+                                        MD.IconButton {
+                                            icon.name: 'videocam'
+                                        }
+                                    }
+                                }
+                            }
+                            ComponentCard {
                                 title: 'Top app bars'
                                 MD.AppBar {
                                     Layout.fillWidth: true

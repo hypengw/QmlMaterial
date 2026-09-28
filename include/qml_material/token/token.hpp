@@ -18,6 +18,7 @@
 #include "qml_material/token/badge.hpp"
 #include "qml_material/token/fab_menu.hpp"
 #include "qml_material/token/extended_fab.hpp"
+#include "qml_material/token/floating_toolbar.hpp"
 #include "qml_material/anim/interpolator.hpp"
 #include "qml_material/core/enum.hpp"
 Q_MOC_INCLUDE("qml_material/token/icon.hpp")
@@ -520,13 +521,16 @@ class Token : public QObject {
     Q_PROPERTY(qml_material::token::BadgeSize badge READ badge CONSTANT FINAL)
     Q_PROPERTY(qml_material::token::FABMenu fab_menu READ fab_menu CONSTANT FINAL)
     Q_PROPERTY(qml_material::token::ExtendedFAB extended_fab READ extended_fab CONSTANT FINAL)
+    Q_PROPERTY(
+        qml_material::token::FloatingToolbar floating_toolbar READ floating_toolbar CONSTANT FINAL)
     /// Carousel layout tokens
     Q_PROPERTY(qml_material::token::Carousel carousel READ carousel CONSTANT FINAL)
     Q_PROPERTY(qml_material::token::Slider slider READ slider CONSTANT FINAL)
 public:
     Token(QObject* = nullptr);
-    FABMenu     fab_menu() const { return {}; }
-    ExtendedFAB extended_fab() const { return {}; }
+    FABMenu         fab_menu() const { return {}; }
+    ExtendedFAB     extended_fab() const { return {}; }
+    FloatingToolbar floating_toolbar() const { return {}; }
     ~Token();
 
     auto version() const -> QString;

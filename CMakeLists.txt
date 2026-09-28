@@ -222,6 +222,7 @@ set(SOURCES
     include/qml_material/control/fab_menu.hpp
     include/qml_material/token/fab_menu.hpp
     include/qml_material/token/extended_fab.hpp
+    include/qml_material/token/floating_toolbar.hpp
     include/qml_material/control/button_group_container.hpp
     include/qml_material/token/button_group.hpp
     include/qml_material/control/check_box.hpp
@@ -417,6 +418,7 @@ set(QML_FILES
     qml/motion/FadeOutMotion.qml
     qml/motion/FadeOutThroughMotion.qml
     qml/navigation/ActionToolBar.qml
+    qml/navigation/FloatingToolbar.qml
     qml/navigation/AppBar.qml
     qml/navigation/BarItem.qml
     qml/navigation/Drawer.qml
