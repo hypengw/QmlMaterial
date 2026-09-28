@@ -2,11 +2,9 @@ import QtQuick
 import QtQuick.Layouts
 import Qcm.Material as MD
 
-MD.ButtonBase {
+MD.SearchBarBase {
     id: control
-
-    // MD.ButtonBase::text is FINAL; the field value is `searchText`.
-    property alias searchText: item_input.text
+    property alias placeholderText: item_input.placeholderText
 
     property bool leading_input: false
     property MD.Action leading_action: MD.Action {
@@ -16,14 +14,12 @@ MD.ButtonBase {
     property MD.Action trailing_action: MD.Action {
         icon.name: control.searchText ? MD.Token.icon.close : ''
         onTriggered: {
-            item_input.text = '';
+            control.searchText = '';
         }
     }
     property MD.StateSearchBar mdState: MD.StateSearchBar {
         item: control
     }
-
-    signal accepted
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
@@ -34,6 +30,7 @@ MD.ButtonBase {
 
     contentItem: RowLayout {
         spacing: 0
+        layoutDirection: control.mirrored ? Qt.RightToLeft : Qt.LeftToRight
 
         MD.IconButton {
             id: item_leading
@@ -48,6 +45,14 @@ MD.ButtonBase {
             id: item_input
             Layout.fillWidth: true
             color: control.mdState.textColor
+            text: control.searchText
+            onTextEdited: control.searchText = text
+            readOnly: control.searchView !== null
+            activeFocusOnTab: !readOnly
+            MD.InputBlock {
+                when: control.searchView !== null
+                target: item_input
+            }
 
             Connections {
                 target: item_input

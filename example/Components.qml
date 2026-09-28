@@ -1938,6 +1938,45 @@ MD.Page {
                             }
 
                             ComponentCard {
+                                title: 'Search'
+                                MD.CheckBox {
+                                    id: fullScreenSearch
+                                    text: 'Full-screen results'
+                                }
+                                MD.SearchBar {
+                                    id: exampleSearch
+                                    Layout.fillWidth: true
+                                    placeholderText: 'Search components'
+                                }
+                                MD.SearchView {
+                                    id: searchResults
+                                    searchBar: exampleSearch
+                                    presentation: fullScreenSearch.checked ? MD.SearchView.FullScreen : MD.SearchView.Docked
+                                    placeholderText: exampleSearch.placeholderText
+                                    onAccepted: close()
+                                    MD.VerticalFlickable {
+                                        anchors.fill: parent
+                                        Column {
+                                            width: parent.width
+                                            Repeater {
+                                                model: ['Buttons', 'Cards', 'Chips', 'Dialogs', 'Floating toolbar', 'Navigation', 'Search', 'Sliders', 'Text fields', 'Time picker'].filter(name => name.toLowerCase().includes(searchResults.searchText.toLowerCase()))
+                                                MD.MenuItem {
+                                                    required property string modelData
+                                                    width: parent.width
+                                                    text: modelData
+                                                    icon.name: 'search'
+                                                    onClicked: {
+                                                        searchResults.searchText = modelData;
+                                                        searchResults.close();
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            ComponentCard {
                                 title: 'Time picker'
                                 MD.TimeTextField {
                                     Layout.alignment: Qt.AlignHCenter

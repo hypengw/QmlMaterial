@@ -248,6 +248,11 @@ set(SOURCES
     include/qml_material/control/button_group.hpp
     include/qml_material/control/abstract_button.hpp
     include/qml_material/control/button.hpp
+    include/qml_material/control/search_bar.hpp
+    src/control/search_bar.cpp
+    include/qml_material/control/search_view.hpp
+    src/control/search_view.cpp
+    include/qml_material/input/search_state.hpp
     include/qml_material/control/icon_spec.hpp
     src/control/panel.cpp
     src/control/page.cpp
@@ -403,6 +408,7 @@ set(QML_FILES
     qml/input/RadioButton.qml
     qml/input/RadioIndicatorShape.qml
     qml/input/SearchBar.qml
+    qml/input/SearchView.qml
     qml/input/Slider.qml
     qml/input/RangeSlider.qml
     qml/input/SliderHandle.qml
