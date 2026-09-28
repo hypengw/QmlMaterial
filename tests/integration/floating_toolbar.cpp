@@ -445,7 +445,9 @@ MD.FloatingToolbar {
     }
     void actionToolbar() {
         QTest::failOnWarning(QRegularExpression(".*"));
-        QQmlComponent component(&m_engine);
+        QQmlEngine engine;
+        engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));
+        QQmlComponent component(&engine);
         component.setData(R"(
 import QtQuick
 import Qcm.Material as MD
@@ -490,11 +492,24 @@ MD.FloatingToolbar {
         polish(polish, qobject_cast<QQuickItem*>(object.get()));
         QVERIFY(main->isVisible());
         QVERIFY(main->implicitWidth() >= 144.);
+        QList<QPointer<QQuickItem>> children;
+        auto                        remember = [&](auto&& self, QQuickItem* item) -> void {
+            for (auto* child : item->childItems()) {
+                children.append(child);
+                self(self, child);
+            }
+        };
+        remember(remember, qobject_cast<QQuickItem*>(object.get()));
+        QVERIFY(! children.isEmpty());
+        object.reset();
+        for (const auto& child : children) QVERIFY(child.isNull());
     }
 
     void transitions() {
         QTest::failOnWarning(QRegularExpression(".*"));
-        QQmlComponent component(&m_engine);
+        QQmlEngine engine;
+        engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));
+        QQmlComponent component(&engine);
         component.setData(R"(
 import QtQuick
 import Qcm.Material as MD

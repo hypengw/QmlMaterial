@@ -44,6 +44,10 @@ public:
             moreButtonIncubator->clear();
             delete moreButtonIncubator;
         }
+        if (moreButtonInstance) {
+            moreButtonInstance->disconnect(q);
+            delete moreButtonInstance;
+        }
     }
 
     void                          calculateImplicitSize();
@@ -217,6 +221,7 @@ void ToolBarLayout::setMoreButton(QQmlComponent* newMoreButton) {
 
     d->moreButton = newMoreButton;
     if (d->moreButtonInstance) {
+        d->moreButtonInstance->disconnect(this);
         d->moreButtonInstance->deleteLater();
         d->moreButtonInstance = nullptr;
     }
@@ -553,6 +558,8 @@ QList<ToolBarLayoutDelegate*> ToolBarLayoutPrivate::createDelegates() {
     if (! moreButtonInstance && ! moreButtonIncubator) {
         moreButtonIncubator = new ToolBarDelegateIncubator(moreButton, qmlContext(moreButton));
         moreButtonIncubator->setStateCallback([this](QQuickItem* item) {
+            // A visual parent does not own an incubated object's lifetime.
+            item->setParent(q);
             item->setParentItem(q);
         });
         moreButtonIncubator->setCompletedCallback([this](ToolBarDelegateIncubator* incubator) {
