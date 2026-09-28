@@ -1584,6 +1584,87 @@ MD.Page {
                                     }
                                 }
                             }
+                            ComponentCard {
+                                title: 'Swipe to dismiss'
+                                MD.Text {
+                                    Layout.fillWidth: true
+                                    text: 'Swipe right to mark, left to remove'
+                                    wrapMode: Text.Wrap
+                                }
+                                MD.Button {
+                                    text: 'Add item'
+                                    onClicked: m_swipe_model.append({
+                                        label: 'New message',
+                                        marked: false
+                                    })
+                                }
+                                ListView {
+                                    id: m_swipe_list
+                                    Layout.fillWidth: true
+                                    implicitHeight: 280
+                                    clip: true
+                                    boundsBehavior: Flickable.StopAtBounds
+                                    model: ListModel {
+                                        id: m_swipe_model
+                                        ListElement {
+                                            label: 'A message to keep'
+                                            marked: false
+                                        }
+                                        ListElement {
+                                            label: 'A message to archive'
+                                            marked: false
+                                        }
+                                        ListElement {
+                                            label: 'Swipe in either direction'
+                                            marked: false
+                                        }
+                                        ListElement {
+                                            label: 'Scroll vertically as usual'
+                                            marked: false
+                                        }
+                                        ListElement {
+                                            label: 'Another message'
+                                            marked: false
+                                        }
+                                    }
+                                    delegate: MD.SwipeToDismiss {
+                                        id: m_swipe_row
+                                        required property int index
+                                        required property string label
+                                        required property bool marked
+                                        width: ListView.view.width
+                                        height: 64
+                                        onDismissed: direction => {
+                                            if (direction === MD.SwipeToDismissState.EndToStart) {
+                                                m_swipe_model.remove(index);
+                                            } else {
+                                                m_swipe_model.setProperty(index, 'marked', !marked);
+                                                dismissState.reset();
+                                            }
+                                        }
+                                        background: Rectangle {
+                                            color: m_swipe_row.dismissState.dismissDirection === MD.SwipeToDismissState.EndToStart ? MD.Token.color.error_container : MD.Token.color.secondary_container
+                                            MD.Icon {
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                x: m_swipe_row.presentedOffset >= 0 ? 16 : parent.width - width - 16
+                                                name: m_swipe_row.dismissState.dismissDirection === MD.SwipeToDismissState.EndToStart ? 'delete' : 'check'
+                                            }
+                                        }
+                                        Rectangle {
+                                            anchors.fill: parent
+                                            color: MD.Token.color.surface
+                                            MD.Text {
+                                                anchors.fill: parent
+                                                leftPadding: 16
+                                                rightPadding: 16
+                                                verticalAlignment: Text.AlignVCenter
+                                                elide: Text.ElideRight
+                                                text: (m_swipe_row.marked ? '✓ ' : '') + m_swipe_row.label
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 
