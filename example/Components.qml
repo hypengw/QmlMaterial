@@ -1938,6 +1938,37 @@ MD.Page {
                             }
 
                             ComponentCard {
+                                title: 'Time picker'
+                                MD.TimeTextField {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    Layout.preferredWidth: 240
+                                    value: timePicker.time.value
+                                    hourFormat: timePicker.time.hourFormat
+                                    onModified: value => timePicker.time.value = value
+                                }
+                                MD.CheckBox {
+                                    text: '24-hour clock'
+                                    onToggled: timePicker.time.hourFormat = checked ? MD.TimeState.Hour24 : MD.TimeState.Hour12
+                                }
+                                MD.TimePicker {
+                                    id: timePicker
+                                    Layout.alignment: Qt.AlignHCenter
+                                    time.hourFormat: MD.TimeState.Hour12
+                                    time.hour: 10
+                                    time.minute: 30
+                                }
+                                MD.Divider {
+                                    Layout.fillWidth: true
+                                }
+                                MD.TimeInput {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    time.hourFormat: MD.TimeState.Hour24
+                                    time.hour: 18
+                                    time.minute: 45
+                                }
+                            }
+
+                            ComponentCard {
                                 title: 'Color picker'
 
                                 MD.ColorPickerButton {

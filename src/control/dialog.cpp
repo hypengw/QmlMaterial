@@ -26,9 +26,15 @@ void Dialog::setResult(int value) {
     Q_EMIT resultChanged();
 }
 void Dialog::accept() { done(Accepted); }
+void Dialog::setAcceptEnabled(bool value) {
+    if (m_acceptEnabled == value) return;
+    m_acceptEnabled = value;
+    Q_EMIT acceptEnabledChanged();
+}
 void Dialog::reject() { done(Rejected); }
 void Dialog::closeFromInput() { reject(); }
 void Dialog::done(int value) {
+    if (value == Accepted && ! m_acceptEnabled) return;
     QPointer<Dialog> guard(this);
     setResult(value);
     if (! guard) return;

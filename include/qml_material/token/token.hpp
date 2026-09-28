@@ -19,6 +19,7 @@
 #include "qml_material/token/fab_menu.hpp"
 #include "qml_material/token/extended_fab.hpp"
 #include "qml_material/token/floating_toolbar.hpp"
+#include "qml_material/token/time_picker.hpp"
 #include "qml_material/anim/interpolator.hpp"
 #include "qml_material/core/enum.hpp"
 Q_MOC_INCLUDE("qml_material/token/icon.hpp")
@@ -526,8 +527,10 @@ class Token : public QObject {
     /// Carousel layout tokens
     Q_PROPERTY(qml_material::token::Carousel carousel READ carousel CONSTANT FINAL)
     Q_PROPERTY(qml_material::token::Slider slider READ slider CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::TimePicker time_picker READ time_picker CONSTANT FINAL)
 public:
     Token(QObject* = nullptr);
+    TimePicker      time_picker() const { return {}; }
     FABMenu         fab_menu() const { return {}; }
     ExtendedFAB     extended_fab() const { return {}; }
     FloatingToolbar floating_toolbar() const { return {}; }

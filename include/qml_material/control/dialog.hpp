@@ -21,6 +21,8 @@ class QML_MATERIAL_API Dialog : public Popup {
     Q_PROPERTY(qreal implicitFooterHeight READ implicitFooterHeight NOTIFY
                    implicitFooterHeightChanged FINAL)
     Q_PROPERTY(int result READ result WRITE setResult NOTIFY resultChanged FINAL)
+    Q_PROPERTY(bool acceptEnabled READ acceptEnabled WRITE setAcceptEnabled NOTIFY
+                   acceptEnabledChanged FINAL)
     Q_PROPERTY(int standardButtons READ standardButtons WRITE setStandardButtons NOTIFY
                    standardButtonsChanged FINAL)
 public:
@@ -74,6 +76,9 @@ public:
     Q_SIGNAL void implicitFooterHeightChanged();
     int           result() const { return m_result; }
     void          setResult(int);
+    bool          acceptEnabled() const { return m_acceptEnabled; }
+    void          setAcceptEnabled(bool value);
+    Q_SIGNAL void acceptEnabledChanged();
     int           standardButtons() const { return m_standardButtons; }
     void          setStandardButtons(int);
     Q_INVOKABLE AbstractButton* standardButton(int) const;
@@ -95,6 +100,7 @@ private:
     void                           syncButtonBoxes();
     QList<QMetaObject::Connection> m_buttonConnections;
     quint64                        m_buttonRevision  = 0;
+    bool                           m_acceptEnabled   = true;
     int                            m_result          = Rejected;
     int                            m_standardButtons = NoButton;
 };

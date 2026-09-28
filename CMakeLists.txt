@@ -293,6 +293,11 @@ set(SOURCES
     include/qml_material/scrollable/scroll_motion.hpp
     src/input/wheel_handler.cpp
     src/input/date_validator.cpp
+    src/input/time_state.cpp
+    src/input/time_dial.cpp
+    include/qml_material/input/time_state.hpp
+    include/qml_material/input/time_dial.hpp
+    include/qml_material/token/time_picker.hpp
     include/qml_material/input/date_validator.hpp
     src/input/nested_scroll.cpp
     src/input/floating_toolbar_scroll.cpp
@@ -447,6 +452,10 @@ set(QML_FILES
     qml/picker/DatePicker.qml
     qml/picker/DatePickerDialog.qml
     qml/picker/DateTextField.qml
+    qml/picker/TimeInput.qml
+    qml/picker/TimePicker.qml
+    qml/picker/TimePickerDialog.qml
+    qml/picker/TimeTextField.qml
     qml/picker/HueChannelSlider.qml
     qml/popup/ActionMenu.qml
     qml/popup/BottomSheet.qml
