@@ -1552,6 +1552,38 @@ MD.Page {
                                     }
                                 }
                             }
+                            ComponentCard {
+                                title: 'Pull to refresh'
+                                MD.Button {
+                                    text: m_pull_refresh.refreshing ? 'Finish refresh' : 'Refresh'
+                                    onClicked: {
+                                        if (m_pull_refresh.refreshing)
+                                            m_refresh_list.model += 1;
+                                        m_pull_refresh.refreshing = !m_pull_refresh.refreshing;
+                                    }
+                                }
+                                MD.PullToRefresh {
+                                    id: m_pull_refresh
+                                    Layout.fillWidth: true
+                                    implicitHeight: 280
+                                    onRefreshRequested: refreshing = true
+                                    ListView {
+                                        id: m_refresh_list
+                                        anchors.fill: parent
+                                        clip: true
+                                        boundsBehavior: Flickable.StopAtBounds
+                                        MD.NestedScroll.enabled: true
+                                        MD.NestedScroll.axes: Qt.Vertical
+                                        MD.NestedScroll.connection: m_pull_refresh.refreshState
+                                        model: 12
+                                        delegate: MD.ItemDelegate {
+                                            required property int index
+                                            width: ListView.view.width
+                                            text: 'Pull down from the top · ' + (index + 1)
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 

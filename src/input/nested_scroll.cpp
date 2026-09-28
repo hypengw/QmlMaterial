@@ -36,7 +36,15 @@ QPointF vectorToScene(QQuickItem* item, QPointF delta) {
 QPointF vectorFromScene(QQuickItem* item, QPointF delta) {
     return item->mapFromScene(delta) - item->mapFromScene(QPointF());
 }
-bool finite(QPointF p) { return std::isfinite(p.x()) && std::isfinite(p.y()); }
+bool    finite(QPointF p) { return std::isfinite(p.x()) && std::isfinite(p.y()); }
+QPointF boundedConsumption(QPointF requested, QPointF available) {
+    const auto bounded = [](qreal value, qreal limit) {
+        return std::isfinite(value)
+                   ? std::clamp(value, std::min(qreal(0), limit), std::max(qreal(0), limit))
+                   : 0;
+    };
+    return { bounded(requested.x(), available.x()), bounded(requested.y(), available.y()) };
+}
 
 class ScrollFrameItem : public QQuickItem {
 public:
@@ -219,6 +227,7 @@ protected:
             setPassiveGrab(event, point, false);
             m_device = nullptr;
             if (event->timestamp() - m_lastTime >= 100) m_velocity = {};
+            if (! releaseConnections()) return;
             const auto chain = m_chain;
             for (auto config : chain) {
                 if (config)
@@ -249,6 +258,37 @@ protected:
     }
 
 private:
+    bool releaseConnections() {
+        QPointer<NestedScrollHandler> guard(this);
+        const auto                    chain    = m_chain;
+        const auto                    revision = m_revision;
+        for (auto it = chain.crbegin(); it != chain.crend(); ++it) {
+            const auto config = *it;
+            if (! config || ! config->item()) {
+                stop();
+                return false;
+            }
+            if (! config->connection()) continue;
+            auto* item      = config->item();
+            auto  available = vectorFromScene(item, m_velocity);
+            if (! config->axes().testFlag(Qt::Horizontal)) available.setX(0);
+            if (! config->axes().testFlag(Qt::Vertical)) available.setY(0);
+            const auto basisX = vectorToScene(item, { 1, 0 });
+            const auto basisY = vectorToScene(item, { 0, 1 });
+            if (! finite(available) || ! finite(basisX) || ! finite(basisY) ||
+                std::abs(basisX.x() * basisY.y() - basisX.y() * basisY.x()) < 1e-9) {
+                stop();
+                return false;
+            }
+            m_applying = true;
+            const auto used =
+                boundedConsumption(config->connection()->release(available), available);
+            if (! guard || m_revision != revision || m_chain.isEmpty()) return false;
+            m_velocity -= basisX * used.x() + basisY * used.y();
+            m_applying = false;
+        }
+        return true;
+    }
     bool isParticipant(QQuickItem* item) const {
         for (auto config : m_chain)
             if (config && config->item() == item) return true;
@@ -428,14 +468,7 @@ private:
             m_applying           = true;
             const auto requested = pre ? config->connection()->preScroll(local, source)
                                        : config->connection()->postScroll(consumed, local, source);
-            const auto bounded   = [](qreal value, qreal available) {
-                return std::isfinite(value) ? std::clamp(value,
-                                                         std::min(qreal(0), available),
-                                                         std::max(qreal(0), available))
-                                            : 0;
-            };
-            const QPointF used(bounded(requested.x(), local.x()),
-                               bounded(requested.y(), local.y()));
+            const auto used      = boundedConsumption(requested, local);
             remaining -= basisX * used.x() + basisY * used.y();
             if (! current()) return false;
             m_applying = false;

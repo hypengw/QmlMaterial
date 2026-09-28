@@ -23,6 +23,11 @@ public:
     };
     Q_ENUM(Source)
     explicit NestedScrollConnection(QObject* parent = nullptr): QObject(parent) {}
+    // Called once on pointer release, before remaining velocity starts a fling.
+    virtual QPointF release(QPointF velocity) {
+        Q_UNUSED(velocity);
+        return {};
+    }
     // Vectors use local content displacement, not pointer displacement.
     virtual QPointF preScroll(QPointF available, Source source)                    = 0;
     virtual QPointF postScroll(QPointF consumed, QPointF available, Source source) = 0;

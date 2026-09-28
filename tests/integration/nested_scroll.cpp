@@ -23,7 +23,11 @@ public:
     std::function<QPointF(QPointF, QPointF)> post = [](QPointF, QPointF) {
         return QPointF();
     };
-    int         starts = 0;
+    int                             starts    = 0;
+    std::function<QPointF(QPointF)> onRelease = [](QPointF) {
+        return QPointF();
+    };
+    QPointF     release(QPointF velocity) override { return onRelease(velocity); }
     QList<bool> endings;
     QPointF     preScroll(QPointF available, Source) override { return pre(available); }
     QPointF     postScroll(QPointF consumed, QPointF available, Source) override {
@@ -63,6 +67,74 @@ class NestedScrollTest : public QObject {
         QCoreApplication::sendEvent(&window, &event);
     }
 private slots:
+    void connectionReleaseVelocity() {
+        TestScrollConnection child, parent;
+        auto*                childConfig =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(inner));
+        auto* parentConfig =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(outer));
+        childConfig->setConnection(&child);
+        parentConfig->setConnection(&parent);
+        QStringList    calls;
+        QList<QPointF> velocities;
+        parent.onRelease = [&](QPointF velocity) {
+            calls << "parent";
+            velocities << velocity;
+            return QPointF(100, 500);
+        };
+        child.onRelease = [&](QPointF velocity) {
+            calls << "child";
+            velocities << velocity;
+            return QPointF(0, 3000);
+        };
+        mouse(QEvent::MouseButtonPress, { 100, 150 }, 1000);
+        mouse(QEvent::MouseMove, { 100, 110 }, 1020);
+        mouse(QEvent::MouseButtonRelease, { 100, 110 }, 1025);
+        QCOMPARE(calls, QStringList({ "parent", "child" }));
+        QCOMPARE(velocities, QList<QPointF>({ { 0, 2000 }, { 0, 1500 } }));
+        QCOMPARE(child.endings, QList<bool>({ false }));
+        QCOMPARE(parent.endings, QList<bool>({ false }));
+        QVERIFY(! inner->isMoving());
+        QVERIFY(! outer->isMoving());
+    }
+    void connectionReleaseOnlyForDrag() {
+        TestScrollConnection connection;
+        auto*                config =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(inner));
+        config->setConnection(&connection);
+        int releases         = 0;
+        connection.onRelease = [&](QPointF velocity) {
+            ++releases;
+            return velocity;
+        };
+        wheel({ 0, -20 }, Qt::ScrollBegin);
+        wheel({}, Qt::ScrollEnd);
+        mouse(QEvent::MouseButtonPress, { 100, 150 }, 1000);
+        mouse(QEvent::MouseButtonRelease, { 100, 150 }, 1020);
+        QCOMPARE(releases, 0);
+        mouse(QEvent::MouseButtonPress, { 100, 150 }, 2000);
+        mouse(QEvent::MouseMove, { 100, 110 }, 2020);
+        config->setEnabled(false);
+        mouse(QEvent::MouseButtonRelease, { 100, 110 }, 2025);
+        QCOMPARE(releases, 0);
+    }
+    void connectionReleaseReplacement() {
+        TestScrollConnection first, second;
+        auto*                config =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(inner));
+        config->setConnection(&first);
+        first.onRelease = [&](QPointF) {
+            config->setConnection(&second);
+            return QPointF();
+        };
+        mouse(QEvent::MouseButtonPress, { 100, 150 }, 1000);
+        mouse(QEvent::MouseMove, { 100, 110 }, 1020);
+        mouse(QEvent::MouseButtonRelease, { 100, 110 }, 1025);
+        QCOMPARE(first.endings, QList<bool>({ true }));
+        QCOMPARE(second.starts, 0);
+        QVERIFY(! inner->isMoving());
+        QVERIFY(! outer->isMoving());
+    }
     void appBarInitialGeometry() {
         QQmlComponent component(&engine);
         component.setData(R"(
