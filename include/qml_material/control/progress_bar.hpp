@@ -41,10 +41,11 @@ protected:
     void componentComplete() override;
 
 private:
-    qreal m_from          = 0;
-    qreal m_to            = 1;
-    qreal m_value         = 0;
-    bool  m_indeterminate = false;
+    qreal   m_from          = 0;
+    qreal   m_to            = 1;
+    qreal   m_value         = 0;
+    bool    m_indeterminate = false;
+    quint64 m_revision      = 0;
 };
 
 } // namespace qml_material

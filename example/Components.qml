@@ -624,25 +624,33 @@ MD.Page {
                             title: 'Progress indicators'
                             spacing: 16
 
-                            // determinate
                             RowLayout {
-                                Layout.alignment: Qt.AlignHCenter
+                                Layout.fillWidth: true
                                 spacing: 8
-                                MD.IconButton {
-                                    id: m_det_play
-                                    checkable: true
-                                    icon.name: checked ? MD.Token.icon.pause : MD.Token.icon.play_arrow
+                                MD.Slider {
+                                    id: m_progress
+                                    Layout.fillWidth: true
+                                    from: 0
+                                    to: 1
+                                    value: 0.5
+                                }
+                                MD.Text {
+                                    Layout.preferredWidth: 48
+                                    horizontalAlignment: Text.AlignRight
+                                    text: Math.round(m_progress.value * 100) + "%"
                                 }
                             }
                             MD.LinearIndicator {
                                 Layout.fillWidth: true
                                 indeterminate: false
-                                value: m_det_play.checked ? 0.65 : 1.0
+                                value: m_progress.value
+                                completionBehavior: MD.LinearIndicator.Keep
                             }
                             MD.LinearIndicator {
                                 Layout.fillWidth: true
                                 indeterminate: false
-                                value: m_det_play.checked ? 0.65 : 1.0
+                                value: m_progress.value
+                                completionBehavior: MD.LinearIndicator.Keep
                                 wavy: true
                             }
                             RowLayout {
@@ -650,12 +658,14 @@ MD.Page {
                                 spacing: 24
                                 MD.CircularIndicator {
                                     indeterminate: false
-                                    value: m_det_play.checked ? 0.65 : 1.0
+                                    value: m_progress.value
+                                    completionBehavior: MD.CircularIndicator.Keep
                                     inactiveColor: MD.MProp.color.secondary_container
                                 }
                                 MD.CircularIndicator {
                                     indeterminate: false
-                                    value: m_det_play.checked ? 0.65 : 1.0
+                                    value: m_progress.value
+                                    completionBehavior: MD.CircularIndicator.Keep
                                     wavy: true
                                     inactiveColor: MD.MProp.color.secondary_container
                                 }
@@ -667,25 +677,26 @@ MD.Page {
                                 spacing: 8
                                 MD.IconButton {
                                     id: m_indet_play
-                                    checkable: true
-                                    icon.name: checked ? MD.Token.icon.pause : MD.Token.icon.play_arrow
+                                    property bool playing: false
+                                    icon.name: playing ? MD.Token.icon.pause : MD.Token.icon.play_arrow
+                                    onClicked: playing = !playing
                                 }
                             }
                             MD.LinearIndicator {
                                 Layout.fillWidth: true
                                 indeterminate: true
-                                running: m_indet_play.checked
+                                running: m_indet_play.playing
                             }
                             MD.LinearIndicator {
                                 Layout.fillWidth: true
                                 indeterminate: true
-                                running: m_indet_play.checked
+                                running: m_indet_play.playing
                                 wavy: true
                             }
                             MD.LinearIndicator {
                                 Layout.fillWidth: true
                                 indeterminate: true
-                                running: m_indet_play.checked
+                                running: m_indet_play.playing
                                 type: MD.LinearIndicator.Contiguous
                             }
                             RowLayout {
@@ -693,16 +704,16 @@ MD.Page {
                                 spacing: 24
                                 MD.CircularIndicator {
                                     indeterminate: true
-                                    running: m_indet_play.checked
+                                    running: m_indet_play.playing
                                 }
                                 MD.CircularIndicator {
                                     indeterminate: true
-                                    running: m_indet_play.checked
+                                    running: m_indet_play.playing
                                     wavy: true
                                 }
                                 MD.CircularIndicator {
                                     indeterminate: true
-                                    running: m_indet_play.checked
+                                    running: m_indet_play.playing
                                     type: MD.CircularIndicator.Reteat
                                 }
                             }

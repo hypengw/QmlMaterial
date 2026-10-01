@@ -10,6 +10,7 @@
 #include <limits>
 #include "qml_material/shape/material_shapes.hpp"
 #include "qml_material/anim/loading_indicator_updator.hpp"
+#include "qml_material/control/progress_indicator.hpp"
 
 using namespace qml_material;
 
@@ -180,33 +181,36 @@ private slots:
                           QUrl());
         std::unique_ptr<QObject> object(component.create());
         QVERIFY2(object, qPrintable(component.errorString()));
-        QQuickNumberAnimation* wave = nullptr;
-        for (auto* animation : object->findChildren<QQuickNumberAnimation*>())
-            if (animation->loops() == -1) wave = animation;
-        QVERIFY(wave);
-        QVERIFY(! wave->isRunning());
+        auto* indicator = qobject_cast<ProgressIndicator*>(object.get());
+        QVERIFY(indicator);
+        QQuickWindow window;
+        window.resize(240, 80);
+        indicator->setParentItem(window.contentItem());
+        window.show();
+        QVERIFY(! indicator->animating());
         object->setProperty("running", true);
-        QVERIFY(wave->isRunning());
+        QTRY_VERIFY(indicator->animating());
         object->setProperty("running", false);
-        QTRY_VERIFY(! wave->isRunning());
+        QTRY_VERIFY(! indicator->animating());
         object->setProperty("running", true);
-        QVERIFY(wave->isRunning());
+        QVERIFY(indicator->animating());
         object->setProperty("enabled", false);
-        QVERIFY(! wave->isRunning());
+        QVERIFY(! indicator->animating());
         object->setProperty("enabled", true);
-        QVERIFY(wave->isRunning());
+        QVERIFY(indicator->animating());
         object->setProperty("running", false);
-        QTRY_VERIFY(! wave->isRunning());
+        QTRY_VERIFY(! indicator->animating());
         object->setProperty("indeterminate", false);
         object->setProperty("value", .5);
-        QVERIFY(wave->isRunning());
+        QTRY_VERIFY(indicator->animating());
+        object->setProperty("completionBehavior", ProgressIndicator::Keep);
         object->setProperty("value", 1.);
-        QVERIFY(! wave->isRunning());
+        QTRY_VERIFY(! indicator->animating());
         object->setProperty("value", 0.);
-        QVERIFY(! wave->isRunning());
+        QTRY_VERIFY(! indicator->animating());
         object->setProperty("value", .5);
         object->setProperty("wavy", false);
-        QVERIFY(! wave->isRunning());
+        QTRY_VERIFY(! indicator->animating());
     }
     void loadingAnimation() {
         QTest::failOnWarning(QRegularExpression(".*"));

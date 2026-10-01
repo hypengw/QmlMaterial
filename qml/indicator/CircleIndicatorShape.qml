@@ -1,55 +1,13 @@
 import QtQuick
-import QtQuick.Shapes
 import Qcm.Material as MD
 
-MD.Shape {
+MD.ProgressIndicatorShape {
     id: root
-    property color strokeColor: MD.MProp.color.primary
+    circular: true
+    legacyRadius: true
     property color inactiveColor: "transparent"
-    property real strokeWidth: 4
     readonly property real radius: height / 2
     readonly property vector2d center: Qt.vector2d(radius, radius)
-
-    property real startAngle: 0
-    property real endAngle: 0
-
-    property real inactiveStartAngle: 0
-    property real inactiveSweepAngle: 0
-
-    asynchronous: false
-
-    ShapePath {
-        capStyle: ShapePath.RoundCap
-        fillColor: "transparent"
-        strokeColor: root.inactiveColor
-        strokeWidth: root.inactiveSweepAngle > 0 ? root.strokeWidth : 0
-
-        PathAngleArc {
-            centerX: root.center.x
-            centerY: root.center.y
-            radiusX: root.radius
-            radiusY: root.radius
-            startAngle: root.inactiveStartAngle
-            sweepAngle: root.inactiveSweepAngle
-            moveToStart: true
-        }
-    }
-
-    ShapePath {
-        capStyle: ShapePath.RoundCap
-        fillColor: "transparent"
-        startX: root.radius
-        startY: 0
-        strokeColor: root.strokeColor
-        strokeWidth: root.strokeWidth
-
-        PathAngleArc {
-            centerX: root.center.x
-            centerY: root.center.y
-            radiusX: root.radius
-            radiusY: root.radius
-            startAngle: root.startAngle
-            sweepAngle: root.endAngle - root.startAngle
-        }
-    }
+    strokeColor: MD.MProp.color.primary
+    trackColor: root.inactiveColor
 }

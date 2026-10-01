@@ -93,7 +93,7 @@ auto LinearIndicatorUpdator::colors() const -> QList<QColor> { return m_colors; 
 void LinearIndicatorUpdator::setColors(const QList<QColor>& v) {
     if (m_colors != v) {
         m_colors    = v;
-        m_color_idx = m_color_idx % m_colors.size();
+        m_color_idx = m_colors.empty() ? 0 : m_color_idx % m_colors.size();
         colorsChanged();
     }
 }
@@ -188,7 +188,7 @@ void LinearIndicatorUpdator::update(double progress) {
         updateContiguous(progress);
     }
     if (m_progress > progress) {
-        m_color_idx   = (m_color_idx + 1) % m_colors.size();
+        m_color_idx   = m_colors.empty() ? 0 : (m_color_idx + 1) % m_colors.size();
         m_color_dirty = true;
     }
     if (m_color_dirty) updateColors();

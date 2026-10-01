@@ -80,6 +80,14 @@ set(SOURCES
     src/shape/material_shapes.cpp
     src/shape/material_shape_path.hpp
     src/shape/material_shape_path.cpp
+    include/qml_material/path/measured_path.hpp
+    src/path/measured_path.cpp
+    include/qml_material/indicator/progress_indicator_geometry.hpp
+    src/indicator/progress_indicator_geometry.cpp
+    src/indicator/progress_indicator_shape.hpp
+    src/indicator/progress_indicator_shape.cpp
+    include/qml_material/control/progress_indicator.hpp
+    src/control/progress_indicator.cpp
     include/qml_material/core/state_bindings.hpp
     include/qml_material/core/attached_property.hpp
     include/qml_material/core/helper.hpp
@@ -540,6 +548,7 @@ set(RESOURCES assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2)
 set(QML_REG_INCLUDE_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/shape"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/shape"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/indicator"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/view"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/anim"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/core"
