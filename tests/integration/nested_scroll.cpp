@@ -3,6 +3,7 @@
 #include "qml_material/input/app_bar_scroll.hpp"
 #include "qml_material/input/floating_toolbar_scroll.hpp"
 #include "qml_material/control/popup.hpp"
+#include "qml_material/util/qml_util.hpp"
 #include <QQmlComponent>
 #include <QQmlEngine>
 #include <QQuickWindow>
@@ -11,6 +12,7 @@
 #include <QtQuick/private/qquickdeliveryagent_p_p.h>
 #include <QtQuick/private/qquickwindow_p.h>
 #include <QtQuick/private/qquickanimation_p.h>
+#include <QtQuick/private/qquicktext_p.h>
 #include <QtTest>
 
 using namespace qml_material;
@@ -167,6 +169,7 @@ MD.AppBar {
     }
     void appBarConsumption() {
         AppBarScroll bar;
+        bar.setAnimationsEnabled(false);
         bar.setCollapseDistance(88);
         bar.begin(NestedScrollConnection::Drag);
         QVERIFY(bar.active());
@@ -207,33 +210,210 @@ MD.AppBar {
         QVERIFY2(bar, qPrintable(component.errorString()));
         auto* behavior = bar->property("scrollBehavior").value<AppBarScroll*>();
         QVERIFY(behavior);
-        QQuickNumberAnimation* snap = nullptr;
-        for (auto* animation : bar->findChildren<QQuickNumberAnimation*>())
-            if (animation->property() == "__offset") snap = animation;
+        auto* snap = behavior->findChild<QVariantAnimation*>();
         QVERIFY(snap);
         behavior->begin(NestedScrollConnection::Drag);
         behavior->preScroll({ 0, 60 }, NestedScrollConnection::Drag);
         behavior->end(false);
-        QVERIFY(snap->isRunning());
+        QVERIFY(behavior->settling());
+        QCOMPARE(behavior->heightOffset(), -60);
         snap->setCurrentTime(snap->duration() / 2);
-        const auto presented = bar->property("__offset").toReal();
+        const auto presented = behavior->heightOffset();
         QVERIFY(presented < -60 && presented > -88);
+        QCOMPARE(bar->implicitHeight(), 152 + presented);
+        QCOMPARE(bar->property("collapsedFraction").toReal(), behavior->collapsedFraction());
         behavior->begin(NestedScrollConnection::Drag);
-        QVERIFY(! snap->isRunning());
+        QVERIFY(! behavior->settling());
         QCOMPARE(behavior->heightOffset(), presented);
         behavior->postScroll({}, { 0, -10 }, NestedScrollConnection::Drag);
         QCOMPARE(bar->property("__offset").toReal(), presented + 10);
         behavior->end(false);
-        QVERIFY(snap->isRunning());
+        QVERIFY(behavior->settling());
         behavior->setEnabled(false);
-        QVERIFY(! snap->isRunning());
+        QVERIFY(! behavior->settling());
         QCOMPARE(bar->implicitHeight(), 152);
         behavior->setEnabled(true);
         behavior->setHeightOffset(-44);
-        QVERIFY(snap->isRunning());
+        QVERIFY(! behavior->settling());
+        QCOMPARE(bar->implicitHeight(), 108);
+        behavior->end(false);
+        QVERIFY(behavior->settling());
+        QVERIFY(bar->setProperty("animationsEnabled", false));
+        QVERIFY(! behavior->settling());
+        QCOMPARE(behavior->heightOffset(), -88);
+        QVERIFY(bar->setProperty("animationsEnabled", true));
+        behavior->setHeightOffset(-44);
+        behavior->end(false);
+        QVERIFY(behavior->settling());
         delete behavior;
-        QVERIFY(! snap->isRunning());
         QCOMPARE(bar->implicitHeight(), 152);
+    }
+    void appBarScrollAppearance_data() {
+        QTest::addColumn<int>("type");
+        QTest::addColumn<qreal>("fraction");
+        QTest::addColumn<qreal>("topAlpha");
+        QTest::addColumn<qreal>("gray");
+        const qreal fractions[] = { 0, .25, .5, .75, 1 };
+        const qreal alphas[]    = { 0, .007071738, .045670218, .212760247, 1 };
+        const qreal grays[]     = { 0, .012394933, .203700284, .537245349, 1 };
+        for (auto type : { Enum::AppBarType::AppBarMedium, Enum::AppBarType::AppBarLarge })
+            for (int i = 0; i < 5; ++i)
+                QTest::newRow(qPrintable(QString("%1-%2").arg(int(type)).arg(i)))
+                    << int(type) << fractions[i] << alphas[i] << grays[i];
+    }
+    void appBarScrollAppearance() {
+        QFETCH(int, type);
+        QFETCH(qreal, fraction);
+        QFETCH(qreal, topAlpha);
+        QFETCH(qreal, gray);
+        QQmlComponent component(&engine);
+        component.setData(R"(
+import QtQuick
+import Qcm.Material as MD
+MD.AppBar {
+    id: bar
+    width: 320
+    title: "Library"
+    collapsedHeight: 60
+    backgroundColor: "black"
+    scrolledBackgroundColor: "white"
+    scrollBehavior: MD.AppBarScroll {
+        collapseDistance: bar.expandedHeight - bar.collapsedHeight
+    }
+})",
+                          QUrl("qrc:/app-bar-appearance.qml"));
+        std::unique_ptr<QQuickItem> bar(qobject_cast<QQuickItem*>(component.create()));
+        QVERIFY2(bar, qPrintable(component.errorString()));
+        QVERIFY(bar->setProperty("type", type));
+        auto* behavior = bar->property("scrollBehavior").value<AppBarScroll*>();
+        behavior->setHeightOffset(-behavior->collapseDistance() * fraction);
+        auto* background = bar->property("background").value<QQuickItem*>();
+        QVERIFY(background);
+        const auto color = background->property("color").value<QColor>();
+        QVERIFY(std::abs(color.redF() - gray) < .0003);
+        QVERIFY(std::abs(color.greenF() - gray) < .0003);
+        QVERIFY(std::abs(color.blueF() - gray) < .0003);
+        auto titles = bar->findChildren<QQuickText*>();
+        titles.removeIf([](QQuickText* text) {
+            return text->text() != "Library";
+        });
+        QCOMPARE(titles.size(), 2);
+        for (auto* title : titles) {
+            const bool expanded = title->parentItem()->y() == 60;
+            QVERIFY(std::abs(title->opacity() - (expanded ? 1 - fraction : topAlpha)) < .00001);
+            if (expanded && fraction == 0) {
+                const auto baseline = title->y() + title->baselineOffset();
+                const auto expected = type == int(Enum::AppBarType::AppBarMedium) ? 24 : 28;
+                QCOMPARE(title->parentItem()->height() - baseline, expected);
+            }
+        }
+    }
+    void appBarContentOverlap_data() {
+        QTest::addColumn<bool>("reverse");
+        QTest::newRow("normal") << false;
+        QTest::newRow("reverse") << true;
+    }
+    void appBarContentOverlap() {
+        QFETCH(bool, reverse);
+        AppBarScroll bar;
+        bar.setCollapseDistance(100);
+        bar.setMode(AppBarScroll::Pinned);
+        bar.setReverseLayout(reverse);
+        const qreal direction = reverse ? -1 : 1;
+        QCOMPARE(bar.postScroll(
+                     { 0, 40 * direction }, { 0, 60 * direction }, NestedScrollConnection::Drag),
+                 QPointF());
+        QCOMPARE(bar.contentOffset(), 40);
+        QCOMPARE(bar.overlappedFraction(), .4);
+        QCOMPARE(bar.heightOffset(), 0);
+        bar.postScroll({ 0, -10 * direction }, {}, NestedScrollConnection::Drag);
+        QCOMPARE(bar.contentOffset(), 30);
+        bar.setContentAtStart(false);
+        bar.setContentAtStart(true);
+        QCOMPARE(bar.contentOffset(), 0);
+        bar.postScroll({ 0, -40 * direction }, {}, NestedScrollConnection::Drag);
+        QCOMPARE(bar.overlappedFraction(), 0);
+        bar.setContentAtStart(false);
+        QCOMPARE(bar.overlappedFraction(), 1);
+        bar.setCollapseDistance(0);
+        bar.postScroll({ 0, 20 * direction }, {}, NestedScrollConnection::Drag);
+        QCOMPARE(bar.overlappedFraction(), 1);
+        bar.setEnabled(false);
+        QCOMPARE(bar.overlappedFraction(), 0);
+    }
+    void appBarSingleRowBackground() {
+        QQmlComponent component(&engine);
+        component.setData(R"(
+import QtQuick
+import Qcm.Material as MD
+MD.AppBar {
+    type: MD.Enum.AppBarSmall
+    animationsEnabled: false
+    backgroundColor: "black"
+    scrolledBackgroundColor: "white"
+    scrollBehavior: MD.AppBarScroll { mode: MD.AppBarScroll.Pinned; collapseDistance: 64 }
+})",
+                          QUrl("qrc:/app-bar-single-row.qml"));
+        std::unique_ptr<QQuickItem> bar(qobject_cast<QQuickItem*>(component.create()));
+        QVERIFY2(bar, qPrintable(component.errorString()));
+        auto* behavior   = bar->property("scrollBehavior").value<AppBarScroll*>();
+        auto* background = bar->property("background").value<QQuickItem*>();
+        QVERIFY(background);
+        behavior->setContentOffset(.5);
+        QCOMPARE(background->property("color").value<QColor>(), QColor("black"));
+        behavior->setContentOffset(1);
+        QCOMPARE(background->property("color").value<QColor>(), QColor("white"));
+        behavior->reset();
+        QCOMPARE(background->property("color").value<QColor>(), QColor("black"));
+        QVERIFY(bar->setProperty("animationsEnabled", true));
+        behavior->setContentOffset(64);
+        auto* transition = background->findChild<QQuickNumberAnimation*>();
+        QVERIFY(transition);
+        QVERIFY(transition->isRunning());
+        QTRY_VERIFY(background->property("color").value<QColor>() != QColor("black"));
+        QVERIFY(bar->setProperty("type", int(Enum::AppBarType::AppBarMedium)));
+        QCOMPARE(background->property("color").value<QColor>(), QColor("black"));
+    }
+    void appBarSnapCancelledByStateChange() {
+        AppBarScroll bar;
+        bar.setCollapseDistance(100);
+        bar.begin(NestedScrollConnection::Drag);
+        bar.setHeightOffset(-60);
+        connect(&bar, &AppBarScroll::activeChanged, &bar, [&] {
+            if (! bar.active()) bar.reset();
+        });
+        bar.end(false);
+        QVERIFY(! bar.settling());
+        QCOMPARE(bar.heightOffset(), 0);
+
+        AppBarScroll stopped;
+        stopped.setCollapseDistance(100);
+        stopped.setHeightOffset(-60);
+        stopped.end(false);
+        QVERIFY(stopped.settling());
+        connect(&stopped, &AppBarScroll::settlingChanged, &stopped, [&] {
+            if (! stopped.settling()) stopped.setEnabled(false);
+        });
+        stopped.begin(NestedScrollConnection::Drag);
+        QVERIFY(! stopped.enabled());
+        QVERIFY(! stopped.active());
+        QVERIFY(! stopped.settling());
+    }
+    void oklabInterpolation() {
+        const auto middle =
+            Util::mixColorOklab(QColor::fromRgbF(0, 0, 0, .2), QColor::fromRgbF(1, 1, 1, .8), .5);
+        // Neutral Oklab L=.5 corresponds to linear RGB=.125, not sRGB=.5.
+        QVERIFY(std::abs(middle.redF() - .388572859) < .0001);
+        QVERIFY(std::abs(middle.greenF() - .388572859) < .0001);
+        QVERIFY(std::abs(middle.blueF() - .388572859) < .0001);
+        QVERIFY(std::abs(middle.alphaF() - .5) < .0001);
+        const auto chromatic = Util::mixColorOklab(Qt::red, Qt::blue, .5);
+        QVERIFY(std::abs(chromatic.redF() - .550441) < .001);
+        QVERIFY(std::abs(chromatic.greenF() - .325621) < .001);
+        QVERIFY(std::abs(chromatic.blueF() - .636501) < .001);
+        QCOMPARE(Util::mixColorOklab(Qt::red, Qt::blue, -1), QColor(Qt::red));
+        QCOMPARE(Util::mixColorOklab(Qt::red, Qt::blue, 2), QColor(Qt::blue));
+        QCOMPARE(Util::mixColorOklab(Qt::red, Qt::blue, qQNaN()), QColor(Qt::red));
     }
     void appBarReverseAndCancellation() {
         AppBarScroll bar;
@@ -252,6 +432,7 @@ MD.AppBar {
     }
     void appBarWheelBeforeContent() {
         AppBarScroll bar;
+        bar.setAnimationsEnabled(false);
         bar.setCollapseDistance(40);
         auto* config =
             qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(inner));
@@ -345,7 +526,12 @@ MD.AppBar {
         QCOMPARE(bar.heightOffset(), -20);
         QCOMPARE(inner->contentY(), 0);
         mouse(QEvent::MouseButtonRelease, { 100, 110 }, 1220);
+        QVERIFY(bar.settling());
+        auto* snap = bar.findChild<QVariantAnimation*>();
+        QVERIFY(snap);
+        snap->setCurrentTime(snap->duration());
         QCOMPARE(bar.heightOffset(), 0);
+        QVERIFY(! bar.settling());
     }
     void appBarShortContent() {
         QFETCH(bool, owned);

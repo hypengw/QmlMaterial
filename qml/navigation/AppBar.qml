@@ -16,53 +16,18 @@ MD.ToolBarBase {
     property bool animationsEnabled: true
     property color backgroundColor: scrollBehavior ? MD.MProp.color.surface : mdState.backgroundColor
     property color scrolledBackgroundColor: MD.MProp.color.surface_container
-    readonly property real collapsedFraction: expandedHeight > collapsedHeight ? Math.min(1, Math.max(0, -__offset / (expandedHeight - collapsedHeight))) : 0
-    property real __offset: 0
+    readonly property real collapsedFraction: scrollBehavior && scrollBehavior.enabled ? scrollBehavior.collapsedFraction : 0
+    readonly property real __offset: scrollBehavior && scrollBehavior.enabled ? scrollBehavior.heightOffset : 0
     property bool __complete: false
-    function __syncOffset(animate = true) {
-        m_snap.stop();
-        const target = scrollBehavior && scrollBehavior.enabled ? scrollBehavior.heightOffset : 0;
-        if (__complete && animate && animationsEnabled && scrollBehavior && !scrollBehavior.active) {
-            m_snap.from = __offset;
-            m_snap.to = target;
-            m_snap.start();
-        } else {
-            __offset = target;
-        }
-    }
-    onScrollBehaviorChanged: __syncOffset(false)
-    onExpandedHeightChanged: __syncOffset(false)
-    onCollapsedHeightChanged: __syncOffset(false)
-    onAnimationsEnabledChanged: __syncOffset(false)
     Component.onCompleted: {
         __complete = true;
-        __syncOffset(false);
     }
-    NumberAnimation {
-        id: m_snap
-        target: control
-        property: "__offset"
-        duration: MD.Token.duration.short4
-        easing: MD.Token.easing.emphasized
-    }
-    Connections {
+    Binding {
         target: control.scrollBehavior
-        function onHeightOffsetChanged() {
-            control.__syncOffset();
-        }
-        function onCollapseDistanceChanged() {
-            control.__syncOffset(false);
-        }
-        function onEnabledChanged() {
-            control.__syncOffset(false);
-        }
-        function onModeChanged() {
-            control.__syncOffset(false);
-        }
-        function onInputStarted() {
-            m_snap.stop();
-            control.scrollBehavior.heightOffset = control.__offset;
-        }
+        property: "animationsEnabled"
+        value: control.animationsEnabled
+        when: control.scrollBehavior !== null
+        restoreMode: Binding.RestoreBindingOrValue
     }
     property MD.StateAppBar mdState: MD.StateAppBar {
         item: control
@@ -91,7 +56,7 @@ MD.ToolBarBase {
         clip: control.scrollBehavior !== null
 
         Item {
-            y: control.scrollBehavior && control.type >= MD.Enum.AppBarMedium ? 64 : 0
+            y: control.scrollBehavior && control.type >= MD.Enum.AppBarMedium ? control.collapsedHeight : 0
             width: parent.width
             height: Math.max(0, parent.height - y)
             clip: control.scrollBehavior !== null && control.type >= MD.Enum.AppBarMedium
@@ -125,7 +90,11 @@ MD.ToolBarBase {
                     restoreMode: Binding.RestoreNone
                     m_text_row.implicitWidth: 0
                     m_title.x: 16 - control.leftPadding
-                    m_title.y: m_title.parent.height - m_title.height - (control.type === MD.Enum.AppBarMedium ? 24 : 28)
+                    m_title.y: {
+                        const padding = control.type === MD.Enum.AppBarMedium ? 24 : 28;
+                        const bottomPadding = control.scrollBehavior ? Math.max(0, Math.min(padding - (m_title.height - m_title.baselineOffset), Math.max(0, control.expandedHeight - control.collapsedHeight) - m_title.height)) : padding;
+                        return m_title.parent.height - m_title.height - bottomPadding;
+                    }
                     m_title.horizontalAlignment: control.mirrored ? Text.AlignRight : Text.AlignLeft
                     m_title.width: m_title.parent.width - 16 * 2
                 }
@@ -142,13 +111,13 @@ MD.ToolBarBase {
             wrapMode: Text.NoWrap
             horizontalAlignment: control.mirrored ? Text.AlignRight : Text.AlignLeft
             x: m_bar_row.x + m_text_row.x
-            y: (64 - height) / 2
+            y: (control.collapsedHeight - height) / 2
             width: m_text_row.width
         }
 
         RowLayout {
             id: m_bar_row
-            y: (64 - height) / 2.0
+            y: ((control.scrollBehavior && control.type >= MD.Enum.AppBarMedium ? control.collapsedHeight : 64) - height) / 2.0
             width: parent.width
             layoutDirection: control.layoutDirection
 
@@ -179,10 +148,18 @@ MD.ToolBarBase {
 
         implicitHeight: control.mdState.containerHeight
         corners: MD.Util.corners(control.radius, 0)
-        color: control.scrollBehavior && control.scrollBehavior.overlapped ? control.scrolledBackgroundColor : control.backgroundColor
+        property real __overlapFraction: control.scrollBehavior && control.scrollBehavior.overlappedFraction > 0.01 ? 1 : 0
+        color: control.scrollBehavior ? MD.Util.mixColorOklab(control.backgroundColor, control.scrolledBackgroundColor, control.type >= MD.Enum.AppBarMedium ? MD.Util.bezierY(control.collapsedFraction, 0.4, 0, 1, 1) : __overlapFraction) : control.backgroundColor
         opacity: control.mdState.backgroundOpacity
+        Behavior on __overlapFraction {
+            enabled: control.__complete && control.animationsEnabled && control.scrollBehavior !== null && control.type < MD.Enum.AppBarMedium
+            NumberAnimation {
+                duration: MD.Token.duration.short4
+                easing: MD.Token.easing.standard
+            }
+        }
         Behavior on color {
-            enabled: control.__complete && control.animationsEnabled
+            enabled: control.__complete && control.animationsEnabled && control.scrollBehavior === null
             ColorAnimation {
                 duration: MD.Token.duration.short4
                 easing: MD.Token.easing.standard

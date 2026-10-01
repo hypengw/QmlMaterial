@@ -55,6 +55,9 @@ public:
     Q_INVOKABLE static QColor transparent(QColor in, float alpha) noexcept;
     Q_INVOKABLE static QColor hoverColor(QColor in) noexcept;
     Q_INVOKABLE static QColor pressColor(QColor in) noexcept;
+    // QColor channels are interpreted as sRGB; alpha is interpolated linearly.
+    Q_INVOKABLE static QML_MATERIAL_API QColor mixColorOklab(QColor from, QColor to,
+                                                             qreal progress) noexcept;
 
     Q_INVOKABLE static qreal devicePixelRatio(QQuickItem* in);
 

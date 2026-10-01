@@ -3,17 +3,18 @@ import Qcm.Material as MD
 
 Rectangle {
     width: 720
-    height: 600
+    height: 920
     color: MD.Token.color.surface
     Column {
         x: 16
         y: 16
+        width: parent.width - 32
         spacing: 24
         Repeater {
-            model: [0, -44, -88]
+            model: [0, -22, -44, -66, -88]
             MD.AppBar {
                 required property real modelData
-                width: 688
+                width: parent.width
                 type: MD.Enum.AppBarLarge
                 title: 'A library of places and memories'
                 animationsEnabled: false
@@ -35,7 +36,7 @@ Rectangle {
             }
         }
         MD.AppBar {
-            width: 280
+            width: Math.min(280, parent.width)
             layoutDirection: Qt.RightToLeft
             type: MD.Enum.AppBarMedium
             title: 'A long title with actions'
@@ -52,6 +53,17 @@ Rectangle {
                     icon.name: 'search'
                 }
             ]
+        }
+        MD.AppBar {
+            width: parent.width
+            type: MD.Enum.AppBarSmall
+            title: 'Pinned over scrolled content'
+            animationsEnabled: false
+            scrollBehavior: MD.AppBarScroll {
+                mode: MD.AppBarScroll.Pinned
+                collapseDistance: 64
+                contentAtStart: false
+            }
         }
     }
 }
