@@ -9,7 +9,7 @@ MD.PopupBase {
     property int sheetType: MD.Enum.BottomSheetModal
     property bool showDragHandle: true
     property bool nestedScrollEnabled: false
-    property bool dismissOnDragDown: sheetType === MD.Enum.BottomSheetModal
+    property bool dismissOnDragDown: true
     property real dragDismissThreshold: _collapsedHeight * 0.25
     property real lowHeight: -1
     property real collapsedHeight: -1

@@ -1030,27 +1030,32 @@ MD.Scrollable {
         mouse(QEvent::MouseButtonRelease, { 100, 130 }, 1240);
     }
     void sheetRelease_data() {
+        QTest::addColumn<bool>("modal");
         QTest::addColumn<bool>("nested");
         QTest::addColumn<QString>("gesture");
         QTest::addColumn<bool>("dismiss");
-        for (bool nested : { false, true }) {
-            for (const auto& gesture : { "fast",
-                                         "paused",
-                                         "rest",
-                                         "reverse",
-                                         "unstable",
-                                         "distance",
-                                         "cancel",
-                                         "threshold" }) {
-                const auto name = QByteArray(nested ? "nested-" : "direct-") + gesture;
-                QTest::newRow(name.constData())
-                    << nested << QString::fromLatin1(gesture)
-                    << (QByteArray(gesture) == "fast" || QByteArray(gesture) == "distance" ||
-                        QByteArray(gesture) == "threshold");
+        for (bool modal : { true, false }) {
+            for (bool nested : { false, true }) {
+                for (const auto& gesture : { "fast",
+                                             "paused",
+                                             "rest",
+                                             "reverse",
+                                             "unstable",
+                                             "distance",
+                                             "cancel",
+                                             "threshold" }) {
+                    const auto name = QByteArray(modal ? "modal-" : "standard-") +
+                                      (nested ? "nested-" : "direct-") + gesture;
+                    QTest::newRow(name.constData())
+                        << modal << nested << QString::fromLatin1(gesture)
+                        << (QByteArray(gesture) == "fast" || QByteArray(gesture) == "distance" ||
+                            QByteArray(gesture) == "threshold");
+                }
             }
         }
     }
     void sheetRelease() {
+        QFETCH(bool, modal);
         QFETCH(bool, nested);
         QFETCH(QString, gesture);
         QFETCH(bool, dismiss);
@@ -1086,6 +1091,12 @@ Item {
         root->setParentItem(window.contentItem());
         auto* sheet = qobject_cast<Popup*>(root->property("sheet").value<QObject*>());
         QVERIFY(sheet);
+        QVERIFY(sheet->setProperty("sheetType",
+                                   int(modal ? Enum::BottomSheetType::BottomSheetModal
+                                             : Enum::BottomSheetType::BottomSheetStandard)));
+        QVERIFY(sheet->property("dismissOnDragDown").toBool());
+        QCOMPARE(sheet->modal(), modal);
+        if (! modal) QVERIFY(sheet->setProperty("lowHeight", 176));
         sheet->open();
         QTRY_VERIFY(sheet->isOpened());
         auto* list   = sheet->findChild<QQuickFlickable*>("sheetList");
@@ -1158,7 +1169,61 @@ Item {
         }
         QCOMPARE(scroll->dragVelocity(), QPointF());
     }
+    void standardSheetDragDismissDisabled() {
+        root.reset();
+        QQmlComponent component(&engine);
+        component.setData(R"(
+import QtQuick
+import Qcm.Material as MD
+Item {
+    id: page; width: 300; height: 500
+    property MD.BottomSheet sheet: MD.BottomSheet {
+        parent: page
+        sheetType: MD.Enum.BottomSheetStandard
+        dismissOnDragDown: false
+        animationDuration: 0
+        preferredContentHeight: 300
+        collapsedHeight: 200
+        Item { width: page.sheet.contentViewportWidth; height: 300 }
+    }
+})",
+                          QUrl("qrc:/standard-sheet-drag-disabled.qml"));
+        QVERIFY2(component.isReady(), qPrintable(component.errorString()));
+        root.reset(qobject_cast<QQuickItem*>(component.create()));
+        QVERIFY(root);
+        window.resize(300, 500);
+        root->setParentItem(window.contentItem());
+        auto* sheet = qobject_cast<Popup*>(root->property("sheet").value<QObject*>());
+        QVERIFY(sheet);
+        sheet->open();
+        QTRY_VERIFY(sheet->isOpened());
+        auto* scroll = sheet->findChild<Flickable*>();
+        QVERIFY(scroll);
+        QSignalSpy frames(&window, &QQuickWindow::afterAnimating);
+        window.update();
+        QTRY_VERIFY(! frames.isEmpty());
+        QSignalSpy released(scroll, &Flickable::dragReleased);
+        QSignalSpy closed(sheet, &Popup::closed);
+        const auto start = sheet->popupItem()->mapToScene({ 100, 24 });
+        mouse(QEvent::MouseButtonPress, start, 1000);
+        mouse(QEvent::MouseMove, start + QPointF(0, 120), 1020);
+        QVERIFY(scroll->isDragging());
+        QVERIFY(scroll->contentY() < 0);
+        mouse(QEvent::MouseButtonRelease, start + QPointF(0, 120), 1240);
+        QCOMPARE(released.size(), 1);
+        QTRY_VERIFY(! scroll->isMoving());
+        QVERIFY(sheet->isOpened());
+        QVERIFY(! sheet->closing());
+        QCOMPARE(closed.size(), 0);
+        QCOMPARE(sheet->property("_dismissDistance").toReal(), 0);
+    }
+    void sheetListPriority_data() {
+        QTest::addColumn<bool>("modal");
+        QTest::newRow("modal") << true;
+        QTest::newRow("standard") << false;
+    }
     void sheetListPriority() {
+        QFETCH(bool, modal);
         root.reset();
         QQmlComponent component(&engine);
         component.setData(R"(
@@ -1189,6 +1254,9 @@ Item {
         root->setParentItem(window.contentItem());
         auto* sheet = qobject_cast<Popup*>(root->property("sheet").value<QObject*>());
         QVERIFY(sheet);
+        QVERIFY(sheet->setProperty("sheetType",
+                                   int(modal ? Enum::BottomSheetType::BottomSheetModal
+                                             : Enum::BottomSheetType::BottomSheetStandard)));
         sheet->open();
         QTRY_VERIFY(sheet->isOpened());
         auto* list   = sheet->findChild<QQuickFlickable*>("sheetList");
@@ -1254,8 +1322,8 @@ Item {
         QCOMPARE(sheet->property("_scrimOpacity").toReal(), 1);
         dragScrim->complete();
         QCOMPARE(sheet->property("_scrimOpacity").toReal(), 0);
-        QVERIFY(sheet->modal());
-        QVERIFY(sheet->dim());
+        QCOMPARE(sheet->modal(), modal);
+        QCOMPARE(sheet->dim(), modal);
         mouse(QEvent::MouseMove, start + QPointF(0, 150), 1070);
         QCOMPARE(scroll->contentY(), -100);
         QVERIFY(scroll->dragVelocity().y() > 0);
