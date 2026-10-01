@@ -13,11 +13,33 @@ MD.Control {
     }
     property alias refreshing: m_state.refreshing
     property alias threshold: m_state.threshold
+    property bool shapeLoading: false
     property bool animationsEnabled: true
     readonly property real presentedOffset: __offset
     property real __offset: 0
     property bool __complete: false
     signal refreshRequested
+    Component {
+        id: c_circular_loading
+        MD.CircularIndicator {
+            implicitWidth: 16
+            implicitHeight: 16
+            padding: strokeWidth / 2
+            strokeWidth: 2.5
+            color: MD.MProp.color.on_surface_variant
+            running: true
+        }
+    }
+    Component {
+        id: c_shape_loading
+        MD.BusyIndicator {
+            implicitWidth: 24
+            implicitHeight: 24
+            indicatorSize: 24
+            colors: [MD.MProp.color.on_surface_variant]
+            running: true
+        }
+    }
     property Component indicator: MD.ElevationRectangle {
         implicitWidth: 40
         implicitHeight: 40
@@ -90,13 +112,7 @@ MD.Control {
                     easing: MD.Token.easing.standard
                 }
             }
-            sourceComponent: MD.CircularIndicator {
-                implicitWidth: 16
-                implicitHeight: 16
-                strokeWidth: 2.5
-                color: MD.MProp.color.on_surface_variant
-                running: true
-            }
+            sourceComponent: control.shapeLoading ? c_shape_loading : c_circular_loading
         }
     }
     function __syncOffset(animate = true) {

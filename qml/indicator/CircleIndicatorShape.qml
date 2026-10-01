@@ -7,7 +7,7 @@ MD.Shape {
     property color strokeColor: MD.MProp.color.primary
     property color inactiveColor: "transparent"
     property real strokeWidth: 4
-    readonly property int radius: height / 2
+    readonly property real radius: height / 2
     readonly property vector2d center: Qt.vector2d(radius, radius)
 
     property real startAngle: 0

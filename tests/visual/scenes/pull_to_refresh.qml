@@ -2,7 +2,7 @@ import QtQuick
 import Qcm.Material as MD
 
 Rectangle {
-    width: 640
+    width: 848
     height: 280
     color: MD.Token.color.surface
     Row {
@@ -10,14 +10,15 @@ Rectangle {
         x: 16
         y: 16
         Repeater {
-            model: [0.65, 1.3, 1]
+            model: [0.65, 1.3, 1, 1]
             MD.PullToRefresh {
                 required property real modelData
                 required property int index
                 width: 192
                 height: 248
                 animationsEnabled: false
-                refreshing: index === 2
+                refreshing: index >= 2
+                shapeLoading: index === 3
                 layoutDirection: index === 1 ? Qt.RightToLeft : Qt.LeftToRight
                 // Fixed presentation samples; native gesture state is exercised separately.
                 Component.onCompleted: __offset = threshold * modelData

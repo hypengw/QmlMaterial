@@ -1616,8 +1616,20 @@ MD.Page {
                             }
                             ComponentCard {
                                 title: 'Pull to refresh'
-                                MD.Button {
+                                MD.SplitButton {
                                     text: m_pull_refresh.refreshing ? 'Finish refresh' : 'Refresh'
+                                    menu: MD.Menu {
+                                        MD.MenuItem {
+                                            text: 'Circular loading'
+                                            selected: !m_pull_refresh.shapeLoading
+                                            onTriggered: m_pull_refresh.shapeLoading = false
+                                        }
+                                        MD.MenuItem {
+                                            text: 'Shape loading'
+                                            selected: m_pull_refresh.shapeLoading
+                                            onTriggered: m_pull_refresh.shapeLoading = true
+                                        }
+                                    }
                                     onClicked: {
                                         if (m_pull_refresh.refreshing)
                                             m_refresh_list.model += 1;

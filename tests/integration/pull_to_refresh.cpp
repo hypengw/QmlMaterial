@@ -19,7 +19,13 @@ private slots:
         QTest::failOnWarning(
             QRegularExpression(".*(Binding loop|TypeError|ReferenceError|Unable to assign).*"));
     }
+    void visualLifecycle_data() {
+        QTest::addColumn<bool>("shapeLoading");
+        QTest::newRow("circular") << false;
+        QTest::newRow("shape") << true;
+    }
     void visualLifecycle() {
+        QFETCH(bool, shapeLoading);
         QQmlEngine engine;
         engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));
         QQmlComponent component(&engine);
@@ -35,6 +41,7 @@ MD.PullToRefresh {
         window.resize(300, 400);
         std::unique_ptr<QQuickItem> item(qobject_cast<QQuickItem*>(component.create()));
         QVERIFY2(item, qPrintable(component.errorString()));
+        item->setProperty("shapeLoading", shapeLoading);
         item->setParentItem(window.contentItem());
         window.show();
         QVERIFY(QTest::qWaitForWindowExposed(&window));
@@ -71,6 +78,21 @@ MD.PullToRefresh {
         QVERIFY(spinner);
         QTRY_VERIFY(spinner->item());
         QPointer<QObject> activeSpinner = spinner->item();
+        QCOMPARE(indicator->size(), QSizeF(40, 40));
+        QCOMPARE(spinner->size(), shapeLoading ? QSizeF(24, 24) : QSizeF(16, 16));
+        QCOMPARE(spinner->position(), shapeLoading ? QPointF(8, 8) : QPointF(12, 12));
+        if (shapeLoading) {
+            QCOMPARE(activeSpinner->property("indicatorSize").toInt(), 24);
+            QVERIFY(activeSpinner->property("running").toBool());
+        } else {
+            auto* content = activeSpinner->property("contentItem").value<QQuickItem*>();
+            QVERIFY(content);
+            QCOMPARE(content->size(), QSizeF(13.5, 13.5));
+            auto* arcLoader = content->findChild<QQuickLoader*>();
+            QVERIFY(arcLoader);
+            QTRY_VERIFY(arcLoader->item());
+            QCOMPARE(arcLoader->item()->property("radius").toReal(), 6.75);
+        }
         item->setVisible(false);
         QVERIFY(! spinner->active());
         QVERIFY(! spinner->item());
@@ -82,6 +104,13 @@ MD.PullToRefresh {
         QCOMPARE(item->property("presentedOffset").toReal(), 80);
         QCOMPARE(spinner->active(), true);
         QVERIFY(spinner->item());
+        QPointer<QObject> previousSpinner = spinner->item();
+        item->setProperty("shapeLoading", ! shapeLoading);
+        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+        QVERIFY(! previousSpinner);
+        QVERIFY(original);
+        QCOMPARE(spinner->size(), shapeLoading ? QSizeF(16, 16) : QSizeF(24, 24));
+        QCOMPARE(spinner->item()->property("indicatorSize").isValid(), ! shapeLoading);
         item->setProperty("indicator", item->property("customIndicator"));
         QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
         QVERIFY(! original);
