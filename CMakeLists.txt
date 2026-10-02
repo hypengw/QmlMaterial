@@ -709,10 +709,12 @@ if(QM_USE_PCH)
     <QtCore/QVariant>
     <QtGui/QColor>
     <QtGui/QFont>
+    <QtGui/QPainterPath>
     <QtQml/QQmlComponent>
     <QtQml/QQmlEngine>
     <QtQml/qqmlprivate.h>
-    <QtQuick/QQuickItem>)
+    <QtQuick/QQuickItem>
+    <QtQuick/QQuickWindow>)
   target_compile_options(${LIBNAME} PRIVATE
     "$<$<CXX_COMPILER_ID:Clang,AppleClang>:-Xclang;-fno-pch-timestamp>")
 endif()
