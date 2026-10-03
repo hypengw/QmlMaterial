@@ -8,6 +8,7 @@
 #include <QGuiApplication>
 #include <QQmlInfo>
 #include <QQmlEngine>
+#include <QQmlProperty>
 #include <QStyleHints>
 #include <QtQuick/private/qquicktransition_p.h>
 #include <QtQuick/private/qquicktransitionmanager_p_p.h>
@@ -50,9 +51,14 @@ void              Popup::setContentItem(QQuickItem* value) { m_surface->setConte
 QQuickItem*       Popup::background() const { return m_surface->background(); }
 void              Popup::setBackground(QQuickItem* value) { m_surface->setBackground(value); }
 qreal             Popup::implicitWidth() const { return m_surface->implicitWidth(); }
-void              Popup::setImplicitWidth(qreal value) { m_surface->setImplicitWidth(value); }
+void              Popup::setImplicitWidth(qreal value) {
+    // Replace the surface's default binding when the popup supplies its own size.
+    QQmlProperty::write(m_surface, QStringLiteral("implicitWidth"), value);
+}
 qreal             Popup::implicitHeight() const { return m_surface->implicitHeight(); }
-void              Popup::setImplicitHeight(qreal value) { m_surface->setImplicitHeight(value); }
+void              Popup::setImplicitHeight(qreal value) {
+    QQmlProperty::write(m_surface, QStringLiteral("implicitHeight"), value);
+}
 qreal             Popup::contentWidth() const { return m_surface->contentWidth(); }
 void              Popup::setContentWidth(qreal value) { m_surface->setContentWidth(value); }
 void              Popup::resetContentWidth() { m_surface->resetContentWidth(); }

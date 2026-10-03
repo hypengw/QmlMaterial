@@ -333,6 +333,28 @@ private Q_SLOTS:
         QVERIFY(surface->contains(QPointF(100, 100)));
         popup->close();
     }
+    void popupExplicitImplicitSize() {
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            MD.Dialog {
+                implicitWidth: 720
+                implicitHeight: 520
+                contentItem: Item { implicitWidth: 100; implicitHeight: 80 }
+            }
+        )", QUrl());
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* popup = qobject_cast<qml_material::Popup*>(object.get());
+        QVERIFY(popup);
+        QCOMPARE(popup->implicitWidth(), 720);
+        QCOMPARE(popup->implicitHeight(), 520);
+        popup->contentItem()->setImplicitWidth(900);
+        popup->contentItem()->setImplicitHeight(800);
+        QCOMPARE(popup->implicitWidth(), 720);
+        QCOMPARE(popup->implicitHeight(), 520);
+    }
     void bottomSheetInputRegion() {
         QQmlComponent component(&m_engine);
         component.setData(R"(
