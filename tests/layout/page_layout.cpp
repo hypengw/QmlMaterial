@@ -38,6 +38,94 @@ private Q_SLOTS:
         m_window.create();
     }
 
+    void cachedPageStartsTransparent() {
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            Item {
+                property alias pageOpacity: page.opacity
+                property alias pageScale: page.scale
+                property alias busy: stack.busy
+                function enter() {
+                    stack.pushItem(page, MD.PageStack.Immediate);
+                    stack.replaceCurrentItem(other, MD.PageStack.Immediate);
+                    return stack.replaceCurrentItem(page);
+                }
+                function finish() { stack.completeTransition(); }
+                MD.PageStack { id: stack; width: 600; height: 400 }
+                Item {
+                    visible: false
+                    Item { id: page }
+                    Item { id: other }
+                }
+            }
+        )", QUrl("qrc:/tests/cached-page-fade.qml"));
+        auto object = std::unique_ptr<QObject>(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        QVariant accepted;
+        QVERIFY(QMetaObject::invokeMethod(object.get(), "enter", Q_RETURN_ARG(QVariant, accepted)));
+        QVERIFY(accepted.toBool());
+        QVERIFY(object->property("busy").toBool());
+        QCOMPARE(object->property("pageOpacity").toReal(), 0.0);
+        QCOMPARE(object->property("pageScale").toReal(), 0.92);
+        QVERIFY(QMetaObject::invokeMethod(object.get(), "finish"));
+        QCOMPARE(object->property("pageOpacity").toReal(), 1.0);
+        QCOMPARE(object->property("pageScale").toReal(), 1.0);
+        QVERIFY(!object->property("busy").toBool());
+    }
+
+    void stackSizesPageBeforeShowing() {
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            Item {
+                property size visibleSize
+                property size visibleImageSize
+                property int showCount: 0
+                function showPage() { return stack.pushItem(page, MD.PageStack.Immediate); }
+                function revisitPage() {
+                    stack.replaceCurrentItem(other, MD.PageStack.Immediate);
+                    return stack.replaceCurrentItem(page, MD.PageStack.Immediate);
+                }
+                MD.PageStack { id: stack; width: 600; height: 400 }
+                Item {
+                    visible: false
+                    Item { id: other }
+                    Item {
+                        id: page
+                        implicitWidth: 300
+                        implicitHeight: 200
+                        onVisibleChanged: {
+                            if (visible) {
+                                showCount++;
+                                visibleSize = Qt.size(width, height);
+                                visibleImageSize = image.sourceSize;
+                            }
+                        }
+                        MD.Image {
+                            id: image
+                            sourceSize: Qt.size(page.width / 3, page.width / 3)
+                        }
+                    }
+                }
+            }
+        )", QUrl("qrc:/tests/stack-page-size.qml"));
+        auto object = std::unique_ptr<QObject>(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        QVariant accepted;
+        QVERIFY(QMetaObject::invokeMethod(object.get(), "showPage", Q_RETURN_ARG(QVariant, accepted)));
+        QVERIFY(accepted.toBool());
+        QCOMPARE(object->property("visibleSize").toSizeF(), QSizeF(600, 400));
+        QCOMPARE(object->property("visibleImageSize").toSizeF(), QSizeF(200, 200));
+        QVERIFY(QMetaObject::invokeMethod(object.get(), "revisitPage", Q_RETURN_ARG(QVariant, accepted)));
+        QVERIFY(accepted.toBool());
+        QCOMPARE(object->property("showCount").toInt(), 2);
+        QCOMPARE(object->property("visibleSize").toSizeF(), QSizeF(600, 400));
+        QCOMPARE(object->property("visibleImageSize").toSizeF(), QSizeF(200, 200));
+    }
+
     void inheritance_data() {
         QTest::addColumn<QByteArray>("property");
         QTest::addColumn<QVariant>("value");

@@ -1,7 +1,7 @@
 #include "qml_material/control/page_stack.hpp"
 #include "page_stack_entries_p.hpp"
 #include "qml_material/token/token.hpp"
-#include <QtQuick/private/qquickanimator_p.h>
+#include <QtQuick/private/qquickanimation_p.h>
 #include <QtQuick/private/qquickitem_p.h>
 #include <QtQuick/private/qquicktransition_p.h>
 #include <QtQuick/private/qquicktransitionmanager_p_p.h>
@@ -16,15 +16,17 @@ namespace
 {
 QQuickTransition* fadeThrough(QObject* owner, bool entering) {
     auto* transition = new QQuickTransition(owner);
-    auto* opacity    = new QQuickOpacityAnimator(transition);
-    auto* scale      = new QQuickScaleAnimator(transition);
+    // Cached pages already have scene-graph nodes; set their initial values before rendering.
+    auto* opacity = new QQuickNumberAnimation(transition);
+    auto* scale   = new QQuickNumberAnimation(transition);
+    opacity->setProperty(QStringLiteral("opacity"));
+    scale->setProperty(QStringLiteral("scale"));
     opacity->setFrom(entering ? 0 : 1);
     opacity->setTo(entering ? 1 : 0);
     scale->setFrom(entering ? .92 : 1);
     scale->setTo(entering ? 1 : .92);
     auto animations = transition->animations();
-    for (QQuickAnimator* animator :
-         { static_cast<QQuickAnimator*>(opacity), static_cast<QQuickAnimator*>(scale) }) {
+    for (auto* animator : { opacity, scale }) {
         animator->setDuration(qRound(token::Duration {}.long1));
         animator->setEasing(token::Easing {}.emphasized());
         animator->componentComplete();
@@ -215,9 +217,18 @@ void PageStack::synchronize() {
             // Publish ownership before reparenting can invoke application callbacks.
             attached(item)->update(this, state->entries.indexOf(entry.id), PageStack::Activating);
             if (! guard || ! item) return;
+            // Reparenting from a hidden cache must not reveal an unsized page.
+            item->setVisible(false);
+            if (! guard || ! item) return;
             item->setParentItem(this);
             if (! guard || ! item) return;
         }
+    }
+    layoutPages();
+    if (! guard) return;
+    for (const auto& entry : state->entries.entries()) {
+        QPointer<QQuickItem> item = entry.item;
+        if (! item) continue;
         const auto status =
             entry.status == PageStackEntries::Status::Active     ? PageStack::Active
             : entry.status == PageStackEntries::Status::Entering ? PageStack::Activating
@@ -228,8 +239,6 @@ void PageStack::synchronize() {
         attached(item)->update(this, state->entries.indexOf(entry.id), status);
         if (! guard) return;
     }
-    layoutPages();
-    if (! guard) return;
     if (state->notifiedDepth != depth()) {
         state->notifiedDepth = depth();
         Q_EMIT depthChanged();
