@@ -8,6 +8,7 @@
 #include <QQmlProperty>
 #include <QQuickItem>
 #include <QQuickWindow>
+#include <QRegularExpression>
 #include <QStandardItemModel>
 #include <QtTest>
 #include <algorithm>
@@ -19,6 +20,8 @@
 #include "qml_material/control/popup.hpp"
 #include "qml_material/control/panel.hpp"
 #include "qml_material/control/dialog.hpp"
+#include "qml_material/style/material_state.hpp"
+#include "qml_material/style/theme.hpp"
 #include "qml_material/control/icon_spec.hpp"
 #include "qml_material/control/abstract_button.hpp"
 #include "qml_material/layout/layout_container.hpp"
@@ -332,6 +335,121 @@ private Q_SLOTS:
         QCOMPARE(popup->popupItem(), surface);
         QVERIFY(surface->contains(QPointF(100, 100)));
         popup->close();
+    }
+    void dialogInRecycledDelegate_data() {
+        QTest::addColumn<bool>("reuse");
+        QTest::newRow("reused") << true;
+        QTest::newRow("not-reused") << false;
+    }
+    void dialogInRecycledDelegate() {
+        QFETCH(bool, reuse);
+        QTest::failOnWarning(QRegularExpression(".*TypeError.*"));
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            pragma ComponentBehavior: Bound
+            import QtQuick
+            import Qcm.Material as MD
+            Item {
+                id: root
+                width: 400; height: 500
+                property int rows: 80
+                property bool reuse: true
+                property int pooled: 0
+                property int reused: 0
+                MD.BottomSheet {
+                    objectName: "sheet"
+                    parent: root
+                    animationDuration: 0
+                    preferredContentHeight: 400
+                    MD.VerticalListView {
+                        id: list
+                        objectName: "list"
+                        width: 360; height: 300
+                        model: root.rows
+                        reuseItems: root.reuse
+                        delegate: Item {
+                            required property int index
+                            width: list.contentWidth; height: 64
+                            ListView.onPooled: ++root.pooled
+                            ListView.onReused: ++root.reused
+                            MD.ColorPickerButton { visible: index % 3 === 0 }
+                        }
+                    }
+                }
+            }
+        )",
+                          QUrl());
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* root = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(root);
+        QVERIFY(root->setProperty("reuse", reuse));
+        root->setParentItem(m_window.contentItem());
+        auto* sheet = root->findChild<qml_material::Popup*>("sheet");
+        auto* list  = root->findChild<QQuickItem*>("list");
+        QVERIFY(sheet);
+        QVERIFY(list);
+        sheet->open();
+        QTRY_VERIFY(sheet->isOpened());
+        settle(root);
+        for (int i = 1; i <= 8; ++i) {
+            QVERIFY(list->setProperty("contentY", i * 320));
+            settle(root);
+        }
+        if (reuse) {
+            QVERIFY(root->property("pooled").toInt() > 0);
+            QVERIFY(root->property("reused").toInt() > 0);
+        } else {
+            QCOMPARE(root->property("pooled").toInt(), 0);
+            QCOMPARE(root->property("reused").toInt(), 0);
+        }
+        sheet->close();
+        QTRY_VERIFY(! sheet->isVisible());
+        QVERIFY(root->setProperty("rows", 0));
+        settle(root);
+        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+        QVERIFY(root->setProperty("rows", 80));
+        sheet->open();
+        QTRY_VERIFY(sheet->isOpened());
+        settle(root);
+        sheet->close();
+    }
+    void stateOutlivesContext() {
+        qml_material::MaterialState state;
+        auto                        target = std::make_unique<QObject>();
+        state.setTarget(target.get());
+        QVERIFY(state.ctx());
+        QVERIFY(state.colors());
+        QSignalSpy targetChanged(&state, &qml_material::CommonState::targetChanged);
+        QSignalSpy ctxChanged(&state, &qml_material::CommonState::ctxChanged);
+        QSignalSpy colorsChanged(&state, &qml_material::CommonState::colorsChanged);
+        target.reset();
+        QVERIFY(! state.target());
+        QVERIFY(! state.ctx());
+        QVERIFY(! state.colors());
+        QCOMPARE(targetChanged.size(), 1);
+        QCOMPARE(ctxChanged.size(), 1);
+        QCOMPARE(colorsChanged.size(), 1);
+
+        auto  contextTarget = std::make_unique<QObject>();
+        auto* context       = qobject_cast<qml_material::Theme*>(
+            qmlAttachedPropertiesObject<qml_material::Theme>(contextTarget.get(), true));
+        state.setCtx(context);
+        QCOMPARE(state.ctx(), context);
+        ctxChanged.clear();
+        colorsChanged.clear();
+        contextTarget.reset();
+        QVERIFY(! state.ctx());
+        QVERIFY(! state.colors());
+        QCOMPARE(ctxChanged.size(), 1);
+        QCOMPARE(colorsChanged.size(), 1);
+
+        auto palette = std::make_unique<qml_material::MdColorMgr>();
+        state.setColors(palette.get());
+        colorsChanged.clear();
+        palette.reset();
+        QVERIFY(! state.colors());
+        QCOMPARE(colorsChanged.size(), 1);
     }
     void popupExplicitImplicitSize() {
         QQmlComponent component(&m_engine);

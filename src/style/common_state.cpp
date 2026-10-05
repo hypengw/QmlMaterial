@@ -3,6 +3,7 @@
 #include "qml_material/style/theme.hpp"
 #include "qml_material/util/qt.hpp"
 #include <QQuickItem>
+#include <private/qqmldata_p.h>
 
 namespace qml_material
 {
@@ -57,9 +58,11 @@ void                   CommonState::setTarget(QObject* target) {
     m_target           = target;
     if (target) {
         m_targetDestroyed = connect(target, &QObject::destroyed, this, [this] {
+            m_target = nullptr;
+            // QML marks the whole delegate tree before its C++ children are destroyed.
+            if (QQmlData::wasDeleted(this)) return;
             const QScopedPropertyUpdateGroup group;
             m_targetGeneration = m_targetGeneration.value() + 1;
-            m_target           = nullptr;
             const QPointer<CommonState> guard(this);
             if (! m_explicitContext) updateContext(nullptr);
             if (guard) Q_EMIT targetChanged();
@@ -79,7 +82,7 @@ void CommonState::colorsChange() {
             const QScopedPropertyUpdateGroup group;
             utils::disconnectAll(m_colorConnections);
             m_colors.setValueBypassingBindings(nullptr);
-            m_colors.notify();
+            if (! QQmlData::wasDeleted(this)) m_colors.notify();
         }));
     }
     Q_EMIT colorsChanged();
@@ -139,6 +142,10 @@ void CommonState::updateContext(Theme* context) {
     if (context) {
         m_contextConnections.append(connect(context, &QObject::destroyed, this, [this] {
             utils::disconnectAll(m_contextConnections);
+            if (QQmlData::wasDeleted(this)) {
+                m_context.setValueBypassingBindings(nullptr);
+                return;
+            }
             const QPointer<CommonState> guard(this);
             m_context = nullptr;
             if (guard) Q_EMIT ctxChanged();
