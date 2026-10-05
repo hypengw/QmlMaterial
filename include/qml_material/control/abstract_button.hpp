@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QTimer>
+#include <QtCore/private/qproperty_p.h>
 #include "qml_material/control/control.hpp"
 #include "qml_material/control/icon_spec.hpp"
 #include "qml_material/control/action.hpp"
@@ -23,13 +24,10 @@ class QML_MATERIAL_API AbstractButton : public Control {
     Q_PROPERTY(bool autoExclusive READ autoExclusive WRITE setAutoExclusive NOTIFY
                    autoExclusiveChanged FINAL)
     Q_PROPERTY(Display display READ display WRITE setDisplay NOTIFY displayChanged FINAL)
-    Q_PROPERTY(bool pressed READ isPressed NOTIFY pressedChanged BINDABLE bindablePressed FINAL)
-    Q_PROPERTY(bool down READ isDown WRITE setDown RESET resetDown NOTIFY downChanged BINDABLE
-                   bindableDown FINAL)
-    Q_PROPERTY(bool checkable READ isCheckable WRITE setCheckable NOTIFY checkableChanged BINDABLE
-                   bindableCheckable FINAL)
-    Q_PROPERTY(bool checked READ isChecked WRITE setChecked NOTIFY checkedChanged BINDABLE
-                   bindableChecked FINAL)
+    Q_PROPERTY(bool pressed READ isPressed NOTIFY pressedChanged FINAL)
+    Q_PROPERTY(bool down READ isDown WRITE setDown RESET resetDown NOTIFY downChanged FINAL)
+    Q_PROPERTY(bool checkable READ isCheckable WRITE setCheckable NOTIFY checkableChanged FINAL)
+    Q_PROPERTY(bool checked READ isChecked WRITE setChecked NOTIFY checkedChanged FINAL)
     Q_PROPERTY(qreal pressX READ pressX NOTIFY pressXChanged FINAL)
     Q_PROPERTY(qreal pressY READ pressY NOTIFY pressYChanged FINAL)
     Q_PROPERTY(bool autoRepeat READ autoRepeat WRITE setAutoRepeat NOTIFY autoRepeatChanged FINAL)
@@ -120,6 +118,7 @@ public:
     Q_SIGNAL void    longPressIntervalChanged();
 
 protected:
+    void         updateChecked(bool);
     virtual void nextCheckState();
     virtual void pointerStarted(const QPointF&) {}
     virtual void pointerMoved(const QPointF&) {}
@@ -141,8 +140,11 @@ protected:
 
 private:
     friend class ButtonGroup;
+    friend class TabBar;
+    void updateCheckable(bool);
     void checkedChange();
     void checkableChange();
+    void pressedChange();
     void enforceAutoExclusive();
     void activate(bool changed);
     enum class Input
@@ -175,12 +177,14 @@ private:
     QPointer<ButtonGroup>          m_group;
     QList<QMetaObject::Connection> m_action_connections;
     Display                        m_display = TextBesideIcon;
-    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(AbstractButton, bool, m_down, false,
-                                         &AbstractButton::downChanged)
-    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(AbstractButton, bool, m_pressed, false,
-                                         &AbstractButton::pressedChanged)
-    Q_OBJECT_BINDABLE_PROPERTY(AbstractButton, bool, m_checked, &AbstractButton::checkedChange)
-    Q_OBJECT_BINDABLE_PROPERTY(AbstractButton, bool, m_checkable, &AbstractButton::checkableChange)
+    Q_OBJECT_COMPAT_PROPERTY_WITH_ARGS(AbstractButton, bool, m_down, &AbstractButton::setDown,
+                                       false)
+    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(AbstractButton, bool, m_pressed, false)
+    Q_OBJECT_BINDABLE_PROPERTY(AbstractButton, bool, m_checked)
+    Q_OBJECT_BINDABLE_PROPERTY(AbstractButton, bool, m_checkable)
+    QPropertyNotifier       m_checkedNotifier, m_checkableNotifier;
+    QPropertyNotifier       m_pressedNotifier, m_downNotifier;
+    bool                    m_explicit_down   = false;
     bool                    m_auto_repeat     = false;
     bool                    m_held            = false;
     bool                    m_repeated        = false;

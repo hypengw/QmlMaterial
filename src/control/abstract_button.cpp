@@ -54,7 +54,18 @@ AbstractButton::AbstractButton(QQuickItem* parent)
     : Control(parent),
       m_icon(new IconSpec(this)),
       m_hold_interval(QGuiApplication::styleHints()->mousePressAndHoldInterval()) {
-    resetDown();
+    m_checkedNotifier   = m_checked.addNotifier([this] {
+        checkedChange();
+    });
+    m_checkableNotifier = m_checkable.addNotifier([this] {
+        checkableChange();
+    });
+    m_pressedNotifier   = m_pressed.addNotifier([this] {
+        pressedChange();
+    });
+    m_downNotifier      = m_down.addNotifier([this] {
+        Q_EMIT downChanged();
+    });
     setFocusPolicy(Qt::StrongFocus);
     setAcceptedMouseButtons(Qt::LeftButton);
     setAcceptTouchEvents(true);
@@ -115,10 +126,10 @@ void    AbstractButton::setAction(Action* value) {
             if (! m_explicit_text) Q_EMIT textChanged();
         }));
         m_action_connections.append(connect(value, &Action::checkedChanged, this, [this]() {
-            if (isChecked() != m_action->isChecked()) setChecked(m_action->isChecked());
+            if (isChecked() != m_action->isChecked()) updateChecked(m_action->isChecked());
         }));
         m_action_connections.append(connect(value, &Action::checkableChanged, this, [this]() {
-            if (isCheckable() != m_action->isCheckable()) setCheckable(m_action->isCheckable());
+            if (isCheckable() != m_action->isCheckable()) updateCheckable(m_action->isCheckable());
         }));
         m_action_connections.append(connect(value, &Action::enabledChanged, this, [this]() {
             setEnabled(m_action->isEnabled());
@@ -138,9 +149,9 @@ void    AbstractButton::setAction(Action* value) {
             if (! m_explicit_text) Q_EMIT textChanged();
             if (alive) Q_EMIT actionChanged();
         }));
-        setChecked(value->isChecked());
+        updateChecked(value->isChecked());
         if (! valid() || ! target) return;
-        setCheckable(value->isCheckable());
+        updateCheckable(value->isCheckable());
         if (! valid() || ! target) return;
         setEnabled(value->isEnabled());
         if (! valid() || ! target) return;
@@ -176,7 +187,7 @@ void AbstractButton::enforceAutoExclusive() {
     for (const auto& button : siblings) {
         if (button && button->parentItem() == parentItem() && button->autoExclusive() &&
             ! button->group())
-            button->setChecked(false);
+            button->updateChecked(false);
         if (! guard || ! m_checked) return;
     }
 }
@@ -196,34 +207,43 @@ void AbstractButton::setDisplay(Display value) {
     m_display = value;
     Q_EMIT displayChanged();
 }
-void AbstractButton::setDown(bool value) { m_down = value; }
+void AbstractButton::setDown(bool value) {
+    m_explicit_down = true;
+    if (m_down.valueBypassingBindings() == value) return;
+    m_down.setValueBypassingBindings(value);
+    m_down.notify();
+}
 void AbstractButton::resetDown() {
-    m_down.setBinding([this] {
-        return isPressed();
-    });
+    if (! m_explicit_down && ! m_down.hasBinding()) return;
+    m_down.takeBinding();
+    QPointer<AbstractButton> guard(this);
+    setDown(isPressed());
+    if (guard) m_explicit_down = false;
 }
-void AbstractButton::setChecked(bool value) {
-    const QScopedPropertyUpdateGroup group;
-    m_checked = value;
+void AbstractButton::pressedChange() {
+    QPointer<AbstractButton> guard(this);
+    Q_EMIT pressedChanged();
+    if (! guard || m_explicit_down || m_down.hasBinding()) return;
+    setDown(isPressed());
+    if (guard) m_explicit_down = false;
 }
+void AbstractButton::setChecked(bool value) { updateChecked(value); }
+void AbstractButton::updateChecked(bool value) { utils::updateBoundValue(m_checked, value); }
 void AbstractButton::checkedChange() {
-    const QScopedPropertyUpdateGroup group;
-    QPointer<AbstractButton>         guard(this);
-    if (m_action && m_action->isChecked() != isChecked()) m_action->setChecked(isChecked());
+    QPointer<AbstractButton> guard(this);
+    if (m_action && m_action->isChecked() != isChecked()) m_action->updateChecked(isChecked());
     if (! guard) return;
     enforceAutoExclusive();
     if (! guard) return;
     if (m_group) m_group->update(this);
     if (guard) Q_EMIT checkedChanged();
 }
-void AbstractButton::setCheckable(bool value) {
-    const QScopedPropertyUpdateGroup group;
-    m_checkable = value;
-}
+void AbstractButton::setCheckable(bool value) { updateCheckable(value); }
+void AbstractButton::updateCheckable(bool value) { utils::updateBoundValue(m_checkable, value); }
 void AbstractButton::checkableChange() {
-    const QScopedPropertyUpdateGroup group;
-    QPointer<AbstractButton>         guard(this);
-    if (m_action && m_action->isCheckable() != isCheckable()) m_action->setCheckable(isCheckable());
+    QPointer<AbstractButton> guard(this);
+    if (m_action && m_action->isCheckable() != isCheckable())
+        m_action->updateCheckable(isCheckable());
     if (guard) Q_EMIT checkableChanged();
 }
 void AbstractButton::setAutoRepeat(bool value) {
@@ -312,7 +332,7 @@ void AbstractButton::setCheckedByInteraction(bool value) {
     if (! m_checkable || (m_checked && ! value && ! canUncheck())) return;
     const bool               previous = m_checked;
     QPointer<AbstractButton> guard(this);
-    setChecked(value);
+    updateChecked(value);
     if (guard && m_checked != previous) Q_EMIT toggled();
 }
 
@@ -408,7 +428,7 @@ void AbstractButton::animateClick() {
     if (m_input == Input::None) begin(Input::Simulated, QPointF(width() / 2, height() / 2));
     if (guard && m_sequence == sequence) m_animate_timer.start(100);
 }
-void AbstractButton::toggle() { setChecked(! m_checked); }
+void AbstractButton::toggle() { updateChecked(! m_checked); }
 
 void AbstractButton::mousePressEvent(QMouseEvent* event) {
     if (event->button() != Qt::LeftButton || event->source() == Qt::MouseEventSynthesizedByQt ||

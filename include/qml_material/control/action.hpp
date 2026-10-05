@@ -33,10 +33,8 @@ class QML_MATERIAL_API Action : public QObject {
     Q_PROPERTY(ActionIcon* icon READ icon CONSTANT FINAL)
     Q_PROPERTY(
         bool enabled READ isEnabled WRITE setEnabled RESET resetEnabled NOTIFY enabledChanged FINAL)
-    Q_PROPERTY(bool checkable READ isCheckable WRITE setCheckable NOTIFY checkableChanged BINDABLE
-                   bindableCheckable FINAL)
-    Q_PROPERTY(bool checked READ isChecked WRITE setChecked NOTIFY checkedChanged BINDABLE
-                   bindableChecked FINAL)
+    Q_PROPERTY(bool checkable READ isCheckable WRITE setCheckable NOTIFY checkableChanged FINAL)
+    Q_PROPERTY(bool checked READ isChecked WRITE setChecked NOTIFY checkedChanged FINAL)
 public:
     explicit Action(QObject* parent = nullptr);
     QBindable<bool>    bindableVisible() { return QBindable<bool>(&m_visible); }
@@ -104,6 +102,9 @@ public:
 
 private:
     friend class ActionGroup;
+    friend class AbstractButton;
+    void            updateChecked(bool);
+    void            updateCheckable(bool);
     void            checkedChange();
     void            appendData(QObject*);
     QList<QObject*> m_data;
@@ -121,9 +122,9 @@ private:
     ActionIcon*           m_icon;
     QPointer<ActionGroup> m_group;
     bool                  m_enabled = true;
-    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(Action, bool, m_checkable, false,
-                                         &Action::checkableChanged)
-    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(Action, bool, m_checked, false, &Action::checkedChange)
-    bool m_triggering = false;
+    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(Action, bool, m_checkable, false)
+    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(Action, bool, m_checked, false)
+    QPropertyNotifier m_checkedNotifier, m_checkableNotifier;
+    bool              m_triggering = false;
 };
 } // namespace qml_material

@@ -27,18 +27,18 @@ QQmlListProperty<AbstractButton> ButtonGroup::buttons() {
              } };
 }
 void ButtonGroup::clear() {
-    const QScopedPropertyUpdateGroup group;
-    QPointer<ButtonGroup>            guard(this);
-    const auto                       items = m_selection.snapshot();
+    QPointer<ButtonGroup> guard(this);
+    const auto            items = m_selection.snapshot();
     for (const auto& item : items) {
         if (item) removeButton(item);
         if (! guard) return;
     }
 }
 void ButtonGroup::update(AbstractButton* preferred) {
-    const QScopedPropertyUpdateGroup group;
-    QPointer<ButtonGroup>            guard(this);
-    m_selection.normalize(this, preferred);
+    QPointer<ButtonGroup> guard(this);
+    m_selection.normalize(this, preferred, [](AbstractButton* button, bool checked) {
+        button->updateChecked(checked);
+    });
     if (! guard) return;
     if (m_notified_selected != m_selection.selected) {
         m_notified_selected = m_selection.selected;
@@ -52,24 +52,22 @@ void ButtonGroup::update(AbstractButton* preferred) {
     }
 }
 void ButtonGroup::setCheckedButton(AbstractButton* member) {
-    const QScopedPropertyUpdateGroup group;
     if (! isExclusive() || (member && ! m_selection.members.contains(member))) return;
     QPointer<ButtonGroup> guard(this);
     if (member) {
         QPointer<AbstractButton> item(member);
-        member->setChecked(true);
+        member->updateChecked(true);
         if (guard && item && item->group() == this) update(item);
     } else {
         const auto items = m_selection.snapshot();
         for (const auto& item : items) {
-            if (item && item->group() == this) item->setChecked(false);
+            if (item && item->group() == this) item->updateChecked(false);
             if (! guard) return;
         }
         update();
     }
 }
 void ButtonGroup::setExclusive(bool value) {
-    const QScopedPropertyUpdateGroup group;
     if (isExclusive() == value) return;
     m_selection.exclusive = value;
     QPointer<ButtonGroup> guard(this);
@@ -77,7 +75,6 @@ void ButtonGroup::setExclusive(bool value) {
     if (guard) Q_EMIT exclusiveChanged();
 }
 void ButtonGroup::addButton(AbstractButton* member) {
-    const QScopedPropertyUpdateGroup group;
     if (! member || m_destroying || m_selection.members.contains(member)) return;
     QPointer<ButtonGroup>    guard(this);
     QPointer<AbstractButton> item(member);
@@ -98,7 +95,6 @@ void ButtonGroup::addButton(AbstractButton* member) {
     Q_EMIT buttonsChanged();
 }
 void ButtonGroup::removeButton(AbstractButton* member) {
-    const QScopedPropertyUpdateGroup group;
     if (! member || ! m_selection.members.removeOne(member)) return;
     QPointer<ButtonGroup>    guard(this);
     QPointer<AbstractButton> item(member);
@@ -114,12 +110,11 @@ void ButtonGroup::removeButton(AbstractButton* member) {
     Q_EMIT buttonsChanged();
 }
 void ButtonGroup::setCheckState(Qt::CheckState state) {
-    const QScopedPropertyUpdateGroup group;
     if (state == Qt::PartiallyChecked || (isExclusive() && state != Qt::Unchecked)) return;
     QPointer<ButtonGroup> guard(this);
     const auto            items = m_selection.snapshot();
     for (const auto& item : items) {
-        if (item && item->group() == this) item->setChecked(state == Qt::Checked);
+        if (item && item->group() == this) item->updateChecked(state == Qt::Checked);
         if (! guard) return;
     }
 }

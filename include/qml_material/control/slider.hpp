@@ -16,8 +16,7 @@ class QML_MATERIAL_API Slider : public Control {
     Q_PROPERTY(qreal visualPosition READ visualPosition NOTIFY visualPositionChanged FINAL)
     Q_PROPERTY(qreal stepSize READ stepSize WRITE setStepSize NOTIFY stepSizeChanged FINAL)
     Q_PROPERTY(SnapMode snapMode READ snapMode WRITE setSnapMode NOTIFY snapModeChanged FINAL)
-    Q_PROPERTY(bool pressed READ pressed WRITE setPressed NOTIFY pressedChanged BINDABLE
-                   bindablePressed FINAL)
+    Q_PROPERTY(bool pressed READ pressed WRITE setPressed NOTIFY pressedChanged FINAL)
     Q_PROPERTY(bool live READ live WRITE setLive NOTIFY liveChanged FINAL)
     Q_PROPERTY(
         bool wheelEnabled READ wheelEnabled WRITE setWheelEnabled NOTIFY wheelEnabledChanged FINAL)
@@ -115,6 +114,7 @@ private:
         Key
     };
     void            setPosition(qreal);
+    void            updatePressed(bool);
     void            updatePosition();
     qreal           positionAt(const QPointF&) const;
     qreal           snapPosition(qreal) const;
@@ -125,7 +125,8 @@ private:
     qreal           m_touch_threshold = -1;
     Qt::Orientation m_orientation     = Qt::Horizontal;
     SnapMode        m_snap            = NoSnap;
-    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(Slider, bool, m_pressed, false, &Slider::pressedChanged)
+    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(Slider, bool, m_pressed, false)
+    QPropertyNotifier              m_pressedNotifier;
     bool                           m_live = true, m_wheel_enabled = false;
     Input                          m_input    = Input::None;
     int                            m_touch_id = -1, m_key = 0;

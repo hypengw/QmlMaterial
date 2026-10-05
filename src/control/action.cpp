@@ -1,10 +1,18 @@
 #include "qml_material/control/action.hpp"
 #include <QProperty>
 #include "qml_material/control/action_group.hpp"
+#include "qml_material/util/qt.hpp"
 
 namespace qml_material
 {
-Action::Action(QObject* parent): QObject(parent), m_icon(new ActionIcon(this)) {}
+Action::Action(QObject* parent): QObject(parent), m_icon(new ActionIcon(this)) {
+    m_checkedNotifier   = m_checked.addNotifier([this] {
+        checkedChange();
+    });
+    m_checkableNotifier = m_checkable.addNotifier([this] {
+        Q_EMIT checkableChanged();
+    });
+}
 Action::~Action() {
     if (m_group) m_group->removeAction(this);
 }
@@ -69,17 +77,12 @@ void Action::setEnabled(bool value) {
     m_enabled      = value;
     if (old != isEnabled()) Q_EMIT enabledChanged();
 }
-void Action::setCheckable(bool value) {
-    const QScopedPropertyUpdateGroup group;
-    m_checkable = value;
-}
-void Action::setChecked(bool value) {
-    const QScopedPropertyUpdateGroup group;
-    m_checked = value;
-}
+void Action::setCheckable(bool value) { updateCheckable(value); }
+void Action::setChecked(bool value) { updateChecked(value); }
+void Action::updateChecked(bool value) { utils::updateBoundValue(m_checked, value); }
+void Action::updateCheckable(bool value) { utils::updateBoundValue(m_checkable, value); }
 void Action::checkedChange() {
-    const QScopedPropertyUpdateGroup group;
-    const QPointer<Action>           guard(this);
+    const QPointer<Action> guard(this);
     if (m_group) m_group->update(this);
     if (guard) Q_EMIT checkedChanged();
 }
@@ -95,10 +98,10 @@ bool Action::canToggle() const {
     return m_checkable && (! m_checked || ! m_group || ! m_group->isExclusive());
 }
 void Action::toggle(QObject* source) {
-    if (! isEnabled() || ! canToggle()) return;
+    if (! isEnabled()) return;
     QPointer<Action>  guard(this);
     QPointer<QObject> sourceGuard(source);
-    setChecked(! m_checked);
+    if (m_checkable) updateChecked(! m_checked);
     if (guard) Q_EMIT toggled(sourceGuard);
 }
 void Action::trigger(QObject* source) {
@@ -106,7 +109,7 @@ void Action::trigger(QObject* source) {
     QPointer<Action>  guard(this);
     QPointer<QObject> sourceGuard(source);
     m_triggering = true;
-    toggle(source);
+    if (canToggle()) toggle(source);
     if (! guard) return;
     if (isEnabled()) Q_EMIT triggered(sourceGuard);
     if (guard) m_triggering = false;

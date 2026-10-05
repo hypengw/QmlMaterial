@@ -14,6 +14,9 @@ namespace qml_material
 {
 
 Slider::Slider(QQuickItem* parent): Control(parent) {
+    m_pressedNotifier = m_pressed.addNotifier([this] {
+        Q_EMIT pressedChanged();
+    });
 #ifdef Q_OS_MACOS
     setFocusPolicy(Qt::TabFocus);
 #else
@@ -81,7 +84,8 @@ void Slider::setSnapMode(SnapMode value) {
     m_snap = value;
     Q_EMIT snapModeChanged();
 }
-void Slider::setPressed(bool value) { m_pressed = value; }
+void Slider::setPressed(bool value) { updatePressed(value); }
+void Slider::updatePressed(bool value) { utils::updateBoundValue(m_pressed, value); }
 void Slider::setLive(bool value) {
     if (m_live == value) return;
     m_live = value;
@@ -173,7 +177,7 @@ void Slider::moveTo(const QPointF& point, bool release) {
         m_touch_id = -1;
         setKeepMouseGrab(false);
         setKeepTouchGrab(false);
-        setPressed(false);
+        updatePressed(false);
     }
 }
 void Slider::cancel() {
@@ -185,7 +189,7 @@ void Slider::cancel() {
     setKeepTouchGrab(false);
     QPointer<Slider> guard(this);
     updatePosition();
-    if (guard) setPressed(false);
+    if (guard) updatePressed(false);
 }
 void Slider::mousePressEvent(QMouseEvent* event) {
     if (event->button() != Qt::LeftButton || m_input != Input::None ||
@@ -200,7 +204,7 @@ void Slider::mousePressEvent(QMouseEvent* event) {
     if (focusPolicy() & Qt::ClickFocus) forceActiveFocus(Qt::MouseFocusReason);
     if (! guard || sequence != m_sequence) return;
     setKeepMouseGrab(true);
-    setPressed(true);
+    updatePressed(true);
     if (guard && sequence == m_sequence) moveTo(event->position(), false);
 }
 void Slider::mouseMoveEvent(QMouseEvent* event) {
@@ -234,7 +238,7 @@ void Slider::touchEvent(QTouchEvent* event) {
             event->accept();
             QPointer<Slider> guard(this);
             if (focusPolicy() & Qt::ClickFocus) forceActiveFocus(Qt::MouseFocusReason);
-            if (guard && sequence == m_sequence) setPressed(true);
+            if (guard && sequence == m_sequence) updatePressed(true);
             return;
         }
     }
@@ -274,7 +278,7 @@ void Slider::keyPressEvent(QKeyEvent* event) {
     m_key                     = key;
     const auto       sequence = ++m_sequence;
     QPointer<Slider> guard(this);
-    setPressed(true);
+    updatePressed(true);
     if (! guard || sequence != m_sequence) return;
     const auto old = m_value;
     const bool up  = horizontal() ? (key == Qt::Key_Right) != mirrored() : key == Qt::Key_Up;

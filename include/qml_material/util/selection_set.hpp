@@ -20,7 +20,8 @@ public:
         return result;
     }
 
-    void normalize(QObject* owner, T* preferred = nullptr) {
+    template<class UpdateChecked>
+    void normalize(QObject* owner, T* preferred, UpdateChecked updateChecked) {
         const auto serial = ++revision;
         if (! exclusive) {
             selected = nullptr;
@@ -40,7 +41,7 @@ public:
         const auto        items = snapshot();
         for (const auto& member : items) {
             if (member && members.contains(member) && member != selected && member->isChecked())
-                member->setChecked(false);
+                updateChecked(member, false);
             if (! guard || revision != serial) return;
         }
     }

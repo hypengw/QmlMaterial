@@ -28,18 +28,18 @@ QQmlListProperty<Action> ActionGroup::actions() {
              } };
 }
 void ActionGroup::clear() {
-    const QScopedPropertyUpdateGroup group;
-    QPointer<ActionGroup>            guard(this);
-    const auto                       items = m_selection.snapshot();
+    QPointer<ActionGroup> guard(this);
+    const auto            items = m_selection.snapshot();
     for (const auto& item : items) {
         if (item) removeAction(item);
         if (! guard) return;
     }
 }
 void ActionGroup::update(Action* preferred) {
-    const QScopedPropertyUpdateGroup group;
-    QPointer<ActionGroup>            guard(this);
-    m_selection.normalize(this, preferred);
+    QPointer<ActionGroup> guard(this);
+    m_selection.normalize(this, preferred, [](Action* action, bool checked) {
+        action->updateChecked(checked);
+    });
     if (! guard) return;
     if (m_notified_selected != m_selection.selected) {
         m_notified_selected = m_selection.selected;
@@ -48,24 +48,22 @@ void ActionGroup::update(Action* preferred) {
     }
 }
 void ActionGroup::setCheckedAction(Action* member) {
-    const QScopedPropertyUpdateGroup group;
     if (! isExclusive() || (member && ! m_selection.members.contains(member))) return;
     QPointer<ActionGroup> guard(this);
     if (member) {
         QPointer<Action> item(member);
-        member->setChecked(true);
+        member->updateChecked(true);
         if (guard && item && item->group() == this) update(item);
     } else {
         const auto items = m_selection.snapshot();
         for (const auto& item : items) {
-            if (item && item->group() == this) item->setChecked(false);
+            if (item && item->group() == this) item->updateChecked(false);
             if (! guard) return;
         }
         update();
     }
 }
 void ActionGroup::setExclusive(bool value) {
-    const QScopedPropertyUpdateGroup group;
     if (isExclusive() == value) return;
     m_selection.exclusive = value;
     QPointer<ActionGroup> guard(this);
@@ -73,7 +71,6 @@ void ActionGroup::setExclusive(bool value) {
     if (guard) Q_EMIT exclusiveChanged();
 }
 void ActionGroup::addAction(Action* member) {
-    const QScopedPropertyUpdateGroup group;
     if (! member || m_destroying || m_selection.members.contains(member)) return;
     QPointer<ActionGroup> guard(this);
     QPointer<Action>      item(member);
@@ -95,7 +92,6 @@ void ActionGroup::addAction(Action* member) {
     Q_EMIT actionsChanged();
 }
 void ActionGroup::removeAction(Action* member) {
-    const QScopedPropertyUpdateGroup group;
     if (! member || ! m_selection.members.removeOne(member)) return;
     QPointer<ActionGroup> guard(this);
     QPointer<Action>      item(member);

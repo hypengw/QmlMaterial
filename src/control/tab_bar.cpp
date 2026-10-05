@@ -76,7 +76,7 @@ void TabBar::currentItemChange() {
         for (auto item : snapshot) {
             if (auto* button = qobject_cast<TabButton*>(item.data());
                 button && button->parentItem() == contentHost())
-                button->setChecked(button == currentItem());
+                button->updateChecked(button == currentItem());
             if (! guard) return;
             if (m_selection_dirty) break;
         }

@@ -15,7 +15,7 @@ void CheckBox::setCheckState(Qt::CheckState value) {
     m_state = value;
     QPointer<CheckBox> guard(this);
     m_syncing = true;
-    if (isChecked() != (value == Qt::Checked)) setChecked(value == Qt::Checked);
+    if (isChecked() != (value == Qt::Checked)) updateChecked(value == Qt::Checked);
     if (! guard) return;
     m_syncing = false;
     if (isChecked() != (m_state == Qt::Checked))

@@ -20,6 +20,7 @@ set(QM_TEST_SOURCES
   integration/date_input.cpp
   visual/visual_blur_mask.cpp
   integration/button_group.cpp
+  integration/bindable_controls.cpp
   integration/material_shapes.cpp
   integration/progress_indicator.cpp
   integration/lazy_list.cpp
@@ -98,7 +99,7 @@ file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/test_groups.inc" CONTENT "${QM
 
 set_tests_properties(side_sheet swipe_to_dismiss pull_to_refresh search_view time_input range_slider floating_toolbar date_input text_field_form extended_fab fab_menu button_group material_shapes lazy_list scroll_motion lazy_data icon_spec toolbar_dynamic_visibility application_lifetime
   PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
-set_tests_properties(progress_indicator lite_layout control_layout dynamic_creation attached_property_propagation
+set_tests_properties(bindable_controls progress_indicator lite_layout control_layout dynamic_creation attached_property_propagation
   page_layout split_view item_proxy nested_scroll adaptive_presenter PROPERTIES ENVIRONMENT
   "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
 set_tests_properties(control_layout PROPERTIES ENVIRONMENT
