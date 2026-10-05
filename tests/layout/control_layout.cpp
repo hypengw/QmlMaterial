@@ -372,7 +372,7 @@ private Q_SLOTS:
                             width: list.contentWidth; height: 64
                             ListView.onPooled: ++root.pooled
                             ListView.onReused: ++root.reused
-                            MD.ColorPickerButton { visible: index % 3 === 0 }
+                            MD.ColorPickerDialog {}
                         }
                     }
                 }
@@ -2045,6 +2045,79 @@ private Q_SLOTS:
         QCOMPARE(comboBox->property("resolvedFontSize").toInt(), fontSize);
     }
 
+    void colorPickerButtonDialogLifecycle() {
+        QTest::failOnWarning(QRegularExpression(".*"));
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            MD.ColorPickerButton { color: "#123456"; showAlpha: false }
+        )",
+                          QUrl());
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* button = qobject_cast<qml_material::AbstractButton*>(object.get());
+        QVERIFY(button);
+        QVERIFY(button->findChildren<qml_material::Dialog*>().isEmpty());
+        QVERIFY(QMetaObject::invokeMethod(button, "dismissPopup"));
+        QVERIFY(button->findChildren<qml_material::Dialog*>().isEmpty());
+        button->click();
+        QVERIFY(button->findChildren<qml_material::Dialog*>().isEmpty());
+        button->setParentItem(m_window.contentItem());
+        QSignalSpy accepted(button, SIGNAL(accepted(QColor)));
+        QVERIFY(accepted.isValid());
+
+        button->click();
+        QPointer<qml_material::Dialog> dialog = button->findChild<qml_material::Dialog*>();
+        QVERIFY(dialog);
+        QVERIFY(dialog->isVisible());
+        QCOMPARE(dialog->property("color").value<QColor>(), QColor("#123456"));
+        QCOMPARE(dialog->property("showAlpha").toBool(), false);
+        button->click();
+        QCOMPARE(button->findChildren<qml_material::Dialog*>().size(), 1);
+        button->setProperty("color", QColor("#abcdef"));
+        button->setProperty("showAlpha", true);
+        QCOMPARE(dialog->property("color").value<QColor>(), QColor("#abcdef"));
+        QCOMPARE(dialog->property("showAlpha").toBool(), true);
+
+        dialog->setProperty("color", QColor("#fedcba"));
+        dialog->setExit(nullptr);
+        dialog->setDeferredCompletion(true);
+        dialog->reject();
+        QVERIFY(dialog->closing());
+        button->click();
+        QCOMPARE(button->findChildren<qml_material::Dialog*>().size(), 1);
+        dialog->completeExit();
+        QTRY_VERIFY(dialog.isNull());
+        QCOMPARE(accepted.size(), 0);
+        QCOMPARE(button->property("color").value<QColor>(), QColor("#abcdef"));
+
+        button->click();
+        dialog = button->findChild<qml_material::Dialog*>();
+        QVERIFY(dialog);
+        QCOMPARE(dialog->property("color").value<QColor>(), QColor("#abcdef"));
+        dialog->setExit(nullptr);
+        dialog->setProperty("color", QColor("#2468ac"));
+        dialog->accept();
+        QCOMPARE(accepted.size(), 1);
+        QCOMPARE(accepted.at(0).at(0).value<QColor>(), QColor("#2468ac"));
+        QCOMPARE(button->property("color").value<QColor>(), QColor("#2468ac"));
+        QTRY_VERIFY(dialog.isNull());
+
+        button->click();
+        dialog = button->findChild<qml_material::Dialog*>();
+        QVERIFY(dialog);
+        QVERIFY(QMetaObject::invokeMethod(button, "dismissPopup"));
+        QVERIFY(! dialog->isVisible());
+        QTRY_VERIFY(dialog.isNull());
+        QCOMPARE(accepted.size(), 1);
+
+        button->click();
+        dialog = button->findChild<qml_material::Dialog*>();
+        QVERIFY(dialog);
+        object.reset();
+        QTRY_VERIFY(dialog.isNull());
+    }
     void colorPickerSwatchDoesNotOverlapHexText() {
         QQmlComponent component(&m_engine);
         component.setData(QByteArrayLiteral(R"(

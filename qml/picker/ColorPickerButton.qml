@@ -21,10 +21,14 @@ MD.ButtonBase {
     bottomInset: 0
     hoverEnabled: enabled
 
-    onClicked: m_dialog.open()
+    onClicked: {
+        if (control.Window.window)
+            m_dialog.active = true;
+    }
 
     function dismissPopup() {
-        m_dialog.dismissImmediately();
+        m_dialog.item?.dismissImmediately();
+        m_dialog.active = false;
     }
 
     contentItem: Item {}
@@ -83,14 +87,20 @@ MD.ButtonBase {
         }
     }
 
-    MD.ColorPickerDialog {
+    Loader {
         id: m_dialog
-        parent: control.MD.Overlay.overlay
-        color: control.color
-        showAlpha: control.showAlpha
-        onAcceptedColor: function (c) {
-            control.color = c;
-            control.accepted(c);
+
+        active: false
+        onLoaded: item.open()
+        sourceComponent: MD.ColorPickerDialog {
+            parent: control.MD.Overlay.overlay
+            color: control.color
+            showAlpha: control.showAlpha
+            onAcceptedColor: function (c) {
+                control.color = c;
+                control.accepted(c);
+            }
+            onClosed: m_dialog.active = false
         }
     }
 }
