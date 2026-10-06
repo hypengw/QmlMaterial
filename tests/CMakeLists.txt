@@ -120,7 +120,7 @@ if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
 endif()
 qt_import_qml_plugins(lazy_list_benchmark)
 
-set(VISUAL_SCENES floating_toolbar date_modes list_item date_locale text_field_form extended_fab fab_menu button_group material_shapes button action_progress elevation elevation_corners shape ripple ripple_phases loading_indicator_shapes tooltip wave_progress snackbar
+set(VISUAL_SCENES font_alignment floating_toolbar date_modes list_item date_locale text_field_form extended_fab fab_menu button_group material_shapes button action_progress elevation elevation_corners shape ripple ripple_phases loading_indicator_shapes tooltip wave_progress snackbar
     icon_artifacts icon_spec range_slider time_picker time_dialog search_view search_fullscreen search_progress app_bar_scroll pull_to_refresh swipe_to_dismiss
     focus_button focus_iconbutton focus_fab focus_chip
     focus_switch focus_checkbox focus_radio

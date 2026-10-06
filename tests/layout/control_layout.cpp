@@ -1,6 +1,7 @@
 #include <QCoreApplication>
 #include <QColor>
 #include <QFont>
+#include <QFontDatabase>
 #include <QFile>
 #include <QGuiApplication>
 #include <QQmlComponent>
@@ -1837,6 +1838,99 @@ private Q_SLOTS:
         settle(chip);
         QVERIFY(trailing_item->isVisible());
         QCOMPARE(row->implicitWidth(), visible_width);
+    }
+
+    void textLineHeightAlignment_data() {
+        QTest::addColumn<QString>("type");
+        QTest::addColumn<QString>("family");
+        QTest::addColumn<bool>("multiline");
+        QStringList families { QGuiApplication::font().family(), QStringLiteral("serif") };
+        const auto  installed = QFontDatabase::families();
+        for (const auto& family : { QStringLiteral("FangSong"),
+                                    QStringLiteral("SimSun"),
+                                    QStringLiteral("Microsoft YaHei"),
+                                    QStringLiteral("LXGW WenKai") }) {
+            if (installed.contains(family) && ! families.contains(family)) families.append(family);
+        }
+        for (const auto& type : { QStringLiteral("Text"), QStringLiteral("Label") }) {
+            for (const auto& family : families) {
+                for (const bool multiline : { false, true }) {
+                    const auto name = type + '-' + family + (multiline ? "-multiline" : "-single");
+                    QTest::newRow(qPrintable(name)) << type << family << multiline;
+                }
+            }
+        }
+    }
+    void textLineHeightAlignment() {
+        QFETCH(QString, type);
+        QFETCH(QString, family);
+        QFETCH(bool, multiline);
+        const auto    source = QStringLiteral(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            Item {
+                width: 360; height: 160
+                property string family
+                property string sample
+                property bool expanded: false
+                MD.%1 {
+                    id: styled
+                    objectName: "styled"
+                    width: 180
+                    height: parent.expanded ? 120 : implicitHeight
+                    text: parent.sample
+                    font.family: parent.family
+                    font.pixelSize: 14
+                    lineHeight: 40
+                    wrapMode: Text.NoWrap
+                }
+                Text {
+                    objectName: "reference"
+                    width: styled.width
+                    height: styled.height
+                    text: styled.text
+                    font: styled.font
+                    lineHeight: styled.lineHeight
+                    lineHeightMode: Text.FixedHeight
+                    textFormat: Text.PlainText
+                    wrapMode: Text.NoWrap
+                    verticalAlignment: Text.AlignVCenter
+                }
+            }
+        )")
+                                   .arg(type)
+                                   .toUtf8();
+        QQmlComponent component(&m_engine);
+        component.setData(source, QUrl(QStringLiteral("qrc:/tests/text-line-height.qml")));
+        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* root = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(root);
+        root->setParentItem(m_window.contentItem());
+        root->setProperty("family", family);
+        root->setProperty("sample",
+                          multiline ? QStringLiteral("Theme\n\u4e3b\u9898")
+                                    : QStringLiteral("\u4e3b\u9898 Theme"));
+        auto* styled    = root->findChild<QQuickItem*>(QStringLiteral("styled"));
+        auto* reference = root->findChild<QQuickItem*>(QStringLiteral("reference"));
+        QVERIFY(styled);
+        QVERIFY(reference);
+        for (const bool expanded : { false, true }) {
+            root->setProperty("expanded", expanded);
+            settle(root);
+            QCOMPARE(styled->property("verticalAlignment").toInt(), int(Qt::AlignVCenter));
+            QCOMPARE(styled->baselineOffset(), reference->baselineOffset());
+            QCOMPARE(styled->implicitWidth(), reference->implicitWidth());
+            QCOMPARE(styled->implicitHeight(), reference->implicitHeight());
+            QCOMPARE(styled->property("lineCount").toInt(), multiline ? 2 : 1);
+        }
+        const auto implicitSize = QSizeF(styled->implicitWidth(), styled->implicitHeight());
+        styled->setProperty("verticalAlignment", int(Qt::AlignTop));
+        reference->setProperty("verticalAlignment", int(Qt::AlignTop));
+        settle(root);
+        QCOMPARE(styled->baselineOffset(), reference->baselineOffset());
+        QCOMPARE(QSizeF(styled->implicitWidth(), styled->implicitHeight()), implicitSize);
     }
 
     void textFieldTypography_data() {

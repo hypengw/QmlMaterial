@@ -15,6 +15,7 @@ Text {
     antialiasing: true
     color: MD.MProp.textColor
     lineHeightMode: Text.FixedHeight
+    verticalAlignment: Text.AlignVCenter
     wrapMode: Text.Wrap
     elide: Text.ElideRight
     textFormat: Text.PlainText
