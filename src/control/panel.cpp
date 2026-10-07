@@ -69,8 +69,6 @@ QSizeF Panel::calculateContentSize() const {
         const auto children = host->childItems();
         if (children.size() == 1) {
             size = QSizeF(children.front()->implicitWidth(), children.front()->implicitHeight());
-        } else if (children.size() > 1) {
-            size = host->childrenRect().size();
         }
         if (! qFuzzyIsNull(host->implicitWidth())) size.setWidth(host->implicitWidth());
         if (! qFuzzyIsNull(host->implicitHeight())) size.setHeight(host->implicitHeight());
@@ -93,8 +91,6 @@ void Panel::observeContentItem() {
     if (auto* host = contentItem()) {
         m_host_connections.append(
             connect(host, &QQuickItem::childrenChanged, this, &Panel::observeChildren));
-        m_host_connections.append(
-            connect(host, &QQuickItem::childrenRectChanged, this, &Panel::updateContentSize));
         m_host_connections.append(
             connect(host, &QQuickItem::implicitWidthChanged, this, &Panel::updateContentSize));
         m_host_connections.append(

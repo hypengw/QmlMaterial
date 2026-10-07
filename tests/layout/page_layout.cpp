@@ -38,6 +38,161 @@ private Q_SLOTS:
         m_window.create();
     }
 
+    void paneContentSizing_data() {
+        QTest::addColumn<QByteArray>("type");
+        QTest::newRow("qt") << QByteArray("QQ.Pane");
+        QTest::newRow("material") << QByteArray("MD.Pane");
+    }
+    void paneContentSizing() {
+        QFETCH(QByteArray, type);
+        QTest::failOnWarning(QRegularExpression(".*Binding loop.*"));
+        QQmlComponent component(&m_engine);
+        component.setData(
+            "import QtQuick; import QtQuick.Controls as QQ; import Qcm.Material as MD; " + type +
+                R"( {
+                width: 320; height: 240
+                padding: 0
+                background: Item {}
+                Item {
+                    objectName: "child"
+                    implicitWidth: 120; implicitHeight: 80
+                    x: 40; y: 30
+                    width: 320; height: 200
+                }
+            })",
+            QUrl("qrc:/tests/pane-content-sizing.qml"));
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* pane = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(pane);
+        pane->setParentItem(m_window.contentItem());
+        auto* host  = pane->property("contentItem").value<QQuickItem*>();
+        auto* child = pane->findChild<QQuickItem*>("child");
+        QVERIFY(host);
+        QVERIFY(child);
+        const auto contentSize = [&] {
+            return QSizeF(pane->property("contentWidth").toReal(),
+                          pane->property("contentHeight").toReal());
+        };
+        settle(pane);
+        QCOMPARE(contentSize(), QSizeF(120, 80));
+        QCOMPARE(pane->implicitWidth(), 120.0);
+        QCOMPARE(pane->implicitHeight(), 80.0);
+        child->setImplicitWidth(140);
+        child->setImplicitHeight(100);
+        QCOMPARE(contentSize(), QSizeF(140, 100));
+
+        auto overlay = std::make_unique<QQuickItem>(host);
+        overlay->setImplicitWidth(300);
+        overlay->setImplicitHeight(200);
+        overlay->setSize(QSizeF(900, 800));
+        overlay->setPosition(QPointF(-20, -30));
+        settle(pane);
+        QCOMPARE(contentSize(), QSizeF(0, 0));
+        QCOMPARE(pane->implicitWidth(), 0.0);
+        QCOMPARE(pane->implicitHeight(), 0.0);
+        QSignalSpy widthChanges(pane, SIGNAL(contentWidthChanged()));
+        QSignalSpy heightChanges(pane, SIGNAL(contentHeightChanged()));
+        child->setImplicitWidth(160);
+        child->setImplicitHeight(120);
+        child->setSize(QSizeF(500, 400));
+        overlay->setPosition(QPointF(-60, -90));
+        overlay->setVisible(false);
+        pane->setSize(QSizeF(640, 480));
+        settle(pane);
+        QCOMPARE(contentSize(), QSizeF(0, 0));
+        QCOMPARE(widthChanges.count(), 0);
+        QCOMPARE(heightChanges.count(), 0);
+
+        host->setImplicitWidth(44);
+        QCOMPARE(contentSize(), QSizeF(44, 0));
+        host->setImplicitHeight(33);
+        QCOMPARE(contentSize(), QSizeF(44, 33));
+        overlay.reset();
+        QCOMPARE(contentSize(), QSizeF(44, 33));
+        host->setImplicitHeight(0);
+        QCOMPARE(contentSize(), QSizeF(44, 120));
+
+        QVERIFY(pane->setProperty("contentWidth", 0));
+        QVERIFY(pane->setProperty("contentHeight", 19));
+        child->setImplicitHeight(150);
+        QCOMPARE(contentSize(), QSizeF(0, 19));
+        const auto reset = [&](const char* name) {
+            const auto property =
+                pane->metaObject()->property(pane->metaObject()->indexOfProperty(name));
+            QVERIFY(property.reset(pane));
+        };
+        reset("contentWidth");
+        reset("contentHeight");
+        QCOMPARE(contentSize(), QSizeF(44, 150));
+        child->setParentItem(nullptr);
+        QCOMPARE(contentSize(), QSizeF(44, 0));
+        host->setImplicitWidth(0);
+        QCOMPARE(contentSize(), QSizeF(0, 0));
+        child->setParentItem(host);
+        QCOMPARE(contentSize(), QSizeF(160, 150));
+    }
+
+    void pageFillOverlaySizing_data() {
+        QTest::addColumn<QByteArray>("type");
+        QTest::addColumn<bool>("fixedHeight");
+        for (const auto& type : { QByteArray("QQ.Page"), QByteArray("MD.Page") }) {
+            QTest::newRow((type + "-fixed").constData()) << type << true;
+            QTest::newRow((type + "-implicit").constData()) << type << false;
+        }
+    }
+    void pageFillOverlaySizing() {
+        QFETCH(QByteArray, type);
+        QFETCH(bool, fixedHeight);
+        QTest::failOnWarning(QRegularExpression(".*Binding loop.*"));
+        QQmlComponent component(&m_engine);
+        component.setData(
+            "import QtQuick; import QtQuick.Controls as QQ; import Qcm.Material as MD; " + type +
+                " { width: 320; " + (fixedHeight ? "height: 240; " : "") + R"(
+                padding: 8
+                spacing: 4
+                background: Item {}
+                header: Item { implicitHeight: 32 }
+                Loader {
+                    objectName: "loader"
+                    anchors.fill: parent
+                    sourceComponent: Item { implicitWidth: 160; implicitHeight: 80 }
+                }
+            })",
+            QUrl("qrc:/tests/page-fill-overlay.qml"));
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* page = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(page);
+        page->setParentItem(m_window.contentItem());
+        auto* host   = page->property("contentItem").value<QQuickItem*>();
+        auto* loader = page->findChild<QQuickItem*>("loader");
+        QVERIFY(host);
+        QVERIFY(loader);
+        settle(page);
+        QCOMPARE(page->property("contentHeight").toReal(), 80.0);
+        QCOMPARE(page->implicitHeight(), 132.0);
+        auto overlay = std::make_unique<QQuickItem>(host);
+        overlay->setPosition(QPointF(-16, -12));
+        overlay->setSize(QSizeF(10, 10));
+        settle(page);
+        QCOMPARE(page->property("contentWidth").toReal(), 0.0);
+        QCOMPARE(page->property("contentHeight").toReal(), 0.0);
+        QCOMPARE(page->implicitWidth(), 16.0);
+        QCOMPARE(page->implicitHeight(), 52.0);
+        QCOMPARE(page->height(), fixedHeight ? 240.0 : 52.0);
+        QCOMPARE(loader->height(), host->height());
+        overlay->setY(-100);
+        if (fixedHeight) page->setHeight(400);
+        settle(page);
+        QCOMPARE(page->implicitHeight(), 52.0);
+        overlay.reset();
+        settle(page);
+        QCOMPARE(page->property("contentHeight").toReal(), 80.0);
+        QCOMPARE(page->implicitHeight(), 132.0);
+        QCOMPARE(page->height(), fixedHeight ? 400.0 : 132.0);
+    }
+
     void cachedPageStartsTransparent() {
         QQmlComponent component(&m_engine);
         component.setData(R"(
