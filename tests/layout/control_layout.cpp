@@ -22,6 +22,13 @@
 #include "qml_material/control/panel.hpp"
 #include "qml_material/control/dialog.hpp"
 #include "qml_material/style/material_state.hpp"
+#include "qml_material/style/list_item_state.hpp"
+#include "qml_material/style/text_field_state.hpp"
+#include "qml_material/style/slider_state.hpp"
+#include "qml_material/style/drag_handle_state.hpp"
+#include "qml_material/control/text_field.hpp"
+#include "qml_material/control/slider.hpp"
+#include "qml_material/control/item_delegate.hpp"
 #include "qml_material/style/theme.hpp"
 #include "qml_material/control/icon_spec.hpp"
 #include "qml_material/control/abstract_button.hpp"
@@ -415,6 +422,180 @@ private Q_SLOTS:
         settle(root);
         sheet->close();
     }
+    void stateDuringPageDestruction_data() {
+        QTest::addColumn<bool>("reuse");
+        QTest::addColumn<bool>("scroll");
+        QTest::addColumn<QString>("delegateFile");
+        for (const auto& file :
+             { QStringLiteral("list_item_state.qml"), QStringLiteral("control_states.qml") }) {
+            for (bool reuse : { true, false }) {
+                for (bool scroll : { true, false }) {
+                    const auto name =
+                        file + (reuse ? "-reused" : "-not-reused") + (scroll ? "-scrolled" : "");
+                    QTest::newRow(qPrintable(name)) << reuse << scroll << file;
+                }
+            }
+        }
+    }
+    void stateDuringPageDestruction() {
+        QFETCH(bool, reuse);
+        QFETCH(bool, scroll);
+        QFETCH(QString, delegateFile);
+        QTest::failOnWarning(QRegularExpression(".*TypeError.*"));
+        QQmlComponent delegate(&m_engine,
+                               QUrl::fromLocalFile(QStringLiteral(QM_LIST_ITEM_STATE_QML))
+                                   .resolved(QUrl(delegateFile)));
+        QVERIFY2(delegate.isReady(), qPrintable(delegate.errorString()));
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            pragma ComponentBehavior: Bound
+            import QtQuick
+            import Qcm.Material as MD
+            Item {
+                id: root
+                width: 400; height: 300
+                property Component rowDelegate
+                property bool reuse: true
+                property var page: null
+                function openPage() { page = factory.createObject(root) }
+                function hidePage() { page.visible = false }
+                function closePage() { page.destroy(); page = null }
+                Component {
+                    id: factory
+                    MD.Page {
+                        width: 400; height: 300
+                        MD.PageVerticalListView {
+                            objectName: "list"
+                            anchors.fill: parent
+                            model: 80
+                            reuseItems: root.reuse
+                            cacheBuffer: 0
+                            delegate: root.rowDelegate
+                        }
+                    }
+                }
+            }
+        )",
+                          QUrl("qrc:/tests/list-item-state-destruction.qml"));
+        std::unique_ptr<QObject> object(component.createWithInitialProperties(
+            { { "rowDelegate", QVariant::fromValue(&delegate) }, { "reuse", reuse } }));
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* root = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(root);
+        root->setParentItem(m_window.contentItem());
+        QVERIFY(QMetaObject::invokeMethod(root, "openPage"));
+        settle(root);
+        auto* list = root->findChild<QQuickItem*>("list");
+        QVERIFY(list);
+        if (scroll) {
+            for (int i = 1; i <= 5; ++i) {
+                QVERIFY(list->setProperty("contentY", i * 300));
+                settle(root);
+            }
+        }
+        QList<QPointer<QQuickItem>> trackedRows;
+        for (int i = 0; i < list->property("count").toInt(); ++i) {
+            QQuickItem* item = nullptr;
+            QVERIFY(QMetaObject::invokeMethod(
+                list, "itemAtIndex", Q_RETURN_ARG(QQuickItem*, item), Q_ARG(int, i)));
+            if (item) trackedRows.append(item);
+        }
+        QVERIFY(! trackedRows.isEmpty());
+        QPointer<QObject> page(root->property("page").value<QObject*>());
+        QVERIFY(page);
+        QVERIFY(QMetaObject::invokeMethod(root, "hidePage"));
+        for (const auto& row : trackedRows) {
+            if (row) QVERIFY(! row->isEnabled());
+        }
+        QVERIFY(QMetaObject::invokeMethod(root, "closePage"));
+        QCoreApplication::processEvents();
+        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+        QTRY_VERIFY(page.isNull());
+        QTRY_VERIFY(std::all_of(trackedRows.cbegin(), trackedRows.cend(), [](const auto& row) {
+            return row.isNull();
+        }));
+    }
+    void listItemStateOutlivesInput() {
+        QProperty<QColor>           color(Qt::red);
+        qml_material::ListItemState state;
+        auto                        item = std::make_unique<qml_material::ItemDelegate>();
+        state.setItem(item.get());
+        state.bindableBackgroundColor().setBinding([&] {
+            return color.value();
+        });
+        item->setEnabled(false);
+        QCOMPARE(state.state(), QStringLiteral("disabled"));
+        QSignalSpy itemChanged(&state, &qml_material::ButtonInteractionState::itemChanged);
+        QSignalSpy stateChanged(&state, &qml_material::CommonState::stateChanged);
+        item.reset();
+        QVERIFY(! state.item());
+        QVERIFY(! state.target());
+        QVERIFY(! state.ctx());
+        QVERIFY(! state.colors());
+        QCOMPARE(itemChanged.count(), 1);
+        QCOMPARE(stateChanged.count(), 1);
+        QVERIFY(state.state().isEmpty());
+        QCOMPARE(state.backgroundColor(), QColor(Qt::red));
+        color = Qt::blue;
+        QCOMPARE(state.backgroundColor(), QColor(Qt::blue));
+        auto replacement = std::make_unique<qml_material::ItemDelegate>();
+        state.setItem(replacement.get());
+        QCOMPARE(state.item(), replacement.get());
+        QVERIFY(state.ctx());
+        QVERIFY(state.colors());
+        replacement->setEnabled(false);
+        QCOMPARE(state.state(), QStringLiteral("disabled"));
+        replacement->setEnabled(true);
+        QVERIFY(state.state().isEmpty());
+        QCOMPARE(state.backgroundColor(), QColor(Qt::blue));
+    }
+
+    void controlStateOutlivesInput() {
+        const auto verify =
+            []<typename State, typename Input>(
+                State& state, std::unique_ptr<Input> item, auto bindable, auto colorValue) {
+                QProperty<QColor> color(Qt::red);
+                state.setItem(item.get());
+                std::invoke(bindable, state).setBinding([&] {
+                    return color.value();
+                });
+                item->setEnabled(false);
+                QCOMPARE(state.state(), QStringLiteral("disabled"));
+                QSignalSpy changed(&state, &qml_material::CommonState::stateChanged);
+                item.reset();
+                QVERIFY(! state.item());
+                QVERIFY(! state.target());
+                QVERIFY(! state.ctx());
+                QVERIFY(! state.colors());
+                QCOMPARE(changed.size(), 1);
+                QVERIFY(state.state().isEmpty());
+                QCOMPARE(std::invoke(colorValue, state), QColor(Qt::red));
+                color = Qt::blue;
+                QCOMPARE(std::invoke(colorValue, state), QColor(Qt::blue));
+                auto replacement = std::make_unique<Input>();
+                state.setItem(replacement.get());
+                QVERIFY(state.ctx());
+                replacement->setEnabled(false);
+                replacement->setEnabled(true);
+                QCOMPARE(std::invoke(colorValue, state), QColor(Qt::blue));
+            };
+        qml_material::TextFieldState field;
+        verify(field,
+               std::make_unique<qml_material::TextField>(),
+               &qml_material::TextFieldState::bindablePlaceholderColor,
+               &qml_material::TextFieldState::placeholderColor);
+        qml_material::SliderState slider;
+        verify(slider,
+               std::make_unique<qml_material::Slider>(),
+               &qml_material::CommonState::bindableBackgroundColor,
+               &qml_material::CommonState::backgroundColor);
+        qml_material::DragHandleState handle;
+        verify(handle,
+               std::make_unique<QQuickItem>(),
+               &qml_material::CommonState::bindableTextColor,
+               &qml_material::CommonState::textColor);
+    }
+
     void stateOutlivesContext() {
         qml_material::MaterialState state;
         auto                        target = std::make_unique<QObject>();

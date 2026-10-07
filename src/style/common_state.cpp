@@ -50,27 +50,32 @@ CommonState::~CommonState() {
 QObject*               CommonState::target() const { return m_target; }
 MdColorMgr*            CommonState::colors() const { return m_colors.value(); }
 QBindable<MdColorMgr*> CommonState::bindableColors() { return QBindable<MdColorMgr*>(&m_colors); }
+bool                   CommonState::isStateActive() const { return ! QQmlData::wasDeleted(this); }
 void                   CommonState::setTarget(QObject* target) {
     if (m_target == target) return;
     const QScopedPropertyUpdateGroup group;
     disconnect(m_targetDestroyed);
+    if (! isStateActive()) {
+        m_target = target;
+        return;
+    }
     m_targetGeneration = m_targetGeneration.value() + 1;
     m_target           = target;
     if (target) {
         m_targetDestroyed = connect(target, &QObject::destroyed, this, [this] {
             m_target = nullptr;
             // QML marks the whole delegate tree before its C++ children are destroyed.
-            if (QQmlData::wasDeleted(this)) return;
+            if (! isStateActive()) return;
             const QScopedPropertyUpdateGroup group;
             m_targetGeneration = m_targetGeneration.value() + 1;
             const QPointer<CommonState> guard(this);
             if (! m_explicitContext) updateContext(nullptr);
-            if (guard) Q_EMIT targetChanged();
+            if (guard && isStateActive()) Q_EMIT targetChanged();
         });
     }
     const QPointer<CommonState> guard(this);
     if (! m_explicitContext) resetCtx();
-    if (guard) Q_EMIT targetChanged();
+    if (guard && isStateActive()) Q_EMIT targetChanged();
 }
 void CommonState::setColors(MdColorMgr* colors) { m_colors = colors; }
 
@@ -82,10 +87,10 @@ void CommonState::colorsChange() {
             const QScopedPropertyUpdateGroup group;
             utils::disconnectAll(m_colorConnections);
             m_colors.setValueBypassingBindings(nullptr);
-            if (! QQmlData::wasDeleted(this)) m_colors.notify();
+            if (isStateActive()) m_colors.notify();
         }));
     }
-    Q_EMIT colorsChanged();
+    if (isStateActive()) Q_EMIT colorsChanged();
 }
 
 #define INPUT(Type, Name, Setter, Bindable)                                      \
@@ -103,11 +108,13 @@ QBindable<StateValues> CommonState::bindableValues() const {
 QQmlListProperty<QObject> CommonState::datas() { return { this, &m_datas }; }
 void                      CommonState::classBegin() { m_canApply = false; }
 void                      CommonState::componentComplete() {
+    if (! isStateActive()) return;
     m_canApply       = true;
     const auto apply = m_applyState;
     if (apply) apply();
 }
 void CommonState::publishState(const QString& next, std::function<void()> apply) {
+    if (! isStateActive()) return;
     const auto                  previous = m_state.value();
     const QPointer<CommonState> guard(this);
     {
@@ -116,8 +123,7 @@ void CommonState::publishState(const QString& next, std::function<void()> apply)
         m_applyState = apply;
         if (m_canApply) apply();
     }
-    if (! guard) return;
-    if (guard && previous != next) Q_EMIT stateChanged();
+    if (guard && isStateActive() && previous != next) Q_EMIT stateChanged();
 }
 Theme* CommonState::ctx() const { return m_context; }
 void   CommonState::setCtx(Theme* context) {
@@ -131,6 +137,7 @@ void CommonState::resetCtx() {
                       : nullptr);
 }
 void CommonState::resetColors() {
+    if (! isStateActive()) return;
     m_colors.setBinding([this] {
         auto* context = ctx();
         return context ? context->color() : nullptr;
@@ -142,18 +149,14 @@ void CommonState::updateContext(Theme* context) {
     if (context) {
         m_contextConnections.append(connect(context, &QObject::destroyed, this, [this] {
             utils::disconnectAll(m_contextConnections);
-            if (QQmlData::wasDeleted(this)) {
-                m_context.setValueBypassingBindings(nullptr);
-                return;
-            }
             const QPointer<CommonState> guard(this);
-            m_context = nullptr;
-            if (guard) Q_EMIT ctxChanged();
+            updateStateInput(m_context, nullptr);
+            if (guard && isStateActive()) Q_EMIT ctxChanged();
         }));
     }
     const QPointer<CommonState> guard(this);
-    m_context = context;
-    if (guard) Q_EMIT ctxChanged();
+    updateStateInput(m_context, context);
+    if (guard && isStateActive()) Q_EMIT ctxChanged();
 }
 
 QString CommonState::state() const { return m_state.value(); }
@@ -188,6 +191,7 @@ RESET(backgroundOpacity, BackgroundOpacity)
 RESET(stateLayerOpacity, StateLayerOpacity)
 #undef RESET
 void CommonState::resetCorners() {
+    if (! isStateActive()) return;
     if (m_appearance.corners.isValid()) {
         m_appearance.corners.reset();
         return;

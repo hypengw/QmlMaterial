@@ -88,30 +88,30 @@ void SliderAppearance::setControl(Control* value, std::function<bool()> pressed)
     {
         const QScopedPropertyUpdateGroup group;
         utils::disconnectAll(m_connections);
-        m_control = value;
+        updateStateInput(m_control, value);
         m_pressed.setBinding([this, pressed = std::move(pressed)] {
             return control() && pressed();
         });
         if (value) {
             m_connections.append(connect(value, &QQuickItem::enabledChanged, this, [this] {
-                m_disabled = control() && ! control()->isEnabled();
+                updateStateInput(m_disabled, control() && ! control()->isEnabled());
             }));
             m_connections.append(connect(value, &QObject::destroyed, this, [this] {
                 utils::disconnectAll(m_connections);
                 QPointer<SliderAppearance> guard(this);
                 {
                     const QScopedPropertyUpdateGroup group;
-                    m_control  = nullptr;
-                    m_disabled = false;
+                    updateStateInput(m_control, nullptr);
+                    updateStateInput(m_disabled, false);
                 }
-                if (guard) Q_EMIT controlChanged();
+                if (guard && isStateActive()) Q_EMIT controlChanged();
             }));
         }
         setTarget(value);
         if (! guard) return;
-        m_disabled = value && ! value->isEnabled();
+        updateStateInput(m_disabled, value && ! value->isEnabled());
     }
-    if (guard) Q_EMIT controlChanged();
+    if (guard && isStateActive()) Q_EMIT controlChanged();
 }
 SliderHandleAppearance::SliderHandleAppearance(QObject* parent): SliderAppearance(parent) {
     m_handleLineWidthKey =

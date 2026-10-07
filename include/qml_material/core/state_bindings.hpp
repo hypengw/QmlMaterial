@@ -16,10 +16,23 @@ namespace qml_material
 {
 namespace detail
 {
+struct StateBindingOwner {
+    std::function<bool()> alive;
+    bool                  stopped = false;
+
+    bool isActive() {
+        if (stopped) return false;
+        if (alive && ! alive()) stopped = true;
+        return ! stopped;
+    }
+};
+
 struct StateProperty {
-    QPointer<QObject> owner;
-    std::type_index   accessor;
-    StateProperty(QObject* object, std::type_index type): owner(object), accessor(type) {}
+    QPointer<QObject>                  owner;
+    std::type_index                    accessor;
+    std::shared_ptr<StateBindingOwner> lifetime;
+    StateProperty(QObject* object, std::type_index type, std::shared_ptr<StateBindingOwner> guard)
+        : owner(object), accessor(type), lifetime(std::move(guard)) {}
     virtual ~StateProperty()                  = default;
     virtual void apply(std::optional<qint64>) = 0;
     virtual void abandon()                    = 0;
@@ -31,11 +44,15 @@ struct StatePropertyOf : StateProperty {
     std::map<qint64, QPropertyBinding<T>> overrides;
     // Reconstruct handles; Qt 6.11's copy assignment can free the replacement binding.
     std::optional<QPropertyBinding<T>> base, saved;
-    T                                  initial, savedValue {};
+    T                                  initial {}, savedValue {};
     bool                               covered = false, stopped = false, baseDeclared = false;
 
-    StatePropertyOf(QObject* object, std::type_index type, std::function<QBindable<T>()> getter)
-        : StateProperty(object, type), access(std::move(getter)), initial(access().value()) {
+    StatePropertyOf(QObject* object, std::type_index type, std::shared_ptr<StateBindingOwner> guard,
+                    std::function<QBindable<T>()> getter)
+        : StateProperty(object, type, std::move(guard)), access(std::move(getter)) {
+        if (! isActive()) return;
+        initial = access().value();
+        if (! isActive()) return;
         const auto binding = access().binding();
         if (! binding.isNull())
             base.emplace(binding);
@@ -45,13 +62,19 @@ struct StatePropertyOf : StateProperty {
             }));
     }
 
-    void install(const QPropertyBinding<T>& binding) {
-        if (! owner || stopped) return;
+    bool isActive() {
+        if (! stopped && owner && lifetime->isActive() && owner && ! stopped) return true;
+        abandon();
+        return false;
+    }
+
+    void install(QPropertyBinding<T> binding) {
+        if (! isActive()) return;
         access().setBinding(binding);
     }
 
     void reset() {
-        if (! owner || stopped) return;
+        if (! isActive()) return;
         if (! base)
             access().setValue(initial);
         else
@@ -59,27 +82,26 @@ struct StatePropertyOf : StateProperty {
     }
 
     void apply(std::optional<qint64> state) override {
-        if (! owner) {
-            abandon();
-            return;
-        }
-        if (stopped) return;
+        if (! isActive()) return;
         const auto next = state ? overrides.find(*state) : overrides.end();
         if (next != overrides.end()) {
-            if (! covered) {
-                saved.emplace(access().binding());
-                if (saved->isNull()) savedValue = access().value();
-                if (! owner || stopped) return;
-                covered = true;
-            }
             const auto binding = next->second;
+            if (! covered) {
+                const auto original = access().binding();
+                if (! isActive()) return;
+                const auto value = original.isNull() ? access().value() : T {};
+                if (! isActive()) return;
+                saved.emplace(original);
+                savedValue = value;
+                covered    = true;
+            }
             install(binding);
         } else if (covered) {
             covered             = false;
             const auto original = std::move(*saved);
             saved.reset();
             const auto value = savedValue;
-            if (! owner || stopped) return;
+            if (! isActive()) return;
             if (original.isNull())
                 access().setValue(value);
             else
@@ -96,18 +118,26 @@ struct StatePropertyOf : StateProperty {
 };
 
 struct StateBindingData {
-    std::vector<std::shared_ptr<StateProperty>>                   properties;
+    std::shared_ptr<StateBindingOwner>          lifetime = std::make_shared<StateBindingOwner>();
+    std::vector<std::shared_ptr<StateProperty>> properties;
     std::map<qint64, std::vector<std::shared_ptr<StateProperty>>> states;
     std::optional<qint64>                                         current;
     bool frozen = false, switching = false, stopped = false;
 
     void abandon() {
         if (std::exchange(stopped, true)) return;
+        lifetime->stopped = true;
         for (const auto& property : properties) property->abandon();
     }
 
+    bool isActive() {
+        if (! stopped && lifetime->isActive() && ! stopped) return true;
+        abandon();
+        return false;
+    }
+
     bool select(std::optional<qint64> next) {
-        if (stopped) return false;
+        if (! isActive()) return false;
         if (switching) {
             qWarning("StateBindings: recursive state change");
             return false;
@@ -126,12 +156,12 @@ struct StateBindingData {
         {
             const QScopedPropertyUpdateGroup group;
             for (const auto& property : affected) {
-                if (stopped) break;
+                if (! isActive()) break;
                 property->apply(next);
             }
         }
         switching = false;
-        return ! stopped;
+        return isActive();
     }
 };
 
@@ -154,9 +184,13 @@ class PropertyKey {
     std::shared_ptr<detail::StatePropertyOf<T>> m_property;
 
 public:
-    bool isValid() const { return m_property && m_property->owner && ! m_property->stopped; }
+    bool isValid() const {
+        const auto property = m_property;
+        return property && property->isActive();
+    }
     void reset() const {
-        if (isValid()) m_property->reset();
+        const auto property = m_property;
+        if (property) property->reset();
     }
 };
 
@@ -172,6 +206,7 @@ public:
     template<typename T>
     bool bind(const PropertyKey<T>& key, const QPropertyBinding<T>& binding) const {
         const auto data = m_data;
+        if (! data->isActive()) return false;
         if (data->frozen || data->stopped || key.m_owner.lock() != data || ! key.isValid() ||
             binding.isNull()) {
             qWarning("StateBindings: invalid or frozen declaration");
@@ -193,7 +228,7 @@ public:
             property->baseDeclared = true;
             property->install(binding);
         }
-        return ! data->stopped;
+        return data->isActive();
     }
 
     template<typename T, typename F>
@@ -216,12 +251,24 @@ public:
     StateBindingSet& operator=(const StateBindingSet&) = delete;
     ~StateBindingSet() { abandon(); }
 
+    // A false result is terminal, even while the property objects still exist.
+    bool setOwnerAliveCheck(std::function<bool()> check) {
+        const auto data = m_data;
+        if (data->frozen || data->stopped || ! data->properties.empty()) {
+            qWarning("StateBindings: owner check must precede property registration");
+            return false;
+        }
+        data->lifetime->alive = std::move(check);
+        return true;
+    }
+
     template<auto Accessor, typename Object>
     auto property(Object* object) {
         using T =
             typename detail::BindableValue<std::invoke_result_t<decltype(Accessor), Object*>>::Type;
         PropertyKey<T> key;
         const auto     data = m_data;
+        if (! data->isActive()) return key;
         if (! object || data->frozen || data->stopped) {
             qWarning("StateBindings: invalid or frozen property registration");
             return key;
@@ -239,10 +286,13 @@ public:
                 return key;
             }
         }
-        key.m_property = std::make_shared<detail::StatePropertyOf<T>>(object, type, [object] {
-            return std::invoke(Accessor, object);
-        });
-        data->properties.push_back(key.m_property);
+        const auto property =
+            std::make_shared<detail::StatePropertyOf<T>>(object, type, data->lifetime, [object] {
+                return std::invoke(Accessor, object);
+            });
+        if (! data->isActive() || ! property->isActive()) return key;
+        key.m_property = property;
+        data->properties.push_back(property);
         return key;
     }
 

@@ -184,11 +184,22 @@ public:
 
 protected:
     explicit CommonState(QObject* parent = nullptr);
-    void    setTarget(QObject*);
-    void    publishState(const QString&, std::function<void()> apply);
+    void setTarget(QObject*);
+    void publishState(const QString&, std::function<void()> apply);
+    bool isStateActive() const;
+    template<typename T>
+    void updateStateInput(QProperty<T>& property, const std::type_identity_t<T>& value) {
+        if (isStateActive())
+            property = value;
+        else
+            property.setValueBypassingBindings(value);
+    }
     quint64 targetGeneration() const { return m_targetGeneration.value(); }
     template<typename Domain>
     void initializeAppearance(StateBindingSet<Domain>& bindings) {
+        bindings.setOwnerAliveCheck([owner = QPointer<CommonState>(this)] {
+            return owner && owner->isStateActive();
+        });
 #define REGISTER(Name, Upper)                                                            \
     m_appearance.Name = bindings.template property<&CommonState::bindable##Upper>(this); \
     m_appearance.Name.reset();

@@ -82,8 +82,8 @@ void            SnakeBarState::setActionItem(AbstractButton* value) {
         m_actionDestroyed = connect(value, &QObject::destroyed, this, [this] {
             setActionItem(nullptr);
         });
-    m_actionItem = value;
-    if (guard) Q_EMIT actionItemChanged();
+    updateStateInput(m_actionItem, value);
+    if (guard && isStateActive()) Q_EMIT actionItemChanged();
 }
 AbstractButton* SnakeBarState::iconItem() const { return m_iconItem.value(); }
 void            SnakeBarState::setIconItem(AbstractButton* value) {
@@ -94,8 +94,8 @@ void            SnakeBarState::setIconItem(AbstractButton* value) {
         m_iconDestroyed = connect(value, &QObject::destroyed, this, [this] {
             setIconItem(nullptr);
         });
-    m_iconItem = value;
-    if (guard) Q_EMIT iconItemChanged();
+    updateStateInput(m_iconItem, value);
+    if (guard && isStateActive()) Q_EMIT iconItemChanged();
 }
 void SnakeBarState::selectionChanged() {
     if (! m_ready) return;

@@ -6,8 +6,8 @@ CarouselItemState::CarouselItemState(QObject* parent): CommonState(parent) {
     initializeAppearance(m_bindings);
     connect(this, &CommonState::targetChanged, this, [this] {
         const QPointer<CarouselItemState> guard(this);
-        m_disabled = item() && ! item()->isEnabled();
-        if (guard) Q_EMIT itemChanged();
+        updateStateInput(m_disabled, item() && ! item()->isEnabled());
+        if (guard && isStateActive()) Q_EMIT itemChanged();
     });
     auto base = m_bindings.base();
     base.bind(m_appearance.elevation, [this]() -> qreal {
@@ -36,7 +36,7 @@ void        CarouselItemState::setItem(QQuickItem* value) {
     disconnect(m_enabledConnection);
     if (value)
         m_enabledConnection = connect(value, &QQuickItem::enabledChanged, this, [this] {
-            m_disabled = item() && ! item()->isEnabled();
+            updateStateInput(m_disabled, item() && ! item()->isEnabled());
         });
     setTarget(value);
 }

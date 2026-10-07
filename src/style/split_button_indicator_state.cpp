@@ -93,14 +93,15 @@ void SplitButtonIndicatorState::updateBackground() {
     if (background) {
         m_backgroundConnections.append(
             connect(background, &QQuickItem::heightChanged, this, [this, background] {
-                m_backgroundHeight = background->height();
+                updateStateInput(m_backgroundHeight, std::optional<qreal>(background->height()));
             }));
         m_backgroundConnections.append(connect(background, &QObject::destroyed, this, [this] {
             utils::disconnectAll(m_backgroundConnections);
-            m_backgroundHeight = std::nullopt;
+            updateStateInput(m_backgroundHeight, std::nullopt);
         }));
     }
-    m_backgroundHeight = background ? std::optional<qreal>(background->height()) : std::nullopt;
+    updateStateInput(m_backgroundHeight,
+                     background ? std::optional<qreal>(background->height()) : std::nullopt);
 }
 Button* SplitButtonIndicatorState::item() const { return m_item.value(); }
 void    SplitButtonIndicatorState::setItem(Button* value) {
@@ -109,33 +110,33 @@ void    SplitButtonIndicatorState::setItem(Button* value) {
     {
         const QScopedPropertyUpdateGroup group;
         utils::disconnectAll(m_connections);
-        m_item = value;
+        updateStateInput(m_item, value);
         if (value) {
             m_connections.append(connect(value,
                                          &Button::backgroundChanged,
                                          this,
                                          &SplitButtonIndicatorState::updateBackground));
             m_connections.append(connect(value, &QQuickItem::enabledChanged, this, [this] {
-                m_disabled = item() && ! item()->isEnabled();
+                updateStateInput(m_disabled, item() && ! item()->isEnabled());
             }));
             m_connections.append(connect(value, &QObject::destroyed, this, [this] {
                 utils::disconnectAll(m_connections);
                 QPointer<SplitButtonIndicatorState> guard(this);
                 {
                     const QScopedPropertyUpdateGroup group;
-                    m_item     = nullptr;
-                    m_disabled = false;
+                    updateStateInput(m_item, nullptr);
+                    updateStateInput(m_disabled, false);
                     updateBackground();
                 }
-                if (guard) Q_EMIT itemChanged();
+                if (guard && isStateActive()) Q_EMIT itemChanged();
             }));
         }
         updateBackground();
         setTarget(value);
         if (! guard) return;
-        m_disabled = value && ! value->isEnabled();
+        updateStateInput(m_disabled, value && ! value->isEnabled());
     }
-    if (guard) Q_EMIT itemChanged();
+    if (guard && isStateActive()) Q_EMIT itemChanged();
 }
 void SplitButtonIndicatorState::selectionChanged() {
     if (! m_ready) return;

@@ -29,6 +29,8 @@ protected:
     StateBindings baseBindings() { return m_bindings.base(); }
     StateBindings stateBindings(Interaction state) { return m_bindings.state(state); }
     void          stopBindings() {
+        m_inputReady = false;
+        m_selection.takeBinding();
         m_hovered.takeBinding();
         m_bindings.abandon();
     }

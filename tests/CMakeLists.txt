@@ -61,6 +61,7 @@ target_link_libraries(qm_tests PRIVATE qml_material qml_material_layouts materia
 target_compile_definitions(qm_tests PRIVATE
   QM_QML_IMPORT_PATH="${QT_QML_OUTPUT_DIRECTORY}"
   QM_ICON_TEST_QML="${CMAKE_CURRENT_SOURCE_DIR}/integration/icon_spec.qml"
+  QM_LIST_ITEM_STATE_QML="${CMAKE_CURRENT_SOURCE_DIR}/integration/list_item_state.qml"
   TOOLBAR_DYNAMIC_QML_PATH="${CMAKE_CURRENT_SOURCE_DIR}/layout/toolbar_dynamic_visibility.qml")
 add_dependencies(qm_tests qml_materialplugin qml_material_layoutsplugin)
 if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)

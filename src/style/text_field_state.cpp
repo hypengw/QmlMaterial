@@ -77,16 +77,16 @@ void TextFieldState::updateNativeInputs() {
     utils::disconnectAll(m_nativeConnections);
     if (auto* control = item()) {
         m_nativeConnections.append(connect(control, &QQuickItem::focusChanged, this, [this] {
-            m_focused = item() && item()->hasFocus();
+            updateStateInput(m_focused, item() && item()->hasFocus());
         }));
         m_nativeConnections.append(
             connect(control, &QQuickTextInput::acceptableInputChanged, this, [this] {
-                m_acceptable = ! item() || item()->hasAcceptableInput();
+                updateStateInput(m_acceptable, ! item() || item()->hasAcceptableInput());
             }));
     }
     const QScopedPropertyUpdateGroup group;
-    m_focused    = item() && item()->hasFocus();
-    m_acceptable = ! item() || item()->hasAcceptableInput();
+    updateStateInput(m_focused, item() && item()->hasFocus());
+    updateStateInput(m_acceptable, ! item() || item()->hasAcceptableInput());
 }
 TextField*           TextFieldState::item() const { return static_cast<TextField*>(inputItem()); }
 void                 TextFieldState::setItem(TextField* item) { setInputItem(item); }

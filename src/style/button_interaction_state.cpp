@@ -64,7 +64,7 @@ void ButtonInteractionState::updateGroupContext() {
         auto* info = qobject_cast<ButtonGroupContainerAttached*>(
             qmlAttachedPropertiesObject<ButtonGroupContainer>(item, true));
         const auto changed = [this] {
-            m_groupRevision = m_groupRevision.value() + 1;
+            if (isStateActive()) m_groupRevision = m_groupRevision.value() + 1;
         };
         m_groupConnections.append(
             connect(info, &ButtonGroupContainerAttached::contextChanged, this, changed));
@@ -134,28 +134,28 @@ void ButtonInteractionState::setInputItem(AbstractButton* item) {
     {
         const QScopedPropertyUpdateGroup group;
         utils::disconnectAll(m_connections);
-        m_item = item;
+        updateStateInput(m_item, item);
         if (item) {
             // QQuickItem::enabled has no bindable API in Qt 6.8.
             m_connections.append(connect(item, &AbstractButton::enabledChanged, this, [this] {
-                m_disabled = inputItem() && ! inputItem()->isEnabled();
+                updateStateInput(m_disabled, inputItem() && ! inputItem()->isEnabled());
             }));
             m_connections.append(connect(item, &QObject::destroyed, this, [this] {
                 utils::disconnectAll(m_connections);
                 const QPointer<ButtonInteractionState> guard(this);
                 {
                     const QScopedPropertyUpdateGroup group;
-                    m_item     = nullptr;
-                    m_disabled = false;
+                    updateStateInput(m_item, nullptr);
+                    updateStateInput(m_disabled, false);
                 }
-                if (guard) Q_EMIT itemChanged();
+                if (guard && isStateActive()) Q_EMIT itemChanged();
             }));
         }
         setTarget(item);
         if (! guard) return;
-        m_disabled = item && ! item->isEnabled();
+        updateStateInput(m_disabled, item && ! item->isEnabled());
     }
-    if (guard) Q_EMIT itemChanged();
+    if (guard && isStateActive()) Q_EMIT itemChanged();
 }
 void ButtonInteractionState::bindStateLayerOpacity() {
     stateBindings(Interaction::Pressed).bind(m_appearance.stateLayerOpacity, [this]() -> qreal {

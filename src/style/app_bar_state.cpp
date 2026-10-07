@@ -63,16 +63,16 @@ void     AppBarState::setItem(ToolBar* value) {
     {
         const QScopedPropertyUpdateGroup group;
         disconnect(m_destroyed);
-        m_item = value;
+        updateStateInput(m_item, value);
         if (value)
             m_destroyed = connect(value, &QObject::destroyed, this, [this] {
                 QPointer<AppBarState> guard(this);
-                m_item = nullptr;
-                if (guard) Q_EMIT itemChanged();
+                updateStateInput(m_item, nullptr);
+                if (guard && isStateActive()) Q_EMIT itemChanged();
             });
         setTarget(value);
     }
-    if (guard) Q_EMIT itemChanged();
+    if (guard && isStateActive()) Q_EMIT itemChanged();
 }
 void AppBarState::selectionChanged() {
     if (! m_ready) return;

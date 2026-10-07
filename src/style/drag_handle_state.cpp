@@ -60,27 +60,27 @@ void        DragHandleState::setItem(QQuickItem* value) {
     {
         const QScopedPropertyUpdateGroup group;
         utils::disconnectAll(m_connections);
-        m_item = value;
+        updateStateInput(m_item, value);
         if (value) {
             m_connections.append(connect(value, &QQuickItem::enabledChanged, this, [this] {
-                m_disabled = item() && ! item()->isEnabled();
+                updateStateInput(m_disabled, item() && ! item()->isEnabled());
             }));
             m_connections.append(connect(value, &QObject::destroyed, this, [this] {
                 utils::disconnectAll(m_connections);
                 QPointer<DragHandleState> guard(this);
                 {
                     const QScopedPropertyUpdateGroup group;
-                    m_item     = nullptr;
-                    m_disabled = false;
+                    updateStateInput(m_item, nullptr);
+                    updateStateInput(m_disabled, false);
                 }
-                if (guard) Q_EMIT itemChanged();
+                if (guard && isStateActive()) Q_EMIT itemChanged();
             }));
         }
         setTarget(value);
         if (! guard) return;
-        m_disabled = value && ! value->isEnabled();
+        updateStateInput(m_disabled, value && ! value->isEnabled());
     }
-    if (guard) Q_EMIT itemChanged();
+    if (guard && isStateActive()) Q_EMIT itemChanged();
 }
 void DragHandleState::selectionChanged() {
     if (! m_ready) return;
