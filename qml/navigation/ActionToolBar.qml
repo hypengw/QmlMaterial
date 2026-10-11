@@ -21,7 +21,7 @@ MD.Control {
         onTriggered: {
             if (presentation?.active)
                 return;
-            presentation = m_menu_presenter.present(m_menu_component);
+            presentation = m_menu_presenter.presentMenu(m_menu_component, m_layout.moreButtonItem);
         }
     }
 
@@ -34,7 +34,7 @@ MD.Control {
         id: m_menu_component
 
         MD.ActionMenu {
-            y: root.height
+            anchorAlignment: MD.PopupBase.End
             actions: m_layout.hiddenActions
         }
     }

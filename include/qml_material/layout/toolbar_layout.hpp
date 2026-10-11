@@ -51,6 +51,7 @@ class QML_MATERIAL_API ToolBarLayout : public QQuickItem {
                    iconDelegateChanged FINAL)
     Q_PROPERTY(QQmlComponent* separatorDelegate READ separatorDelegate WRITE setSeparatorDelegate
                    NOTIFY separatorDelegateChanged FINAL)
+    Q_PROPERTY(QQuickItem* moreButtonItem READ moreButtonItem NOTIFY moreButtonItemChanged FINAL)
     Q_PROPERTY(QQmlComponent* moreButton READ moreButton WRITE setMoreButton NOTIFY
                    moreButtonChanged FINAL)
     Q_PROPERTY(qreal spacing READ spacing WRITE setSpacing NOTIFY spacingChanged FINAL)
@@ -116,6 +117,8 @@ public:
     void           setSeparatorDelegate(QQmlComponent* newSeparatorDelegate);
     Q_SIGNAL void  separatorDelegateChanged();
 
+    QQuickItem*    moreButtonItem() const;
+    Q_SIGNAL void  moreButtonItemChanged();
     QQmlComponent* moreButton() const;
     void           setMoreButton(QQmlComponent* newMoreButton);
     Q_SIGNAL void  moreButtonChanged();

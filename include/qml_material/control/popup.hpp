@@ -26,6 +26,7 @@ class Control;
 class Panel;
 class OverlayManager;
 class PopupMotion;
+class PopupAnchorObserver;
 
 class QML_MATERIAL_API Popup : public QObject, public QQmlParserStatus {
     Q_OBJECT
@@ -35,6 +36,17 @@ class QML_MATERIAL_API Popup : public QObject, public QQmlParserStatus {
     Q_PROPERTY(QQuickItem* parent READ parentItem WRITE setParentItem NOTIFY parentChanged FINAL)
     Q_PROPERTY(QQuickItem* positioningItem READ positioningItem WRITE setPositioningItem NOTIFY
                    positioningItemChanged FINAL)
+    Q_PROPERTY(
+        QQuickItem* anchorItem READ anchorItem WRITE setAnchorItem NOTIFY anchorItemChanged FINAL)
+    Q_PROPERTY(Placement preferredPlacement READ preferredPlacement WRITE setPreferredPlacement
+                   NOTIFY preferredPlacementChanged FINAL)
+    Q_PROPERTY(AnchorAlignment anchorAlignment READ anchorAlignment WRITE setAnchorAlignment NOTIFY
+                   anchorAlignmentChanged FINAL)
+    Q_PROPERTY(QQuickItem::TransformOrigin anchorTransformOrigin READ anchorTransformOrigin NOTIFY
+                   anchorTransformOriginChanged FINAL)
+    Q_PROPERTY(qreal anchorGap READ anchorGap WRITE setAnchorGap NOTIFY anchorGapChanged FINAL)
+    Q_PROPERTY(
+        Placement resolvedPlacement READ resolvedPlacement NOTIFY resolvedPlacementChanged FINAL)
     Q_PROPERTY(QQuickItem* surfaceItem READ surfaceItem CONSTANT FINAL)
     Q_PROPERTY(
         QQuickItem* popupItem READ popupItem WRITE setPopupItem NOTIFY popupItemChanged FINAL)
@@ -147,8 +159,40 @@ public:
         Clamp
     };
     Q_ENUM(CollisionPolicy)
-    QQuickItem* parentItem() const { return m_parent; }
-    void        setParentItem(QQuickItem*);
+    enum Placement
+    {
+        Below,
+        Above,
+        Leading,
+        Trailing
+    };
+    Q_ENUM(Placement)
+    enum AnchorAlignment
+    {
+        Start,
+        Center,
+        End
+    };
+    Q_ENUM(AnchorAlignment)
+    QQuickItem*                 anchorItem() const { return m_anchor; }
+    void                        setAnchorItem(QQuickItem*);
+    Placement                   preferredPlacement() const { return m_preferredPlacement; }
+    void                        setPreferredPlacement(Placement);
+    AnchorAlignment             anchorAlignment() const { return m_anchorAlignment; }
+    void                        setAnchorAlignment(AnchorAlignment);
+    qreal                       anchorGap() const { return m_anchorGap; }
+    void                        setAnchorGap(qreal);
+    Placement                   resolvedPlacement() const { return m_resolvedPlacement; }
+    QQuickItem::TransformOrigin anchorTransformOrigin() const { return m_anchorTransformOrigin; }
+    Q_SIGNAL void               anchorTransformOriginChanged();
+    Q_SIGNAL void               anchorItemChanged();
+    Q_SIGNAL void               preferredPlacementChanged();
+    Q_SIGNAL void               anchorAlignmentChanged();
+    Q_SIGNAL void               anchorGapChanged();
+    Q_SIGNAL void               resolvedPlacementChanged();
+    Q_SIGNAL void               openRejected(const QString& error);
+    QQuickItem*                 parentItem() const { return m_parent; }
+    void                        setParentItem(QQuickItem*);
     // Null uses the logical parent; changing the coordinate reference does not reparent the popup.
     QQuickItem*                  positioningItem() const { return m_positioningItem; }
     void                         setPositioningItem(QQuickItem*);
@@ -364,8 +408,9 @@ public:
     Q_SIGNAL void closed();
 
 protected:
-    void beginInteractiveTransition();
-    void endInteractiveTransition(bool opening);
+    virtual void prepareForOpen() {}
+    void         beginInteractiveTransition();
+    void         endInteractiveTransition(bool opening);
     struct TransitionTarget {
         QString  property;
         QVariant value;
@@ -382,6 +427,9 @@ protected:
 
 private:
     friend class OverlayManager;
+    friend class PopupAnchorObserver;
+    void anchorChanged();
+    bool validAnchor() const;
     void overlayPress(const QPointF&);
     void overlayRelease(const QPointF&);
     void cancelOverlayPress();
@@ -393,36 +441,44 @@ private:
         Open,
         Closing
     };
-    bool                           changeState(State);
-    void                           observeParent();
-    void                           observePositioningItem();
-    void                           refreshEnvironment();
-    void                           resolveFont();
-    void                           resolveLocale();
-    void                           resolveLayoutDirection();
-    void                           resolveHoverEnabled();
-    void                           refreshInheritedZ();
-    void                           updateOverlay();
-    void                           finishClose();
-    void                           startTransition(bool);
-    Panel*                         m_surface;
-    QPointer<QQuickItem>           m_parent, m_hitItem, m_positioningItem;
-    QPointer<Control>              m_environmentParent;
-    QPointer<OverlayManager>       m_overlay;
-    QList<QMetaObject::Connection> m_parentConnections, m_overlayConnections;
-    QList<QMetaObject::Connection> m_positioningConnections;
-    QPointer<QQuickTransition>     m_enter, m_exit;
-    std::unique_ptr<PopupMotion>   m_motion;
-    State                          m_state          = Closed;
-    bool                           m_dismissing     = false;
-    bool                           m_finishingClose = false;
-    std::function<void()>          m_presentationCloseHandler;
-    QQuickTransform*               m_presentationTransform = nullptr;
-    std::optional<qreal>           m_width, m_height;
-    bool                           m_interacting = false;
-    QPointer<QObject>              m_presentationOwner;
-    QMetaObject::Connection        m_presentationOwnerConnection;
-    bool                           m_presentationAllowed = false;
+    bool                                 changeState(State);
+    void                                 observeParent();
+    void                                 observePositioningItem();
+    void                                 refreshEnvironment();
+    void                                 resolveFont();
+    void                                 resolveLocale();
+    void                                 resolveLayoutDirection();
+    void                                 resolveHoverEnabled();
+    void                                 refreshInheritedZ();
+    void                                 updateOverlay();
+    void                                 finishClose();
+    void                                 startTransition(bool);
+    QPointer<QQuickItem>                 m_anchor;
+    std::unique_ptr<PopupAnchorObserver> m_anchorObserver;
+    QList<QMetaObject::Connection>       m_anchorConnections;
+    bool                                 m_anchored           = false;
+    Placement                            m_preferredPlacement = Below, m_resolvedPlacement = Below;
+    AnchorAlignment                      m_anchorAlignment       = Start;
+    qreal                                m_anchorGap             = 0;
+    QQuickItem::TransformOrigin          m_anchorTransformOrigin = QQuickItem::Top;
+    Panel*                               m_surface;
+    QPointer<QQuickItem>                 m_parent, m_hitItem, m_positioningItem;
+    QPointer<Control>                    m_environmentParent;
+    QPointer<OverlayManager>             m_overlay;
+    QList<QMetaObject::Connection>       m_parentConnections, m_overlayConnections;
+    QList<QMetaObject::Connection>       m_positioningConnections;
+    QPointer<QQuickTransition>           m_enter, m_exit;
+    std::unique_ptr<PopupMotion>         m_motion;
+    State                                m_state          = Closed;
+    bool                                 m_dismissing     = false;
+    bool                                 m_finishingClose = false;
+    std::function<void()>                m_presentationCloseHandler;
+    QQuickTransform*                     m_presentationTransform = nullptr;
+    std::optional<qreal>                 m_width, m_height;
+    bool                                 m_interacting = false;
+    QPointer<QObject>                    m_presentationOwner;
+    QMetaObject::Connection              m_presentationOwnerConnection;
+    bool                                 m_presentationAllowed = false;
     bool m_presentationRequestEnabled = false, m_requestingPresentation = false;
     bool m_complete = false, m_requestedVisible = false, m_modal = false, m_focus = false,
          m_deferred = false, m_positioning = false;

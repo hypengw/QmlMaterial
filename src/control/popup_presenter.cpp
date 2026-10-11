@@ -1,5 +1,6 @@
 #include "qml_material/control/popup_presenter.hpp"
 #include "qml_material/control/popup.hpp"
+#include "qml_material/control/menu.hpp"
 
 #include <QMetaMethod>
 #include <QQmlContext>
@@ -121,6 +122,9 @@ PopupPresenter::~PopupPresenter() {
     for (auto presentation : presentations) {
         if (! presentation || presentation->m_terminal) continue;
         presentation->m_terminal = true;
+        for (const auto& connection : std::as_const(presentation->m_anchorConnections))
+            disconnect(connection);
+        presentation->m_anchorConnections.clear();
         if (presentation->m_request) presentation->m_request->cancel();
     }
     m_presentations.clear();
@@ -163,7 +167,18 @@ void PopupPresenter::setIncubationMode(Pool::IncubationMode value) {
 
 PopupPresentation* PopupPresenter::present(const QVariant&    source,
                                            const QVariantMap& initialProperties) {
-    auto* presentation = new PopupPresentation(this);
+    return presentImpl(source, initialProperties, nullptr, false);
+}
+PopupPresentation* PopupPresenter::presentMenu(const QVariant& source, QQuickItem* anchor,
+                                               const QVariantMap& initialProperties) {
+    return presentImpl(source, initialProperties, anchor, true);
+}
+PopupPresentation* PopupPresenter::presentImpl(const QVariant&    source,
+                                               const QVariantMap& initialProperties,
+                                               QQuickItem* anchor, bool menu) {
+    auto* presentation     = new PopupPresentation(this);
+    presentation->m_menu   = menu;
+    presentation->m_anchor = anchor;
     QQmlEngine::setObjectOwnership(presentation, QQmlEngine::JavaScriptOwnership);
     m_presentations.push_back(presentation);
 
@@ -178,11 +193,44 @@ PopupPresentation* PopupPresenter::present(const QVariant&    source,
         return presentation;
     }
 
+    if (menu) {
+        if (! anchor || ! anchor->isVisible() || anchor->window() != m_host->window() ||
+            initialProperties.contains(QStringLiteral("x")) ||
+            initialProperties.contains(QStringLiteral("y")) ||
+            initialProperties.contains(QStringLiteral("anchorItem"))) {
+            failPresentation(
+                presentation,
+                QStringLiteral(
+                    "presentMenu requires a visible same-window anchor and no manual coordinates"));
+            return presentation;
+        }
+        auto invalidate = [this, presentation] {
+            if (presentation->m_terminal) return;
+            auto anchor = presentation->m_anchor;
+            if (! anchor || ! anchor->isVisible() || ! m_host ||
+                anchor->window() != m_host->window())
+                requestClose(presentation, PopupPresentation::Finish::Cancelled);
+        };
+        presentation->m_anchorConnections.append(
+            connect(anchor, &QObject::destroyed, presentation, invalidate));
+        presentation->m_anchorConnections.append(
+            connect(anchor, &QQuickItem::visibleChanged, presentation, invalidate));
+        presentation->m_anchorConnections.append(
+            connect(anchor, &QQuickItem::windowChanged, presentation, invalidate));
+    }
     ensurePoolContext();
     auto properties = initialProperties;
+    if (menu) properties.insert(QStringLiteral("anchorItem"), QVariant::fromValue(anchor));
     properties.insert(QStringLiteral("parent"), QVariant::fromValue(m_host.data()));
 
-    auto* request           = m_pool->request(source, properties, {}, m_incubationMode);
+    auto* request = m_pool->request(source, properties, {}, m_incubationMode);
+    if (presentation->m_terminal) {
+        if (request->status() == PoolRequest::Loading)
+            request->cancel();
+        else
+            request->release();
+        return presentation;
+    }
     presentation->m_request = request;
     connect(request, &PoolRequest::statusChanged, presentation, [this, presentation]() {
         handleRequest(presentation);
@@ -259,6 +307,20 @@ void PopupPresenter::attachPopup(PopupPresentation* presentation, QObject* popup
         return;
     }
 
+    if (presentation->m_menu && ! qobject_cast<Menu*>(popup)) {
+        failPresentation(presentation, QStringLiteral("presentMenu requires MenuBase"));
+        return;
+    }
+    if (auto* managed = qobject_cast<Popup*>(popup)) {
+        connect(managed,
+                &Popup::openRejected,
+                presentation,
+                [this, presentation](const QString& error) {
+                    // Rejection has no open surface to close; finish the existing request directly.
+                    presentation->setErrorString(error);
+                    finishPresentation(presentation, PopupPresentation::Finish::Error);
+                });
+    }
     const auto* meta = popup->metaObject();
     QStringList missing;
     if (meta->indexOfMethod("open()") < 0) missing.push_back(QStringLiteral("open()"));
@@ -374,7 +436,10 @@ void PopupPresenter::finishPresentation(PopupPresentation*        presentation,
                                         PopupPresentation::Finish finish) {
     if (! presentation || presentation->m_terminal) return;
     presentation->m_terminal = true;
-    presentation->m_finish   = finish;
+    for (const auto& connection : std::as_const(presentation->m_anchorConnections))
+        disconnect(connection);
+    presentation->m_anchorConnections.clear();
+    presentation->m_finish = finish;
 
     if (presentation->m_request)
         disconnect(presentation->m_request, nullptr, presentation, nullptr);

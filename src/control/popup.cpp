@@ -1,6 +1,8 @@
 #include "qml_material/control/popup.hpp"
 #include "qml_material/control/panel.hpp"
 #include "popup_surface.hpp"
+#include "popup_placement.hpp"
+#include <QtQuick/private/qquickitem_p.h>
 #include "qml_material/control/overlay.hpp"
 #include "qml_material/style/theme.hpp"
 #include "qml_material/util/qt.hpp"
@@ -15,9 +17,62 @@
 #include <QtQuick/private/qquicktranslate_p.h>
 #include <algorithm>
 #include <cmath>
+#include <utility>
 
 namespace qml_material
 {
+// An observation-only child receives complete ancestor transforms on Qt 6.8 too.
+class PopupAnchorObserver : public QQuickItem {
+    class Private : public QQuickItemPrivate {
+    public:
+        bool transformChanged(QQuickItem* item) override {
+            const auto result = QQuickItemPrivate::transformChanged(item);
+            static_cast<PopupAnchorObserver*>(q_ptr)->schedule();
+            return result;
+        }
+    };
+
+public:
+    explicit PopupAnchorObserver(Popup* popup): QQuickItem(*new Private), m_popup(popup) {
+        setParent(popup);
+        setFlag(ItemObservesViewport);
+    }
+    void observe(QQuickItem* item) {
+        m_invalidated = false;
+        setParentItem(item);
+    }
+    void schedule() {
+        if (! m_popup) return;
+        m_invalidated |= m_popup->isVisible() && ! m_popup->validAnchor();
+        if (m_pending) return;
+        m_pending = true;
+        QMetaObject::invokeMethod(
+            this,
+            [this] {
+                m_pending              = false;
+                const bool invalidated = std::exchange(m_invalidated, false);
+                if (! m_popup) return;
+                if (invalidated && m_popup->isVisible())
+                    m_popup->dismissImmediately();
+                else
+                    m_popup->anchorChanged();
+            },
+            Qt::QueuedConnection);
+    }
+
+protected:
+    void itemChange(ItemChange change, const ItemChangeData& data) override {
+        QQuickItem::itemChange(change, data);
+        if (change == ItemVisibleHasChanged || change == ItemSceneChange ||
+            change == ItemParentHasChanged)
+            schedule();
+    }
+
+private:
+    QPointer<Popup> m_popup;
+    bool            m_pending = false, m_invalidated = false;
+};
+
 class PopupMotion : public QQuickTransitionManager {
 public:
     explicit PopupMotion(Popup* popup): m_popup(popup) {}
@@ -55,19 +110,19 @@ void              Popup::setImplicitWidth(qreal value) {
     // Replace the surface's default binding when the popup supplies its own size.
     QQmlProperty::write(m_surface, QStringLiteral("implicitWidth"), value);
 }
-qreal             Popup::implicitHeight() const { return m_surface->implicitHeight(); }
-void              Popup::setImplicitHeight(qreal value) {
+qreal Popup::implicitHeight() const { return m_surface->implicitHeight(); }
+void  Popup::setImplicitHeight(qreal value) {
     QQmlProperty::write(m_surface, QStringLiteral("implicitHeight"), value);
 }
-qreal             Popup::contentWidth() const { return m_surface->contentWidth(); }
-void              Popup::setContentWidth(qreal value) { m_surface->setContentWidth(value); }
-void              Popup::resetContentWidth() { m_surface->resetContentWidth(); }
-qreal             Popup::contentHeight() const { return m_surface->contentHeight(); }
-void              Popup::setContentHeight(qreal value) { m_surface->setContentHeight(value); }
-void              Popup::resetContentHeight() { m_surface->resetContentHeight(); }
-qreal             Popup::padding() const { return m_surface->padding(); }
-void              Popup::setPadding(qreal value) { m_surface->setPadding(value); }
-qreal             Popup::horizontalPadding() const { return m_surface->horizontalPadding(); }
+qreal Popup::contentWidth() const { return m_surface->contentWidth(); }
+void  Popup::setContentWidth(qreal value) { m_surface->setContentWidth(value); }
+void  Popup::resetContentWidth() { m_surface->resetContentWidth(); }
+qreal Popup::contentHeight() const { return m_surface->contentHeight(); }
+void  Popup::setContentHeight(qreal value) { m_surface->setContentHeight(value); }
+void  Popup::resetContentHeight() { m_surface->resetContentHeight(); }
+qreal Popup::padding() const { return m_surface->padding(); }
+void  Popup::setPadding(qreal value) { m_surface->setPadding(value); }
+qreal Popup::horizontalPadding() const { return m_surface->horizontalPadding(); }
 void  Popup::setHorizontalPadding(qreal value) { m_surface->setHorizontalPadding(value); }
 qreal Popup::verticalPadding() const { return m_surface->verticalPadding(); }
 void  Popup::setVerticalPadding(qreal value) { m_surface->setVerticalPadding(value); }
@@ -112,6 +167,7 @@ bool  Popup::mirrored() const { return m_surface->mirrored(); }
 Popup::Popup(QObject* parent): Popup(new PopupSurface<Panel>(this), parent) {}
 Popup::Popup(Panel* surface, QObject* parent)
     : QObject(parent), m_surface(surface), m_motion(std::make_unique<PopupMotion>(this)) {
+    m_anchorObserver = std::make_unique<PopupAnchorObserver>(this);
     m_surface->setParent(this);
     m_surface->setVisible(false);
     m_hideTimer.setSingleShot(true);
@@ -171,6 +227,7 @@ Popup::Popup(Panel* surface, QObject* parent)
     connect(m_surface, &Panel::activeFocusChanged, this, &Popup::activeFocusChanged);
     connect(m_surface, &Panel::visualFocusChanged, this, &Popup::visualFocusChanged);
     connect(m_surface, &Panel::mirroredChanged, this, &Popup::mirroredChanged);
+    connect(m_surface, &Panel::mirroredChanged, this, &Popup::reposition);
     connect(m_surface, &Panel::contentChildrenChanged, this, &Popup::contentChildrenChanged);
     connect(m_surface, &Panel::fontChanged, this, &Popup::fontChanged);
     connect(m_surface, &Panel::localeChanged, this, &Popup::localeChanged);
@@ -187,6 +244,8 @@ Popup::~Popup() {
     utils::disconnectAll(m_parentConnections);
     utils::disconnectAll(m_positioningConnections);
     utils::disconnectAll(m_overlayConnections);
+    utils::disconnectAll(m_anchorConnections);
+    m_anchorObserver.reset();
     m_motion->cancel();
     if (m_overlay) m_overlay->remove(this);
     m_surface->setParentItem(nullptr);
@@ -224,6 +283,62 @@ void Popup::setParentItem(QQuickItem* item) {
     m_parent = item;
     observeParent();
     if (guard) Q_EMIT parentChanged();
+}
+void Popup::setAnchorItem(QQuickItem* item) {
+    if (m_anchor == item && m_anchored == bool(item)) return;
+    utils::disconnectAll(m_anchorConnections);
+    const bool clearing = m_anchored && ! item;
+    m_anchor            = item;
+    if (item) {
+        for (auto signal : { &QQuickItem::widthChanged, &QQuickItem::heightChanged })
+            m_anchorConnections.append(connect(item, signal, this, &Popup::anchorChanged));
+        m_anchorConnections.append(connect(item, &QObject::destroyed, this, [this] {
+            m_anchorObserver->schedule();
+            Q_EMIT anchorItemChanged();
+        }));
+    }
+    m_anchored = item != nullptr;
+    m_anchorObserver->observe(item);
+    QPointer<Popup> guard(this);
+    if (clearing && isVisible()) dismissImmediately();
+    if (! guard) return;
+    anchorChanged();
+    if (guard) Q_EMIT anchorItemChanged();
+}
+bool Popup::validAnchor() const {
+    return m_anchor && m_anchor != m_surface && ! m_surface->isAncestorOf(m_anchor) &&
+           m_anchor->isVisible() && m_overlay && m_anchor->window() == m_overlay->window();
+}
+void Popup::anchorChanged() {
+    if (! m_anchored) return;
+    if (isVisible() && ! validAnchor()) {
+        dismissImmediately();
+    } else {
+        reposition();
+    }
+}
+void Popup::setPreferredPlacement(Placement value) {
+    if (m_preferredPlacement == value) return;
+    m_preferredPlacement = value;
+    QPointer<Popup> guard(this);
+    reposition();
+    if (guard) Q_EMIT preferredPlacementChanged();
+}
+void Popup::setAnchorAlignment(AnchorAlignment value) {
+    if (m_anchorAlignment == value) return;
+    m_anchorAlignment = value;
+    QPointer<Popup> guard(this);
+    reposition();
+    if (guard) Q_EMIT anchorAlignmentChanged();
+}
+void Popup::setAnchorGap(qreal value) {
+    if (! std::isfinite(value)) return;
+    value = std::max<qreal>(0, value);
+    if (m_anchorGap == value) return;
+    m_anchorGap = value;
+    QPointer<Popup> guard(this);
+    reposition();
+    if (guard) Q_EMIT anchorGapChanged();
 }
 void Popup::setPositioningItem(QQuickItem* item) {
     if (m_positioningItem == item) return;
@@ -505,6 +620,11 @@ void Popup::open() {
     QPointer<Popup> guard(this);
     updateOverlay();
     if (! guard) return;
+    if (m_anchored && ! validAnchor()) {
+        m_requestedVisible = false;
+        Q_EMIT openRejected(QStringLiteral("Popup requires a visible anchor in its window"));
+        return;
+    }
     if (! m_overlay) {
         m_requestedVisible = true;
         return;
@@ -519,8 +639,11 @@ void Popup::open() {
     if (! changeState(Entering)) return;
     m_overlay->add(this);
     if (! guard || ! entering()) return;
-    m_surface->setVisible(true);
+    prepareForOpen();
+    if (! guard || ! entering()) return;
     reposition();
+    if (! guard || ! entering()) return;
+    m_surface->setVisible(true);
     refreshEnvironment();
     if (m_focus) forceActiveFocus(Qt::PopupFocusReason);
     if (! guard || ! entering()) return;
@@ -685,9 +808,43 @@ void Popup::reposition() {
         transform->setXScale(factor);
         transform->setYScale(factor);
     }
-    m_surface->setSize(surfaceSize());
-    if (! guard) return;
-    if (m_overlay && m_parent) m_surface->setPosition(surfacePosition());
+    if (m_anchored && validAnchor()) {
+        const auto bounds = QRectF(0, 0, overlayWidth(), overlayHeight())
+                                .adjusted(std::max<qreal>(0, leftMargin()),
+                                          std::max<qreal>(0, topMargin()),
+                                          -std::max<qreal>(0, rightMargin()),
+                                          -std::max<qreal>(0, bottomMargin()));
+        const auto result = placePopup(m_anchor->mapRectToItem(m_overlay, m_anchor->boundingRect()),
+                                       surfaceSize(),
+                                       bounds,
+                                       m_preferredPlacement,
+                                       m_anchorAlignment,
+                                       m_anchorGap,
+                                       mirrored());
+        if (! result) {
+            m_positioning = false;
+            if (isVisible()) dismissImmediately();
+            if (guard)
+                Q_EMIT openRejected(
+                    QStringLiteral("Popup anchor has no usable presentation space"));
+            return;
+        }
+        const bool changed       = m_resolvedPlacement != result->placement;
+        m_resolvedPlacement      = result->placement;
+        const bool originChanged = m_anchorTransformOrigin != result->origin;
+        m_anchorTransformOrigin  = result->origin;
+        m_surface->setSize(result->rect.size());
+        if (! guard) return;
+        m_surface->setPosition(result->rect.topLeft());
+        if (! guard) return;
+        if (changed) Q_EMIT resolvedPlacementChanged();
+        if (! guard) return;
+        if (originChanged) Q_EMIT anchorTransformOriginChanged();
+    } else if (! m_anchored) {
+        m_surface->setSize(surfaceSize());
+        if (! guard) return;
+        if (m_overlay && m_parent) m_surface->setPosition(surfacePosition());
+    }
     if (! guard) return;
     if (isVisible() && m_overlay) m_overlay->updateDimmer(this);
     if (guard) {

@@ -12,8 +12,6 @@ MD.PopupBase {
     property bool readyForOpen: true
     readonly property bool openPending: m_open_state.pending
 
-    signal openRejected(string error)
-
     function requestOpen() {
         if (m_open_state.rejected) {
             if (m_open_state.replayRejection) {

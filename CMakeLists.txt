@@ -274,6 +274,7 @@ set(SOURCES
     include/qml_material/control/panel.hpp
     include/qml_material/control/tool_bar.hpp
     include/qml_material/control/control.hpp
+    src/control/popup_placement.hpp
     src/control/popup.cpp
     src/control/dialog.cpp
     src/control/menu.cpp

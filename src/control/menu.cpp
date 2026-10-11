@@ -1,6 +1,7 @@
 #include "qml_material/control/menu.hpp"
 #include "qml_material/control/panel.hpp"
 #include <QtQmlModels/private/qqmlobjectmodel_p.h>
+#include <QtQuick/private/qquickitemview_p.h>
 #include <QQmlInfo>
 #include <QQmlComponent>
 #include <algorithm>
@@ -70,11 +71,20 @@ void Menu::insertItem(int index, QQuickItem* item) {
         moveItem(old, old < index ? index - 1 : index);
         return;
     }
+    QPointer<Menu>       guard(this);
+    QPointer<QQuickItem> target(item);
+    auto                 menuItem = qobject_cast<MenuItem*>(item);
+    if (menuItem && menuItem->menu() && menuItem->menu() != this) {
+        auto owner = menuItem->menu();
+        owner->takeItem(owner->indexOf(item));
+        if (! guard || ! target) return;
+    }
     m_items.insert(index, item);
     m_destroyConnections.insert(item, connect(item, &QObject::destroyed, this, [this, item] {
                                     removeAt(indexOf(item));
                                 }));
-    QPointer<Menu> guard(this);
+    if (menuItem) menuItem->setMenu(this);
+    if (! guard || ! target) return;
     m_model->insert(index, item);
     if (! guard) return;
     if (m_index >= index) setCurrentIndex(m_index + 1);
@@ -94,10 +104,13 @@ void Menu::moveItem(int from, int to) {
 }
 void Menu::removeAt(int index) {
     if (index < 0 || index >= count()) return;
-    auto item = m_items.takeAt(index);
+    QPointer<QQuickItem> item(m_items.takeAt(index));
     disconnect(m_destroyConnections.take(item));
     QPointer<Menu> guard(this);
     m_model->remove(index);
+    if (! guard) return;
+    if (auto menuItem = qobject_cast<MenuItem*>(item.data()); menuItem && menuItem->menu() == this)
+        menuItem->setMenu(nullptr);
     if (! guard) return;
     if (m_index == index)
         setCurrentIndex(-1);
@@ -123,7 +136,27 @@ void Menu::dismiss() {
         current = parent;
     }
 }
+void Menu::prepareForOpen() {
+    QPointer<Menu> guard(this);
+    Q_EMIT aboutToPrepare();
+    if (! guard) return;
+    if (auto view = qobject_cast<QQuickItemView*>(contentItem())) view->forceLayout();
+}
+void Menu::openFor(QQuickItem* anchor) {
+    if (! anchor) {
+        Q_EMIT openRejected(QStringLiteral("Menu requires an anchor"));
+        return;
+    }
+    QPointer<Menu> guard(this);
+    setAnchorItem(anchor);
+    if (guard) open();
+}
 void Menu::popup(qreal x, qreal y) {
+    if (anchorItem()) {
+        Q_EMIT openRejected(
+            QStringLiteral("Menu.popup coordinates cannot be combined with anchorItem"));
+        return;
+    }
     setX(x);
     setY(y);
     open();
@@ -141,8 +174,29 @@ void Menu::openSubMenu(Menu* child, QQuickItem* anchor) {
     if (! guard || ! target || ! item) return;
     child->setParentItem(item);
     if (! guard || ! target || ! item) return;
-    child->setX(mirrored() ? -child->width() : item->width());
-    child->setY(0);
-    child->open();
+    child->setPreferredPlacement(Trailing);
+    if (! guard || ! target || ! item) return;
+    child->setAnchorAlignment(Start);
+    if (! guard || ! target || ! item) return;
+    child->openFor(item);
+}
+MenuItem::~MenuItem() {
+    disconnect(m_menuDestroyed);
+    disconnect(m_subMenuDestroyed);
+}
+void MenuItem::setMenu(Menu* value) {
+    if (m_menu == value) return;
+    disconnect(m_menuDestroyed);
+    m_menu = value;
+    if (value) m_menuDestroyed = connect(value, &QObject::destroyed, this, &MenuItem::menuChanged);
+    Q_EMIT menuChanged();
+}
+void MenuItem::setSubMenu(Menu* value) {
+    if (m_subMenu == value) return;
+    disconnect(m_subMenuDestroyed);
+    m_subMenu = value;
+    if (value)
+        m_subMenuDestroyed = connect(value, &QObject::destroyed, this, &MenuItem::subMenuChanged);
+    Q_EMIT subMenuChanged();
 }
 } // namespace qml_material

@@ -7,6 +7,7 @@ endforeach()
 enable_testing()
 
 set(QM_TEST_SOURCES
+  integration/menu_placement.cpp
   integration/side_sheet.cpp
   integration/swipe_to_dismiss.cpp
   integration/pull_to_refresh.cpp
@@ -100,7 +101,7 @@ file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/test_groups.inc" CONTENT "${QM
 
 set_tests_properties(side_sheet swipe_to_dismiss pull_to_refresh search_view time_input range_slider floating_toolbar date_input text_field_form extended_fab fab_menu button_group material_shapes lazy_list scroll_motion lazy_data icon_spec toolbar_dynamic_visibility application_lifetime
   PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
-set_tests_properties(bindable_controls progress_indicator lite_layout control_layout dynamic_creation attached_property_propagation
+set_tests_properties(menu_placement bindable_controls progress_indicator lite_layout control_layout dynamic_creation attached_property_propagation
   page_layout split_view item_proxy nested_scroll adaptive_presenter PROPERTIES ENVIRONMENT
   "QT_QPA_PLATFORM=offscreen;QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY}")
 set_tests_properties(control_layout PROPERTIES ENVIRONMENT
@@ -121,7 +122,7 @@ if(QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
 endif()
 qt_import_qml_plugins(lazy_list_benchmark)
 
-set(VISUAL_SCENES font_alignment floating_toolbar date_modes list_item date_locale text_field_form extended_fab fab_menu button_group material_shapes button action_progress elevation elevation_corners shape ripple ripple_phases loading_indicator_shapes tooltip wave_progress snackbar
+set(VISUAL_SCENES menu_placement font_alignment floating_toolbar date_modes list_item date_locale text_field_form extended_fab fab_menu button_group material_shapes button action_progress elevation elevation_corners shape ripple ripple_phases loading_indicator_shapes tooltip wave_progress snackbar
     icon_artifacts icon_spec range_slider time_picker time_dialog search_view search_fullscreen search_progress app_bar_scroll pull_to_refresh swipe_to_dismiss
     focus_button focus_iconbutton focus_fab focus_chip
     focus_switch focus_checkbox focus_radio

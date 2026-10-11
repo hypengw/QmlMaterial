@@ -212,6 +212,7 @@ void ToolBarLayout::setSeparatorDelegate(QQmlComponent* newSeparatorDelegate) {
     Q_EMIT separatorDelegateChanged();
 }
 
+QQuickItem*    ToolBarLayout::moreButtonItem() const { return d->moreButtonInstance; }
 QQmlComponent* ToolBarLayout::moreButton() const { return d->moreButton; }
 
 void ToolBarLayout::setMoreButton(QQmlComponent* newMoreButton) {
@@ -224,6 +225,7 @@ void ToolBarLayout::setMoreButton(QQmlComponent* newMoreButton) {
         d->moreButtonInstance->disconnect(this);
         d->moreButtonInstance->deleteLater();
         d->moreButtonInstance = nullptr;
+        Q_EMIT moreButtonItemChanged();
     }
     relayout();
     Q_EMIT moreButtonChanged();
@@ -565,6 +567,7 @@ QList<ToolBarLayoutDelegate*> ToolBarLayoutPrivate::createDelegates() {
         moreButtonIncubator->setCompletedCallback([this](ToolBarDelegateIncubator* incubator) {
             moreButtonInstance = qobject_cast<QQuickItem*>(incubator->object());
             moreButtonInstance->setVisible(false);
+            Q_EMIT q->moreButtonItemChanged();
 
             QObject::connect(moreButtonInstance, &QQuickItem::visibleChanged, q, [this]() {
                 moreButtonInstance->setVisible(shouldShowMoreButton);

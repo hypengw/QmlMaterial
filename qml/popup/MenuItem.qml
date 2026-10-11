@@ -3,22 +3,19 @@ import QtQuick
 import Qcm.Material as MD
 import Qcm.Material.Layouts as Lite
 
-MD.ButtonBase {
+MD.MenuItemBase {
     id: control
 
-    property MD.MenuBase menu: null
-    property MD.MenuBase subMenu: null
     property Item arrow
-    signal triggered
     onClicked: {
         if (subMenu) {
             if (menu) {
                 menu.openSubMenu(subMenu, control);
             } else {
                 subMenu.parent = control;
-                subMenu.x = control.mirrored ? -subMenu.width : control.width;
-                subMenu.y = 0;
-                subMenu.open();
+                subMenu.preferredPlacement = MD.PopupBase.Trailing;
+                subMenu.anchorAlignment = MD.PopupBase.Start;
+                subMenu.openFor(control);
             }
         } else {
             triggered();

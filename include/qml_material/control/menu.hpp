@@ -1,6 +1,7 @@
 #pragma once
 
 #include "qml_material/control/popup.hpp"
+#include "qml_material/control/button.hpp"
 
 QT_BEGIN_NAMESPACE
 class QQmlComponent;
@@ -44,11 +45,16 @@ public:
     Q_INVOKABLE void        dismiss();
     Q_INVOKABLE void        openSubMenu(Menu*, QQuickItem* anchor);
     Q_INVOKABLE void        popup(qreal x, qreal y);
+    Q_INVOKABLE void        openFor(QQuickItem* anchor);
+    Q_SIGNAL void           aboutToPrepare();
     Q_SIGNAL void           countChanged();
     Q_SIGNAL void           currentIndexChanged();
     Q_SIGNAL void           titleChanged();
     Q_SIGNAL void           delegateChanged();
     Q_SIGNAL void           parentMenuChanged();
+
+protected:
+    void prepareForOpen() override;
 
 private:
     void                                        removeAt(int);
@@ -62,5 +68,25 @@ private:
     QMetaObject::Connection                     m_parentDestroyed;
     QString                                     m_title;
     int                                         m_index = -1;
+};
+class QML_MATERIAL_API MenuItem : public Button {
+    Q_OBJECT
+    QML_NAMED_ELEMENT(MenuItemBase)
+    Q_PROPERTY(Menu* menu READ menu WRITE setMenu NOTIFY menuChanged FINAL)
+    Q_PROPERTY(Menu* subMenu READ subMenu WRITE setSubMenu NOTIFY subMenuChanged FINAL)
+public:
+    explicit MenuItem(QQuickItem* parent = nullptr): Button(parent) {}
+    ~MenuItem() override;
+    Menu*         menu() const { return m_menu; }
+    void          setMenu(Menu*);
+    Menu*         subMenu() const { return m_subMenu; }
+    void          setSubMenu(Menu*);
+    Q_SIGNAL void menuChanged();
+    Q_SIGNAL void subMenuChanged();
+    Q_SIGNAL void triggered();
+
+private:
+    QPointer<Menu>          m_menu, m_subMenu;
+    QMetaObject::Connection m_menuDestroyed, m_subMenuDestroyed;
 };
 } // namespace qml_material

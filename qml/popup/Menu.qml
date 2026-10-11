@@ -16,6 +16,7 @@ MD.MenuBase {
     property list<Item> __entryItems
     property list<Item> __ownedItems
     property list<Item> __entryOwnedItems
+    property bool __entriesDirty: true
 
     function insertAction(index: int, action: MD.Action) {
         const item = delegate.createObject(contentItem, {
@@ -39,7 +40,7 @@ MD.MenuBase {
         insertMenu(count, menu);
     }
     function menuAt(index: int): MD.MenuBase {
-        return (itemAt(index) as MD.MenuItem)?.subMenu ?? null;
+        return (itemAt(index) as MD.MenuItemBase)?.subMenu ?? null;
     }
     function removeMenu(menu: MD.MenuBase) {
         for (let index = count - 1; index >= 0; --index) {
@@ -49,8 +50,6 @@ MD.MenuBase {
     }
     function __removeEntry(item: Item) {
         takeItem(indexOf(item));
-        if (item instanceof MD.MenuItem)
-            item.menu = null;
         const entryIndex = __entryItems.indexOf(item);
         if (entryIndex >= 0)
             __entryItems.splice(entryIndex, 1);
@@ -75,6 +74,9 @@ MD.MenuBase {
         }
     }
     function __syncEntries() {
+        if (!__entriesDirty)
+            return;
+        __entriesDirty = false;
         for (const item of __entryItems)
             takeItem(indexOf(item));
         for (const item of __entryOwnedItems)
@@ -102,7 +104,11 @@ MD.MenuBase {
             addItem(item);
         }
     }
-    onEntriesChanged: Qt.callLater(__syncEntries)
+    onEntriesChanged: {
+        __entriesDirty = true;
+        Qt.callLater(__syncEntries);
+    }
+    onAboutToPrepare: __syncEntries()
     function __dismissChain() {
         dismiss();
     }
@@ -112,6 +118,7 @@ MD.MenuBase {
             const item = itemAt(index);
             if (item instanceof MD.AbstractButtonBase && item.enabled && item.visible) {
                 currentIndex = index;
+                contentItem.positionViewAtIndex(index, ListView.Contain);
                 item.forceActiveFocus(Qt.TabFocusReason);
                 return;
             }
@@ -124,10 +131,11 @@ MD.MenuBase {
     }
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)
 
-    margins: 0
+    margins: anchorItem ? 8 : 0
+    anchorGap: 4
     verticalPadding: 8
 
-    transformOrigin: !cascade ? Item.Top : (mirrored ? Item.TopRight : Item.TopLeft)
+    transformOrigin: anchorItem ? anchorTransformOrigin : (!cascade ? Item.Top : (mirrored ? Item.TopRight : Item.TopLeft))
 
     delegate: MD.MenuItem {}
 
@@ -172,13 +180,13 @@ MD.MenuBase {
                 control.__moveCurrent(event.key === Qt.Key_Down ? 1 : -1);
                 event.accepted = true;
             } else if (event.key === (control.mirrored ? Qt.Key_Left : Qt.Key_Right)) {
-                const item = control.itemAt(control.currentIndex) as MD.MenuItem;
+                const item = control.itemAt(control.currentIndex) as MD.MenuItemBase;
                 if (item?.subMenu) {
                     item.click();
                     event.accepted = true;
                 }
             } else if (event.key === (control.mirrored ? Qt.Key_Right : Qt.Key_Left)) {
-                const parentItem = control.parent as MD.MenuItem;
+                const parentItem = control.parent as MD.MenuItemBase;
                 if (parentItem) {
                     control.close();
                     parentItem.forceActiveFocus(Qt.TabFocusReason);
@@ -190,7 +198,7 @@ MD.MenuBase {
             let preferredWidth = 0;
             for (let index = 0; index < control.count; ++index) {
                 const item = control.itemAt(index);
-                if (item && (!control.visible || item.visible))
+                if (item && (!control.surfaceItem.visible || item.visible))
                     preferredWidth = Math.max(preferredWidth, item.implicitWidth);
             }
             return preferredWidth;
@@ -202,7 +210,7 @@ MD.MenuBase {
             }
             return control.contentModel;
         }
-        interactive: contentHeight + control.topPadding + control.bottomPadding > control.height
+        interactive: contentHeight > control.availableHeight
         keyNavigationEnabled: false
         MD.ScrollIndicator.vertical: MD.ScrollIndicator {}
     }
@@ -224,7 +232,7 @@ MD.MenuBase {
                 const count = control.count;
                 return index < count ? control.itemAt(index) : null;
             }
-            readonly property MD.MenuItem menuItem: item as MD.MenuItem
+            readonly property MD.MenuItemBase menuItem: item as MD.MenuItemBase
             property Connections events: Connections {
                 target: menuItem
                 function onTriggered() {
@@ -241,12 +249,6 @@ MD.MenuBase {
                 property: "width"
                 value: control.availableWidth
                 when: item !== null
-            }
-            property Binding itemMenu: Binding {
-                target: menuItem
-                property: "menu"
-                value: control
-                when: menuItem !== null
             }
         }
     }

@@ -83,6 +83,9 @@ private:
     void setErrorString(QString value);
     void setResult(QVariant value);
 
+    QPointer<QQuickItem>           m_anchor;
+    QList<QMetaObject::Connection> m_anchorConnections;
+    bool                           m_menu = false;
     QPointer<PopupPresenter>       m_presenter;
     QPointer<PoolRequest>          m_request;
     QPointer<QObject>              m_popup;
@@ -157,6 +160,8 @@ public:
 
     Q_INVOKABLE PopupPresentation* present(const QVariant&    source,
                                            const QVariantMap& initialProperties = {});
+    Q_INVOKABLE PopupPresentation* presentMenu(const QVariant& source, QQuickItem* anchor,
+                                               const QVariantMap& initialProperties = {});
     Q_INVOKABLE void               closeAll();
 
     Q_SIGNAL void hostChanged();
@@ -165,6 +170,8 @@ public:
 private:
     friend class PopupPresentation;
 
+    PopupPresentation* presentImpl(const QVariant& source, const QVariantMap& properties,
+                                   QQuickItem* anchor, bool menu);
     void requestClose(PopupPresentation* presentation, PopupPresentation::Finish finish);
     void handleRequest(PopupPresentation* presentation);
     void attachPopup(PopupPresentation* presentation, QObject* popup);
