@@ -1,4 +1,40 @@
 <releases>
+  <release version="0.5.0" date="2026-10-13">
+    <description>
+      <p>Added:</p>
+      <ul>
+        <li>MaterialShapePath with built-in Material shapes and morph transitions.</li>
+        <li>ButtonGroupContainer with standard and connected button groups.</li>
+        <li>ExtendedFAB, FABMenu, FABMenuItem, and ToggleFAB.</li>
+        <li>FloatingToolbar with scroll, exit, and drag behavior.</li>
+        <li>RangeSlider, TimePicker, and TimeInput.</li>
+        <li>SearchView and shared SearchState.</li>
+        <li>AppBarScroll and NestedScrollConnection.</li>
+        <li>PullToRefresh with circular and shape loading styles.</li>
+        <li>SideSheet, SideSheetDialog, SwipeToDismiss, and SwipeToDismissState.</li>
+        <li>Popup anchor placement and collision handling, plus MenuItemBase.</li>
+      </ul>
+      <p>Changed:</p>
+      <ul>
+        <li>Move control states and containers into C++ and reorganize QML components.</li>
+        <li>Render wavy progress geometry in C++ and pause indicator animations outside the viewport.</li>
+        <li>Add TextField error, supporting text, prefixes, and suffixes.</li>
+        <li>Add DateValidator and localize DatePicker.</li>
+        <li>Add TabBar layout modes and transitions, and SplitButton shape and icon transitions.</li>
+        <li>Improve IconButton XS sizing and make ListItem index and model optional.</li>
+      </ul>
+      <p>Fixed:</p>
+      <ul>
+        <li>Prevent CommonState notifications and StateBindingSet binding restoration during QML destruction.</li>
+        <li>Preserve AbstractButton, Action, and Slider caller bindings.</li>
+        <li>Fix Panel implicit content sizing and Popup implicit size binding overrides.</li>
+        <li>Fix cached PageStack transitions and create ColorPickerButton dialogs on demand.</li>
+        <li>Fix AppBar scroll appearance, standard BottomSheet drag dismissal, and SideSheetDialog reopening.</li>
+        <li>Fix nested popup and tooltip stacking, and toolbar overflow button lifetime.</li>
+        <li>Fix Label and Text vertical alignment, asymmetric corner shadows, and PullToRefresh spinner radius.</li>
+      </ul>
+    </description>
+  </release>
   <release version="0.4.2" date="2026-09-27">
     <description>
       <ul>
