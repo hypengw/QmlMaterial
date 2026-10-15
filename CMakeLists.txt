@@ -605,7 +605,11 @@ else()
       assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_1.woff2)
 
   if(UNIX)
-    if(ANDROID)
+   if(ANDROID)
+      set(QM_ICON_FILL_0_FONT_FILE
+          assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_0.ttf)
+      set(QM_ICON_FILL_1_FONT_FILE
+          assets/MaterialSymbolsRounded.wght_400.opsz_24.fill_1.ttf)
       list(APPEND SOURCES src/platform/android/android.cpp)
       list(APPEND SHADER_DEFINES "GLES=1")
       list(APPEND SOURCES src/dialog/file_dialog_stub.cpp)
