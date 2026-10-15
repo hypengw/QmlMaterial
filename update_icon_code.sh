@@ -1,7 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-url="https://github.com/google/material-design-icons/raw/refs/heads/master/variablefont/MaterialSymbolsOutlined%5BFILL,GRAD,opsz,wght%5D.codepoints"
-dst=include/qml_material/token/icon_code.inl
-curl -L "$url" > /tmp/icon_code.inl
-
-sed -e 's|^|CODE\(|' -e 's|$|"\);|' -e 's| |, "\\u|' /tmp/icon_code.inl > $dst
+project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+if command -v uv >/dev/null 2>&1; then
+    exec uv run --script "$project_dir/scripts/update_icons.py" "$@"
+fi
+exec "${PYTHON:-python3}" "$project_dir/scripts/update_icons.py" "$@"

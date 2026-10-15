@@ -1,6 +1,7 @@
 #include <QtTest>
 #include <QQmlComponent>
 #include <QQmlEngine>
+#include <QRawFont>
 #include "qml_material/control/action.hpp"
 #include "qml_material/control/button.hpp"
 
@@ -12,6 +13,51 @@ private slots:
     void init() {
         QTest::failOnWarning(
             QRegularExpression(".*(Binding loop|Unable to assign|Cannot assign|TypeError).*"));
+    }
+
+    void fontCoverage_data() {
+        QTest::addColumn<QString>("fileName");
+        for (const auto* fill : { "0", "1" }) {
+            const auto name =
+                QStringLiteral("MaterialSymbolsRounded.wght_400.opsz_24.fill_") + fill;
+            QTest::newRow(qPrintable(name + ".ttf")) << name + ".ttf";
+#if ! defined(Q_OS_WIN) && ! defined(Q_OS_ANDROID) && ! defined(Q_OS_WASM)
+            QTest::newRow(qPrintable(name + ".woff2")) << name + ".woff2";
+#endif
+        }
+#if ! defined(Q_OS_WIN) && ! defined(Q_OS_ANDROID) && ! defined(Q_OS_WASM)
+        QTest::newRow("FILL-variable")
+            << QStringLiteral("MaterialSymbolsRounded.wght_400.opsz_24.woff2");
+#endif
+    }
+    void fontCoverage() {
+        QFETCH(QString, fileName);
+        const auto path =
+            QTest::qFindTestData(qPrintable("../../assets/" + fileName), __FILE__, __LINE__);
+        QVERIFY(! path.isEmpty());
+        const QRawFont font(path, 24);
+        QVERIFY2(font.isValid(), qPrintable(fileName));
+        QQmlEngine engine;
+        engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));
+        QQmlComponent component(&engine);
+        component.setData("import Qcm.Material as MD; MD.TokenImpl {}", QUrl());
+        std::unique_ptr<QObject> token(component.create());
+        QVERIFY2(token, qPrintable(component.errorString()));
+        auto* icons = token->property("icon").value<QObject*>();
+        QVERIFY(icons);
+        const auto* meta = icons->metaObject();
+        QVERIFY(meta->propertyCount() > meta->propertyOffset());
+        QCOMPARE(icons->property("2d_2").toString(), QString::fromUcs4(U"\U000fff0e"));
+        for (int i = meta->propertyOffset(); i < meta->propertyCount(); ++i) {
+            const auto property = meta->property(i);
+            const auto text     = property.read(icons).toString();
+            const auto points   = text.toUcs4();
+            QCOMPARE(points.size(), 1);
+            QVERIFY2(font.supportsCharacter(points.first()), property.name());
+            const auto glyphs = font.glyphIndexesForString(text);
+            QCOMPARE(glyphs.size(), 1);
+            QVERIFY2(glyphs.first() != 0, property.name());
+        }
     }
 
     void interfaces() {
