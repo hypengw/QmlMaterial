@@ -643,7 +643,8 @@ private Q_SLOTS:
                 implicitHeight: 520
                 contentItem: Item { implicitWidth: 100; implicitHeight: 80 }
             }
-        )", QUrl());
+        )",
+                          QUrl());
         std::unique_ptr<QObject> object(component.create());
         QVERIFY2(object, qPrintable(component.errorString()));
         auto* popup = qobject_cast<qml_material::Popup*>(object.get());

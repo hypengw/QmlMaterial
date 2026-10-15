@@ -215,7 +215,8 @@ private Q_SLOTS:
                     Item { id: other }
                 }
             }
-        )", QUrl("qrc:/tests/cached-page-fade.qml"));
+        )",
+                          QUrl("qrc:/tests/cached-page-fade.qml"));
         auto object = std::unique_ptr<QObject>(component.create());
         QVERIFY2(object, qPrintable(component.errorString()));
         QVariant accepted;
@@ -227,7 +228,7 @@ private Q_SLOTS:
         QVERIFY(QMetaObject::invokeMethod(object.get(), "finish"));
         QCOMPARE(object->property("pageOpacity").toReal(), 1.0);
         QCOMPARE(object->property("pageScale").toReal(), 1.0);
-        QVERIFY(!object->property("busy").toBool());
+        QVERIFY(! object->property("busy").toBool());
     }
 
     void stackSizesPageBeforeShowing() {
@@ -266,15 +267,18 @@ private Q_SLOTS:
                     }
                 }
             }
-        )", QUrl("qrc:/tests/stack-page-size.qml"));
+        )",
+                          QUrl("qrc:/tests/stack-page-size.qml"));
         auto object = std::unique_ptr<QObject>(component.create());
         QVERIFY2(object, qPrintable(component.errorString()));
         QVariant accepted;
-        QVERIFY(QMetaObject::invokeMethod(object.get(), "showPage", Q_RETURN_ARG(QVariant, accepted)));
+        QVERIFY(
+            QMetaObject::invokeMethod(object.get(), "showPage", Q_RETURN_ARG(QVariant, accepted)));
         QVERIFY(accepted.toBool());
         QCOMPARE(object->property("visibleSize").toSizeF(), QSizeF(600, 400));
         QCOMPARE(object->property("visibleImageSize").toSizeF(), QSizeF(200, 200));
-        QVERIFY(QMetaObject::invokeMethod(object.get(), "revisitPage", Q_RETURN_ARG(QVariant, accepted)));
+        QVERIFY(QMetaObject::invokeMethod(
+            object.get(), "revisitPage", Q_RETURN_ARG(QVariant, accepted)));
         QVERIFY(accepted.toBool());
         QCOMPARE(object->property("showCount").toInt(), 2);
         QCOMPARE(object->property("visibleSize").toSizeF(), QSizeF(600, 400));
