@@ -27,6 +27,11 @@ MD.Page {
             icon: MD.Token.icon.shapes
         },
         {
+            name: 'motion',
+            source: 'qrc:/Qcm/Material/Example/Motion.qml',
+            icon: MD.Token.icon.animation
+        },
+        {
             name: 'typography',
             source: 'qrc:/Qcm/Material/Example/Typography.qml',
             icon: MD.Token.icon.description

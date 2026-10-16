@@ -2,9 +2,34 @@
 
 #include <QtCore/QEasingCurve>
 #include <QtCore/QPointF>
+#include <algorithm>
 
 namespace qml_material::anim
 {
+namespace expressive
+{
+inline auto fast_spatial() noexcept -> QEasingCurve {
+    auto out = QEasingCurve(QEasingCurve::BezierSpline);
+    out.addCubicBezierSegment({ 0.42, 1.67 }, { 0.21, 0.90 }, { 1., 1. });
+    return out;
+}
+inline auto default_spatial() noexcept -> QEasingCurve {
+    auto out = QEasingCurve(QEasingCurve::BezierSpline);
+    out.addCubicBezierSegment({ 0.38, 1.21 }, { 0.22, 1.00 }, { 1., 1. });
+    return out;
+}
+inline auto slow_spatial() noexcept -> QEasingCurve {
+    auto out = QEasingCurve(QEasingCurve::BezierSpline);
+    out.addCubicBezierSegment({ 0.39, 1.29 }, { 0.35, 0.98 }, { 1., 1. });
+    return out;
+}
+inline auto default_effects() noexcept -> QEasingCurve {
+    auto out = QEasingCurve(QEasingCurve::BezierSpline);
+    out.addCubicBezierSegment({ 0.34, 0.80 }, { 0.34, 1.00 }, { 1., 1. });
+    return out;
+}
+} // namespace expressive
+
 inline float get_fraction_in_range(qint32 playtime, qint32 start, qint32 duration) {
     float fraction = (float)(playtime - start) / duration;
     return std::clamp(fraction, 0.f, 1.f);

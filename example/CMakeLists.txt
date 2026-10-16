@@ -11,6 +11,7 @@ qt_add_resources(
   FABMenus.qml
   carousel/CarouselDemoData.qml
   Color.qml
+  Motion.qml
   Shape.qml
   ShapeEffects.qml
   Example.qml

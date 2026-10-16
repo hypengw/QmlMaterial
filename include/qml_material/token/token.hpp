@@ -10,6 +10,7 @@
 #include "qml_material/export.hpp"
 #include "qml_material/token/type_scale.hpp"
 #include "qml_material/token/duration.hpp"
+#include "qml_material/token/motion.hpp"
 #include "qml_material/token/split_button.hpp"
 #include "qml_material/token/button.hpp"
 #include "qml_material/token/segmented_button.hpp"
@@ -497,6 +498,7 @@ class Token : public QObject {
     Q_PROPERTY(qml_material::token::Duration duration READ duration CONSTANT FINAL)
     /// Motion Easing
     Q_PROPERTY(qml_material::token::Easing easing READ easing CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::Motion motion READ motion CONSTANT FINAL)
     /// State appearance settings
     Q_PROPERTY(qml_material::token::State state READ state CONSTANT FINAL)
     /// Shape styling settings
@@ -550,6 +552,7 @@ public:
     auto window_class() const -> const WindowClass&;
     auto duration() const -> const Duration&;
     auto easing() const -> const Easing&;
+    auto motion() const -> Motion { return {}; }
     auto spacing() const -> const Spacing&;
     auto split_button() const -> const SplitButtonSize&;
     auto button() const -> const ButtonSize&;

@@ -93,6 +93,7 @@ set(SOURCES
     include/qml_material/core/helper.hpp
     include/qml_material/token/badge.hpp
     include/qml_material/token/duration.hpp
+    include/qml_material/token/motion.hpp
     include/qml_material/token/combo_box.hpp
     include/qml_material/token/text_field.hpp
     include/qml_material/util/loggingcategory.hpp
