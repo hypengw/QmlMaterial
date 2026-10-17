@@ -7,11 +7,28 @@ qt_add_resources(
   "${CMAKE_CURRENT_SOURCE_DIR}"
   FILES
   Components.qml
+  Compositions.qml
+  compositions/QuickTile.qml
+  compositions/QuickControls.qml
+  compositions/ShadeSlider.qml
+  compositions/NotificationFeed.qml
+  compositions/NotificationCard.qml
+  compositions/NotificationList.qml
+  compositions/MediaCard.qml
+  compositions/MediaSeekBar.qml
   ButtonGroups.qml
   FABMenus.qml
   carousel/CarouselDemoData.qml
   Color.qml
-  Motion.qml
+  compositions/Motion.qml
+  compositions/Clocks.qml
+  compositions/ClockWidget.qml
+  compositions/ClockWidgetHand.qml
+  compositions/ClockWidgetNumerals.qml
+  compositions/DatePickers.qml
+  compositions/TimePickers.qml
+  compositions/ColorPickers.qml
+  compositions/FilePickers.qml
   Shape.qml
   ShapeEffects.qml
   Example.qml
@@ -26,7 +43,9 @@ qt_add_resources(
   assets/carousel/abstract-sky-small.jpg
   assets/carousel/abstract-sun-ultrawide.jpg
   assets/carousel/abstract-teal-tall.jpg
-  assets/carousel/abstract-violet-portrait.jpg)
+  assets/carousel/abstract-violet-portrait.jpg
+  assets/clocks/GoogleSansFlex-Medium.ttf
+  assets/clocks/OFL.txt)
 
 qt_add_executable(qm_example main.cpp)
 qt_add_resources(

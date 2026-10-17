@@ -279,7 +279,7 @@ private slots:
         QFETCH(int, width);
         QQmlEngine engine;
         engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));
-        const auto path = QFINDTESTDATA("../../example/Motion.qml");
+        const auto path = QFINDTESTDATA("../../example/compositions/Motion.qml");
         QVERIFY(! path.isEmpty());
         QQmlComponent            component(&engine, QUrl::fromLocalFile(path));
         std::unique_ptr<QObject> object(
@@ -303,6 +303,8 @@ private slots:
         }
         auto* animation = root->findChild<QQuickNumberAnimation*>("spatialAnimation");
         QVERIFY(animation);
+        QVERIFY(! root->findChild<QQuickColorAnimation*>("colorAnimation"));
+        QVERIFY(! root->findChild<QQuickNumberAnimation*>("opacityAnimation"));
         QSignalSpy finished(animation, &QQuickAbstractAnimation::finished);
         auto*      play = root->findChild<QObject*>("playButton");
         QVERIFY(play);
@@ -332,9 +334,6 @@ private slots:
         QCOMPARE(root->property("progress").toReal(), 1.0);
         QVERIFY(! root->property("running").toBool());
         QVERIFY(root->setProperty("animationsEnabled", true));
-        QVERIFY(root->setProperty("startColor", QColor(Qt::red)));
-        QVERIFY(root->setProperty("endColor", QColor(Qt::blue)));
-        QCOMPARE(root->property("effectColor").value<QColor>(), QColor(Qt::blue));
         QVERIFY(QMetaObject::invokeMethod(root, "toggleTarget"));
         root->setVisible(false);
         QVERIFY(! root->property("running").toBool());

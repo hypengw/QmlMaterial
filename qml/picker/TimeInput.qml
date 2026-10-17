@@ -29,7 +29,9 @@ MD.Control {
     contentItem: Item {
         id: fields
         readonly property real fieldsWidth: Math.min(width, control.tokens.fieldWidth * 2 + control.tokens.separatorWidth)
-        readonly property real fieldsX: control.mirrored && !control.time.is24Hour && !control.__stackPeriod ? control.__periodWidth + control.tokens.periodGap : 0
+        readonly property real groupWidth: fieldsWidth + (!control.time.is24Hour && !control.__stackPeriod ? control.__periodWidth + control.tokens.periodGap : 0)
+        readonly property real groupX: (width - groupWidth) / 2
+        readonly property real fieldsX: groupX + (control.mirrored && !control.time.is24Hour && !control.__stackPeriod ? control.__periodWidth + control.tokens.periodGap : 0)
         Field {
             id: hours
             objectName: "timeHour"
@@ -55,14 +57,16 @@ MD.Control {
             visible: !control.time.is24Hour
             width: control.__stackPeriod ? fields.fieldsWidth : control.__periodWidth
             height: control.__stackPeriod ? control.__fieldHeight / 2 : control.__fieldHeight
-            x: control.__stackPeriod || control.mirrored ? 0 : fields.fieldsWidth + control.tokens.periodGap
+            x: fields.groupX + (control.__stackPeriod || control.mirrored ? 0 : fields.fieldsWidth + control.tokens.periodGap)
             y: control.__stackPeriod ? control.__fieldHeight + control.__supportHeight + control.tokens.periodGap : 0
             PeriodButton {
                 id: am
+                objectName: "timeAm"
                 period: 0
             }
             PeriodButton {
                 id: pm
+                objectName: "timePm"
                 x: control.__stackPeriod ? width : 0
                 y: control.__stackPeriod ? 0 : height
                 period: 1

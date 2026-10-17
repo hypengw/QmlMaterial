@@ -1,4 +1,5 @@
 #include "qml_material/control/progress_indicator.hpp"
+#include "qml_material/core/item_activity.hpp"
 #include "qml_material/anim/linear_indicator_updator.hpp"
 #include "qml_material/anim/circular_indicator_updator.hpp"
 #include "qml_material/anim/interpolator.hpp"
@@ -41,45 +42,43 @@ bool valid(qreal value) { return std::isfinite(value) && value >= 0; }
 
 struct ProgressIndicator::Private {
     explicit Private(bool circle): circular(circle), amplitude(circle ? 1.6 : 3) {}
-    bool                           circular;
-    bool                           running         = true;
-    bool                           runningOverride = false;
-    bool                           wavy            = false;
-    bool                           animations      = true;
-    bool                           active          = false;
-    bool                           initialized     = false;
-    qreal                          stroke          = 4;
-    qreal                          wavelength      = -1;
-    qreal                          amplitude;
-    int                            cycle       = -1;
-    qreal                          gap         = 4;
-    bool                           gapOverride = false;
-    qreal                          angleGap    = -1;
-    bool                           angleReset  = false;
-    qreal                          angle       = -90;
-    QColor                         color       = Qt::black;
-    QColor                         track       = Qt::transparent;
-    QColor                         stop        = Qt::black;
-    int                            type        = -1;
-    CompletionBehavior             completion  = Drain;
-    AnimStateType                  state       = Stopped;
-    Transition                     display;
-    Transition                     amp;
-    Transition                     drain;
-    Transition                     opacity;
-    qreal                          runElapsed  = 0;
-    qreal                          endElapsed  = 0;
-    qreal                          endDuration = 0;
-    qreal                          endFrom     = 0;
-    qreal                          phase       = 0;
-    LinearIndicatorUpdator*        linear      = nullptr;
-    CircularIndicatorUpdator*      circle      = nullptr;
-    QPointer<QQuickWindow>         window;
-    QMetaObject::Connection        frameConnection;
-    QMetaObject::Connection        visibilityConnection;
-    QList<QMetaObject::Connection> viewportConnections;
-    bool                           inViewport = false;
-    QElapsedTimer                  clock;
+    bool                          circular;
+    bool                          running         = true;
+    bool                          runningOverride = false;
+    bool                          wavy            = false;
+    bool                          animations      = true;
+    bool                          active          = false;
+    bool                          initialized     = false;
+    qreal                         stroke          = 4;
+    qreal                         wavelength      = -1;
+    qreal                         amplitude;
+    int                           cycle       = -1;
+    qreal                         gap         = 4;
+    bool                          gapOverride = false;
+    qreal                         angleGap    = -1;
+    bool                          angleReset  = false;
+    qreal                         angle       = -90;
+    QColor                        color       = Qt::black;
+    QColor                        track       = Qt::transparent;
+    QColor                        stop        = Qt::black;
+    int                           type        = -1;
+    CompletionBehavior            completion  = Drain;
+    AnimStateType                 state       = Stopped;
+    Transition                    display;
+    Transition                    amp;
+    Transition                    drain;
+    Transition                    opacity;
+    qreal                         runElapsed  = 0;
+    qreal                         endElapsed  = 0;
+    qreal                         endDuration = 0;
+    qreal                         endFrom     = 0;
+    qreal                         phase       = 0;
+    LinearIndicatorUpdator*       linear      = nullptr;
+    CircularIndicatorUpdator*     circle      = nullptr;
+    QPointer<QQuickWindow>        window;
+    QMetaObject::Connection       frameConnection;
+    std::unique_ptr<ItemActivity> activity;
+    QElapsedTimer                 clock;
     struct Properties {
         bool   running = true, wavy = false, animationsEnabled = true;
         qreal  strokeWidth = 4, waveLength = -1, waveAmplitude = -1, gapSize = 4, gapAngle = 8,
@@ -109,12 +108,13 @@ ProgressIndicator::ProgressIndicator(bool circular, QQuickItem* parent)
     connect(this, &QQuickItem::visibleChanged, this, &ProgressIndicator::publish);
     connect(this, &QQuickItem::enabledChanged, this, &ProgressIndicator::publish);
     connect(this, &QQuickItem::windowChanged, this, &ProgressIndicator::bindWindow);
+    d->activity = std::make_unique<ItemActivity>(this);
+    connect(d->activity.get(), &ItemActivity::changed, this, &ProgressIndicator::publish);
     bindWindow(window());
 }
 ProgressIndicator::~ProgressIndicator() {
     disconnect(d->frameConnection);
-    disconnect(d->visibilityConnection);
-    for (const auto& connection : d->viewportConnections) disconnect(connection);
+    d->activity.reset();
 }
 bool ProgressIndicator::running() const {
     return d->runningOverride ? d->running : indeterminate();
@@ -241,7 +241,7 @@ void ProgressIndicator::synchronize(bool immediate) {
 
 bool ProgressIndicator::eligible() const {
     return d->initialized && isVisible() && isEnabled() && d->window && d->window->isVisible() &&
-           d->window->visibility() != QWindow::Minimized && d->inViewport;
+           d->window->visibility() != QWindow::Minimized && d->activity->active();
 }
 bool ProgressIndicator::needsAnimation() const {
     if (! d->animations) return false;
@@ -253,60 +253,14 @@ bool ProgressIndicator::needsAnimation() const {
            (indeterminate() && d->state != Stopped) || wave;
 }
 void ProgressIndicator::bindWindow(QQuickWindow* window) {
-    QPointer<ProgressIndicator> guard(this);
     disconnect(d->frameConnection);
-    disconnect(d->visibilityConnection);
     d->window = window;
     d->clock.invalidate();
     if (window) {
-        d->frameConnection      = connect(window, &QQuickWindow::afterAnimating, this, [this] {
-            QPointer<ProgressIndicator> guard(this);
-            refreshViewport();
-            if (! guard) return;
+        d->frameConnection = connect(window, &QQuickWindow::afterAnimating, this, [this] {
             if (eligible() && needsAnimation()) polish();
         });
-        d->visibilityConnection = connect(window, &QWindow::visibilityChanged, this, [this] {
-            publish();
-        });
     }
-    observeViewport();
-    if (! guard) return;
-    publish();
-}
-void ProgressIndicator::observeViewport() {
-    for (const auto& connection : d->viewportConnections) disconnect(connection);
-    d->viewportConnections.clear();
-    for (auto* item = static_cast<QQuickItem*>(this); item; item = item->parentItem()) {
-        const auto observe = [this, item](auto signal) {
-            d->viewportConnections.push_back(
-                connect(item, signal, this, &ProgressIndicator::refreshViewport));
-        };
-        observe(&QQuickItem::xChanged);
-        observe(&QQuickItem::yChanged);
-        observe(&QQuickItem::widthChanged);
-        observe(&QQuickItem::heightChanged);
-        observe(&QQuickItem::rotationChanged);
-        observe(&QQuickItem::scaleChanged);
-        observe(&QQuickItem::transformOriginChanged);
-        observe(&QQuickItem::clipChanged);
-        d->viewportConnections.push_back(
-            connect(item, &QQuickItem::parentChanged, this, &ProgressIndicator::observeViewport));
-    }
-    refreshViewport();
-}
-void ProgressIndicator::refreshViewport() {
-    QRectF area;
-    if (window()) {
-        auto* root = window()->contentItem();
-        area       = mapRectToItem(root, QRectF(0, 0, width(), height()))
-                         .intersected(QRectF(0, 0, root->width(), root->height()));
-        for (auto* item = parentItem(); item && ! area.isEmpty(); item = item->parentItem()) {
-            if (item->clip()) area = area.intersected(item->mapRectToItem(root, item->clipRect()));
-        }
-    }
-    const bool inViewport = ! area.isEmpty();
-    if (d->inViewport == inViewport) return;
-    d->inViewport = inViewport;
     publish();
 }
 void ProgressIndicator::schedule() {

@@ -84,7 +84,7 @@ MD.ButtonBase {
         border.width: control.mdState.type == MD.Enum.BtOutlined ? 1 : 0
         border.color: control.enabled ? control.mdState.ctx.color.outline : control.mdState.ctx.color.on_surface
         elevation: control.mdState.elevation
-        elevationVisible: (control.mdState.type == MD.Enum.BtElevated) && !control.flat && color.a > 0
+        elevationVisible: elevation > 0 && !control.flat && color.a > 0
 
         MD.Ripple {
             anchors.fill: parent

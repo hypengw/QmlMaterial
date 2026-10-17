@@ -17,6 +17,11 @@ MD.Page {
             icon: MD.Token.icon.widgets
         },
         {
+            name: 'compositions',
+            source: 'qrc:/Qcm/Material/Example/Compositions.qml',
+            icon: MD.Token.icon.dashboard
+        },
+        {
             name: 'color',
             source: 'qrc:/Qcm/Material/Example/Color.qml',
             icon: MD.Token.icon.palette
@@ -25,11 +30,6 @@ MD.Page {
             name: 'shape',
             source: 'qrc:/Qcm/Material/Example/Shape.qml',
             icon: MD.Token.icon.shapes
-        },
-        {
-            name: 'motion',
-            source: 'qrc:/Qcm/Material/Example/Motion.qml',
-            icon: MD.Token.icon.animation
         },
         {
             name: 'typography',
@@ -236,23 +236,46 @@ MD.Page {
                 padding: 0
                 backgroundColor: MD.MProp.color.surface_container
 
-                contentItem: RowLayout {
-                    Repeater {
-                        model: root.pageModel
-                        Item {
-                            Layout.fillWidth: true
-                            implicitHeight: 12 + children[0].implicitHeight + 16
-                            required property var modelData
-                            required property int index
-                            MD.BarItem {
-                                anchors.fill: parent
-                                anchors.topMargin: 12
-                                anchors.bottomMargin: 16
-                                icon.name: parent.modelData.icon
-                                text: parent.modelData.name
-                                checked: root.pageIndex == parent.index
-                                onClicked: {
-                                    root.pageIndex = parent.index;
+                contentItem: MD.Flickable {
+                    id: navigation
+                    objectName: 'compactNavigation'
+                    implicitHeight: 88
+                    contentWidth: navigationItems.width
+                    contentHeight: height
+                    flickableDirection: Flickable.HorizontalFlick
+                    function revealCurrent() {
+                        const item = navigationRepeater.itemAt(root.pageIndex);
+                        if (!item)
+                            return;
+                        const limit = Math.max(0, contentWidth - width);
+                        let position = Math.min(contentX, item.x);
+                        position = Math.max(position, item.x + item.width - width);
+                        contentX = Math.max(0, Math.min(position, limit));
+                    }
+                    onWidthChanged: Qt.callLater(revealCurrent)
+                    Row {
+                        id: navigationItems
+                        Repeater {
+                            id: navigationRepeater
+                            model: root.pageModel
+                            Item {
+                                width: Math.max(104, navigation.width / root.pageModel.length)
+                                height: navigation.height
+                                required property var modelData
+                                required property int index
+                                MD.BarItem {
+                                    objectName: 'compactNavigationButton' + parent.index
+                                    anchors.fill: parent
+                                    anchors.topMargin: 12
+                                    anchors.bottomMargin: 16
+                                    icon.name: parent.modelData.icon
+                                    text: parent.modelData.name
+                                    checked: root.pageIndex == parent.index
+                                    onCheckedChanged: if (checked)
+                                        Qt.callLater(navigation.revealCurrent)
+                                    onClicked: {
+                                        root.pageIndex = parent.index;
+                                    }
                                 }
                             }
                         }

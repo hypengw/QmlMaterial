@@ -12,6 +12,8 @@
 #include "qml_material/control/tab_bar.hpp"
 #include "qml_material/control/tab_button.hpp"
 #include "qml_material/core/state_bindings.hpp"
+#include "qml_material/style/button_state.hpp"
+#include "qml_material/style/icon_button_state.hpp"
 
 using namespace qml_material;
 
@@ -706,6 +708,131 @@ private slots:
             peer.setCheckable(true);
         }
         QVERIFY(! guard);
+    }
+
+    void buttonElevation_data() {
+        QTest::addColumn<bool>("icon");
+        QTest::addColumn<int>("type");
+        QTest::addColumn<bool>("toggle");
+        QTest::addColumn<qreal>("baseElevation");
+        QTest::addColumn<qreal>("hoverElevation");
+        const struct {
+            const char* name;
+            bool        icon;
+            int         type;
+            qreal       base, hover;
+        } rows[] = {
+            { "filled", false, int(Enum::ButtonType::BtFilled), 0, 1 },
+            { "tonal", false, int(Enum::ButtonType::BtFilledTonal), 0, 1 },
+            { "elevated", false, int(Enum::ButtonType::BtElevated), 1, 3 },
+            { "outlined", false, int(Enum::ButtonType::BtOutlined), 0, 0 },
+            { "text", false, int(Enum::ButtonType::BtText), 0, 0 },
+            { "icon-standard", true, int(Enum::IconButtonType::IBtStandard), 0, 0 },
+            { "icon-filled", true, int(Enum::IconButtonType::IBtFilled), 0, 0 },
+            { "icon-tonal", true, int(Enum::IconButtonType::IBtFilledTonal), 0, 0 },
+            { "icon-outlined", true, int(Enum::IconButtonType::IBtOutlined), 0, 0 },
+        };
+        for (const auto& row : rows) {
+            for (bool toggle : { false, true }) {
+                const auto name = QByteArray(row.name) + (toggle ? "-toggle" : "");
+                QTest::newRow(name.constData())
+                    << row.icon << row.type << toggle << row.base << row.hover;
+            }
+        }
+    }
+    void buttonElevation() {
+        QFETCH(bool, icon);
+        QFETCH(int, type);
+        QFETCH(bool, toggle);
+        QFETCH(qreal, baseElevation);
+        QFETCH(qreal, hoverElevation);
+        QQmlEngine engine;
+        engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));
+        QQmlComponent component(&engine);
+        component.setData("import QtQuick; import Qcm.Material as MD; MD." +
+                              QByteArray(icon ? "IconButton" : "Button") + R"( {
+                id: control
+                property int appearanceType: 0
+                width: 180; height: 64
+                hoverEnabled: true
+                mdState.type: control.appearanceType
+            })",
+                          QUrl());
+        std::unique_ptr<QObject> object(component.createWithInitialProperties(
+            { { "appearanceType", type }, { "checkable", toggle } }));
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* button = qobject_cast<Button*>(object.get());
+        auto* state  = object->findChild<CommonState*>();
+        QVERIFY(button && state);
+        QQuickWindow window;
+        window.resize(320, 160);
+        button->setParentItem(window.contentItem());
+        button->setPosition({ 20, 20 });
+        window.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        window.requestActivate();
+        QVERIFY(QTest::qWaitForWindowActive(&window));
+        const auto verifyElevation = [&](qreal expected) {
+            QCOMPARE(state->elevation(), expected);
+            QTRY_COMPARE(button->background()->property("elevation").toReal(), expected);
+            QTRY_COMPARE(button->background()->property("elevationVisible").toBool(),
+                         expected > 0 && ! button->isFlat());
+        };
+        const QPoint outside(280, 120), inside(60, 40);
+        for (int checked = 0; checked < (toggle ? 2 : 1); ++checked) {
+            button->setFocus(false);
+            button->setChecked(checked);
+            QTest::mouseMove(&window, outside);
+            QTRY_VERIFY(! button->hovered());
+            verifyElevation(baseElevation);
+            QTest::mouseMove(&window, inside);
+            QTRY_COMPARE(state->state(), QString("hovered"));
+            verifyElevation(hoverElevation);
+            QVERIFY(state->stateLayerOpacity() > 0);
+            if (! icon) {
+                object->setProperty("appearanceType", int(Enum::ButtonType::BtText));
+                verifyElevation(0);
+                object->setProperty("appearanceType", type);
+                verifyElevation(hoverElevation);
+            }
+            QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, inside);
+            QCOMPARE(state->state(), QString("pressed"));
+            verifyElevation(baseElevation);
+            QVERIFY(state->stateLayerOpacity() > 0);
+            QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, inside);
+            QTest::mouseMove(&window, outside);
+            button->setFocus(false);
+            button->forceActiveFocus(Qt::TabFocusReason);
+            QVERIFY(button->visualFocus());
+            QCOMPARE(state->state(), icon ? QString("pressed") : QString("focus"));
+            verifyElevation(baseElevation);
+            button->setEnabled(false);
+            QCOMPARE(state->state(), QString("disabled"));
+            verifyElevation(0);
+            QCOMPARE(state->stateLayerOpacity(), 0);
+            button->setEnabled(true);
+            button->setFocus(false);
+            QTRY_VERIFY(state->state().isEmpty());
+            verifyElevation(baseElevation);
+        }
+        QProperty<qreal> custom(7);
+        state->bindableElevation().setBinding([&] {
+            return custom.value();
+        });
+        QCOMPARE(state->elevation(), 7);
+        QTest::mouseMove(&window, inside);
+        QTRY_COMPARE(state->state(), QString("hovered"));
+        QCOMPARE(state->elevation(), hoverElevation);
+        custom = 9;
+        QTest::mouseMove(&window, outside);
+        QTRY_VERIFY(state->state().isEmpty());
+        QCOMPARE(state->elevation(), 9);
+        QVERIFY(state->bindableElevation().hasBinding());
+        state->resetElevation();
+        QCOMPARE(state->elevation(), baseElevation);
+        custom = 11;
+        QCOMPARE(state->elevation(), baseElevation);
+        object.reset();
     }
 
     void qmlPressState() {

@@ -62,7 +62,7 @@ void IconButtonState::bindTargets() {
         return defaultBackgroundColor();
     });
     base.bind(m_appearance.elevation, [this]() -> qreal {
-        return elevationTokens().level1;
+        return elevationTokens().level0;
     });
     base.bind(m_appearance.corner, [this]() -> qreal {
         const auto size = sizeToken();
@@ -90,9 +90,8 @@ void IconButtonState::bindTargets() {
     bindStateLayerOpacity();
     for (auto state : { Interaction::Pressed, Interaction::Hovered }) {
         auto active = stateBindings(state);
-        active.bind(m_appearance.elevation, [this, state]() -> qreal {
-            return state == Interaction::Hovered ? elevationTokens().level2
-                                                 : elevationTokens().level1;
+        active.bind(m_appearance.elevation, [this]() -> qreal {
+            return elevationTokens().level0;
         });
         active.bind(m_appearance.stateLayerColor, [this, state] {
             if (state == Interaction::Pressed && ButtonType(type()) == ButtonType::IBtOutlined &&

@@ -290,6 +290,59 @@ MD.TimePicker { time.hourFormat: MD.TimeState.Hour24; time.hour: 18; time.minute
         QVERIFY(hour->x() >= 0);
         QVERIFY(minute->x() + minute->width() <= hour->parentItem()->width());
     }
+    void pickerAlignment() {
+        QTest::failOnWarning(QRegularExpression(".*"));
+        QQmlEngine engine;
+        engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));
+        QQuickWindow window;
+        window.resize(440, 700);
+        QQmlComponent component(&engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            MD.TimePicker { time.locale: Qt.locale("en_US") }
+        )",
+                          QUrl());
+        QScopedPointer<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* picker = qobject_cast<QQuickItem*>(object.data());
+        QVERIFY(picker);
+        picker->setParentItem(window.contentItem());
+        auto* time = object->property("time").value<TimeState*>();
+        auto* dial = picker->findChild<QQuickItem*>("timeDial");
+        QVERIFY(time && dial);
+        window.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        const auto polish = [](auto&& self, QQuickItem* item) -> void {
+            item->ensurePolished();
+            for (auto* child : item->childItems()) self(self, child);
+        };
+        for (int width : { 250, 288, 328, 400 }) {
+            picker->setWidth(width);
+            for (auto format : { TimeState::Hour12, TimeState::Hour24 }) {
+                time->setHourFormat(format);
+                for (auto direction : { Qt::LeftToRight, Qt::RightToLeft }) {
+                    QVERIFY(picker->setProperty("layoutDirection", int(direction)));
+                    polish(polish, picker);
+                    QCoreApplication::processEvents();
+                    polish(polish, picker);
+                    QRectF fields;
+                    for (auto name : { "timeHour", "timeMinute", "timeAm", "timePm" }) {
+                        auto* field = picker->findChild<QQuickItem*>(name);
+                        QVERIFY(field);
+                        if (field->isVisible())
+                            fields |=
+                                field->mapRectToItem(picker, QRectF(QPointF(), field->size()));
+                    }
+                    QVERIFY(qAbs(fields.center().x() - width / 2.0) < .01);
+                    const auto dialCenter =
+                        dial->mapToItem(picker, QPointF(dial->width() / 2, dial->height() / 2));
+                    QVERIFY(qAbs(fields.center().x() - dialCenter.x()) < .01);
+                    QVERIFY(fields.left() >= -.01 && fields.right() <= width + .01);
+                }
+            }
+        }
+    }
     void dialogTransaction() {
         QTest::failOnWarning(QRegularExpression(".*"));
         QQmlEngine engine;

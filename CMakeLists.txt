@@ -73,6 +73,14 @@ endif()
 set(LIBNAME qml_material)
 
 set(SOURCES
+    include/qml_material/clock/clock_source.hpp
+    src/clock/clock_source.cpp
+    include/qml_material/control/clock.hpp
+    src/control/clock.cpp
+    include/qml_material/core/item_activity.hpp
+    src/core/item_activity.cpp
+    include/qml_material/util/time_format.hpp
+    src/util/time_format.cpp
     include/qml_material/shape/rounded_polygon.hpp
     include/qml_material/shape/material_shapes.hpp
     src/shape/rounded_polygon.cpp
@@ -86,6 +94,10 @@ set(SOURCES
     src/indicator/progress_indicator_geometry.cpp
     src/indicator/progress_indicator_shape.hpp
     src/indicator/progress_indicator_shape.cpp
+    include/qml_material/indicator/squiggly_progress_geometry.hpp
+    src/indicator/squiggly_progress_geometry.cpp
+    src/indicator/squiggly_progress.hpp
+    src/indicator/squiggly_progress.cpp
     include/qml_material/control/progress_indicator.hpp
     src/control/progress_indicator.cpp
     include/qml_material/core/state_bindings.hpp
@@ -384,6 +396,7 @@ set(SOURCES
     include/qml_material/dialog/file_dialog.hpp)
 
 set(QML_FILES
+    qml/control/Clock.qml
     qml/Token.qml
     qml/Util.qml
     qml/button/BusyButton.qml
@@ -548,6 +561,7 @@ set(QML_FILES
 set(RESOURCES assets/MaterialSymbolsRounded.wght_400.opsz_24.woff2)
 
 set(QML_REG_INCLUDE_DIRS
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/clock"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/qml_material/shape"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/shape"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/indicator"

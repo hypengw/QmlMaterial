@@ -52,6 +52,7 @@ public:
     Q_SIGNAL void           titleChanged();
     Q_SIGNAL void           delegateChanged();
     Q_SIGNAL void           parentMenuChanged();
+    bool                    blocksScenePoint(const QPointF&) const override;
 
 protected:
     void prepareForOpen() override;

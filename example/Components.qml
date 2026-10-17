@@ -1115,91 +1115,6 @@ MD.Page {
                             }
 
                             ComponentCard {
-                                id: m_fd_card
-                                title: 'File pickers'
-                                spacing: 12
-
-                                property string lastResult: ''
-
-                                MD.FileDialog {
-                                    id: m_fd_open_one
-                                    title: 'Open file'
-                                    fileMode: MD.FileDialog.OpenFile
-                                    nameFilters: ['Images (*.png *.jpg *.jpeg)', 'Text (*.txt *.md)', 'All files (*)']
-                                    onAccepted: m_fd_card.lastResult = 'OpenFile: ' + selectedFile
-                                    onRejected: m_fd_card.lastResult = 'OpenFile: cancelled'
-                                }
-                                MD.FileDialog {
-                                    id: m_fd_open_many
-                                    title: 'Open files'
-                                    fileMode: MD.FileDialog.OpenFiles
-                                    nameFilters: ['All files (*)']
-                                    onAccepted: m_fd_card.lastResult = 'OpenFiles: ' + JSON.stringify(selectedFiles.map(u => u.toString()))
-                                    onRejected: m_fd_card.lastResult = 'OpenFiles: cancelled'
-                                }
-                                MD.FileDialog {
-                                    id: m_fd_save
-                                    title: 'Save file'
-                                    fileMode: MD.FileDialog.SaveFile
-                                    nameFilters: ['Text (*.txt)', 'All files (*)']
-                                    defaultSuffix: 'txt'
-                                    onAccepted: m_fd_card.lastResult = 'SaveFile: ' + selectedFile
-                                    onRejected: m_fd_card.lastResult = 'SaveFile: cancelled'
-                                }
-                                MD.FolderDialog {
-                                    id: m_fd_folder
-                                    title: 'Pick folder'
-                                    onAccepted: m_fd_card.lastResult = 'FolderDialog: ' + selectedFolder
-                                    onRejected: m_fd_card.lastResult = 'FolderDialog: cancelled'
-                                }
-
-                                GridLayout {
-                                    Layout.fillWidth: true
-                                    columns: 2
-                                    rowSpacing: 8
-                                    columnSpacing: 8
-
-                                    MD.Button {
-                                        Layout.fillWidth: true
-                                        mdState.type: MD.Enum.BtFilled
-                                        text: 'Open file'
-                                        icon.name: MD.Token.icon.file_open
-                                        onClicked: m_fd_open_one.open()
-                                    }
-                                    MD.Button {
-                                        Layout.fillWidth: true
-                                        mdState.type: MD.Enum.BtFilledTonal
-                                        text: 'Open multiple'
-                                        icon.name: MD.Token.icon.file_open
-                                        onClicked: m_fd_open_many.open()
-                                    }
-                                    MD.Button {
-                                        Layout.fillWidth: true
-                                        mdState.type: MD.Enum.BtFilledTonal
-                                        text: 'Save file'
-                                        icon.name: MD.Token.icon.file_save
-                                        onClicked: m_fd_save.open()
-                                    }
-                                    MD.Button {
-                                        Layout.fillWidth: true
-                                        mdState.type: MD.Enum.BtFilledTonal
-                                        text: 'Pick folder'
-                                        icon.name: MD.Token.icon.folder
-                                        onClicked: m_fd_folder.open()
-                                    }
-                                }
-
-                                MD.Label {
-                                    Layout.fillWidth: true
-                                    visible: m_fd_card.lastResult.length > 0
-                                    text: m_fd_card.lastResult
-                                    typescale: MD.Token.typescale.body_small
-                                    opacity: 0.8
-                                    wrapMode: Text.Wrap
-                                }
-                            }
-
-                            ComponentCard {
                                 id: m_bottom_sheet_card
                                 title: 'Bottom sheets'
                                 spacing: 12
@@ -2158,32 +2073,8 @@ MD.Page {
                             spacing: 16
                             MD.Text {
                                 Layout.alignment: Qt.AlignHCenter
-                                text: 'Pickers'
+                                text: 'Search and data'
                                 typescale: MD.Token.typescale.title_large
-                            }
-
-                            ComponentCard {
-                                title: 'Date picker'
-
-                                MD.DateTextField {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    Layout.preferredWidth: 200
-                                    locale: m_date_picker.locale
-                                    dateFormat: ""
-                                    value: m_date_picker.selectedDate
-                                    onModified: function (d) {
-                                        m_date_picker.selectedDate = d;
-                                    }
-                                }
-                                MD.Divider {
-                                    Layout.fillWidth: true
-                                }
-                                MD.DatePicker {
-                                    id: m_date_picker
-                                    Layout.alignment: Qt.AlignHCenter
-                                    selectionMode: MD.DatePicker.SelectionMode.Single
-                                    selectedDate: new Date()
-                                }
                             }
 
                             ComponentCard {
@@ -2222,60 +2113,6 @@ MD.Page {
                                             }
                                         }
                                     }
-                                }
-                            }
-
-                            ComponentCard {
-                                title: 'Time picker'
-                                MD.TimeTextField {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    Layout.preferredWidth: 240
-                                    value: timePicker.time.value
-                                    hourFormat: timePicker.time.hourFormat
-                                    onModified: value => timePicker.time.value = value
-                                }
-                                MD.CheckBox {
-                                    text: '24-hour clock'
-                                    onToggled: timePicker.time.hourFormat = checked ? MD.TimeState.Hour24 : MD.TimeState.Hour12
-                                }
-                                MD.TimePicker {
-                                    id: timePicker
-                                    Layout.alignment: Qt.AlignHCenter
-                                    time.hourFormat: MD.TimeState.Hour12
-                                    time.hour: 10
-                                    time.minute: 30
-                                }
-                                MD.Divider {
-                                    Layout.fillWidth: true
-                                }
-                                MD.TimeInput {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    time.hourFormat: MD.TimeState.Hour24
-                                    time.hour: 18
-                                    time.minute: 45
-                                }
-                            }
-
-                            ComponentCard {
-                                title: 'Color picker'
-
-                                MD.ColorPickerButton {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    Layout.preferredWidth: 120
-                                    color: m_color_picker.color
-                                    onAccepted: function (c) {
-                                        m_color_picker.color = c;
-                                    }
-                                }
-                                MD.Divider {
-                                    Layout.fillWidth: true
-                                }
-                                MD.ColorPicker {
-                                    id: m_color_picker
-                                    Layout.fillWidth: true
-                                    Layout.preferredWidth: 400
-                                    showHeader: false
-                                    color: '#6750A4'
                                 }
                             }
 

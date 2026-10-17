@@ -136,8 +136,6 @@ private:
     void                     notifyParameters();
     void                     publish();
     void                     bindWindow(QQuickWindow* window);
-    void                     observeViewport();
-    void                     refreshViewport();
     void                     schedule();
     bool                     eligible() const;
     bool                     needsAnimation() const;

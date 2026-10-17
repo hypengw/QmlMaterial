@@ -1,15 +1,11 @@
 #include "qml_material/input/time_state.hpp"
+#include "qml_material/util/time_format.hpp"
 #include <QTime>
 
 namespace qml_material
 {
 namespace
 {
-QString digits(const QLocale& locale, int value, bool padded) {
-    auto result = locale.toString(value);
-    if (padded && value < 10) result.prepend(locale.zeroDigit());
-    return result;
-}
 int parseDigits(const QLocale& locale, const QString& text, int minimum, int maximum) {
     // Reject signs, grouping and whitespace; locale digits and ASCII digits are accepted.
     if (text.isEmpty() || text.size() > 2) return -1;
@@ -27,27 +23,15 @@ TimeState::TimeState(QObject* parent): QObject(parent) {
 }
 bool TimeState::uses24Hour(const Data& data) {
     if (data.format != LocaleFormat) return data.format == Hour24;
-    const auto pattern = data.locale.timeFormat(QLocale::ShortFormat);
-    bool       quoted  = false;
-    for (qsizetype i = 0; i < pattern.size(); ++i) {
-        if (pattern[i] == QLatin1Char('\'')) {
-            if (i + 1 < pattern.size() && pattern[i + 1] == QLatin1Char('\''))
-                ++i;
-            else
-                quoted = ! quoted;
-        } else if (! quoted && (pattern[i] == QLatin1Char('A') || pattern[i] == QLatin1Char('a'))) {
-            return false;
-        }
-    }
-    return true;
+    return time_format::uses24Hour(data.locale);
 }
 bool TimeState::is24Hour() const { return uses24Hour(m_data.value()); }
 void TimeState::formatInput(Data& data) {
     const int hour   = data.value / 60;
     data.draftHour   = uses24Hour(data) ? hour : (hour % 12 == 0 ? 12 : hour % 12);
     data.draftMinute = data.value % 60;
-    data.hourText    = digits(data.locale, data.draftHour, true);
-    data.minuteText  = digits(data.locale, data.draftMinute, true);
+    data.hourText    = time_format::number(data.locale, data.draftHour, true);
+    data.minuteText  = time_format::number(data.locale, data.draftMinute, true);
 }
 void TimeState::publish(Data data, bool user) {
     if (data == m_data.value()) return;
@@ -153,7 +137,9 @@ void TimeState::step(int delta) {
     formatInput(data);
     publish(data, true);
 }
-QString TimeState::number(int value, bool padded) const { return digits(locale(), value, padded); }
+QString TimeState::number(int value, bool padded) const {
+    return time_format::number(locale(), value, padded);
+}
 QString TimeState::inputFormat() const {
     return is24Hour() ? QStringLiteral("HH:mm") : QStringLiteral("hh:mm AP");
 }

@@ -98,8 +98,10 @@ void ButtonAppearanceState::bindAppearance() {
     for (auto state : { Interaction::Pressed, Interaction::Hovered, Interaction::Focus }) {
         auto active = stateBindings(state);
         active.bind(m_appearance.elevation, [this, state]() -> qreal {
-            const auto e        = elevationTokens();
-            const bool elevated = ButtonType(type()) == ButtonType::BtElevated;
+            const auto type = ButtonType(this->type());
+            const auto e    = elevationTokens();
+            if (type == ButtonType::BtText || type == ButtonType::BtOutlined) return e.level0;
+            const bool elevated = type == ButtonType::BtElevated;
             return state == Interaction::Hovered ? (elevated ? e.level2 : e.level1)
                                                  : (elevated ? e.level1 : e.level0);
         });

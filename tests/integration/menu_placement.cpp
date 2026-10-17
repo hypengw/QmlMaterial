@@ -5,6 +5,8 @@
 #include <QQuickItem>
 #include <QQuickWindow>
 #include <QtQuick/private/qquicktranslate_p.h>
+#include <QtQuick/private/qquickwindow_p.h>
+#include <QtQuick/private/qquickdeliveryagent_p_p.h>
 #include <memory>
 #include "qml_material/control/menu.hpp"
 #include "qml_material/control/action.hpp"
@@ -47,6 +49,330 @@ private slots:
         engine.setIncubationController(nullptr);
         root.reset();
         QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+    }
+    void menuDefaults() {
+        Menu menu;
+        QVERIFY(menu.modal());
+        QVERIFY(menu.focus());
+        QVERIFY(! menu.dim());
+        Popup popup;
+        QVERIFY(! popup.modal());
+        QVERIFY(! popup.focus());
+        QVERIFY(! popup.dim());
+    }
+    void openerClick_data() {
+        QTest::addColumn<bool>("anchored");
+        QTest::addColumn<bool>("independent");
+        QTest::addColumn<bool>("releaseClose");
+        QTest::addColumn<bool>("deferred");
+        QTest::addColumn<bool>("touchInput");
+        QTest::newRow("nested") << false << false << false << false << false;
+        QTest::newRow("anchored") << true << false << false << false << false;
+        QTest::newRow("independent") << false << true << false << false << false;
+        QTest::newRow("release") << true << false << true << false << false;
+        QTest::newRow("closing") << false << false << false << true << false;
+        QTest::newRow("touch") << false << false << false << false << true;
+        QTest::newRow("touch-independent") << false << true << false << false << true;
+        QTest::newRow("touch-release") << true << false << true << false << true;
+    }
+    void openerClick() {
+        QFETCH(bool, anchored);
+        QFETCH(bool, independent);
+        QFETCH(bool, releaseClose);
+        QFETCH(bool, deferred);
+        QFETCH(bool, touchInput);
+        QVERIFY(create(R"(
+            property int clicks: 0
+            MD.Button {
+                id: button; objectName: "anchor"; x: 40; y: 40; width: 120; height: 48
+                text: "Menu"
+                onClicked: { root.clicks++; menu.open() }
+                MD.Menu {
+                    id: menu; objectName: "menu"; y: button.height; width: 180
+                    enter: null; exit: null
+                    MD.MenuItem { text: "First" }
+                }
+            }
+        )"));
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        auto m = menu();
+        if (independent) {
+            m->setParentItem(qobject_cast<QQuickItem*>(root.get()));
+            m->setX(40);
+            m->setY(100);
+        }
+        if (anchored) {
+            m->setParentItem(qobject_cast<QQuickItem*>(root.get()));
+            m->setAnchorItem(anchor());
+        }
+        if (releaseClose) m->setClosePolicy(Popup::CloseOnReleaseOutside);
+        m->setDeferredCompletion(deferred);
+        QSignalSpy  shown(m, &Popup::aboutToShow);
+        const auto  point  = anchor()->mapToScene({ 60, 24 }).toPoint();
+        static auto device = QTest::createTouchDevice();
+        auto        touch  = QTest::touchEvent(&window, device, false);
+        auto        send   = [&](bool press) {
+            if (touchInput) {
+                if (press)
+                    touch.press(0, point, &window).commit();
+                else
+                    touch.release(0, point, &window).commit();
+                QQuickWindowPrivate::get(&window)
+                    ->deliveryAgentPrivate()
+                    ->flushFrameSynchronousEvents(&window);
+            } else if (press) {
+                QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, point);
+            } else {
+                QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, point);
+            }
+        };
+        send(true);
+        send(false);
+        if (deferred) m->completeEnter();
+        QVERIFY(m->isOpened());
+        QCOMPARE(shown.count(), 1);
+        send(true);
+        if (releaseClose)
+            QVERIFY(m->isOpened());
+        else if (deferred)
+            QVERIFY(m->closing());
+        else
+            QVERIFY(! m->isVisible());
+        send(false);
+        QCOMPARE(shown.count(), 1);
+        QCOMPARE(root->property("clicks").toInt(), 1);
+        if (deferred) {
+            QVERIFY(m->closing());
+            // The opener remains blocked while the menu is still exiting.
+            send(true);
+            send(false);
+            QCOMPARE(shown.count(), 1);
+            m->completeExit();
+        }
+        QVERIFY(! m->isVisible());
+        send(true);
+        send(false);
+        QCOMPARE(shown.count(), 2);
+        QCOMPARE(root->property("clicks").toInt(), 2);
+    }
+    void outsideClick_data() {
+        QTest::addColumn<bool>("nonModal");
+        QTest::newRow("default-modal") << false;
+        QTest::newRow("explicit-non-modal") << true;
+    }
+    void outsideClick() {
+        QFETCH(bool, nonModal);
+        QVERIFY(create(R"(
+            property int clicks: 0
+            MD.Button { id: button; x: 40; y: 40; text: "Other"; onClicked: root.clicks++ }
+            MD.Menu {
+                objectName: "menu"; x: 240; y: 40; width: 180; enter: null; exit: null
+                MD.MenuItem { text: "First" }
+            }
+        )"));
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        if (nonModal) menu()->setModal(false);
+        menu()->open();
+        QVERIFY(menu()->isOpened());
+        QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, { 60, 60 });
+        QVERIFY(! menu()->isVisible());
+        QCOMPARE(root->property("clicks").toInt(), nonModal ? 1 : 0);
+        QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, { 60, 60 });
+        QCOMPARE(root->property("clicks").toInt(), nonModal ? 2 : 1);
+    }
+    void openerClosePolicy_data() {
+        QTest::addColumn<int>("policy");
+        QTest::addColumn<bool>("modal");
+        QTest::newRow("non-modal-manual") << int(Popup::NoAutoClose) << false;
+        QTest::newRow("non-modal-outside-parent") << int(Popup::CloseOnPressOutsideParent) << false;
+        QTest::newRow("non-modal-release-outside-parent")
+            << int(Popup::CloseOnReleaseOutsideParent) << false;
+        QTest::newRow("modal-manual") << int(Popup::NoAutoClose) << true;
+        QTest::newRow("modal-outside-parent") << int(Popup::CloseOnPressOutsideParent) << true;
+        QTest::newRow("modal-release-outside-parent")
+            << int(Popup::CloseOnReleaseOutsideParent) << true;
+    }
+    void openerClosePolicy() {
+        QFETCH(int, policy);
+        QFETCH(bool, modal);
+        QVERIFY(create(R"(
+            property int clicks: 0
+            MD.Button {
+                objectName: "anchor"; x: 40; y: 40; width: 120; height: 48
+                onClicked: { root.clicks++; if (menu.visible) menu.close(); else menu.open() }
+                MD.Menu {
+                    id: menu; objectName: "menu"; y: parent.height; width: 180
+                    enter: null; exit: null
+                    MD.MenuItem { text: "First" }
+                }
+            }
+        )"));
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        menu()->setClosePolicy(Popup::ClosePolicy(policy));
+        menu()->setModal(modal);
+        QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, { 100, 64 });
+        QVERIFY(menu()->isOpened());
+        QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, { 100, 64 });
+        QVERIFY(menu()->isOpened());
+        QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, { 100, 64 });
+        QCOMPARE(menu()->isOpened(), modal);
+        QCOMPARE(root->property("clicks").toInt(), modal ? 1 : 2);
+    }
+    void splitButtonOpener() {
+        QVERIFY(create(R"(
+            property int clicks: 0
+            MD.SplitButton {
+                objectName: "split"; x: 40; y: 40; text: "Action"
+                onClicked: root.clicks++
+                menu: MD.Menu {
+                    objectName: "menu"; width: 180; enter: null; exit: null
+                    MD.MenuItem { text: "First" }
+                }
+            }
+        )"));
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        auto       split = root->findChild<QQuickItem*>("split");
+        const auto point =
+            split->mapToScene({ split->width() - 12, split->height() / 2 }).toPoint();
+        QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, point);
+        QVERIFY(menu()->isOpened());
+        QSignalSpy shown(menu(), &Popup::aboutToShow);
+        QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, point);
+        QVERIFY(! menu()->isVisible());
+        QCOMPARE(shown.count(), 0);
+        QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, point);
+        QVERIFY(menu()->isOpened());
+        QTest::mouseClick(&window,
+                          Qt::LeftButton,
+                          Qt::NoModifier,
+                          split->mapToScene({ 16, split->height() / 2 }).toPoint());
+        QVERIFY(! menu()->isVisible());
+        QCOMPARE(root->property("clicks").toInt(), 0);
+        QTest::mouseClick(&window,
+                          Qt::LeftButton,
+                          Qt::NoModifier,
+                          split->mapToScene({ 16, split->height() / 2 }).toPoint());
+        QCOMPARE(root->property("clicks").toInt(), 1);
+    }
+    void submenuOpenerClick() {
+        QVERIFY(create(R"(
+            property int clicks: 0
+            MD.Button {
+                id: button; objectName: "anchor"; x: 40; y: 40; width: 120; height: 48
+                onClicked: { root.clicks++; menu.open() }
+                MD.Menu {
+                    id: menu; objectName: "menu"; y: button.height; width: 180
+                    enter: null; exit: null
+                    MD.MenuItem { objectName: "childAnchor"; text: "Submenu" }
+                }
+            }
+            MD.Menu {
+                objectName: "child"; width: 180; enter: null; exit: null
+                MD.MenuItem { text: "Child" }
+            }
+        )"));
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        const QPoint point(100, 64);
+        QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, point);
+        auto child = root->findChild<Menu*>("child");
+        menu()->openSubMenu(child, root->findChild<QQuickItem*>("childAnchor"));
+        QVERIFY(child->isOpened());
+        QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, point);
+        QVERIFY(! menu()->isVisible());
+        QVERIFY(! child->isVisible());
+        QCOMPARE(root->property("clicks").toInt(), 1);
+    }
+    void comboBoxOpenerClick() {
+        QVERIFY(create(R"(
+            MD.ComboBox {
+                id: combo; x: 40; y: 40; width: 180; model: ["First", "Second"]
+                popup: MD.Menu {
+                    objectName: "menu"; parent: combo; modal: false
+                    y: combo.height; width: combo.width; enter: null; exit: null; focus: false
+                    closePolicy: MD.PopupBase.CloseOnPressOutsideParent
+                    MD.MenuItem { text: "First" }
+                    MD.MenuItem { text: "Second" }
+                }
+            }
+        )"));
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        const QPoint point(200, 64);
+        QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, point);
+        QVERIFY(menu()->isOpened());
+        QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, point);
+        QVERIFY(! menu()->isVisible());
+    }
+    void cascadeParentInteraction() {
+        QVERIFY(create(R"(
+            property int parentClicks: 0
+            property int childClicks: 0
+            MD.Menu {
+                id: parentMenu; objectName: "menu"; x: 100; y: 100; width: 180
+                enter: null; exit: null
+                MD.MenuItem { text: "Submenu"; subMenu: childMenu }
+                MD.MenuItem {
+                    action: MD.Action {
+                        text: "Parent action"; closeMenu: false
+                        onTriggered: root.parentClicks++
+                    }
+                }
+            }
+            MD.Menu {
+                id: childMenu; objectName: "child"; width: 180; enter: null; exit: null
+                MD.MenuItem { text: "Child action"; onTriggered: root.childClicks++ }
+            }
+        )"));
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        auto parent = menu();
+        auto child  = root->findChild<Menu*>("child");
+        parent->open();
+        parent->contentItem()->ensurePolished();
+        parent->openSubMenu(child, parent->itemAt(0));
+        child->contentItem()->ensurePolished();
+        QVERIFY(parent->modal());
+        QVERIFY(child->modal());
+        QVERIFY(child->isOpened());
+        auto       action = parent->itemAt(1);
+        const auto point =
+            action->mapToScene({ action->width() / 2, action->height() / 2 }).toPoint();
+        QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, point);
+        QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, point);
+        QCOMPARE(root->property("parentClicks").toInt(), 1);
+        QVERIFY(parent->isOpened());
+        QVERIFY(! child->isVisible());
+
+        parent->openSubMenu(child, parent->itemAt(0));
+        child->contentItem()->ensurePolished();
+        QVERIFY(child->isOpened());
+        action = child->itemAt(0);
+        QTest::mouseClick(
+            &window,
+            Qt::LeftButton,
+            Qt::NoModifier,
+            action->mapToScene({ action->width() / 2, action->height() / 2 }).toPoint());
+        QCOMPARE(root->property("childClicks").toInt(), 1);
+        QVERIFY(! parent->isVisible());
+        QVERIFY(! child->isVisible());
+    }
+    void destructiveHideCallback() {
+        QVERIFY(create(R"(
+            property int clicks: 0
+            MD.Button { x: 40; y: 40; text: "Other"; onClicked: root.clicks++ }
+            MD.Menu {
+                objectName: "menu"; x: 240; y: 40; width: 180; enter: null; exit: null
+                MD.MenuItem { text: "First" }
+            }
+        )"));
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        QPointer<Menu> m = menu();
+        connect(m, &Popup::aboutToHide, m, [&] {
+            delete m.data();
+        });
+        m->open();
+        QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, { 60, 60 });
+        QVERIFY(! m);
+        QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, { 60, 60 });
+        QCOMPARE(root->property("clicks").toInt(), 0);
     }
     void geometryMatrix() {
         const QRectF bounds(8, 8, 624, 464);

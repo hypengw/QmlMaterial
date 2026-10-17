@@ -11,6 +11,12 @@ MD.TextField {
     property alias hourFormat: selectedTime.hourFormat
     property alias locale: selectedTime.locale
     signal modified(int value)
+    function openPicker() {
+        if (control.readOnly)
+            return;
+        dialog.value = control.value;
+        dialog.open();
+    }
     text: time.displayText
     placeholderText: rules.time.inputFormat
     inputMethodHints: Qt.ImhTime
@@ -40,10 +46,7 @@ MD.TextField {
         icon.name: "schedule"
         implicitBackgroundSize: 0
         enabled: !control.readOnly
-        onClicked: {
-            dialog.value = control.value;
-            dialog.open();
-        }
+        onClicked: control.openPicker()
     }
     MD.TimePickerDialog {
         id: dialog

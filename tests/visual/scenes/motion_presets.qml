@@ -1,5 +1,5 @@
 import QtQuick
-import "../../../example" as Example
+import "../../../example/compositions" as Example
 
 Rectangle {
     width: 900
@@ -8,7 +8,6 @@ Rectangle {
 
     Example.Motion {
         anchors.fill: parent
-        showHeader: false
         animationsEnabled: false
         Component.onCompleted: {
             atEnd = true;

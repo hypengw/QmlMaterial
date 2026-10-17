@@ -9,6 +9,8 @@
 namespace qml_material
 {
 Menu::Menu(QObject* parent): Popup(parent), m_model(new QQmlObjectModel(this)) {
+    setModal(true);
+    setDim(false);
     setFocus(true);
     connect(this, &Popup::aboutToShow, this, [this] {
         if (focus() && contentItem()) contentItem()->forceActiveFocus(Qt::PopupFocusReason);
@@ -38,6 +40,10 @@ void Menu::setDelegate(QQmlComponent* value) {
     if (m_delegate == value) return;
     m_delegate = value;
     Q_EMIT delegateChanged();
+}
+bool Menu::blocksScenePoint(const QPointF& point) const {
+    // Cascading menus let the parent menu handle outside input.
+    return Popup::blocksScenePoint(point) && (! m_parentMenu || ! m_parentMenu->isVisible());
 }
 void Menu::setParentMenu(Menu* value) {
     if (m_parentMenu == value) return;
