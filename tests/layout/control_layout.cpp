@@ -1341,6 +1341,51 @@ private Q_SLOTS:
         QTRY_COMPARE(collapsedContent->implicitHeight(), 32.0);
     }
 
+    void railItemExpansionLabels_data() {
+        QTest::addColumn<QString>("text");
+        for (const auto& text : { QStringLiteral("typography"), QStringLiteral("about") })
+            QTest::newRow(qPrintable(text)) << text;
+    }
+
+    void railItemExpansionLabels() {
+        QFETCH(QString, text);
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            MD.RailItem {
+                icon.name: MD.Token.icon.info
+                expand: true
+                collapsedIconStyle: MD.Enum.IconOnly
+                expansionProgress: 0
+            }
+        )",
+                          QUrl());
+        std::unique_ptr<QObject> object(
+            component.createWithInitialProperties({ { "text", text } }));
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto item = qobject_cast<QQuickItem*>(object.get());
+        item->setParentItem(m_window.contentItem());
+        auto content = qvariant_cast<QQuickItem*>(item->property("contentItem"));
+        QVERIFY(content);
+        for (const auto& sample : QList<QPair<qreal, qreal>> {
+                 { .25, 127 }, { .5, 158 }, { .75, 189 }, { 1, 220 }, { 1, 96 } }) {
+            QVERIFY(item->setProperty("expansionProgress", sample.first));
+            item->setWidth(sample.second);
+            settle(item);
+            int visibleLabels = 0;
+            for (auto label : content->childItems()) {
+                if (! label->isVisible() || label->property("text").toString() != text) continue;
+                ++visibleLabels;
+                QVERIFY(label->property("lineCount").toInt() <= 1);
+                QVERIFY(label->implicitHeight() <= item->height());
+                QVERIFY(label->y() >= 0);
+                QVERIFY(label->y() + label->height() <= item->height() + .1);
+            }
+            QCOMPARE(visibleLabels, 1);
+        }
+    }
+
     void attachedToolTipLifecycle() {
         const auto source = QByteArrayLiteral(R"(
             import QtQuick

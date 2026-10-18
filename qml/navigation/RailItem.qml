@@ -102,6 +102,7 @@ MD.ButtonBase {
             x: control._expandedLeadingPad + control._indicatorMargin + (control._showIcon ? control.icon.width + control._iconLabelSpacing : 0)
             y: (control._expandedIndicatorH - implicitHeight) / 2
             width: Math.max(0, parent.width - x - control._expandedTrailingPad)
+            wrapMode: Text.NoWrap
             elide: Text.ElideRight
         }
     }

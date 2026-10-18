@@ -1,57 +1,53 @@
+pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Layouts
-
 import Qcm.Material as MD
 
-MD.Page {
+MD.Dialog {
     id: root
+    objectName: 'aboutPopup'
     title: 'About'
-    padding: 12
+    standardButtons: MD.Dialog.Close
+    width: Math.min(440, Math.max(0, overlayWidth - 32))
+    height: Math.min(implicitHeight, Math.max(0, overlayHeight - 32))
+    positioningItem: overlayItem
+    x: (overlayWidth - width) / 2
+    y: (overlayHeight - height) / 2
 
-    ColumnLayout {
-        anchors.fill: parent
-        MD.Pane {
-            Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
-            Layout.preferredWidth: 400
-            backgroundColor: MD.MProp.color.surface_container
-            radius: MD.Token.shape.corner.medium
-            padding: 12
-
-            ColumnLayout {
-                anchors.fill: parent
-
-                ColumnLayout {
-                    Layout.alignment: Qt.AlignHCenter
-                    MD.Label {
-                        text: 'QmlMaterial'
-                        typescale: MD.Token.typescale.title_large
-                    }
-                    MD.Label {
-                        text: MD.Token.version
-                        typescale: MD.Token.typescale.label_large
-                        opacity: 0.8
-                    }
-
-                    RowLayout {
-                        MD.SuggestionChip {
-                            text: 'repo'
-                            onClicked: {
-                                Qt.openUrlExternally('https://github.com/hypengw/QmlMaterial');
-                            }
-                        }
-                        MD.SuggestionChip {
-                            text: 'issue'
-                            onClicked: {
-                                Qt.openUrlExternally('https://github.com/hypengw/QmlMaterial/issues');
-                            }
-                        }
-                        MD.SuggestionChip {
-                            text: 'donate'
-                            onClicked: {
-                                Qt.openUrlExternally('https://ko-fi.com/hypengw');
-                            }
-                        }
-                    }
+    contentItem: MD.VerticalFlickable {
+        implicitWidth: 392
+        implicitHeight: content.implicitHeight
+        clip: true
+        Column {
+            id: content
+            width: parent.width
+            spacing: 16
+            MD.Text {
+                width: parent.width
+                text: 'QmlMaterial'
+                typescale: MD.Token.typescale.title_large
+                horizontalAlignment: Text.AlignHCenter
+            }
+            MD.Text {
+                width: parent.width
+                text: MD.Token.version
+                typescale: MD.Token.typescale.label_large
+                horizontalAlignment: Text.AlignHCenter
+                opacity: 0.8
+            }
+            Flow {
+                width: parent.width
+                spacing: 8
+                MD.SuggestionChip {
+                    text: 'repo'
+                    onClicked: Qt.openUrlExternally('https://github.com/hypengw/QmlMaterial')
+                }
+                MD.SuggestionChip {
+                    text: 'issue'
+                    onClicked: Qt.openUrlExternally('https://github.com/hypengw/QmlMaterial/issues')
+                }
+                MD.SuggestionChip {
+                    text: 'donate'
+                    onClicked: Qt.openUrlExternally('https://ko-fi.com/hypengw')
                 }
             }
         }

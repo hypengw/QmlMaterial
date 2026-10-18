@@ -30,7 +30,10 @@ MD.Page {
             name: 'shape',
             source: 'qrc:/Qcm/Material/Example/Shape.qml',
             icon: MD.Token.icon.shapes
-        },
+        }
+    ]
+
+    readonly property var popupModel: [
         {
             name: 'typography',
             source: 'qrc:/Qcm/Material/Example/Typography.qml',
@@ -42,6 +45,16 @@ MD.Page {
             icon: MD.Token.icon.info
         }
     ]
+
+    function openUtilityPopup(source) {
+        utilityPresenter.present(source);
+    }
+
+    MD.PopupPresenter {
+        id: utilityPresenter
+        objectName: 'utilityPopupPresenter'
+        host: root
+    }
 
     onPageIndexChanged: {
         m_container.switchTo(pageModel[pageIndex].source, {}, false);
@@ -75,6 +88,8 @@ MD.Page {
 
                 sourceComponent: MD.NavigationRail {
                     id: m_rail
+                    objectName: 'exampleNavigationRail'
+                    autoExpand: false
                     model: root.pageModel
                     currentIndex: root.pageIndex
 
@@ -89,12 +104,37 @@ MD.Page {
 
                     // theme panel only fits the expanded rail
                     footer: Item {
-                        implicitHeight: m_panel.visible ? m_panel.implicitHeight + 16 : 0
+                        implicitHeight: m_rail.useLarge ? popupLinks.implicitHeight + m_panel.implicitHeight + 24 : 0
+
+                        Column {
+                            id: popupLinks
+                            width: parent.width
+                            visible: m_rail.useLarge
+                            Repeater {
+                                model: root.popupModel
+                                MD.RailItem {
+                                    required property var modelData
+                                    objectName: modelData.name + 'PopupButton'
+                                    width: popupLinks.width
+                                    expand: m_rail.useLarge
+                                    expansionProgress: m_rail.expansionProgress
+                                    collapsedIconStyle: MD.Enum.IconOnly
+                                    text: modelData.name
+                                    icon.name: modelData.icon
+                                    onClicked: {
+                                        if (m_rail.useModal)
+                                            m_rail.close();
+                                        root.openUtilityPopup(modelData.source);
+                                    }
+                                }
+                            }
+                        }
 
                         ColumnLayout {
                             id: m_panel
                             visible: m_rail.useLarge
                             x: 16
+                            y: popupLinks.height + 8
                             width: parent.width - 32
                             spacing: 8
                             RowLayout {
@@ -210,6 +250,7 @@ MD.Page {
 
             MD.PageContainer {
                 id: m_container
+                objectName: 'examplePages'
                 Layout.fillHeight: true
                 Layout.fillWidth: true
                 clip: true
@@ -236,47 +277,81 @@ MD.Page {
                 padding: 0
                 backgroundColor: MD.MProp.color.surface_container
 
-                contentItem: MD.Flickable {
-                    id: navigation
-                    objectName: 'compactNavigation'
+                contentItem: Item {
                     implicitHeight: 88
-                    contentWidth: navigationItems.width
-                    contentHeight: height
-                    flickableDirection: Flickable.HorizontalFlick
-                    function revealCurrent() {
-                        const item = navigationRepeater.itemAt(root.pageIndex);
-                        if (!item)
-                            return;
-                        const limit = Math.max(0, contentWidth - width);
-                        let position = Math.min(contentX, item.x);
-                        position = Math.max(position, item.x + item.width - width);
-                        contentX = Math.max(0, Math.min(position, limit));
-                    }
-                    onWidthChanged: Qt.callLater(revealCurrent)
-                    Row {
-                        id: navigationItems
-                        Repeater {
-                            id: navigationRepeater
-                            model: root.pageModel
-                            Item {
-                                width: Math.max(104, navigation.width / root.pageModel.length)
-                                height: navigation.height
-                                required property var modelData
-                                required property int index
-                                MD.BarItem {
-                                    objectName: 'compactNavigationButton' + parent.index
-                                    anchors.fill: parent
-                                    anchors.topMargin: 12
-                                    anchors.bottomMargin: 16
-                                    icon.name: parent.modelData.icon
-                                    text: parent.modelData.name
-                                    checked: root.pageIndex == parent.index
-                                    onCheckedChanged: if (checked)
-                                        Qt.callLater(navigation.revealCurrent)
-                                    onClicked: {
-                                        root.pageIndex = parent.index;
+
+                    MD.Flickable {
+                        id: navigation
+                        objectName: 'compactNavigation'
+                        anchors.fill: parent
+                        anchors.rightMargin: moreButton.width
+                        contentWidth: navigationItems.width
+                        contentHeight: height
+                        flickableDirection: Flickable.HorizontalFlick
+                        function revealCurrent() {
+                            const item = navigationRepeater.itemAt(root.pageIndex);
+                            if (!item)
+                                return;
+                            const limit = Math.max(0, contentWidth - width);
+                            let position = Math.min(contentX, item.x);
+                            position = Math.max(position, item.x + item.width - width);
+                            contentX = Math.max(0, Math.min(position, limit));
+                        }
+                        onWidthChanged: Qt.callLater(revealCurrent)
+                        Row {
+                            id: navigationItems
+                            Repeater {
+                                id: navigationRepeater
+                                model: root.pageModel
+                                Item {
+                                    width: Math.max(104, navigation.width / root.pageModel.length)
+                                    height: navigation.height
+                                    required property var modelData
+                                    required property int index
+                                    MD.BarItem {
+                                        objectName: 'compactNavigationButton' + parent.index
+                                        anchors.fill: parent
+                                        anchors.topMargin: 12
+                                        anchors.bottomMargin: 16
+                                        icon.name: parent.modelData.icon
+                                        text: parent.modelData.name
+                                        checked: root.pageIndex == parent.index
+                                        onCheckedChanged: if (checked)
+                                            Qt.callLater(navigation.revealCurrent)
+                                        onClicked: {
+                                            root.pageIndex = parent.index;
+                                        }
                                     }
                                 }
+                            }
+                        }
+                    }
+
+                    MD.BarItem {
+                        id: moreButton
+                        objectName: 'compactMoreButton'
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        anchors.topMargin: 12
+                        anchors.bottomMargin: 16
+                        width: 88
+                        text: 'More'
+                        icon.name: MD.Token.icon.more_horiz
+                        onClicked: utilityMenu.openFor(moreButton)
+
+                        MD.Menu {
+                            id: utilityMenu
+                            objectName: 'compactUtilityMenu'
+                            preferredPlacement: MD.PopupBase.Above
+                            anchorAlignment: MD.PopupBase.End
+                            model: root.popupModel
+                            contentDelegate: MD.MenuItem {
+                                required property var modelData
+                                objectName: modelData.name + 'MenuItem'
+                                text: modelData.name
+                                icon.name: modelData.icon
+                                onTriggered: root.openUtilityPopup(modelData.source)
                             }
                         }
                     }

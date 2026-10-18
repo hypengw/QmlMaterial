@@ -13,6 +13,9 @@
 #include "qml_material/control/clock.hpp"
 #include "qml_material/control/slider.hpp"
 #include "qml_material/control/button.hpp"
+#include "qml_material/control/menu.hpp"
+#include "qml_material/control/overlay.hpp"
+#include "qml_material/control/page_container.hpp"
 #include "qml_material/input/swipe_to_dismiss_state.hpp"
 #include "qml_material/input/time_state.hpp"
 #include "qml_material/indicator/squiggly_progress_geometry.hpp"
@@ -27,6 +30,15 @@ QQuickItem* visualChild(QQuickItem* item, const QString& name) {
     if (item->objectName() == name) return item;
     for (auto* child : item->childItems()) {
         if (auto* result = visualChild(child, name)) return result;
+    }
+    return nullptr;
+}
+qml_material::Dialog* visibleDialog(QQuickWindow& window, const QString& name) {
+    for (auto item : qml_material::OverlayManager::get(&window)->childItems()) {
+        auto dialog = qobject_cast<qml_material::Dialog*>(item->parent());
+        if (dialog && dialog->surfaceItem() == item && dialog->objectName() == name &&
+            dialog->isVisible())
+            return dialog;
     }
     return nullptr;
 }
@@ -1086,9 +1098,11 @@ private slots:
         QVERIFY(navigation->property("contentWidth").toReal() > navigation->width());
         const auto pages     = root->property("pageModel").value<QJSValue>();
         const int  pageCount = pages.property("length").toInt();
-        QCOMPARE(pageCount, 6);
-        for (int index = 0; index < pageCount; ++index)
-            QVERIFY(pages.property(index).property("name").toString() != "motion");
+        QCOMPARE(pageCount, 4);
+        for (int index = 0; index < pageCount; ++index) {
+            const auto name = pages.property(index).property("name").toString();
+            QVERIFY(name != "motion" && name != "about" && name != "typography");
+        }
         for (int index : { pageCount - 1, 1 }) {
             auto* button =
                 visualChild(navigation, "compactNavigationButton" + QString::number(index));
@@ -1105,6 +1119,126 @@ private slots:
         polish(root);
         QCoreApplication::processEvents();
         verifyText(navigation);
+        auto more = root->findChild<QQuickItem*>("compactMoreButton");
+        QVERIFY(more && more->isVisible());
+        const auto moreBounds = more->mapRectToItem(root, more->boundingRect());
+        QVERIFY(root->boundingRect().contains(moreBounds));
+        QVERIFY(moreBounds.left() >= navigation->mapToItem(root, { navigation->width(), 0 }).x());
+    }
+    void utilityPopups_data() {
+        QTest::addColumn<int>("width");
+        QTest::addColumn<QString>("name");
+        for (int width : { 320, 840, 1280 }) {
+            for (const auto& name : { QStringLiteral("about"), QStringLiteral("typography") })
+                QTest::newRow(qPrintable(QString::number(width) + "-" + name)) << width << name;
+        }
+    }
+    void utilityPopups() {
+        QFETCH(int, width);
+        QFETCH(QString, name);
+        QQmlEngine   engine;
+        QQuickWindow window;
+        window.resize(width, 900);
+        engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));
+        QQmlComponent component(&engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            import "qrc:/Qcm/Material/Example" as Demo
+            Demo.Example {
+                id: root
+                height: 900; pageIndex: 1
+                MD.MProp.size: MD.ThemeSize { width: root.width; duration: 0 }
+            }
+        )",
+                          QUrl());
+        std::unique_ptr<QObject> object(
+            component.createWithInitialProperties({ { "width", width } }));
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto root = qobject_cast<QQuickItem*>(object.get());
+        root->setParentItem(window.contentItem());
+        window.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        polish(root);
+        auto pages = root->findChild<qml_material::PageContainer*>("examplePages");
+        QVERIFY(pages);
+        QTRY_VERIFY(pages->currentItem() &&
+                    pages->currentItem()->property("title") == "Compositions");
+        const QPointer<QQuickItem> currentPage = pages->currentItem();
+        const auto                 currentKey  = pages->currentKey();
+        QSignalSpy                 pageChanged(root, SIGNAL(pageIndexChanged()));
+        QSignalSpy routeChanged(pages, &qml_material::PageContainer::currentKeyChanged);
+        auto       mouseClick = [&](QQuickItem* item) {
+            QTest::mouseClick(
+                &window,
+                Qt::LeftButton,
+                Qt::NoModifier,
+                item->mapToScene({ item->width() / 2, item->height() / 2 }).toPoint());
+        };
+        if (width == 320) {
+            QVERIFY(! root->findChild<QQuickItem*>("exampleNavigationRail"));
+            auto more = root->findChild<QQuickItem*>("compactMoreButton");
+            QVERIFY(more && more->isVisible());
+            auto menu = root->findChild<qml_material::Menu*>("compactUtilityMenu");
+            QVERIFY(menu);
+            menu->setEnter(nullptr);
+            menu->setExit(nullptr);
+            mouseClick(more);
+            QVERIFY(menu->isOpened());
+            QCOMPARE(menu->count(), 2);
+            polish(menu->surfaceItem());
+            auto item = visualChild(menu->surfaceItem(), name + "MenuItem");
+            QVERIFY(item);
+            mouseClick(item);
+            QVERIFY(! menu->isVisible());
+        } else {
+            auto rail = root->findChild<QQuickItem*>("exampleNavigationRail");
+            QVERIFY(rail);
+            QVERIFY(! rail->property("useLarge").toBool());
+            if (auto button = visualChild(window.contentItem(), name + "PopupButton"))
+                QVERIFY(! button->isVisible());
+            QVERIFY(QMetaObject::invokeMethod(rail, "open"));
+            QTRY_COMPARE(rail->property("expansionProgress").toReal(), 1.0);
+            polish(root);
+            QTRY_VERIFY(visualChild(window.contentItem(), name + "PopupButton"));
+            auto button = visualChild(window.contentItem(), name + "PopupButton");
+            QVERIFY(button->isVisible());
+            QCOMPARE(button->property("expansionProgress").toReal(),
+                     rail->property("expansionProgress").toReal());
+            mouseClick(button);
+            if (rail->property("useModal").toBool()) QVERIFY(! rail->property("useLarge").toBool());
+        }
+        QTRY_VERIFY(visibleDialog(window, name + "Popup"));
+        QPointer<qml_material::Dialog> dialog = visibleDialog(window, name + "Popup");
+        QTRY_VERIFY(dialog->isOpened());
+        QVERIFY(dialog->modal());
+        QCOMPARE(dialog->parentItem(), root);
+        QCOMPARE(pages->currentItem(), currentPage.data());
+        QCOMPARE(pages->currentKey(), currentKey);
+        QCOMPARE(root->property("pageIndex").toInt(), 1);
+        QCOMPARE(pageChanged.count(), 0);
+        QCOMPARE(routeChanged.count(), 0);
+        polish(dialog->surfaceItem());
+        verifyText(dialog->surfaceItem());
+
+        window.resize(320, 360);
+        root->setSize({ 320, 360 });
+        polish(root);
+        polish(dialog->surfaceItem());
+        QTRY_VERIFY(QRectF(0, 0, 320, 360).contains(dialog->presentationRect()));
+        verifyText(dialog->surfaceItem());
+        if (name == "typography")
+            QVERIFY(dialog->contentItem()->property("contentHeight").toReal() >
+                    dialog->contentItem()->height());
+        auto close = dialog->standardButton(qml_material::Dialog::Close);
+        QVERIFY(close);
+        dialog->setExit(nullptr);
+        mouseClick(close);
+        QTRY_VERIFY(! dialog);
+        QCOMPARE(pages->currentItem(), currentPage.data());
+        QCOMPARE(pages->currentKey(), currentKey);
+        QCOMPARE(pageChanged.count(), 0);
+        QCOMPARE(routeChanged.count(), 0);
     }
 };
 int run_compositions(int argc, char** argv) {
