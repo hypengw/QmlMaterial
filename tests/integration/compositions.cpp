@@ -17,6 +17,7 @@
 #include "qml_material/control/overlay.hpp"
 #include "qml_material/control/page_container.hpp"
 #include "qml_material/input/swipe_to_dismiss_state.hpp"
+#include "qml_material/input/app_bar_scroll.hpp"
 #include "qml_material/input/time_state.hpp"
 #include "qml_material/indicator/squiggly_progress_geometry.hpp"
 
@@ -1227,9 +1228,44 @@ private slots:
         polish(dialog->surfaceItem());
         QTRY_VERIFY(QRectF(0, 0, 320, 360).contains(dialog->presentationRect()));
         verifyText(dialog->surfaceItem());
-        if (name == "typography")
-            QVERIFY(dialog->contentItem()->property("contentHeight").toReal() >
-                    dialog->contentItem()->height());
+        if (name == "typography") {
+            auto samples = dialog->contentItem();
+            QCOMPARE(dialog->leftPadding(), 0.0);
+            QCOMPARE(dialog->rightPadding(), 0.0);
+            QCOMPARE(dialog->topPadding(), 0.0);
+            QCOMPARE(dialog->bottomPadding(), 0.0);
+            QCOMPARE(samples->width(), dialog->width());
+            QCOMPARE(samples->property("leftMargin").toReal(), 24.0);
+            QCOMPARE(samples->property("rightMargin").toReal(), 24.0);
+            QCOMPARE(samples->property("topMargin").toReal(), 20.0);
+            QCOMPARE(samples->property("bottomMargin").toReal(), 20.0);
+            QCOMPARE(samples->property("contentWidth").toReal(), samples->width() - 48);
+            QCOMPARE(samples->property("contentX").toReal(), -24.0);
+            QCOMPARE(samples->property("contentY").toReal(), -20.0);
+            QVERIFY(samples->property("contentHeight").toReal() > samples->height());
+
+            auto header = dialog->header();
+            QVERIFY(header);
+            auto scroll = header->property("scrollBehavior").value<qml_material::AppBarScroll*>();
+            QVERIFY(scroll);
+            QCOMPARE(scroll->mode(), qml_material::AppBarScroll::Pinned);
+            QVERIFY(! scroll->overlapped());
+            auto background = header->property("background").value<QQuickItem*>();
+            QVERIFY(background);
+            const auto headerHeight = header->height();
+            QTRY_COMPARE(background->property("color"), header->property("backgroundColor"));
+
+            QVERIFY(samples->setProperty("contentY", 80.0));
+            QVERIFY(scroll->overlapped());
+            QTRY_COMPARE(background->property("color"),
+                         header->property("scrolledBackgroundColor"));
+            QCOMPARE(scroll->heightOffset(), 0.0);
+            QCOMPARE(header->height(), headerHeight);
+
+            QVERIFY(samples->setProperty("contentY", -samples->property("topMargin").toReal()));
+            QVERIFY(! scroll->overlapped());
+            QTRY_COMPARE(background->property("color"), header->property("backgroundColor"));
+        }
         auto close = dialog->standardButton(qml_material::Dialog::Close);
         QVERIFY(close);
         dialog->setExit(nullptr);

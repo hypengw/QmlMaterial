@@ -124,6 +124,61 @@ int run_toolbar_dynamic_visibility(int argc, char** argv) {
         delete root;
         return fail("restoring maxShowActionNum did not restore actions");
     }
+    auto* layout = root->findChild<qml_material::ToolBarLayout*>();
+    if (! layout) {
+        delete root;
+        return fail("toolbar layout was not created");
+    }
+    root->setProperty("actionBarWidthLimit", layout->minimumWidth());
+    if (! waitFor(
+            [layout]() {
+                return layout->hiddenActions().size() == 3;
+            },
+            window)) {
+        delete root;
+        return fail("narrow toolbar did not fold its actions");
+    }
+    root->setProperty("actionBarWidthLimit", layout->implicitWidth());
+    if (! waitFor(
+            [layout]() {
+                return layout->hiddenActions().isEmpty();
+            },
+            window)) {
+        delete root;
+        return fail("restoring the implicit size retained folded actions");
+    }
+    QQuickItem cache;
+    cache.setParentItem(window.contentItem());
+    cache.setVisible(false);
+    for (int i = 0; i < 3; ++i) {
+        root->setProperty("actionBarWidthLimit", layout->minimumWidth());
+        if (! waitFor(
+                [layout]() {
+                    return layout->hiddenActions().size() == 3;
+                },
+                window)) {
+            delete root;
+            return fail("toolbar did not fold before caching the page");
+        }
+        root->setParentItem(&cache);
+        if (layout->isVisible()) {
+            delete root;
+            return fail("cached page toolbar remained visible");
+        }
+        layout->ensurePolished();
+        root->setProperty("actionBarWidthLimit", layout->implicitWidth());
+        root->setParentItem(window.contentItem());
+        if (! waitFor(
+                [layout]() {
+                    int visible = 0;
+                    for (auto* item : layout->childItems()) visible += item->isVisible();
+                    return layout->hiddenActions().isEmpty() && visible == 3;
+                },
+                window)) {
+            delete root;
+            return fail("cached page did not restore visible toolbar actions");
+        }
+    }
     delete root;
     std::printf("PASS toolbar_dynamic_visibility\n");
     return EXIT_SUCCESS;

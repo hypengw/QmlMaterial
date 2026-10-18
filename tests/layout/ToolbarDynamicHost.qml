@@ -6,7 +6,8 @@ Item {
     id: root
 
     property list<Action> actions
-    readonly property real targetWidth: Math.ceil(actionLayout.implicitWidth) + 2
+    property real widthLimit: Infinity
+    readonly property real targetWidth: Math.min(Math.ceil(actionLayout.implicitWidth) + 2, widthLimit)
     readonly property int hiddenCount: actionLayout.hiddenActions.length
     property alias maxShowActionNum: actionLayout.maxShowActionNum
 

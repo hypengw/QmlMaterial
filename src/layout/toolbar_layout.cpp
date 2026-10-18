@@ -307,12 +307,9 @@ void ToolBarLayout::componentComplete() {
 }
 
 void ToolBarLayout::geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry) {
-    if (newGeometry != oldGeometry) {
-        if (newGeometry.size() != QSizeF { implicitWidth(), implicitHeight() }) {
-            relayout();
-        } else {
-            polish();
-        }
+    if (newGeometry.size() != oldGeometry.size()) {
+        // Returning to the implicit size must discard overflow calculated at a narrower size.
+        relayout();
     }
     QQuickItem::geometryChange(newGeometry, oldGeometry);
 }

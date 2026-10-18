@@ -12,6 +12,7 @@ Item {
     readonly property int hiddenCount: actionBarHost.hiddenCount
     readonly property real actionBarWidth: actionBarHost.width
     property alias maxShowActionNum: actionBarHost.maxShowActionNum
+    property alias actionBarWidthLimit: actionBarHost.widthLimit
 
     Action {
         id: linkAction

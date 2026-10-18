@@ -6,18 +6,35 @@ MD.Dialog {
     objectName: 'typographyPopup'
     title: 'Typography'
     standardButtons: MD.Dialog.Close
+    mdState.backgroundColor: mdState.ctx.color.surface
+    horizontalPadding: 0
+    topPadding: 0
+    bottomPadding: 0
     width: Math.min(640, Math.max(0, overlayWidth - 32))
     height: Math.min(implicitHeight, Math.max(0, overlayHeight - 32))
     positioningItem: overlayItem
     x: (overlayWidth - width) / 2
     y: (overlayHeight - height) / 2
 
+    header: MD.AppBar {
+        objectName: 'typographyAppBar'
+        title: root.title
+        radius: MD.Token.shape.corner.extra_large
+        scrollBehavior: MD.AppBarScroll {
+            mode: MD.AppBarScroll.Pinned
+            contentAtStart: samples.atYBeginning
+        }
+    }
+
     contentItem: MD.VerticalFlickable {
+        id: samples
         objectName: 'typographySamples'
-        implicitWidth: 592
-        implicitHeight: Math.min(480, content.implicitHeight + topMargin + bottomMargin)
-        topMargin: 8
-        bottomMargin: 8
+        implicitWidth: 640
+        implicitHeight: Math.min(504, content.implicitHeight + topMargin + bottomMargin)
+        leftMargin: 24
+        rightMargin: 24
+        topMargin: 20
+        bottomMargin: 20
         clip: true
 
         Column {
