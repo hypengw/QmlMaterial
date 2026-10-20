@@ -4,6 +4,9 @@ import Qcm.Material as MD
 
 MD.SliderBase {
     id: control
+    Accessible.role: Accessible.Slider
+    Accessible.onIncreaseAction: increase()
+    Accessible.onDecreaseAction: decrease()
 
     property MD.StateSlider mdState: MD.StateSlider {
         item: control
@@ -40,9 +43,9 @@ MD.SliderBase {
     // Cursor handling
     PointHandler {
         cursorShape: {
-            if (control.pressed)
+            if ((control.mdState.interactions.pressed || control.mdState.interactions.dragged))
                 return Qt.ClosedHandCursor;
-            if (control.hovered)
+            if (control.mdState.interactions.hovered)
                 return Qt.PointingHandCursor;
             return Qt.ArrowCursor;
         }
@@ -174,11 +177,11 @@ MD.SliderBase {
             const offset = control.horizontal ? availableSpace / 2 : control.visualPosition * availableSpace;
             return control.topPadding + offset;
         }
-        value: control.value
+        value: control.previewValue
         labelBehavior: control.labelBehavior
-        handleHasFocus: control.visualFocus
-        handlePressed: control.pressed
-        handleHovered: control.hovered
+        handleHasFocus: control.focusVisible
+        handlePressed: (control.mdState.interactions.pressed || control.mdState.interactions.dragged)
+        handleHovered: control.mdState.interactions.hovered
         horizontal: control.horizontal
         handleWidth: control.mdState.handleWidth
         handleHeight: control.mdState.handleHeight

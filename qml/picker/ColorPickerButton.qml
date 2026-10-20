@@ -2,14 +2,10 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Qcm.Material as MD
 
-MD.ButtonBase {
+MD.ColorPickerButtonBase {
     id: control
 
-    property color color: "#6750A4"
-    property bool showAlpha: true
     property int radius: 8
-
-    signal accepted(color c)
 
     implicitWidth: 80
     implicitHeight: 32
@@ -20,16 +16,6 @@ MD.ButtonBase {
     topInset: 0
     bottomInset: 0
     hoverEnabled: enabled
-
-    onClicked: {
-        if (control.Window.window)
-            m_dialog.active = true;
-    }
-
-    function dismissPopup() {
-        m_dialog.item?.dismissImmediately();
-        m_dialog.active = false;
-    }
 
     contentItem: Item {}
 
@@ -50,10 +36,7 @@ MD.ButtonBase {
             MD.Ripple {
                 anchors.fill: parent
                 corners: parent.corners
-                pressX: control.pressX - parent.x
-                pressY: control.pressY - parent.y
-                pressed: control.pressed
-                stateOpacity: control.hovered ? 0.08 : 0
+                interactionSource: control.interactionSource
                 color: MD.HctUtil.toneOf(control.color) > 50 ? "#000000" : "#ffffff"
             }
         }
@@ -71,10 +54,7 @@ MD.ButtonBase {
             MD.Ripple {
                 anchors.fill: parent
                 corners: parent.corners
-                pressX: control.pressX - parent.x
-                pressY: control.pressY - parent.y
-                pressed: control.pressed
-                stateOpacity: control.hovered ? 0.08 : 0
+                interactionSource: control.interactionSource
                 color: MD.HctUtil.paletteTone(control.color, MD.MProp.color.mode === MD.Enum.Dark ? 80 : 30)
             }
 
@@ -84,23 +64,6 @@ MD.ButtonBase {
                 size: 16
                 color: MD.HctUtil.paletteTone(control.color, MD.MProp.color.mode === MD.Enum.Dark ? 80 : 30)
             }
-        }
-    }
-
-    Loader {
-        id: m_dialog
-
-        active: false
-        onLoaded: item.open()
-        sourceComponent: MD.ColorPickerDialog {
-            parent: control.MD.Overlay.overlay
-            color: control.color
-            showAlpha: control.showAlpha
-            onAcceptedColor: function (c) {
-                control.color = c;
-                control.accepted(c);
-            }
-            onClosed: m_dialog.active = false
         }
     }
 }

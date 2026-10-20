@@ -17,7 +17,7 @@ SplitButtonState::SplitButtonState(QObject* parent): ButtonAppearanceState(paren
     });
     m_innerCorner.setBinding([this] {
         const auto token = sizeToken();
-        return down()      ? token.inner_corner_pressed_size
+        return pressed()   ? token.inner_corner_pressed_size
                : hovered() ? token.inner_corner_hovered_size
                            : token.inner_corner_size;
     });
@@ -31,7 +31,7 @@ SplitButtonState::SplitButtonState(QObject* parent): ButtonAppearanceState(paren
     });
     base.bind(m_appearance.corner, [this]() -> qreal {
         const auto token = buttonSize();
-        if (down()) return token.pressed_corner_size;
+        if (pressed()) return token.pressed_corner_size;
         if (! isRound()) return token.corner_size;
         return backgroundHeight().value_or(token.container_height) / 2;
     });

@@ -14,17 +14,17 @@ Rectangle {
         x: 24
         y: 24
         spacing: 16
-        MD.Button {
+        MD.ActionButton {
             action: shared
             text: "XS"
             mdState.size: MD.Enum.XS
         }
-        MD.IconButton {
+        MD.ActionIconButton {
             action: shared
             mdState.size: MD.Enum.M
             icon.fill: true
         }
-        MD.IconButton {
+        MD.ActionIconButton {
             action: shared
             icon.color: "#d02040"
         }
@@ -57,7 +57,7 @@ Rectangle {
         MD.Button {
             text: "No icon"
         }
-        MD.Button {
+        MD.ActionButton {
             action: shared
             enabled: false
             text: "Disabled"

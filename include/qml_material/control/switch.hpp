@@ -1,32 +1,33 @@
 #pragma once
-#include "qml_material/control/abstract_button.hpp"
+#include "qml_material/control/toggle_button.hpp"
 
 namespace qml_material
 {
-class QML_MATERIAL_API Switch : public AbstractButton {
+class QML_MATERIAL_API Switch : public ToggleButton {
     Q_OBJECT
     QML_NAMED_ELEMENT(SwitchBase)
     Q_PROPERTY(qreal position READ position NOTIFY positionChanged FINAL)
     Q_PROPERTY(qreal visualPosition READ visualPosition NOTIFY visualPositionChanged FINAL)
+    Q_PROPERTY(bool dragging READ isDragging NOTIFY draggingChanged FINAL)
 public:
     explicit Switch(QQuickItem* parent = nullptr);
-    qreal         position() const { return m_position; }
-    qreal         visualPosition() const { return mirrored() ? 1 - m_position : m_position; }
+    ~Switch() override;
+    qreal         position() const { return m_dragPosition.value_or(isChecked() ? 1 : 0); }
+    qreal         visualPosition() const { return mirrored() ? 1 - position() : position(); }
+    bool          isDragging() const { return m_dragPosition.has_value(); }
     Q_SIGNAL void positionChanged();
     Q_SIGNAL void visualPositionChanged();
-
-protected:
-    void nextCheckState() override;
-    void pointerStarted(const QPointF&) override;
-    void pointerMoved(const QPointF&) override;
-    void interactionEnded() override;
-    bool retainPressOutside() const override { return true; }
+    Q_SIGNAL void draggingChanged();
 
 private:
-    qreal   positionAt(const QPointF&) const;
-    void    setPosition(qreal);
-    qreal   m_position = 0;
-    QPointF m_origin;
-    bool    m_dragging = false;
+    void                           checkedChange() override;
+    void                           observeIndicator();
+    qreal                          positionAt(QPointF) const;
+    void                           setDragPosition(qreal);
+    void                           finishDrag(QPointF, bool cancelled);
+    void                           notifyPosition();
+    std::optional<qreal>           m_dragPosition;
+    quint64                        m_dragRevision = 0;
+    QList<QMetaObject::Connection> m_indicatorConnections;
 };
 } // namespace qml_material

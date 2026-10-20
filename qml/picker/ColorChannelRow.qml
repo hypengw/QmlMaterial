@@ -90,7 +90,7 @@ RowLayout {
         to: root.to
         step: root.step
         wrap: root.channel === ColorChannelRow.Channel.Hue
-        onMoved: function (v) {
+        onValueChangeRequested: function (v) {
             root.moved(v);
         }
     }
@@ -101,7 +101,7 @@ RowLayout {
             value: root.value
             from: root.from
             to: root.to
-            onMoved: function (v) {
+            onValueChangeRequested: function (v) {
                 root.moved(v);
             }
         }
@@ -120,7 +120,7 @@ RowLayout {
                     return Qt.rgba(root.contextColor.r, root.contextColor.g, root.contextColor.b, root.value / (root.to - root.from));
                 return root._colorTo();
             }
-            onMoved: function (v) {
+            onValueChangeRequested: function (v) {
                 root.moved(v);
             }
         }

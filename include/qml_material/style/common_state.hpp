@@ -11,6 +11,7 @@
 #include "qml_material/token/token.hpp"
 #include <QPointer>
 #include "qml_material/util/corner.hpp"
+#include "qml_material/style/indication_policy.hpp"
 
 Q_MOC_INCLUDE("QQuickItem")
 Q_MOC_INCLUDE("qml_material/token/color.hpp")
@@ -26,7 +27,6 @@ class Theme;
 struct StateValues {
     Q_GADGET_EXPORT(QML_MATERIAL_API)
     QML_VALUE_TYPE(state_values)
-    Q_PROPERTY(QString state MEMBER state CONSTANT FINAL)
     Q_PROPERTY(QColor textColor MEMBER textColor CONSTANT FINAL)
     Q_PROPERTY(QColor backgroundColor MEMBER backgroundColor CONSTANT FINAL)
     Q_PROPERTY(QColor stateLayerColor MEMBER stateLayerColor CONSTANT FINAL)
@@ -38,18 +38,37 @@ struct StateValues {
     Q_PROPERTY(qreal elevation MEMBER elevation CONSTANT FINAL)
     Q_PROPERTY(qreal corner MEMBER corner CONSTANT FINAL)
 public:
-    QString state;
-    QColor  textColor { Qt::transparent }, backgroundColor { Qt::transparent };
-    QColor  outlineColor { Qt::transparent }, supportTextColor { Qt::transparent };
-    QColor  stateLayerColor { Qt::transparent };
-    qreal   contentOpacity = 1, backgroundOpacity = 1, stateLayerOpacity = 0;
-    qreal   elevation = 0, corner = 0;
-    bool    operator==(const StateValues&) const = default;
+    QColor textColor { Qt::transparent }, backgroundColor { Qt::transparent };
+    QColor outlineColor { Qt::transparent }, supportTextColor { Qt::transparent };
+    QColor stateLayerColor { Qt::transparent };
+    qreal  contentOpacity = 1, backgroundOpacity = 1, stateLayerOpacity = 0;
+    qreal  elevation = 0, corner = 0;
+    bool   operator==(const StateValues&) const = default;
 };
 
 class QML_MATERIAL_API CommonState : public QObject, public QQmlParserStatus {
     Q_OBJECT
     QML_NAMED_ELEMENT(CommonState)
+    Q_PROPERTY(InteractionSource* interactionSource READ interactionSource WRITE
+                   setInteractionSource NOTIFY interactionSourceChanged FINAL)
+    Q_PROPERTY(qml_material::InteractionValues interactions READ interactions NOTIFY
+                   interactionsChanged FINAL)
+    Q_PROPERTY(
+        qml_material::IndicationValues indication READ indication NOTIFY indicationChanged FINAL)
+    Q_PROPERTY(
+        QColor indicationColor READ indicationColor WRITE setIndicationColor RESET
+            resetIndicationColor NOTIFY indicationChanged BINDABLE bindableIndicationColor FINAL)
+    Q_PROPERTY(qml_material::token::State indicationTokens READ indicationTokens WRITE
+                   setIndicationTokens RESET resetIndicationTokens NOTIFY indicationChanged BINDABLE
+                       bindableIndicationTokens FINAL)
+    Q_PROPERTY(bool pressIndicationEnabled READ pressIndicationEnabled WRITE
+                   setPressIndicationEnabled NOTIFY indicationChanged FINAL)
+    Q_PROPERTY(bool hoverIndicationEnabled READ hoverIndicationEnabled WRITE
+                   setHoverIndicationEnabled NOTIFY indicationChanged FINAL)
+    Q_PROPERTY(bool focusIndicationEnabled READ focusIndicationEnabled WRITE
+                   setFocusIndicationEnabled NOTIFY indicationChanged FINAL)
+    Q_PROPERTY(bool dragIndicationEnabled READ dragIndicationEnabled WRITE setDragIndicationEnabled
+                   NOTIFY indicationChanged FINAL)
     QML_UNCREATABLE("Base class for native control states")
     Q_INTERFACES(QQmlParserStatus)
     Q_CLASSINFO("DefaultProperty", "datas")
@@ -93,13 +112,35 @@ class QML_MATERIAL_API CommonState : public QObject, public QQmlParserStatus {
     Q_PROPERTY(
         qml_material::Theme* ctx READ ctx WRITE setCtx RESET resetCtx NOTIFY ctxChanged FINAL)
     Q_PROPERTY(QObject* target READ target NOTIFY targetChanged)
-    Q_PROPERTY(QString state READ state NOTIFY stateChanged FINAL)
 
 public:
     ~CommonState() override;
-    QObject*                    target() const;
-    MdColorMgr*                 colors() const;
-    void                        setColors(MdColorMgr*);
+    InteractionSource* interactionSource() const { return m_indication.source(); }
+    void               setInteractionSource(InteractionSource*);
+    InteractionValues  interactions() const { return m_indication.interactions().values(); }
+    Q_SIGNAL void      interactionSourceChanged();
+    Q_SIGNAL void      interactionsChanged();
+    IndicationValues   indication() const { return m_indication.values(); }
+    QColor             indicationColor() const { return m_indication.color(); }
+    void               setIndicationColor(const QColor& value) { m_indication.setColor(value); }
+    void               resetIndicationColor() { m_indication.resetColor(); }
+    QBindable<QColor>  bindableIndicationColor() { return m_indication.bindableColor(); }
+    token::State       indicationTokens() const { return m_indication.tokens(); }
+    void setIndicationTokens(const token::State& value) { m_indication.setTokens(value); }
+    void resetIndicationTokens() { m_indication.resetTokens(); }
+    QBindable<token::State> bindableIndicationTokens() { return m_indication.bindableTokens(); }
+    bool                    pressIndicationEnabled() const { return m_indication.pressEnabled(); }
+    bool                    hoverIndicationEnabled() const { return m_indication.hoverEnabled(); }
+    bool                    focusIndicationEnabled() const { return m_indication.focusEnabled(); }
+    bool                    dragIndicationEnabled() const { return m_indication.dragEnabled(); }
+    void          setPressIndicationEnabled(bool value) { m_indication.setPressEnabled(value); }
+    void          setHoverIndicationEnabled(bool value) { m_indication.setHoverEnabled(value); }
+    void          setFocusIndicationEnabled(bool value) { m_indication.setFocusEnabled(value); }
+    void          setDragIndicationEnabled(bool value) { m_indication.setDragEnabled(value); }
+    Q_SIGNAL void indicationChanged();
+    QObject*      target() const;
+    MdColorMgr*   colors() const;
+    void          setColors(MdColorMgr*);
     QBindable<MdColorMgr*>      bindableColors();
     StateValues                 values() const;
     QBindable<StateValues>      bindableValues() const;
@@ -172,7 +213,6 @@ public:
     void                    setCtx(Theme*);
     Q_INVOKABLE void        resetCtx();
     Q_INVOKABLE void        resetColors();
-    QString                 state() const;
     Q_SIGNAL void           ctxChanged();
 
     Q_SIGNAL void colorsChanged();
@@ -180,15 +220,18 @@ public:
     Q_SIGNAL void stateTokensChanged();
     Q_SIGNAL void elevationTokensChanged();
     Q_SIGNAL void valuesChanged();
-    Q_SIGNAL void stateChanged();
 
 protected:
     explicit CommonState(QObject* parent = nullptr);
-    void setTarget(QObject*);
-    void publishState(const QString&, std::function<void()> apply);
+    void                          setTarget(QObject*);
+    void                          applyAppearance(std::function<void()> apply);
+    IndicationPolicy&             indicationPolicy() { return m_indication; }
+    const InteractionAccumulator& interactionAccumulator() const {
+        return m_indication.interactions();
+    }
     bool isStateActive() const;
-    template<typename T>
-    void updateStateInput(QProperty<T>& property, const std::type_identity_t<T>& value) {
+    template<typename Property, typename T>
+    void updateStateInput(Property& property, const T& value) {
         if (isStateActive())
             property = value;
         else
@@ -241,7 +284,6 @@ protected:
 private:
     void                  updateContext(Theme*);
     void                  colorsChange();
-    QProperty<QString>    m_state;
     std::function<void()> m_applyState;
     bool                  m_canApply = true;
 
@@ -279,5 +321,8 @@ private:
                                &CommonState::backgroundOpacityChanged)
     Q_OBJECT_BINDABLE_PROPERTY(CommonState, qreal, m_stateLayerOpacityValue,
                                &CommonState::stateLayerOpacityChanged)
+    IndicationPolicy        m_indication;
+    QPropertyNotifier       m_interactionsNotifier;
+    QMetaObject::Connection m_sourceDestroyed;
 };
 } // namespace qml_material

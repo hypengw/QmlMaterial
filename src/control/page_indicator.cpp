@@ -2,7 +2,7 @@
 #include <QMouseEvent>
 #include <QTouchEvent>
 #include <QLineF>
-#include <QMetaProperty>
+#include <QKeyEvent>
 #include <QQmlEngine>
 #include <QQmlInfo>
 #include <limits>
@@ -11,7 +11,36 @@
 namespace qml_material
 {
 
-PageIndicator::PageIndicator(QQuickItem* parent): Control(parent) {
+PageIndicator::PageIndicator(QQuickItem* parent)
+    : Control(parent), m_input(this, [this] {
+          Q_EMIT interactionSourceChanged();
+      }) {
+    m_input.acceptsInput = [this] {
+        return m_interactive && m_count > 0;
+    };
+    m_input.click().pointerStarted = [this](const PointerInput& input) {
+        setPressed(hitIndex(input.position));
+    };
+    m_input.click().pointerMoved = [this](QPointF point) {
+        setPressed(hitIndex(point));
+    };
+    m_input.click().pointerClicked = [this](QPointF point) {
+        releasePress(point);
+    };
+    m_input.click().pointerCancelled = [this] {
+        setPressed(-1);
+    };
+    m_input.click().clicked = [this] {
+        if (m_count > 0) Q_EMIT currentIndexChangeRequested((m_current_index + 1) % m_count);
+    };
+    m_input.focusVisibleChanged = [this] {
+        Q_EMIT focusVisibleChanged();
+    };
+    setFocusPolicy(Qt::StrongFocus);
+    m_input.setHoverEnabled(hoverEnabled());
+    connect(this, &Control::hoverEnabledChanged, this, [this] {
+        m_input.setHoverEnabled(hoverEnabled());
+    });
     connect(this, &Control::contentItemChanged, this, [this]() {
         cancelPress();
         for (const auto& entry : m_items)
@@ -114,10 +143,8 @@ void PageIndicator::updatePolish() {
         if (! parentContext) break;
         auto      context = new QQmlContext(parentContext, this);
         const int index   = m_items.size();
-        context->setContextProperty(QStringLiteral("index"), index);
-        context->setContextProperty(QStringLiteral("pressed"), false);
-        auto object = component->beginCreate(context);
-        auto item   = qobject_cast<QQuickItem*>(object);
+        auto      object  = component->beginCreate(context);
+        auto      item    = qobject_cast<QQuickItem*>(object);
         if (! item) {
             component->completeCreate();
             delete object;
@@ -128,17 +155,8 @@ void PageIndicator::updatePolish() {
         item->setParent(this);
         context->setParent(item);
         QQmlEngine::setObjectOwnership(item, QQmlEngine::CppOwnership);
-        const auto  meta            = item->metaObject();
-        const int   pressedProperty = meta->indexOfProperty("pressed");
-        QVariantMap initial;
-        const int   indexProperty = meta->indexOfProperty("index");
-        if (indexProperty >= 0 && meta->property(indexProperty).isWritable())
-            initial.insert("index", index);
-        const bool writablePressed =
-            pressedProperty >= 0 && meta->property(pressedProperty).isWritable();
-        if (writablePressed) initial.insert("pressed", false);
-        component->setInitialProperties(item, initial);
-        m_items.append({ item, context, writablePressed });
+        component->setInitialProperties(item, { { "index", index } });
+        m_items.append({ item });
         connect(item, &QObject::destroyed, this, [this]() {
             m_rebuild = true;
             cancelPress();
@@ -185,83 +203,54 @@ int PageIndicator::hitIndex(const QPointF& point) const {
 void PageIndicator::setPressed(int index) {
     if (m_pressed_index == index) return;
     m_pressed_index = index;
-    // Copy guards against QML property handlers changing the delegate collection.
-    const auto entries = m_items;
-    for (int i = 0; i < entries.size(); ++i) {
-        const auto& entry   = entries[i];
-        const bool  pressed = i == m_pressed_index;
-        if (entry.context) entry.context->setContextProperty(QStringLiteral("pressed"), pressed);
-        if (entry.item && entry.pressedProperty)
-            entry.item->setProperty("pressed", i == m_pressed_index);
-    }
+    Q_EMIT highlightedIndexChanged();
 }
 
 void PageIndicator::cancelPress() {
-    m_mouse_pressed = false;
-    m_touch_id      = -1;
+    const QPointer<PageIndicator> guard(this);
+    m_input.cancelActivation();
+    if (! guard) return;
     setPressed(-1);
 }
 
 void PageIndicator::releasePress(const QPointF& point) {
-    const int index = hitIndex(point);
-    cancelPress();
-    if (index >= 0 && index < m_count && m_interactive) setCurrentIndex(index);
+    const int                     index = hitIndex(point);
+    const QPointer<PageIndicator> guard(this);
+    setPressed(-1);
+    if (guard && index >= 0 && index < m_count && m_interactive)
+        Q_EMIT currentIndexChangeRequested(index);
 }
 
-void PageIndicator::mousePressEvent(QMouseEvent* event) {
-    if (! m_interactive || event->button() != Qt::LeftButton) {
+bool PageIndicator::event(QEvent* event) {
+    const QPointer<PageIndicator> guard(this);
+    const bool                    handled = m_input.observeEvent(event);
+    return ! guard || handled ? true : Control::event(event);
+}
+void PageIndicator::mousePressEvent(QMouseEvent* event) { m_input.event(event); }
+void PageIndicator::mouseMoveEvent(QMouseEvent* event) { m_input.event(event); }
+void PageIndicator::mouseReleaseEvent(QMouseEvent* event) { m_input.event(event); }
+void PageIndicator::mouseUngrabEvent() { m_input.mouseUngrabbed(); }
+void PageIndicator::touchUngrabEvent() { m_input.touchUngrabbed(); }
+void PageIndicator::touchEvent(QTouchEvent* event) { m_input.event(event); }
+void PageIndicator::keyPressEvent(QKeyEvent* event) {
+    if (! m_input.available()) {
         event->ignore();
         return;
     }
-    m_mouse_pressed = true;
-    setPressed(hitIndex(event->position()));
+    int next = m_current_index;
+    switch (event->key()) {
+    case Qt::Key_Left: next += mirrored() ? 1 : -1; break;
+    case Qt::Key_Right: next += mirrored() ? -1 : 1; break;
+    case Qt::Key_Home: next = 0; break;
+    case Qt::Key_End: next = m_count - 1; break;
+    default:
+        if (! m_input.event(event)) Control::keyPressEvent(event);
+        return;
+    }
     event->accept();
+    next = std::clamp(next, 0, m_count - 1);
+    if (next != m_current_index) Q_EMIT currentIndexChangeRequested(next);
 }
-void PageIndicator::mouseMoveEvent(QMouseEvent* event) {
-    if (! m_mouse_pressed) {
-        event->ignore();
-        return;
-    }
-    setPressed(hitIndex(event->position()));
-    event->accept();
-}
-void PageIndicator::mouseReleaseEvent(QMouseEvent* event) {
-    if (! m_mouse_pressed || event->button() != Qt::LeftButton) {
-        event->ignore();
-        return;
-    }
-    releasePress(event->position());
-    event->accept();
-}
-void PageIndicator::mouseUngrabEvent() { cancelPress(); }
-void PageIndicator::touchUngrabEvent() { cancelPress(); }
-void PageIndicator::touchEvent(QTouchEvent* event) {
-    if (! m_interactive) {
-        event->ignore();
-        return;
-    }
-    if (event->type() == QEvent::TouchCancel) {
-        cancelPress();
-        event->accept();
-        return;
-    }
-    for (const auto& point : event->points()) {
-        if (m_touch_id < 0 && point.state() == QEventPoint::Pressed) m_touch_id = point.id();
-        if (point.id() != m_touch_id) continue;
-        if (point.state() == QEventPoint::Released)
-            releasePress(point.position());
-        else
-            setPressed(hitIndex(point.position()));
-        event->accept();
-        return;
-    }
-    event->ignore();
-}
-void PageIndicator::itemChange(ItemChange change, const ItemChangeData& data) {
-    Control::itemChange(change, data);
-    if ((change == ItemEnabledHasChanged && ! isEnabled()) ||
-        (change == ItemVisibleHasChanged && ! isVisible()) || change == ItemSceneChange)
-        cancelPress();
-}
+void PageIndicator::keyReleaseEvent(QKeyEvent* event) { m_input.event(event); }
 
 } // namespace qml_material

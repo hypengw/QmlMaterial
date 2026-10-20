@@ -1,17 +1,17 @@
 #pragma once
 #include "qml_material/style/button_interaction_state.hpp"
-Q_MOC_INCLUDE("qml_material/control/item_delegate.hpp")
+Q_MOC_INCLUDE("qml_material/control/selection_button.hpp")
 namespace qml_material
 {
-class ItemDelegate;
+class SelectionButton;
 class QML_MATERIAL_API DrawerItemState : public ButtonInteractionState {
     Q_OBJECT
     QML_NAMED_ELEMENT(StateDrawerItem)
-    Q_PROPERTY(qml_material::ItemDelegate* item READ item WRITE setItem NOTIFY itemChanged FINAL)
+    Q_PROPERTY(qml_material::SelectionButton* item READ item WRITE setItem NOTIFY itemChanged FINAL)
 public:
     explicit DrawerItemState(QObject* parent = nullptr);
-    ItemDelegate* item() const;
-    void          setItem(ItemDelegate*);
+    SelectionButton* item() const;
+    void             setItem(SelectionButton*);
 
 private:
     BindingLifetime m_bindingLifetime { bindingSet().lifetime() };

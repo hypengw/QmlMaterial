@@ -65,7 +65,8 @@ public:
     Q_SIGNAL void   changed();
 
 protected:
-    void setOverride(ActionIcon*);
+    ActionIcon* overrideIcon() const { return m_override; }
+    void        setOverride(ActionIcon*);
 
 private:
     void                           refresh();
@@ -93,10 +94,13 @@ private:
 class QML_MATERIAL_API IconSpec : public ActionIcon {
     Q_OBJECT
     QML_ELEMENT
+    Q_PROPERTY(qml_material::ActionIcon* actionIcon READ actionIcon WRITE setActionIcon NOTIFY
+                   changed FINAL)
     Q_PROPERTY(int width READ width WRITE setWidth RESET resetWidth NOTIFY widthChanged FINAL)
     Q_PROPERTY(int height READ height WRITE setHeight RESET resetHeight NOTIFY heightChanged FINAL)
 public:
     explicit IconSpec(QObject* parent = nullptr): ActionIcon(parent) {}
+    ActionIcon*   actionIcon() const { return overrideIcon(); }
     void          setActionIcon(ActionIcon* value) { setOverride(value); }
     int           width() const { return m_width.value_or(0); }
     int           height() const { return m_height.value_or(0); }

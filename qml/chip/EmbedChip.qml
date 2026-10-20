@@ -3,7 +3,7 @@ import QtQuick
 import Qcm.Material as MD
 import Qcm.Material.Layouts as Lite
 
-MD.ButtonBase {
+MD.CommandButtonBase {
     id: control
 
     property MD.StateEmbedChip mdState: MD.StateEmbedChip {
@@ -15,8 +15,6 @@ MD.ButtonBase {
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
-    flat: true
-    checkable: false
     leftInset: 0
     rightInset: 0
     topInset: 0
@@ -29,7 +27,6 @@ MD.ButtonBase {
     icon.width: 18
     icon.height: 18
     icon.color: control.MD.MProp.color.on_background
-    action: null
     font.capitalization: Font.MixedCase
 
     property string trailingIconName
@@ -91,10 +88,8 @@ MD.ButtonBase {
         MD.Ripple {
             anchors.fill: parent
             radius: parent.radius
-            pressX: control.pressX
-            pressY: control.pressY
-            pressed: control.pressed
-            stateOpacity: control.mdState.stateLayerOpacity
+            interactionSource: control.interactionSource
+            indication: control.mdState.indication
             color: control.mdState.stateLayerColor
         }
     }

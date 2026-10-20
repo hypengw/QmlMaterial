@@ -6,10 +6,10 @@ namespace qml_material
 {
 ComboBoxState::ComboBoxState(QObject* parent): InputState(parent) {
     m_hovered.setBinding([this] {
-        return item() && item()->hovered();
+        return item() && interactions().hovered;
     });
     m_focused.setBinding([this] {
-        return item() && item()->visualFocus();
+        return item() && (interactions().focused || m_expanded.value());
     });
     m_acceptable.setBinding([this] {
         return ! item() || item()->acceptableInput();
@@ -39,15 +39,42 @@ ComboBoxState::ComboBoxState(QObject* parent): InputState(parent) {
     disabled.bind(m_appearance.backgroundOpacity, [] {
         return qreal(.12);
     });
+    connect(this, &ComboBoxState::itemChanged, this, [this] {
+        if (item()) return;
+        utils::disconnectAll(m_inputConnections);
+        const QPointer<ComboBoxState> guard(this);
+        updateStateInput(m_expanded, false);
+        if (guard) setInteractionSource(nullptr);
+    });
 }
 ComboBoxState::~ComboBoxState() {
+    utils::disconnectAll(m_inputConnections);
     m_bindings.abandon();
     m_hovered.takeBinding();
     m_focused.takeBinding();
     m_acceptable.takeBinding();
 }
-ComboBox*           ComboBoxState::item() const { return static_cast<ComboBox*>(inputItem()); }
-void                ComboBoxState::setItem(ComboBox* item) { setInputItem(item); }
+ComboBox* ComboBoxState::item() const { return static_cast<ComboBox*>(inputItem()); }
+void      ComboBoxState::setItem(ComboBox* value) {
+    if (item() == value) return;
+    utils::disconnectAll(m_inputConnections);
+    const QPointer<ComboBoxState> guard(this);
+    setInputItem(value);
+    if (! guard || item() != value) return;
+    const auto refresh = [this] {
+        const QPointer<ComboBoxState> guard(this);
+        auto*                         target = item();
+        updateStateInput(m_expanded, target && target->popupVisible());
+        if (guard && item() == target)
+            setInteractionSource(target ? target->interactionSource() : nullptr);
+    };
+    if (value) {
+        m_inputConnections.append(
+            connect(value, &ComboBox::interactionSourceChanged, this, refresh));
+        m_inputConnections.append(connect(value, &ComboBox::popupVisibleChanged, this, refresh));
+    }
+    refresh();
+}
 int                 ComboBoxState::size() const { return m_size.value(); }
 void                ComboBoxState::setSize(const int& value) { m_size = value; }
 QBindable<int>      ComboBoxState::bindableSize() { return QBindable<int>(&m_size); }

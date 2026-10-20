@@ -5,8 +5,11 @@
 namespace qml_material
 {
 TextFieldState::TextFieldState(QObject* parent): InputState(parent) {
-    m_hovered.setBinding([this] {
-        return item() && item()->hovered();
+    connect(this, &CommonState::interactionsChanged, this, [this] {
+        const auto                       values = interactions();
+        const QScopedPropertyUpdateGroup group;
+        updateStateInput(m_hovered, values.hovered);
+        updateStateInput(m_focused, values.focused);
     });
     connect(this, &InputState::itemChanged, this, &TextFieldState::updateNativeInputs);
     m_selectedSize.setBinding([this] {
@@ -76,16 +79,12 @@ TextFieldState::~TextFieldState() {
 void TextFieldState::updateNativeInputs() {
     utils::disconnectAll(m_nativeConnections);
     if (auto* control = item()) {
-        m_nativeConnections.append(connect(control, &QQuickItem::focusChanged, this, [this] {
-            updateStateInput(m_focused, item() && item()->hasFocus());
-        }));
         m_nativeConnections.append(
             connect(control, &QQuickTextInput::acceptableInputChanged, this, [this] {
                 updateStateInput(m_acceptable, ! item() || item()->hasAcceptableInput());
             }));
     }
     const QScopedPropertyUpdateGroup group;
-    updateStateInput(m_focused, item() && item()->hasFocus());
     updateStateInput(m_acceptable, ! item() || item()->hasAcceptableInput());
 }
 TextField*           TextFieldState::item() const { return static_cast<TextField*>(inputItem()); }

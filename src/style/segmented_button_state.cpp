@@ -1,10 +1,9 @@
 #include "qml_material/style/segmented_button_state.hpp"
-#include "qml_material/control/button.hpp"
+#include "qml_material/control/toggle_button.hpp"
 #include "qml_material/token/color.hpp"
 namespace qml_material
 {
-SegmentedButtonState::SegmentedButtonState(QObject* parent)
-    : ButtonInteractionState(parent, FocusTreatment::Separate) {
+SegmentedButtonState::SegmentedButtonState(QObject* parent): ButtonInteractionState(parent) {
     connect(this,
             &ButtonInteractionState::itemChanged,
             this,
@@ -48,7 +47,7 @@ SegmentedButtonState::SegmentedButtonState(QObject* parent)
         return checked() ? color(&MdColorMgr::secondary_container) : QColor(Qt::transparent);
     });
     base.bind(m_appearance.outlineColor, colorBinding(&MdColorMgr::outline));
-    auto disabled = stateBindings(Interaction::Disabled);
+    auto disabled = disabledBindings();
     disabled.bind(m_appearance.textColor, colorBinding(&MdColorMgr::on_surface));
     disabled.bind(m_appearance.outlineColor, colorBinding(&MdColorMgr::on_surface));
     disabled.bind(m_appearance.backgroundColor, [this] {
@@ -61,10 +60,11 @@ SegmentedButtonState::SegmentedButtonState(QObject* parent)
         return checked() ? qreal(.12) : qreal(1);
     });
     bindStateLayerOpacity();
-    for (auto state : { Interaction::Pressed, Interaction::Hovered, Interaction::Focus })
-        stateBindings(state).bind(m_appearance.stateLayerColor, [this] {
-            return color(checked() ? &MdColorMgr::on_secondary_container : &MdColorMgr::on_surface);
-        });
+    appearanceWhen([this] {
+        return pressed() || hovered() || visualFocus();
+    }).bind(m_appearance.stateLayerColor, [this] {
+        return color(checked() ? &MdColorMgr::on_secondary_container : &MdColorMgr::on_surface);
+    });
 }
 void SegmentedButtonState::updateMirrorSource() {
     disconnect(m_mirrorConnection);
@@ -75,8 +75,8 @@ void SegmentedButtonState::updateMirrorSource() {
         });
     m_mirrored = control && control->mirrored();
 }
-Button* SegmentedButtonState::item() const { return static_cast<Button*>(inputItem()); }
-void    SegmentedButtonState::setItem(Button* item) { setInputItem(item); }
+ToggleButton* SegmentedButtonState::item() const { return static_cast<ToggleButton*>(inputItem()); }
+void          SegmentedButtonState::setItem(ToggleButton* item) { setInputItem(item); }
 #define INPUT(Type, Name, Upper)                                                       \
     Type            SegmentedButtonState::Name() const { return m_##Name.value(); }    \
     void            SegmentedButtonState::set##Upper(Type value) { m_##Name = value; } \

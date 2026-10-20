@@ -3,7 +3,10 @@
 #include "qml_material/token/color.hpp"
 namespace qml_material
 {
-SwitchState::SwitchState(QObject* parent): ButtonInteractionState(parent, FocusTreatment::Ignored) {
+SwitchState::SwitchState(QObject* parent): ButtonInteractionState(parent) {
+    indicationPolicy().bindDefaultColor(Qt::makePropertyBinding([this] {
+        return color(checked() ? &MdColorMgr::primary : &MdColorMgr::on_surface);
+    }));
     m_hasIcon.setBinding([this] {
         const auto* control = item();
         return control && ! control->icon()->isEmpty();
@@ -29,7 +32,7 @@ SwitchState::SwitchState(QObject* parent): ButtonInteractionState(parent, FocusT
     base.bind(m_handleSizeKey, [this] {
         return checked() || hasIcon() ? 24 : 16;
     });
-    auto disabled = stateBindings(Interaction::Disabled);
+    auto disabled = disabledBindings();
     disabled.bind(m_appearance.elevation, [this]() -> qreal {
         return elevationTokens().level0;
     });
@@ -41,28 +44,35 @@ SwitchState::SwitchState(QObject* parent): ButtonInteractionState(parent, FocusT
     disabled.bind(m_appearance.backgroundOpacity, [this]() -> qreal {
         return stateTokens().disabled_container;
     });
-    for (auto state : { Interaction::Pressed, Interaction::Hovered }) {
-        auto active = stateBindings(state);
-        active.bind(m_appearance.textColor, text);
-        active.bind(m_appearance.backgroundColor, background);
-        active.bind(m_handleColorKey, [this] {
-            return color(checked() ? &MdColorMgr::primary_container
-                                   : &MdColorMgr::on_surface_variant);
-        });
-        active.bind(m_appearance.stateLayerColor, [this] {
-            return color(checked() ? &MdColorMgr::primary : &MdColorMgr::on_surface);
-        });
-        active.bind(m_appearance.stateLayerOpacity, [this, state]() -> qreal {
-            return state == Interaction::Pressed ? stateTokens().pressed.state_layer_opacity
-                                                 : stateTokens().hover.state_layer_opacity;
-        });
-    }
-    stateBindings(Interaction::Pressed).bind(m_handleSizeKey, [] {
+    auto active = appearanceWhen([this] {
+        return pressed() || interactions().dragged || hovered();
+    });
+    active.bind(m_appearance.textColor, text);
+    active.bind(m_appearance.backgroundColor, background);
+    active.bind(m_handleColorKey, [this] {
+        return color(checked() ? &MdColorMgr::primary_container : &MdColorMgr::on_surface_variant);
+    });
+    active.bind(m_appearance.stateLayerColor, [this] {
+        return color(checked() ? &MdColorMgr::primary : &MdColorMgr::on_surface);
+    });
+    bindStateLayerOpacity(false);
+    appearanceWhen([this] {
+        return pressed() || interactions().dragged;
+    }).bind(m_handleSizeKey, [] {
         return 28;
     });
 }
-Switch*           SwitchState::item() const { return static_cast<Switch*>(inputItem()); }
-void              SwitchState::setItem(Switch* item) { setInputItem(item); }
+Switch* SwitchState::item() const { return static_cast<Switch*>(inputItem()); }
+void    SwitchState::setItem(Switch* item) {
+    setInputItem(
+        item,
+        [item] {
+            return item->isChecked();
+        },
+        [] {
+            return true;
+        });
+}
 QColor            SwitchState::handleColor() const { return m_handleColor.value(); }
 void              SwitchState::setHandleColor(const QColor& value) { m_handleColor = value; }
 QBindable<QColor> SwitchState::bindableHandleColor() { return QBindable<QColor>(&m_handleColor); }

@@ -74,12 +74,12 @@ void ItemActivity::refresh() {
     auto* target = d->target.data();
     if (! target || QQmlData::wasDeleted(target)) return;
     auto*  window = target->window();
+    auto*  root   = window ? window->contentItem() : nullptr;
     QRectF area;
-    if (target->isVisible() && window && window->isVisible() &&
+    if (target->isVisible() && root && window->isVisible() &&
         window->visibility() != QWindow::Minimized) {
-        auto* root = window->contentItem();
-        area       = target->mapRectToItem(root, target->boundingRect())
-                         .intersected(QRectF(0, 0, root->width(), root->height()));
+        area = target->mapRectToItem(root, target->boundingRect())
+                   .intersected(QRectF(0, 0, root->width(), root->height()));
         for (auto* item = target; item && ! area.isEmpty(); item = item->parentItem()) {
             if (item->opacity() <= 0) area = {};
             if (item != target && item->clip())

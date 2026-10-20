@@ -11,7 +11,7 @@ TabBarAttached* attached(TabButton* button) {
     return qobject_cast<TabBarAttached*>(qmlAttachedPropertiesObject<TabBar>(button, true));
 }
 } // namespace
-TabBar::TabBar(QQuickItem* parent): Container(parent), m_group(new ButtonGroup(this)) {
+TabBar::TabBar(QQuickItem* parent): Container(parent) {
     connect(this, &Control::availableWidthChanged, this, &QQuickItem::polish);
     connect(this, &Control::availableHeightChanged, this, &QQuickItem::polish);
     connect(this, &Control::spacingChanged, this, &QQuickItem::polish);
@@ -33,23 +33,21 @@ void TabBar::itemAdded(QQuickItem* item) {
     auto* button = qobject_cast<TabButton*>(item);
     if (! button) return;
     auto& connections = m_connections[button];
-    connections.append(connect(button, &AbstractButton::checkedChanged, this, [this, button] {
-        if (! m_selecting && isComponentComplete() && button->isChecked())
-            setCurrentIndex(indexOf(button));
-    }));
     connections.append(connect(button, &TabButton::fillWidthChanged, this, &QQuickItem::polish));
     connections.append(connect(button, &TabButton::fillHeightChanged, this, &QQuickItem::polish));
     connections.append(connect(button, &QObject::destroyed, this, [this, button] {
         m_connections.remove(button);
     }));
-    m_group->addButton(button);
+    connections.append(connect(button, &SelectionButton::selectionRequested, this, [this, button] {
+        const int index = indexOf(button);
+        if (index >= 0) requestCurrentIndex(index);
+    }));
 }
 void TabBar::itemRemoved(QQuickItem* item) {
     auto connections = m_connections.take(item);
     utils::disconnectAll(connections);
     QPointer<TabBar>    guard(this);
     QPointer<TabButton> button(qobject_cast<TabButton*>(item));
-    if (button) m_group->removeButton(button);
     if (guard && button && attached(button)->tabBar() == this)
         attached(button)->update(nullptr, -1);
 }
@@ -63,31 +61,11 @@ void TabBar::itemsChanged() {
         if (! guard) return;
     }
 }
-void TabBar::currentItemChange() {
-    if (m_selecting) {
-        m_selection_dirty = true;
-        return;
-    }
-    m_selecting = true;
-    QPointer<TabBar> guard(this);
-    do {
-        m_selection_dirty   = false;
-        const auto snapshot = items();
-        for (auto item : snapshot) {
-            if (auto* button = qobject_cast<TabButton*>(item.data());
-                button && button->parentItem() == contentHost())
-                button->updateChecked(button == currentItem());
-            if (! guard) return;
-            if (m_selection_dirty) break;
-        }
-    } while (m_selection_dirty);
-    m_selecting = false;
-}
-int TabBar::initialIndex() const {
-    int index = Container::initialIndex();
-    for (int i = 0; i < count(); ++i)
-        if (itemAt(i)->isChecked()) index = i;
-    return index;
+void TabBar::requestCurrentIndex(int index) {
+    if (! isEnabled() || ! isVisible() || index < -1 || index >= count()) return;
+    auto* item = itemAt(index);
+    if (index >= 0 && (! item || ! item->isEnabled() || ! item->isVisible())) return;
+    Q_EMIT currentIndexChangeRequested(index);
 }
 void TabBar::setPosition(Position value) {
     if (m_position == value) return;
@@ -211,9 +189,11 @@ void TabBar::navigate(int delta) {
     for (int i = currentIndex() + delta; i >= 0 && i < count(); i += delta) {
         auto* button = itemAt(i);
         if (button && button->isEnabled() && button->isVisible()) {
-            QPointer<TabButton> alive(button);
-            setCurrentIndex(i);
-            if (alive) alive->forceActiveFocus(Qt::TabFocusReason);
+            QPointer<TabButton>    alive(button);
+            const QPointer<TabBar> guard(this);
+            requestCurrentIndex(i);
+            if (guard && alive && currentItem() == alive)
+                alive->forceActiveFocus(Qt::TabFocusReason);
             return;
         }
     }

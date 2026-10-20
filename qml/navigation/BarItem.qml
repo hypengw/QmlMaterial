@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Qcm.Material as MD
 
-MD.ButtonBase {
+MD.NavigationItemBase {
     id: control
 
     property int iconStyle: hasIcon ? MD.Enum.IconAndText : MD.Enum.TextOnly
@@ -15,7 +15,6 @@ MD.ButtonBase {
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
-    flat: false
     topInset: 0
     bottomInset: 0
     leftInset: 0
@@ -27,7 +26,7 @@ MD.ButtonBase {
     icon.width: 24
     icon.height: 24
     icon.color: control.mdState.supportTextColor
-    icon.fill: control.checked
+    icon.fill: control.selected
 
     font.weight: MD.Token.typescale.label_large.weight
     font.pointSize: MD.Token.typescale.label_large.size
@@ -52,7 +51,7 @@ MD.ButtonBase {
                 font.capitalization: Font.MixedCase
                 typescale: MD.Token.typescale.label_medium
                 text: control.text
-                prominent: control.checked
+                prominent: control.selected
                 color: control.mdState.textColor
             }
         }
@@ -74,7 +73,7 @@ MD.ButtonBase {
                 to: 64
                 duration: MD.Token.duration.short2
                 easing: MD.Token.easing.linear
-                running: control.checked
+                running: control.selected
             }
 
             radius: height / 2
@@ -82,16 +81,13 @@ MD.ButtonBase {
             elevation: control.mdState.elevation
         }
         MD.Ripple {
-            readonly property point p: control.mapToItem(this, control.pressX, control.pressY)
             x: (parent.width - width) / 2
             y: 0
             height: 32
             width: 64
             radius: height / 2
-            pressX: p.x
-            pressY: p.y
-            pressed: control.pressed
-            stateOpacity: control.mdState.stateLayerOpacity
+            interactionSource: control.interactionSource
+            indication: control.mdState.indication
             color: control.mdState.stateLayerColor
         }
     }

@@ -1,6 +1,7 @@
 #pragma once
 #include "qml_material/style/input_state.hpp"
 #include "qml_material/token/text_field.hpp"
+#include "qml_material/input/interaction_source.hpp"
 Q_MOC_INCLUDE("qml_material/control/text_field.hpp")
 namespace qml_material
 {

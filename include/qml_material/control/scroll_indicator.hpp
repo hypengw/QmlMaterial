@@ -98,7 +98,7 @@ private:
     void                            layout(Axis&, bool horizontal, bool force = false);
     void                            activate(Axis&, bool horizontal);
     void                            sync(Axis&, bool horizontal);
-    void                            scroll(Axis&, bool horizontal);
+    void                            scroll(Axis&, bool horizontal, qreal requestedPosition);
     Q_SLOT void                     syncHorizontal();
     Q_SLOT void                     syncVertical();
     std::unique_ptr<ScrollViewport> m_viewport;

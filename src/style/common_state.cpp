@@ -2,12 +2,20 @@
 #include "qml_material/token/color.hpp"
 #include "qml_material/style/theme.hpp"
 #include "qml_material/util/qt.hpp"
+#include "qml_material/control/control.hpp"
+#include "qml_material/control/text_field.hpp"
 #include <QQuickItem>
 #include <private/qqmldata_p.h>
 
 namespace qml_material
 {
-CommonState::CommonState(QObject* parent): QObject(parent) {
+CommonState::CommonState(QObject* parent)
+    : QObject(parent), m_indication(this, [this] {
+          if (isStateActive()) Q_EMIT indicationChanged();
+      }) {
+    m_interactionsNotifier = m_indication.interactions().bindableValues().addNotifier([this] {
+        if (isStateActive()) Q_EMIT interactionsChanged();
+    });
 #define APPEARANCE(Name, Initial) m_##Name##Value = Initial;
     APPEARANCE(textColor, QColor(Qt::transparent))
     APPEARANCE(backgroundColor, QColor(Qt::transparent))
@@ -24,7 +32,6 @@ CommonState::CommonState(QObject* parent): QObject(parent) {
     resetCorners();
     m_values.setBinding([this] {
         StateValues result;
-        result.state = state();
 #define VALUE(Name) result.Name = Name();
         VALUE(textColor)
         VALUE(backgroundColor)
@@ -39,12 +46,33 @@ CommonState::CommonState(QObject* parent): QObject(parent) {
 #undef VALUE
         return result;
     });
+    m_indication.bindDefaultColor(Qt::makePropertyBinding([this] {
+        return textColor();
+    }));
+    m_indication.bindDefaultTokens(Qt::makePropertyBinding([this] {
+        return stateTokens();
+    }));
 }
 CommonState::~CommonState() {
     disconnect(this, nullptr, this, nullptr);
     disconnect(m_targetDestroyed);
+    disconnect(m_sourceDestroyed);
     utils::disconnectAll(m_contextConnections);
     utils::disconnectAll(m_colorConnections);
+}
+
+void CommonState::setInteractionSource(InteractionSource* source) {
+    if (interactionSource() == source) return;
+    disconnect(m_sourceDestroyed);
+    const QPointer<CommonState>       guard(this);
+    const QPointer<InteractionSource> next(source);
+    m_indication.setSource(source);
+    if (! guard || interactionSource() != next) return;
+    if (next)
+        m_sourceDestroyed = connect(next, &QObject::destroyed, this, [this] {
+            if (isStateActive()) Q_EMIT interactionSourceChanged();
+        });
+    if (isStateActive()) Q_EMIT interactionSourceChanged();
 }
 
 QObject*               CommonState::target() const { return m_target; }
@@ -59,8 +87,9 @@ void                   CommonState::setTarget(QObject* target) {
         m_target = target;
         return;
     }
-    m_targetGeneration = m_targetGeneration.value() + 1;
-    m_target           = target;
+    m_targetGeneration    = m_targetGeneration.value() + 1;
+    m_target              = target;
+    const auto generation = targetGeneration();
     if (target) {
         m_targetDestroyed = connect(target, &QObject::destroyed, this, [this] {
             m_target = nullptr;
@@ -74,6 +103,8 @@ void                   CommonState::setTarget(QObject* target) {
         });
     }
     const QPointer<CommonState> guard(this);
+    m_indication.setTarget(qobject_cast<QQuickItem*>(target));
+    if (! guard || generation != targetGeneration()) return;
     if (! m_explicitContext) resetCtx();
     if (guard && isStateActive()) Q_EMIT targetChanged();
 }
@@ -113,17 +144,11 @@ void                      CommonState::componentComplete() {
     const auto apply = m_applyState;
     if (apply) apply();
 }
-void CommonState::publishState(const QString& next, std::function<void()> apply) {
+void CommonState::applyAppearance(std::function<void()> apply) {
     if (! isStateActive()) return;
-    const auto                  previous = m_state.value();
-    const QPointer<CommonState> guard(this);
-    {
-        const QScopedPropertyUpdateGroup group;
-        m_state      = next;
-        m_applyState = apply;
-        if (m_canApply) apply();
-    }
-    if (guard && isStateActive() && previous != next) Q_EMIT stateChanged();
+    const QScopedPropertyUpdateGroup group;
+    m_applyState = apply;
+    if (m_canApply) apply();
 }
 Theme* CommonState::ctx() const { return m_context; }
 void   CommonState::setCtx(Theme* context) {
@@ -159,7 +184,6 @@ void CommonState::updateContext(Theme* context) {
     if (guard && isStateActive()) Q_EMIT ctxChanged();
 }
 
-QString CommonState::state() const { return m_state.value(); }
 #define APPEARANCE(Type, Name, Upper)                                               \
     Type            CommonState::Name() const { return m_##Name##Value.value(); }   \
     void            CommonState::set##Upper(const Type& v) { m_##Name##Value = v; } \

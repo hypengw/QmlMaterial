@@ -21,6 +21,11 @@ MD.ItemDelegate {
     readonly property string displayText: headerView?.headerTexts[row] ?? ""
     highlighted: control.selected
 
+    MD.InteractionObserver {
+        id: feedback
+        source: control.interactionSource
+    }
+
     background: Rectangle {
         implicitWidth: 56
         implicitHeight: 44
@@ -28,10 +33,7 @@ MD.ItemDelegate {
 
         MD.Ripple {
             anchors.fill: parent
-            pressX: control.pressX
-            pressY: control.pressY
-            pressed: control.pressed
-            stateOpacity: control.pressed ? MD.Token.state.pressed.state_layer_opacity : (control.hovered ? MD.Token.state.hover.state_layer_opacity : 0)
+            interactionSource: control.interactionSource
             color: MD.Token.color.on_surface
         }
 
@@ -53,6 +55,6 @@ MD.ItemDelegate {
         verticalAlignment: Text.AlignVCenter
         text: control.displayText ?? ""
         typescale: MD.Token.typescale.title_small
-        color: control.hovered ? MD.Token.color.on_surface : MD.Token.color.on_surface_variant
+        color: feedback.hovered ? MD.Token.color.on_surface : MD.Token.color.on_surface_variant
     }
 }

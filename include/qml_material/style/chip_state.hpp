@@ -1,19 +1,14 @@
 #pragma once
 #include "qml_material/style/button_interaction_state.hpp"
-Q_MOC_INCLUDE("qml_material/control/button.hpp")
 namespace qml_material
 {
-class Button;
-class QML_MATERIAL_API ChipState : public ButtonInteractionState {
+class QML_MATERIAL_API ChipState : public ButtonValueState {
     Q_OBJECT
     QML_ANONYMOUS
-    Q_PROPERTY(qml_material::Button* item READ item WRITE setItem NOTIFY itemChanged FINAL)
     Q_PROPERTY(bool elevated READ elevated WRITE setElevated NOTIFY elevatedChanged BINDABLE
                    bindableElevated FINAL)
 
 public:
-    Button*         item() const;
-    void            setItem(Button*);
     bool            elevated() const;
     void            setElevated(bool);
     QBindable<bool> bindableElevated();

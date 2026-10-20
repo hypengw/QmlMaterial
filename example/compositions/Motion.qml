@@ -10,9 +10,8 @@ Item {
     property int presetIndex: 0
     property bool animationsEnabled: true
     property bool atEnd: false
-    property bool _ready: false
     readonly property var spatialPreset: {
-        const presets = MD.Token.motion.expressive;
+        const presets = MD.Token.motion.spring.expressive;
         switch (presetIndex) {
         case 1:
             return presets.defaultSpatial;
@@ -22,28 +21,17 @@ Item {
             return presets.fastSpatial;
         }
     }
-    readonly property bool running: spatialAnimation.running
-    property real progress: 0
+    readonly property bool running: spatialMotion.running
+    readonly property real progress: spatialMotion.value
 
     function stop() {
-        spatialAnimation.stop();
+        spatialMotion.stop();
     }
     function synchronize() {
-        progress = atEnd ? 1 : 0;
+        spatialMotion.snapTo(atEnd ? 1 : 0);
     }
     function toggleTarget() {
         atEnd = !atEnd;
-        animateToTarget();
-    }
-    function animateToTarget() {
-        stop();
-        if (!animationsEnabled) {
-            synchronize();
-            return;
-        }
-        spatialAnimation.from = progress;
-        spatialAnimation.to = atEnd ? 1 : 0;
-        spatialAnimation.start();
     }
     function reset() {
         stop();
@@ -51,26 +39,14 @@ Item {
         synchronize();
     }
     function finish() {
-        spatialAnimation.complete();
+        spatialMotion.complete();
     }
-    onPresetIndexChanged: if (_ready && running)
-        animateToTarget()
-    onAnimationsEnabledChanged: if (_ready && !animationsEnabled)
-        finish()
-    onVisibleChanged: if (_ready && !visible)
-        finish()
-    Component.onCompleted: {
-        _ready = true;
-        reset();
-    }
-
-    NumberAnimation {
-        id: spatialAnimation
-        objectName: 'spatialAnimation'
-        target: root
-        property: 'progress'
-        duration: root.spatialPreset.duration
-        easing: root.spatialPreset.easing
+    MD.SpringMotion {
+        id: spatialMotion
+        objectName: 'spatialMotion'
+        enabled: root.animationsEnabled && root.visible && (!root.Window.window || (root.Window.window.visible && root.Window.window.visibility !== Window.Minimized))
+        targetValue: root.atEnd ? 1 : 0
+        spec: root.spatialPreset
     }
 
     Column {
@@ -83,7 +59,7 @@ Item {
             width: Math.min(280, content.width)
             model: ['Fast spatial', 'Default spatial', 'Slow spatial']
             currentIndex: root.presetIndex
-            onActivated: root.presetIndex = currentIndex
+            onSelectionChangeRequested: (index, value) => root.presetIndex = index
         }
 
         Flow {
@@ -94,14 +70,14 @@ Item {
                 objectName: 'playButton'
                 icon.name: root.atEnd ? MD.Token.icon.undo : MD.Token.icon.play_arrow
                 MD.ToolTip.text: root.atEnd ? 'Reverse' : 'Play'
-                MD.ToolTip.visible: hovered
+                MD.ToolTip.visible: mdState.interactions.hovered
                 Accessible.name: root.atEnd ? 'Reverse' : 'Play'
                 onClicked: root.toggleTarget()
             }
             MD.IconButton {
                 icon.name: MD.Token.icon.restart_alt
                 MD.ToolTip.text: 'Reset'
-                MD.ToolTip.visible: hovered
+                MD.ToolTip.visible: mdState.interactions.hovered
                 Accessible.name: 'Reset'
                 onClicked: root.reset()
             }
@@ -109,7 +85,7 @@ Item {
                 icon.name: MD.Token.icon.skip_next
                 enabled: root.running
                 MD.ToolTip.text: 'Complete'
-                MD.ToolTip.visible: hovered
+                MD.ToolTip.visible: mdState.interactions.hovered
                 Accessible.name: 'Complete'
                 onClicked: root.finish()
             }
@@ -119,7 +95,7 @@ Item {
                 MD.Switch {
                     anchors.verticalCenter: parent.verticalCenter
                     checked: root.animationsEnabled
-                    onToggled: root.animationsEnabled = checked
+                    onCheckedChangeRequested: value => root.animationsEnabled = value
                     Accessible.name: 'Animation'
                 }
                 MD.Label {
@@ -137,7 +113,7 @@ Item {
                 typescale: MD.Token.typescale.title_medium
             }
             MD.Label {
-                text: root.spatialPreset.duration + ' ms'
+                text: 'k ' + root.spatialPreset.stiffness + ' / damping ' + root.spatialPreset.dampingRatio
                 typescale: MD.Token.typescale.body_medium
             }
         }

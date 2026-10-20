@@ -1,18 +1,22 @@
 #pragma once
 #include "qml_material/style/common_state.hpp"
 Q_MOC_INCLUDE("qml_material/control/control.hpp")
-Q_MOC_INCLUDE("qml_material/control/abstract_button.hpp")
+Q_MOC_INCLUDE("qml_material/control/button_control.hpp")
 namespace qml_material
 {
 class Control;
-class AbstractButton;
+class ButtonControl;
 class QML_MATERIAL_API SnakeBarState : public CommonState {
     Q_OBJECT
     QML_NAMED_ELEMENT(StateSnakeBar)
+    Q_PROPERTY(qml_material::IndicationValues actionIndication READ actionIndication NOTIFY
+                   actionIndicationChanged FINAL)
+    Q_PROPERTY(qml_material::IndicationValues iconIndication READ iconIndication NOTIFY
+                   iconIndicationChanged FINAL)
     Q_PROPERTY(qml_material::Control* item READ item WRITE setItem NOTIFY itemChanged FINAL)
-    Q_PROPERTY(qml_material::AbstractButton* actionItem READ actionItem WRITE setActionItem NOTIFY
+    Q_PROPERTY(qml_material::ButtonControl* actionItem READ actionItem WRITE setActionItem NOTIFY
                    actionItemChanged)
-    Q_PROPERTY(qml_material::AbstractButton* iconItem READ iconItem WRITE setIconItem NOTIFY
+    Q_PROPERTY(qml_material::ButtonControl* iconItem READ iconItem WRITE setIconItem NOTIFY
                    iconItemChanged)
     Q_PROPERTY(QColor iconColor READ iconColor WRITE setIconColor RESET resetIconColor NOTIFY
                    iconColorChanged BINDABLE bindableIconColor)
@@ -25,14 +29,18 @@ class QML_MATERIAL_API SnakeBarState : public CommonState {
 public:
     explicit SnakeBarState(QObject* parent = nullptr);
     ~SnakeBarState() override;
+    IndicationValues  actionIndication() const { return m_actionIndication.values(); }
+    IndicationValues  iconIndication() const { return m_iconIndication.values(); }
+    Q_SIGNAL void     actionIndicationChanged();
+    Q_SIGNAL void     iconIndicationChanged();
     Control*          item() const;
     void              setItem(Control*);
     Q_SIGNAL void     itemChanged();
-    AbstractButton*   actionItem() const;
-    void              setActionItem(AbstractButton*);
+    ButtonControl*    actionItem() const;
+    void              setActionItem(ButtonControl*);
     Q_SIGNAL void     actionItemChanged();
-    AbstractButton*   iconItem() const;
-    void              setIconItem(AbstractButton*);
+    ButtonControl*    iconItem() const;
+    void              setIconItem(ButtonControl*);
     Q_SIGNAL void     iconItemChanged();
     QColor            iconColor() const;
     void              setIconColor(const QColor&);
@@ -51,38 +59,26 @@ public:
     Q_SIGNAL void     iconStateLayerOpacityChanged();
 
 private:
-    enum class Interaction
+    enum class Appearance
     {
-        Base,
-        ActionHover,
-        ActionFocus,
-        ActionPress,
-        IconHover,
-        IconFocus,
-        IconPress
+        Base
     };
-    struct Selection {
-        Interaction state                              = Interaction::Base;
-        quint64     generation                         = 0;
-        bool        operator==(const Selection&) const = default;
-    };
-    void                         selectionChanged();
-    StateBindingSet<Interaction> m_bindings { Interaction::Base };
-    QProperty<AbstractButton*>   m_actionItem { nullptr };
-    QProperty<AbstractButton*>   m_iconItem { nullptr };
-    QMetaObject::Connection      m_actionDestroyed;
-    QMetaObject::Connection      m_iconDestroyed;
-    bool                         m_ready = false;
-    Q_OBJECT_BINDABLE_PROPERTY(SnakeBarState, Selection, m_selection,
-                               &SnakeBarState::selectionChanged)
+    StateBindingSet<Appearance> m_bindings { Appearance::Base };
+    QProperty<ButtonControl*>   m_actionItem { nullptr };
+    QProperty<ButtonControl*>   m_iconItem { nullptr };
+    QMetaObject::Connection     m_actionDestroyed;
+    QMetaObject::Connection     m_iconDestroyed;
+    QMetaObject::Connection     m_actionSourceChanged, m_iconSourceChanged;
     Q_OBJECT_BINDABLE_PROPERTY(SnakeBarState, QColor, m_iconColor, &SnakeBarState::iconColorChanged)
     Q_OBJECT_BINDABLE_PROPERTY(SnakeBarState, QColor, m_iconStateLayerColor,
                                &SnakeBarState::iconStateLayerColorChanged)
     Q_OBJECT_BINDABLE_PROPERTY(SnakeBarState, qreal, m_iconStateLayerOpacity,
                                &SnakeBarState::iconStateLayerOpacityChanged)
-    PropertyKey<QColor>                    m_iconColorKey;
-    PropertyKey<QColor>                    m_iconLayerColorKey;
-    PropertyKey<qreal>                     m_iconLayerOpacityKey;
-    StateBindingSet<Interaction>::Lifetime m_lifetime { m_bindings.lifetime() };
+    PropertyKey<QColor>                   m_iconColorKey;
+    PropertyKey<QColor>                   m_iconLayerColorKey;
+    PropertyKey<qreal>                    m_iconLayerOpacityKey;
+    IndicationPolicy                      m_actionIndication;
+    IndicationPolicy                      m_iconIndication;
+    StateBindingSet<Appearance>::Lifetime m_lifetime { m_bindings.lifetime() };
 };
 } // namespace qml_material

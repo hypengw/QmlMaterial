@@ -22,8 +22,6 @@ Control::Control(QQuickItem* parent): QQuickItem(parent) {
     m_control_connections.append(
         connect(qGuiApp, &QGuiApplication::fontChanged, this, &Control::resolveFont));
 
-    m_control_connections.append(
-        connect(this, &QQuickItem::activeFocusChanged, this, &Control::updateVisualFocus));
     m_control_connections.append(connect(this, &QQuickItem::baselineOffsetChanged, this, [this]() {
         Q_EMIT baselineOffsetChanged();
     }));
@@ -356,14 +354,11 @@ void Control::setContentItem(QQuickItem* item) {
             item, &QQuickItem::implicitHeightChanged, this, &Control::updateImplicitMetrics));
         m_content_connections.append(connect(
             item, &QQuickItem::baselineOffsetChanged, this, &Control::updateBaselineOffset));
-        m_content_connections.append(
-            connect(item, &QQuickItem::activeFocusChanged, this, &Control::updateVisualFocus));
         m_content_connections.append(connect(item, &QObject::destroyed, this, [this]() {
             disconnectContentItem();
             m_content_item = nullptr;
             updateImplicitMetrics();
             updateBaselineOffset();
-            updateVisualFocus();
             Q_EMIT contentItemChanged();
         }));
     }
@@ -371,7 +366,6 @@ void Control::setContentItem(QQuickItem* item) {
     orderManagedItems();
     updateImplicitMetrics();
     updateBaselineOffset();
-    updateVisualFocus();
     if (isComponentComplete()) layoutContentItem();
     Q_EMIT contentItemChanged();
 }
@@ -468,19 +462,6 @@ void Control::resetHoverEnabled() {
     resolveHoverEnabled();
 }
 
-bool Control::hovered() const { return m_hovered; }
-
-Qt::FocusReason Control::focusReason() const { return m_focus_reason; }
-
-void Control::setFocusReason(Qt::FocusReason value) {
-    if (m_focus_reason == value) return;
-    m_focus_reason = value;
-    Q_EMIT focusReasonChanged();
-    updateVisualFocus();
-}
-
-bool Control::visualFocus() const { return m_visual_focus; }
-
 void Control::componentComplete() {
     QQuickItem::componentComplete();
     resolveEnvironment();
@@ -498,60 +479,11 @@ void Control::geometryChange(const QRectF& newGeometry, const QRectF& oldGeometr
 }
 
 void Control::itemChange(ItemChange change, const ItemChangeData& value) {
+    const QPointer<Control> guard(this);
     QQuickItem::itemChange(change, value);
-    switch (change) {
-    case ItemParentHasChanged:
-    case ItemSceneChange:
-        if ((change == ItemParentHasChanged && value.item) ||
-            (change == ItemSceneChange && value.window))
-            resolveEnvironment();
-        break;
-    case ItemVisibleHasChanged:
-        if (! value.boolValue) setHovered(false);
-        break;
-    case ItemEnabledHasChanged:
-        if (! value.boolValue) setHovered(false);
-        break;
-    case ItemActiveFocusHasChanged: updateVisualFocus(); break;
-    default: break;
-    }
-}
-
-void Control::focusInEvent(QFocusEvent* event) {
-    setFocusReason(event->reason());
-    QQuickItem::focusInEvent(event);
-    updateVisualFocus();
-}
-
-void Control::focusOutEvent(QFocusEvent* event) {
-    setFocusReason(event->reason());
-    QQuickItem::focusOutEvent(event);
-    updateVisualFocus();
-}
-
-void Control::hoverEnterEvent(QHoverEvent* event) {
-    setHovered(m_hover_enabled);
-    event->ignore();
-}
-
-void Control::hoverMoveEvent(QHoverEvent* event) {
-    setHovered(m_hover_enabled && contains(event->position()));
-    event->ignore();
-}
-
-void Control::hoverLeaveEvent(QHoverEvent* event) {
-    setHovered(false);
-    event->ignore();
-}
-
-bool Control::eventFilter(QObject* watched, QEvent* event) {
-    if (watched == m_content_item) {
-        if (event->type() == QEvent::FocusIn || event->type() == QEvent::FocusOut) {
-            setFocusReason(static_cast<QFocusEvent*>(event)->reason());
-            updateVisualFocus();
-        }
-    }
-    return QQuickItem::eventFilter(watched, event);
+    if (guard && ((change == ItemParentHasChanged && value.item) ||
+                  (change == ItemSceneChange && value.window)))
+        resolveEnvironment();
 }
 
 Control::PaddingState Control::paddingState() const {
@@ -714,22 +646,8 @@ void Control::updateHoverEnabled(bool value) {
     m_hover_enabled = value;
     setAcceptHoverEvents(value);
     QPointer<Control> guard(this);
-    if (! value) setHovered(false);
-    if (! guard) return;
     utils::propagateHoverEnabled(this, value);
     if (guard) Q_EMIT hoverEnabledChanged();
-}
-
-void Control::updateVisualFocus() {
-    const bool hasFocus = hasActiveFocus() || (m_content_item && m_content_item->hasActiveFocus());
-    const bool value    = hasFocus && utils::isKeyboardFocusReason(m_focus_reason);
-    if (m_visual_focus == value) return;
-    m_visual_focus = value;
-}
-
-void Control::setHovered(bool value) {
-    if (m_hovered == value) return;
-    m_hovered = value;
 }
 
 void Control::layoutItems() {

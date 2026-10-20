@@ -1,10 +1,9 @@
 #include "qml_material/style/search_bar_state.hpp"
-#include "qml_material/control/button.hpp"
+#include "qml_material/control/button_control.hpp"
 #include "qml_material/token/color.hpp"
 namespace qml_material
 {
-SearchBarState::SearchBarState(QObject* parent)
-    : ButtonInteractionState(parent, FocusTreatment::Pressed, PressSource::Pressed) {
+SearchBarState::SearchBarState(QObject* parent): ButtonInteractionState(parent) {
     m_placeholderKey = bindingSet().property<&SearchBarState::bindablePlaceholderOpacity>(this);
     auto base        = baseBindings();
     base.bind(m_placeholderKey, [] {
@@ -17,7 +16,7 @@ SearchBarState::SearchBarState(QObject* parent)
     base.bind(m_appearance.backgroundColor, colorBinding(&MdColorMgr::surface_container_highest));
     base.bind(m_appearance.supportTextColor, colorBinding(&MdColorMgr::on_surface_variant));
     base.bind(m_appearance.outlineColor, colorBinding(&MdColorMgr::outline));
-    auto disabled = stateBindings(Interaction::Disabled);
+    auto disabled = disabledBindings();
     disabled.bind(m_appearance.supportTextColor, colorBinding(&MdColorMgr::on_surface));
     disabled.bind(m_placeholderKey, [] {
         return qreal(.38);
@@ -25,20 +24,17 @@ SearchBarState::SearchBarState(QObject* parent)
     disabled.bind(m_appearance.backgroundOpacity, [] {
         return qreal(.12);
     });
-    for (auto state : { Interaction::Pressed, Interaction::Hovered }) {
-        auto active = stateBindings(state);
-        active.bind(m_appearance.stateLayerColor, colorBinding(&MdColorMgr::on_surface));
-        active.bind(m_appearance.stateLayerOpacity, [this, state]() -> qreal {
-            return state == Interaction::Pressed ? stateTokens().pressed.state_layer_opacity
-                                                 : stateTokens().hover.state_layer_opacity;
-        });
-    }
+    auto active = appearanceWhen([this] {
+        return pressed() || hovered() || visualFocus();
+    });
+    active.bind(m_appearance.stateLayerColor, colorBinding(&MdColorMgr::on_surface));
+    bindStateLayerOpacity();
 }
-Button* SearchBarState::item() const { return static_cast<Button*>(inputItem()); }
-void    SearchBarState::setItem(Button* item) { setInputItem(item); }
-qreal   SearchBarState::placeholderOpacity() const { return m_placeholderOpacity.value(); }
-void    SearchBarState::setPlaceholderOpacity(qreal value) { m_placeholderOpacity = value; }
-void    SearchBarState::resetPlaceholderOpacity() { m_placeholderKey.reset(); }
+ButtonControl* SearchBarState::item() const { return inputItem(); }
+void           SearchBarState::setItem(ButtonControl* item) { setInputItem(item, {}, {}); }
+qreal          SearchBarState::placeholderOpacity() const { return m_placeholderOpacity.value(); }
+void           SearchBarState::setPlaceholderOpacity(qreal value) { m_placeholderOpacity = value; }
+void           SearchBarState::resetPlaceholderOpacity() { m_placeholderKey.reset(); }
 QBindable<qreal> SearchBarState::bindablePlaceholderOpacity() {
     return QBindable<qreal>(&m_placeholderOpacity);
 }

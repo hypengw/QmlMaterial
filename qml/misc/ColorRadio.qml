@@ -2,16 +2,18 @@ import QtQuick
 
 import Qcm.Material as MD
 
-Item {
+MD.Selectable {
     id: root
     property color color
     property int size: 24
-    property bool checked: false
 
     implicitHeight: size
     implicitWidth: size
 
-    signal clicked
+    Accessible.role: Accessible.RadioButton
+    Accessible.checked: selected
+    Accessible.checkable: true
+    Accessible.onPressAction: click()
 
     Rectangle {
         anchors.centerIn: parent
@@ -28,15 +30,8 @@ Item {
             width: parent.width
             height: width
             radius: width / 2
-            scale: root.checked ? 0.8 : 0.0
-            visible: root.checked
-        }
-        MouseArea {
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            hoverEnabled: true
-
-            onClicked: root.clicked()
+            scale: root.selected ? 0.8 : 0.0
+            visible: root.selected
         }
     }
 }

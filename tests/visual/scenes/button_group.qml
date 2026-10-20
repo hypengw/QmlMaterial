@@ -23,7 +23,7 @@ Rectangle {
         LayoutMirroring.childrenInherit: true
     }
     MD.ButtonGroupContainer {
-        id: pressedGroup
+        id: shapeGroup
         x: 24
         y: ltrGroups.y + ltrGroups.height + 32
         MD.Button {
@@ -31,8 +31,8 @@ Rectangle {
             mdState.type: MD.Enum.BtFilled
         }
         MD.Button {
-            text: "Pressed"
-            down: true
+            text: "Rounded"
+            mdState.corners: MD.Util.corners(8)
             mdState.type: MD.Enum.BtFilled
         }
         MD.Button {
@@ -42,7 +42,7 @@ Rectangle {
     }
     MD.ButtonGroupContainer {
         x: 24
-        y: pressedGroup.y + pressedGroup.height + 24
+        y: shapeGroup.y + shapeGroup.height + 24
         variant: MD.ButtonGroupContainer.Connected
         MD.Button {
             text: "Disabled"
@@ -61,7 +61,7 @@ Rectangle {
         }
         MD.IconButton {
             icon.name: MD.Token.icon.star
-            down: true
+            mdState.corners: MD.Util.corners(8)
             mdState.type: MD.Enum.IBtFilled
         }
     }

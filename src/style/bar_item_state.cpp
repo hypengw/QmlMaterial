@@ -1,9 +1,11 @@
 #include "qml_material/style/bar_item_state.hpp"
-#include "qml_material/control/button.hpp"
+#include "qml_material/control/selection_button.hpp"
 #include "qml_material/token/color.hpp"
 namespace qml_material
 {
 BarItemState::BarItemState(QObject* parent): ButtonInteractionState(parent) {
+    indicationPolicy().bindDefaultColor(
+        Qt::makePropertyBinding(colorBinding(&MdColorMgr::on_surface)));
     auto base = baseBindings();
     base.bind(m_appearance.textColor, [this] {
         return color(checked() ? &MdColorMgr::on_surface : &MdColorMgr::on_surface_variant);
@@ -19,16 +21,16 @@ BarItemState::BarItemState(QObject* parent): ButtonInteractionState(parent) {
         return elevationTokens().level0;
     });
     bindStateLayerOpacity();
-    for (auto state : { Interaction::Pressed, Interaction::Hovered }) {
-        auto active = stateBindings(state);
-        active.bind(m_appearance.textColor, colorBinding(&MdColorMgr::on_surface));
-        active.bind(m_appearance.supportTextColor, [this] {
-            return color(checked() ? &MdColorMgr::on_secondary_container : &MdColorMgr::on_surface);
-        });
-        active.bind(m_appearance.stateLayerColor, colorBinding(&MdColorMgr::on_surface));
-    }
+    auto active = appearanceWhen([this] {
+        return pressed() || hovered() || visualFocus();
+    });
+    active.bind(m_appearance.textColor, colorBinding(&MdColorMgr::on_surface));
+    active.bind(m_appearance.supportTextColor, [this] {
+        return color(checked() ? &MdColorMgr::on_secondary_container : &MdColorMgr::on_surface);
+    });
+    active.bind(m_appearance.stateLayerColor, colorBinding(&MdColorMgr::on_surface));
 }
-Button* BarItemState::item() const { return static_cast<Button*>(inputItem()); }
-void    BarItemState::setItem(Button* item) { setInputItem(item); }
+SelectionButton* BarItemState::item() const { return static_cast<SelectionButton*>(inputItem()); }
+void             BarItemState::setItem(SelectionButton* item) { setInputItem(item); }
 
 } // namespace qml_material

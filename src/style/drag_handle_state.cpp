@@ -85,15 +85,7 @@ void        DragHandleState::setItem(QQuickItem* value) {
 void DragHandleState::selectionChanged() {
     if (! m_ready) return;
     const auto selection = m_selection.value();
-    QString    name;
-    switch (selection.state) {
-    case Interaction::Disabled: name = QStringLiteral("disabled"); break;
-    case Interaction::Pressed: name = QStringLiteral("pressed"); break;
-    case Interaction::Hovered: name = QStringLiteral("hovered"); break;
-    case Interaction::Focus: name = QStringLiteral("focus"); break;
-    default: break;
-    }
-    publishState(name, [this, next = selection.state] {
+    applyAppearance([this, next = selection.state] {
         m_bindings.select(next);
     });
 }

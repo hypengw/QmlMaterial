@@ -112,10 +112,10 @@ MD.Control {
             hue: m_state.h
             saturation: m_state.s
             value: m_state.v
-            onUserHueChanged: function (h) {
+            onHueChangeRequested: function (h) {
                 control.setHue(h);
             }
-            onUserSvChanged: function (s, v) {
+            onSvChangeRequested: function (s, v) {
                 control.setSV(s, v);
             }
         }
@@ -146,12 +146,18 @@ MD.Control {
                 MD.SegmentedButton {
                     text: "HSV"
                     checked: control._mode === 0
-                    onClicked: control._mode = 0
+                    onCheckedChangeRequested: value => {
+                        if (value)
+                            control._mode = 0;
+                    }
                 }
                 MD.SegmentedButton {
                     text: "RGB"
                     checked: control._mode === 1
-                    onClicked: control._mode = 1
+                    onCheckedChangeRequested: value => {
+                        if (value)
+                            control._mode = 1;
+                    }
                 }
             }
         }

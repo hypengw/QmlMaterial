@@ -56,6 +56,10 @@ MD.Control {
             y: input.y + input.height + control.tokens.dialGap
             property bool ready: false
             Component.onCompleted: ready = true
+            MD.InteractionObserver {
+                id: dialFeedback
+                source: dial.interactionSource
+            }
             Rectangle {
                 anchors.fill: parent
                 radius: width / 2
@@ -66,7 +70,7 @@ MD.Control {
                 y: dial.height / 2
                 rotation: dial.handAngle
                 Behavior on rotation {
-                    enabled: dial.ready && dial.visible && !dial.pressed
+                    enabled: dial.ready && dial.visible && !dialFeedback.pressed && !dialFeedback.dragged
                     RotationAnimation {
                         direction: RotationAnimation.Shortest
                         duration: MD.Token.duration.short3
@@ -129,7 +133,7 @@ MD.Control {
             icon.name: control.time.displayMode === MD.TimeState.Clock ? "keyboard" : "schedule"
             onClicked: control.time.displayMode = control.time.displayMode === MD.TimeState.Clock ? MD.TimeState.Input : MD.TimeState.Clock
             MD.ToolTip.text: control.time.displayMode === MD.TimeState.Clock ? qsTr("Enter time") : qsTr("Select time")
-            MD.ToolTip.visible: hovered
+            MD.ToolTip.visible: mdState.interactions.hovered
         }
     }
 }

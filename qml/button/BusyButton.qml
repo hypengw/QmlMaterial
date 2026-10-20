@@ -4,16 +4,8 @@ import Qcm.Material as MD
 
 MD.Button {
     id: control
-    property int busy: {
-        if (action instanceof MD.Action)
-            return (action as MD.Action).busy;
-        return MD.Enum.Idle;
-    }
-    property real progress: {
-        if (action instanceof MD.Action)
-            return (action as MD.Action).progress;
-        return 0;
-    }
+    property int busy: MD.Enum.Idle
+    property real progress: 0
     contentItem.visible: !busy
 
     MD.Loader {

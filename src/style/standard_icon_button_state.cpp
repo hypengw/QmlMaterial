@@ -1,17 +1,17 @@
 #include "qml_material/style/standard_icon_button_state.hpp"
-#include "qml_material/control/button.hpp"
+#include "qml_material/control/button_control.hpp"
 #include "qml_material/token/color.hpp"
 namespace qml_material
 {
 StandardIconButtonState::StandardIconButtonState(QObject* parent): ButtonInteractionState(parent) {
     auto base = baseBindings();
     base.bind(m_appearance.textColor, [this] {
-        return color(checked() ? &MdColorMgr::primary : &MdColorMgr::on_surface_variant);
+        return color(&MdColorMgr::on_surface_variant);
     });
     base.bind(m_appearance.elevation, [this]() -> qreal {
         return elevationTokens().level0;
     });
-    auto disabled = stateBindings(Interaction::Disabled);
+    auto disabled = disabledBindings();
     disabled.bind(m_appearance.textColor, colorBinding(&MdColorMgr::on_surface));
     disabled.bind(m_appearance.elevation, [this]() -> qreal {
         return elevationTokens().level0;
@@ -23,12 +23,13 @@ StandardIconButtonState::StandardIconButtonState(QObject* parent): ButtonInterac
         return stateTokens().disabled_container;
     });
     bindStateLayerOpacity();
-    for (auto state : { Interaction::Pressed, Interaction::Hovered })
-        stateBindings(state).bind(m_appearance.stateLayerColor, [this] {
-            return color(checked() ? &MdColorMgr::primary : &MdColorMgr::on_surface_variant);
-        });
+    appearanceWhen([this] {
+        return pressed() || hovered() || visualFocus();
+    }).bind(m_appearance.stateLayerColor, [this] {
+        return color(&MdColorMgr::on_surface_variant);
+    });
 }
-Button* StandardIconButtonState::item() const { return static_cast<Button*>(inputItem()); }
-void    StandardIconButtonState::setItem(Button* item) { setInputItem(item); }
+ButtonControl* StandardIconButtonState::item() const { return inputItem(); }
+void           StandardIconButtonState::setItem(ButtonControl* item) { setInputItem(item, {}, {}); }
 
 } // namespace qml_material

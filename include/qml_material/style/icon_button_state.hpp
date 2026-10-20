@@ -2,14 +2,12 @@
 #include "qml_material/style/button_interaction_state.hpp"
 #include "qml_material/token/button.hpp"
 #include <optional>
-Q_MOC_INCLUDE("qml_material/control/button.hpp")
+Q_MOC_INCLUDE("qml_material/control/button_control.hpp")
 namespace qml_material
 {
-class Button;
-class QML_MATERIAL_API IconButtonState : public ButtonInteractionState {
+class QML_MATERIAL_API IconButtonState : public ButtonValueState {
     Q_OBJECT
     QML_NAMED_ELEMENT(StateIconButton)
-    Q_PROPERTY(qml_material::Button* item READ item WRITE setItem NOTIFY itemChanged FINAL)
     Q_PROPERTY(int type READ type WRITE setType NOTIFY typeChanged BINDABLE bindableType FINAL)
     Q_PROPERTY(int size READ size WRITE setSize NOTIFY sizeChanged BINDABLE bindableSize FINAL)
     Q_PROPERTY(int widthMode READ widthMode WRITE setWidthMode NOTIFY widthModeChanged BINDABLE
@@ -26,8 +24,6 @@ class QML_MATERIAL_API IconButtonState : public ButtonInteractionState {
 
 public:
     explicit IconButtonState(QObject* parent = nullptr);
-    Button*                          item() const;
-    void                             setItem(Button*);
     int                              type() const;
     void                             setType(int);
     QBindable<int>                   bindableType();

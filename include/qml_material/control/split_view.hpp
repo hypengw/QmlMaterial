@@ -1,6 +1,7 @@
 #pragma once
 
 #include "qml_material/control/container.hpp"
+#include "qml_material/input/input_host.hpp"
 #include <QHash>
 #include <QQmlComponent>
 #include <limits>
@@ -21,6 +22,7 @@ struct Pane;
 class QML_MATERIAL_API SplitView : public Container {
     Q_OBJECT
     QML_NAMED_ELEMENT(SplitViewBase)
+    Q_PROPERTY(bool focusVisible READ focusVisible NOTIFY focusVisibleChanged FINAL)
     QML_ATTACHED(SplitViewAttached)
     Q_PROPERTY(Qt::Orientation orientation READ orientation WRITE setOrientation NOTIFY
                    orientationChanged FINAL)
@@ -33,6 +35,8 @@ class QML_MATERIAL_API SplitView : public Container {
 public:
     explicit SplitView(QQuickItem* parent = nullptr);
     ~SplitView() override;
+    bool                      focusVisible() const { return m_focusInput.focusVisible(); }
+    Q_SIGNAL void             focusVisibleChanged();
     static SplitViewAttached* qmlAttachedProperties(QObject*);
     Qt::Orientation           orientation() const { return m_orientation; }
     void                      setOrientation(Qt::Orientation);
@@ -52,6 +56,7 @@ public:
     Q_SIGNAL void             transitionsChanged();
 
 protected:
+    bool event(QEvent*) override;
     bool isContent(QQuickItem*) const override;
     void itemAdded(QQuickItem*) override;
     void itemRemoved(QQuickItem*) override;
@@ -60,6 +65,7 @@ protected:
     void componentComplete() override;
 
 private:
+    InputHost m_focusInput;
     friend class SplitHandleInput;
     friend class SplitViewAttached;
     void                                                changeExpanded(QQuickItem*);

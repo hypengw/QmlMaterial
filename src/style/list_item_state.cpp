@@ -1,11 +1,10 @@
 #include "qml_material/style/list_item_state.hpp"
-#include "qml_material/control/item_delegate.hpp"
+#include "qml_material/control/button_control.hpp"
 #include "qml_material/style/theme.hpp"
 #include "qml_material/token/color.hpp"
 namespace qml_material
 {
-ListItemState::ListItemState(QObject* parent)
-    : ButtonInteractionState(parent, FocusTreatment::Ignored, PressSource::Pressed) {
+ListItemState::ListItemState(QObject* parent): ButtonInteractionState(parent) {
     auto base = baseBindings();
     base.bind(m_appearance.elevation, [this]() -> qreal {
         return elevationTokens().level0;
@@ -14,11 +13,12 @@ ListItemState::ListItemState(QObject* parent)
         return ctx() ? ctx()->textColor() : QColor(Qt::transparent);
     });
     base.bind(m_appearance.backgroundColor, [this] {
+        if (selected()) return color(&MdColorMgr::secondary_container);
         return ctx() ? ctx()->backgroundColor() : QColor(Qt::transparent);
     });
     base.bind(m_appearance.supportTextColor, colorBinding(&MdColorMgr::on_surface_variant));
     base.bind(m_appearance.stateLayerColor, colorBinding(&MdColorMgr::on_surface));
-    auto disabled = stateBindings(Interaction::Disabled);
+    auto disabled = disabledBindings();
     disabled.bind(m_appearance.elevation, [this]() -> qreal {
         return elevationTokens().level0;
     });
@@ -31,13 +31,8 @@ ListItemState::ListItemState(QObject* parent)
     disabled.bind(m_appearance.backgroundOpacity, [this]() -> qreal {
         return stateTokens().disabled_content;
     });
-    stateBindings(Interaction::Pressed).bind(m_appearance.stateLayerOpacity, [this]() -> qreal {
-        return stateTokens().pressed.state_layer_opacity;
-    });
-    stateBindings(Interaction::Hovered).bind(m_appearance.stateLayerOpacity, [this]() -> qreal {
-        return stateTokens().hover.state_layer_opacity;
-    });
+    bindStateLayerOpacity(false);
 }
-ItemDelegate* ListItemState::item() const { return static_cast<ItemDelegate*>(inputItem()); }
-void          ListItemState::setItem(ItemDelegate* item) { setInputItem(item); }
+ButtonControl* ListItemState::item() const { return inputItem(); }
+void           ListItemState::setItem(ButtonControl* item) { setInputItem(item, {}, {}); }
 } // namespace qml_material

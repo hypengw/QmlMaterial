@@ -18,144 +18,55 @@ MD.Control {
     property int displayMode: DatePicker.DisplayMode.Calendar
     property bool showModeToggle: true
     property string inputDateFormat: ""
-    property int __navigation: 0
-    property bool __editingInput: false
-    property bool __complete: false
-    readonly property int __firstYear: Math.max(1, minDate && !isNaN(minDate.getTime()) ? minDate.getFullYear() : 1)
-    readonly property int __lastYear: Math.min(9999, maxDate && !isNaN(maxDate.getTime()) ? maxDate.getFullYear() : 9999)
-
-    property int selectionMode: DatePicker.SelectionMode.Single
-    property date selectedDate: new Date()
-    property var rangeStart
-    property var rangeEnd
-    property var minDate
-    property var maxDate
-    property int year: isNaN(selectedDate.getTime()) ? new Date().getFullYear() : selectedDate.getFullYear()
-    property int month: isNaN(selectedDate.getTime()) ? new Date().getMonth() : selectedDate.getMonth()
+    readonly property MD.DatePickerState dateState: MD.DatePickerState {
+        id: m_state
+        locale: control.locale
+        inputMode: control.displayMode === DatePicker.Input
+        rules.dateFormat: control.inputDateFormat
+        startInput: m_startInput
+        endInput: m_endInput
+    }
+    property alias __navigation: m_state.navigation
+    readonly property int __firstYear: dateState.firstYear
+    readonly property int __lastYear: dateState.lastYear
+    property alias selectionMode: m_state.selectionMode
+    property alias selectedDate: m_state.selectedDate
+    property alias rangeStart: m_state.rangeStart
+    property alias rangeEnd: m_state.rangeEnd
+    property alias minDate: m_state.minDate
+    property alias maxDate: m_state.maxDate
+    property alias year: m_state.year
+    property alias month: m_state.month
+    signal selectedDateChangeRequested(date date)
+    signal rangeChangeRequested(date start, date end)
+    Connections {
+        target: control.dateState
+        function onSelectedDateChangeRequested(date) {
+            control.selectedDateChangeRequested(date);
+        }
+        function onRangeChangeRequested(start, end) {
+            control.rangeChangeRequested(start, end);
+        }
+    }
     property string supportingText: control.selectionMode === DatePicker.SelectionMode.Range ? qsTr("Select date range") : qsTr("Select date")
     property bool showHeader: true
     property string headlineFormat: locale.dateFormat(Locale.ShortFormat)
     property string monthTitleFormat: "MMMM yyyy"
-    readonly property date __invalidDate: new Date(NaN)
-    readonly property bool selectionValid: selectionMode === DatePicker.SelectionMode.Single ? _dayEnabled(selectedDate) : m_rules.rangeValid(rangeStart ?? __invalidDate, rangeEnd ?? __invalidDate, minDate ?? __invalidDate, maxDate ?? __invalidDate)
+    readonly property bool selectionValid: dateState.selectionValid
 
     implicitWidth: 360
     implicitHeight: contentItem.implicitHeight + topPadding + bottomPadding
 
-    function _syncInputs() {
-        if (!__complete || __editingInput)
-            return;
-        m_startInput.text = m_rules.formatDate(selectionMode === DatePicker.SelectionMode.Single ? selectedDate : rangeStart ?? __invalidDate);
-        m_endInput.text = m_rules.formatDate(rangeEnd ?? __invalidDate);
-    }
-    function _editInput(end, text) {
-        __editingInput = true;
-        try {
-            const date = m_rules.parse(text);
-            if (selectionMode === DatePicker.SelectionMode.Single)
-                selectedDate = date;
-            else if (end)
-                rangeEnd = isNaN(date.getTime()) ? undefined : date;
-            else
-                rangeStart = isNaN(date.getTime()) ? undefined : date;
-        } finally {
-            __editingInput = false;
-        }
-    }
-    function _monthEnabled(y, m) {
-        return m_rules.monthEnabled(y, m, minDate ?? __invalidDate, maxDate ?? __invalidDate);
-    }
-    onSelectedDateChanged: _syncInputs()
-    onRangeStartChanged: _syncInputs()
-    onRangeEndChanged: _syncInputs()
-    onSelectionModeChanged: _syncInputs()
-    onDisplayModeChanged: {
-        __navigation = 0;
-        _syncInputs();
-        const date = selectionMode === DatePicker.SelectionMode.Single ? selectedDate : rangeStart;
-        if (date && !isNaN(date.getTime())) {
-            year = date.getFullYear();
-            month = date.getMonth();
-        }
-        if (__complete) {
-            if (displayMode === DatePicker.DisplayMode.Input)
-                m_startInput.forceActiveFocus();
-            else
-                m_grid.forceActiveFocus();
-        }
-    }
-    Component.onCompleted: {
-        __complete = true;
-        _syncInputs();
-    }
-
-    function _sameDay(a, b) {
-        return m_rules.sameDay(a ?? __invalidDate, b ?? __invalidDate);
-    }
-    function _inRange(d) {
-        if (control.selectionMode !== DatePicker.SelectionMode.Range)
-            return false;
-        return m_rules.insideRange(d, control.rangeStart ?? __invalidDate, control.rangeEnd ?? __invalidDate);
-    }
-    function _dayEnabled(d) {
-        return m_rules.dateEnabled(d ?? __invalidDate, control.minDate ?? __invalidDate, control.maxDate ?? __invalidDate);
-    }
-    function _shiftMonth(delta) {
-        let m = control.month + delta;
-        let y = control.year;
-        while (m < 0) {
-            m += 12;
-            y -= 1;
-        }
-        while (m > 11) {
-            m -= 12;
-            y += 1;
-        }
-        control.month = m;
-        control.year = y;
-    }
-    function _selectDay(d) {
-        if (!_dayEnabled(d))
-            return;
-        if (control.selectionMode === DatePicker.SelectionMode.Single) {
-            control.selectedDate = d;
-        } else {
-            if (!control.rangeStart || isNaN(control.rangeStart.getTime()) || (control.rangeEnd && !isNaN(control.rangeEnd.getTime()))) {
-                control.rangeStart = d;
-                control.rangeEnd = undefined;
-            } else if (!m_rules.rangeValid(control.rangeStart, d, control.minDate ?? __invalidDate, control.maxDate ?? __invalidDate)) {
-                control.rangeStart = d;
-            } else {
-                control.rangeEnd = d;
-            }
-        }
-    }
     function _fmtHeadline(d) {
         if (!d || isNaN(d.getTime()))
             return "—";
         return d.toLocaleDateString(control.locale, control.headlineFormat);
     }
     function _monthTitle() {
-        return m_calendar.firstDate.toLocaleDateString(control.locale, control.monthTitleFormat);
+        return control.dateState.calendar.firstDate.toLocaleDateString(control.locale, control.monthTitleFormat);
     }
 
     background: null
-    MD.DateValidator {
-        id: m_rules
-        locale: control.locale
-        dateFormat: control.inputDateFormat
-        minDate: control.minDate ?? control.__invalidDate
-        maxDate: control.maxDate ?? control.__invalidDate
-        onInputFormatChanged: control._syncInputs()
-    }
-
-    MD.CalendarMonthModel {
-        id: m_calendar
-        month: control.month
-        year: control.year
-        locale: control.locale
-    }
-
     contentItem: Column {
         spacing: 0
 
@@ -221,7 +132,7 @@ MD.Control {
                 text: control._monthTitle()
                 mdState.type: MD.Enum.BtText
                 icon.name: control.__navigation ? "expand_less" : "expand_more"
-                onClicked: control.__navigation = control.__navigation ? 0 : 1
+                onClicked: control.dateState.toggleNavigation()
             }
 
             MD.IconButton {
@@ -230,8 +141,8 @@ MD.Control {
                 anchors.rightMargin: 4
                 anchors.verticalCenter: parent.verticalCenter
                 icon.name: MD.Token.icon.chevron_left
-                enabled: control._monthEnabled(control.month === 0 ? control.year - 1 : control.year, (control.month + 11) % 12)
-                onClicked: control._shiftMonth(-1)
+                enabled: control.dateState.monthEnabled(control.month === 0 ? control.year - 1 : control.year, (control.month + 11) % 12)
+                onClicked: control.dateState.shiftMonth(-1)
             }
             MD.IconButton {
                 id: m_nextBtn
@@ -239,8 +150,8 @@ MD.Control {
                 anchors.rightMargin: 12
                 anchors.verticalCenter: parent.verticalCenter
                 icon.name: MD.Token.icon.chevron_right
-                enabled: control._monthEnabled(control.month === 11 ? control.year + 1 : control.year, (control.month + 1) % 12)
-                onClicked: control._shiftMonth(1)
+                enabled: control.dateState.monthEnabled(control.month === 11 ? control.year + 1 : control.year, (control.month + 1) % 12)
+                onClicked: control.dateState.shiftMonth(1)
             }
         }
 
@@ -264,10 +175,7 @@ MD.Control {
                 height: m_years.cellHeight
                 text: String(yearValue)
                 mdState.type: yearValue === control.year ? MD.Enum.BtFilledTonal : MD.Enum.BtText
-                onClicked: {
-                    control.year = yearValue;
-                    control.__navigation = 2;
-                }
+                onClicked: control.dateState.selectYear(yearValue)
             }
         }
 
@@ -276,7 +184,7 @@ MD.Control {
             width: parent.width
             columns: 3
             Repeater {
-                model: m_calendar.monthNames
+                model: control.dateState.calendar.monthNames
                 delegate: MD.Button {
                     required property int index
                     required property string modelData
@@ -286,12 +194,9 @@ MD.Control {
                     leftPadding: 8
                     rightPadding: 8
                     text: modelData
-                    enabled: control._monthEnabled(control.year, index)
+                    enabled: control.dateState.monthEnabled(control.year, index)
                     mdState.type: index === control.month ? MD.Enum.BtFilledTonal : MD.Enum.BtText
-                    onClicked: {
-                        control.month = index;
-                        control.__navigation = 0;
-                    }
+                    onClicked: control.dateState.selectMonth(index)
                 }
             }
         }
@@ -309,13 +214,12 @@ MD.Control {
                 x: 24
                 width: parent.width - 48
                 placeholderText: control.selectionMode === DatePicker.SelectionMode.Single ? qsTr("Date") : qsTr("Start date")
-                supportingText: m_rules.inputFormat
-                validator: m_rules
+                supportingText: control.dateState.rules.inputFormat
+                validator: control.dateState.rules
                 inputMethodHints: Qt.ImhDate
                 selectByMouse: true
                 error: text.length > 0 && !acceptableInput
                 errorText: qsTr("Enter a valid date")
-                onTextEdited: control._editInput(false, text)
             }
             MD.TextField {
                 id: m_endInput
@@ -324,13 +228,12 @@ MD.Control {
                 x: 24
                 width: parent.width - 48
                 placeholderText: qsTr("End date")
-                supportingText: m_rules.inputFormat
-                validator: m_rules
+                supportingText: control.dateState.rules.inputFormat
+                validator: control.dateState.rules
                 inputMethodHints: Qt.ImhDate
                 selectByMouse: true
                 error: text.length > 0 && (!acceptableInput || (m_startInput.acceptableInput && !control.selectionValid))
                 errorText: acceptableInput ? qsTr("End date must not precede start date") : qsTr("Enter a valid date")
-                onTextEdited: control._editInput(true, text)
             }
         }
 
@@ -358,7 +261,7 @@ MD.Control {
             contentItem: Row {
                 spacing: m_dow.spacing
                 Repeater {
-                    model: m_calendar.weekDays
+                    model: control.dateState.calendar.weekDays
                     delegate: m_dow.delegate
                 }
             }
@@ -367,20 +270,24 @@ MD.Control {
         MD.Control {
             id: m_grid
             visible: control.displayMode === DatePicker.DisplayMode.Calendar && control.__navigation === 0
-            activeFocusOnTab: true
             anchors.horizontalCenter: parent.horizontalCenter
             width: 7 * 40 + 6 * 8
             implicitHeight: 6 * 40 + 5 * 8 + topPadding + bottomPadding
             spacing: 8
 
-            property Component delegate: Item {
+            property Component delegate: MD.CalendarDayBase {
                 required property int index
                 required property var model
                 readonly property bool inMonth: model.month === control.month
-                readonly property bool selected: control.selectionMode === DatePicker.SelectionMode.Single ? control._sameDay(model.date, control.selectedDate) : (control._sameDay(model.date, control.rangeStart) || control._sameDay(model.date, control.rangeEnd))
-                readonly property bool inRange: control._inRange(model.date)
+                dateState: control.dateState
+                dayIndex: index
                 readonly property bool today: model.today
-                readonly property bool dayEnabled: control._dayEnabled(model.date)
+                enabled: dayEnabled
+                activeFocusOnTab: tabStop || focus
+                Accessible.role: Accessible.Button
+                Accessible.name: date.toLocaleDateString(control.locale, Locale.LongFormat)
+                Accessible.selected: selected
+                Accessible.onPressAction: click()
 
                 implicitWidth: 40
                 implicitHeight: 40
@@ -414,39 +321,8 @@ MD.Control {
                 rowSpacing: m_grid.spacing
                 columnSpacing: m_grid.spacing
                 Repeater {
-                    model: m_calendar
+                    model: control.dateState.calendar
                     delegate: m_grid.delegate
-                }
-            }
-
-            MouseArea {
-                id: m_pointer
-                anchors.fill: m_grid.contentItem
-                acceptedButtons: Qt.LeftButton
-                property bool tracking: false
-
-                function indexAt(x, y) {
-                    const cell = m_grid.contentItem.childAt(x, y);
-                    return cell ? cell.index : -1;
-                }
-                onPressed: tracking = true
-                onReleased: function (mouse) {
-                    const index = tracking ? indexAt(mouse.x, mouse.y) : -1;
-                    tracking = false;
-                    if (index >= 0) {
-                        const date = m_calendar.dateAt(index);
-                        if (control._dayEnabled(date))
-                            control._selectDay(date);
-                    }
-                }
-                onCanceled: {
-                    tracking = false;
-                }
-            }
-            Connections {
-                target: m_calendar
-                function onDataChanged() {
-                    m_pointer.tracking = false;
                 }
             }
         }

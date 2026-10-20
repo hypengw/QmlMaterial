@@ -87,11 +87,6 @@ class QML_MATERIAL_API Control : public QQuickItem, public ControlEnvironment {
                    resetBaselineOffset NOTIFY baselineOffsetChanged FINAL)
     Q_PROPERTY(bool hoverEnabled READ hoverEnabled WRITE setHoverEnabled RESET resetHoverEnabled
                    NOTIFY hoverEnabledChanged FINAL)
-    Q_PROPERTY(bool hovered READ hovered NOTIFY hoveredChanged BINDABLE bindableHovered FINAL)
-    Q_PROPERTY(Qt::FocusReason focusReason READ focusReason WRITE setFocusReason NOTIFY
-                   focusReasonChanged FINAL)
-    Q_PROPERTY(bool visualFocus READ visualFocus NOTIFY visualFocusChanged BINDABLE
-                   bindableVisualFocus FINAL)
 
 public:
     enum LayoutFlag
@@ -223,14 +218,6 @@ public:
     void                setHoverEnabled(bool value);
     void                resetHoverEnabled();
 
-    bool            hovered() const;
-    QBindable<bool> bindableHovered() const { return QBindable<bool>(&m_hovered); }
-
-    Qt::FocusReason focusReason() const;
-    void            setFocusReason(Qt::FocusReason value);
-    bool            visualFocus() const;
-    QBindable<bool> bindableVisualFocus() const { return QBindable<bool>(&m_visual_focus); }
-
     Q_SIGNAL void fontChanged();
     Q_SIGNAL void localeChanged();
     Q_SIGNAL void layoutDirectionChanged();
@@ -263,9 +250,6 @@ public:
     Q_SIGNAL void extraImplicitHeightChanged();
     Q_SIGNAL void baselineOffsetChanged();
     Q_SIGNAL void hoverEnabledChanged();
-    Q_SIGNAL void hoveredChanged();
-    Q_SIGNAL void focusReasonChanged();
-    Q_SIGNAL void visualFocusChanged();
 
 protected:
     virtual qreal  defaultSpacing() const { return 0; }
@@ -277,12 +261,6 @@ protected:
     void           componentComplete() override;
     void           geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry) override;
     void           itemChange(ItemChange change, const ItemChangeData& value) override;
-    void           focusInEvent(QFocusEvent* event) override;
-    void           focusOutEvent(QFocusEvent* event) override;
-    void           hoverEnterEvent(QHoverEvent* event) override;
-    void           hoverMoveEvent(QHoverEvent* event) override;
-    void           hoverLeaveEvent(QHoverEvent* event) override;
-    bool           eventFilter(QObject* watched, QEvent* event) override;
 
 private:
     struct PaddingState {
@@ -310,8 +288,6 @@ private:
     void         updateLocale(const QLocale&);
     void         updateLayoutDirection(Qt::LayoutDirection);
     void         updateHoverEnabled(bool);
-    void         updateVisualFocus();
-    void         setHovered(bool value);
     void         layoutItems();
     void         layoutBackground();
     void         orderManagedItems();
@@ -359,11 +335,7 @@ private:
     bool                m_locale_explicit { false };
     bool                m_layout_direction_explicit { false };
     bool                m_hover_enabled { false };
-    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(Control, bool, m_hovered, false, &Control::hoveredChanged)
-    bool m_baseline_explicit { false };
-    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(Control, bool, m_visual_focus, false,
-                                         &Control::visualFocusChanged)
-    Qt::FocusReason m_focus_reason { Qt::OtherFocusReason };
+    bool                m_baseline_explicit { false };
 };
 
 } // namespace qml_material

@@ -2,7 +2,7 @@ import QtQuick
 import Qcm.Material as MD
 import Qcm.Material.Layouts as Lite
 
-MD.ButtonBase {
+MD.ToggleButtonBase {
     id: control
 
     readonly property MD.SegmentedButtonGroup segmentedGroup: MD.ContainerBase.container as MD.SegmentedButtonGroup
@@ -24,8 +24,6 @@ MD.ButtonBase {
     leftPadding: mdState.leadingSpace
     rightPadding: mdState.trailingSpace
     spacing: mdState.spacing
-
-    checkable: true
 
     icon.width: mdState.iconSize
     icon.height: mdState.iconSize
@@ -92,10 +90,8 @@ MD.ButtonBase {
         MD.Ripple {
             anchors.fill: parent
             corners: parent.corners
-            pressX: control.pressX
-            pressY: control.pressY
-            pressed: control.pressed
-            stateOpacity: control.mdState.stateLayerOpacity
+            interactionSource: control.interactionSource
+            indication: control.mdState.indication
             color: control.mdState.stateLayerColor
         }
     }

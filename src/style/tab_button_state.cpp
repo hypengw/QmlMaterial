@@ -13,7 +13,7 @@ TabButtonState::TabButtonState(QObject* parent): ButtonInteractionState(parent) 
     base.bind(m_appearance.elevation, [this]() -> qreal {
         return elevationTokens().level0;
     });
-    auto disabled = stateBindings(Interaction::Disabled);
+    auto disabled = disabledBindings();
     disabled.bind(m_appearance.textColor, colorBinding(&MdColorMgr::on_surface));
     disabled.bind(m_appearance.backgroundColor, colorBinding(&MdColorMgr::on_surface));
     disabled.bind(m_appearance.contentOpacity, [this]() -> qreal {
@@ -23,18 +23,18 @@ TabButtonState::TabButtonState(QObject* parent): ButtonInteractionState(parent) 
         return stateTokens().disabled_container;
     });
     bindStateLayerOpacity();
-    for (auto state : { Interaction::Pressed, Interaction::Hovered }) {
-        auto active = stateBindings(state);
-        active.bind(m_appearance.textColor, [this] {
-            if (! colors()) return QColor(Qt::transparent);
-            return type() == int(Enum::TabType::PrimaryTab) ? baseTextColor()
-                                                            : color(&MdColorMgr::on_surface);
-        });
-        active.bind(m_appearance.stateLayerColor, [this] {
-            return color(type() == int(Enum::TabType::PrimaryTab) ? &MdColorMgr::primary
-                                                                  : &MdColorMgr::on_surface);
-        });
-    }
+    auto active = appearanceWhen([this] {
+        return pressed() || hovered() || visualFocus();
+    });
+    active.bind(m_appearance.textColor, [this] {
+        if (! colors()) return QColor(Qt::transparent);
+        return type() == int(Enum::TabType::PrimaryTab) ? baseTextColor()
+                                                        : color(&MdColorMgr::on_surface);
+    });
+    active.bind(m_appearance.stateLayerColor, [this] {
+        return color(type() == int(Enum::TabType::PrimaryTab) ? &MdColorMgr::primary
+                                                              : &MdColorMgr::on_surface);
+    });
 }
 TabButton*        TabButtonState::item() const { return static_cast<TabButton*>(inputItem()); }
 void              TabButtonState::setItem(TabButton* item) { setInputItem(item); }

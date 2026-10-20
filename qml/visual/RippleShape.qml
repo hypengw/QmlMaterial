@@ -6,13 +6,14 @@ import Qcm.Material as MD
 Item {
     id: root
     property real stateOpacity: 0
-    property bool pressed: false
-    property real pressX: width / 2
-    property real pressY: height / 2
 
-    property real _circle_radius: 0
+    readonly property real _circle_radius: Math.hypot(width, height) * motion.progress * 1.3
 
-    property alias color: m_back.color
+    property color color: "transparent"
+    property MD.InteractionSource interactionSource: null
+    property alias indication: motion.indication
+    property real pressOpacity: MD.Token.state.pressed.state_layer_opacity
+    property bool animationsEnabled: true
     property alias corners: m_back.corners
     property alias radius: m_back.radius
     readonly property real _maxCorner: Math.min(root.width, root.height) * 0.5
@@ -24,43 +25,46 @@ Item {
 
     clip: false
 
-    MD.Rectangle {
-        id: m_back
-        anchors.fill: parent
-        color: "transparent"
-        opacity: root.stateOpacity
+    MD.RippleMotion {
+        id: motion
+        target: root
+        interactionSource: root.interactionSource
+        stateOpacity: root.stateOpacity
+        pressOpacity: root.pressOpacity
+        color: root.color
+        enabled: root.animationsEnabled
     }
 
     MD.Shape {
         id: m_circle
         anchors.fill: parent
-        opacity: 0.12
+        opacity: motion.rippleOpacity
         ShapePath {
             strokeWidth: 0
             strokeColor: "transparent"
             fillColor: m_back.color
             fillGradient: RadialGradient {
-                centerX: root.pressX
-                centerY: root.pressY
+                centerX: motion.origin.x
+                centerY: motion.origin.y
                 centerRadius: root._circle_radius
                 focalX: centerX
                 focalY: centerY
 
                 GradientStop {
                     position: 0
-                    color: MD.Util.transparent(root.color, 1.0)
+                    color: MD.Util.transparent(motion.ink, 1.0)
                 }
                 GradientStop {
                     position: 0.77
-                    color: MD.Util.transparent(root.color, 1.0)
+                    color: MD.Util.transparent(motion.ink, 1.0)
                 }
                 GradientStop {
                     position: 0.771
-                    color: MD.Util.transparent(root.color, 0.0)
+                    color: MD.Util.transparent(motion.ink, 0.0)
                 }
                 GradientStop {
                     position: 1
-                    color: MD.Util.transparent(root.color, 0.0)
+                    color: MD.Util.transparent(motion.ink, 0.0)
                 }
             }
 
@@ -111,104 +115,10 @@ Item {
         }
     }
 
-    state: "normal"
-
-    readonly property real endRadius: Math.sqrt(root.height * root.height + root.width * root.width) * 1.3
-
-    states: [
-        State {
-            name: "active"
-            when: root.pressed
-            PropertyChanges {
-                restoreEntryValues: false
-                root._circle_radius: endRadius
-            }
-        },
-        State {
-            name: "normal"
-            when: true
-        }
-    ]
-
-    transitions: [
-        Transition {
-            from: "normal"
-            to: "active"
-            SequentialAnimation {
-                ScriptAction {
-                    script: {
-                        m_fade.stop();
-                        m_back.opacity = root.stateOpacity;
-                        root._circle_radius = root.endRadius / 1.3 / 4;
-                        m_circle.opacity = 0.12;
-                    }
-                }
-                ParallelAnimation {
-                    NumberAnimation {
-                        target: m_back
-                        property: 'opacity'
-                        to: 0.12
-                        duration: 500
-                    }
-                    NumberAnimation {
-                        target: root
-                        property: '_circle_radius'
-                        duration: 500
-                    }
-                }
-            }
-        },
-        Transition {
-            from: "active"
-            to: "normal"
-            ParallelAnimation {
-                alwaysRunToEnd: true
-                NumberAnimation {
-                    target: m_back
-                    to: root.stateOpacity
-                    property: 'opacity'
-                    duration: 200
-                }
-                SequentialAnimation {
-                    NumberAnimation {
-                        target: root
-                        property: '_circle_radius'
-                        to: root.endRadius
-                        duration: 200
-                    }
-
-                    ScriptAction {
-                        script: {
-                            m_fade.start();
-                        }
-                    }
-                }
-            }
-        }
-    ]
-
-    // for tracking root.stateOpacity, need to be top-level
-    SequentialAnimation {
-        id: m_fade
-        running: false
-        onStopped: {
-            m_back.opacity = Qt.binding(function () {
-                return root.stateOpacity;
-            });
-            m_circle.opacity = 0;
-        }
-
-        NumberAnimation {
-            target: m_back
-            to: root.stateOpacity
-            duration: 100
-            property: "opacity"
-        }
-        NumberAnimation {
-            target: m_circle
-            to: 0
-            duration: 100
-            property: "opacity"
-        }
+    MD.Rectangle {
+        id: m_back
+        anchors.fill: parent
+        color: motion.ink
+        opacity: motion.opacity
     }
 }

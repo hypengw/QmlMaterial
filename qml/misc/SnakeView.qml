@@ -5,7 +5,6 @@ import Qcm.Material as MD
 ListView {
     id: root
 
-    property int m_snake_id: 0
     property bool bottomToTop: false
 
     model: m_snake
@@ -15,15 +14,7 @@ ListView {
     }
 
     function show(text, duration = 4000, flag = MD.Enum.TFCloseable, action = null, maximumWidth = 0, actionOnNewLine = false) {
-        const snake = m_snake.createSnake();
-        snake.text = text;
-        snake.duration = duration;
-        snake.flag = flag;
-        snake.maximumWidth = maximumWidth;
-        snake.actionOnNewLine = actionOnNewLine;
-        if (action)
-            snake.action = action;
-        m_snake.showSnake(snake);
+        m_snake.show(text, duration, flag, action, maximumWidth, actionOnNewLine);
     }
 
     z: Infinity
@@ -75,28 +66,18 @@ ListView {
         clip: height < implicitHeight
         required property var model
 
-        function close() {
-            m_snake.removeById(model.sid);
-        }
-
         MD.SnakeBar {
             x: 0
             y: 0
             width: parent.width
             height: implicitHeight
             text: dg_bar.model.text
-            showClose: dg_bar.model.flag
-            onClosed: dg_bar.close()
+            snakeModel: m_snake
+            snakeId: dg_bar.model.sid
+            presentationId: dg_bar.model.presentationId
+            showClose: !!(dg_bar.model.flag & MD.Enum.TFCloseable)
             action: dg_bar.model.action
             actionOnNewLine: dg_bar.model.actionOnNewLine
-            Component.onCompleted: {
-                const sid = dg_bar.model.sid;
-                if (dg_bar.model.action) {
-                    dg_bar.model.action.triggered.connect(() => {
-                        m_snake.removeById(sid);
-                    });
-                }
-            }
         }
     }
 }

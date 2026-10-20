@@ -1,5 +1,5 @@
 #include "qml_material/style/card_state.hpp"
-#include "qml_material/control/button.hpp"
+#include "qml_material/control/button_control.hpp"
 #include "qml_material/token/color.hpp"
 namespace qml_material
 {
@@ -19,7 +19,7 @@ CardState::CardState(QObject* parent): ButtonInteractionState(parent) {
         auto* palette = colors();
         return palette ? palette->getOn(backgroundColor()) : QColor(Qt::transparent);
     });
-    auto disabled = stateBindings(Interaction::Disabled);
+    auto disabled = disabledBindings();
     disabled.bind(m_appearance.elevation, [this]() -> qreal {
         return Enum::CardType(type()) == Enum::CardType::CardFilled ? elevationTokens().level1
                                                                     : elevationTokens().level0;
@@ -31,32 +31,35 @@ CardState::CardState(QObject* parent): ButtonInteractionState(parent) {
     disabled.bind(m_appearance.backgroundOpacity, [this]() -> qreal {
         return stateTokens().disabled_container;
     });
-    stateBindings(Interaction::Pressed).bind(m_appearance.elevation, [this] {
-        return baseElevation();
-    });
-    stateBindings(Interaction::Hovered).bind(m_appearance.elevation, [this]() -> qreal {
+    appearanceWhen([this] {
+        return elevationInteraction(true) != qml_material::Interaction::None;
+    }).bind(m_appearance.elevation, [this]() -> qreal {
+        const auto interaction = elevationInteraction(true);
+        if (interaction == qml_material::Interaction::Drag)
+            return Enum::CardType(type()) == Enum::CardType::CardElevated
+                       ? elevationTokens().level4
+                       : elevationTokens().level3;
+        if (interaction != qml_material::Interaction::Hover) return baseElevation();
         const auto t = Enum::CardType(type());
         return t == Enum::CardType::CardOutlined || t == Enum::CardType::CardFilled
                    ? elevationTokens().level1
                    : elevationTokens().level2;
     });
-    for (auto state : { Interaction::Pressed, Interaction::Hovered }) {
-        auto active = stateBindings(state);
-        active.bind(m_appearance.stateLayerColor, colorBinding(&MdColorMgr::on_surface));
-        active.bind(m_appearance.stateLayerOpacity, [this, state]() -> qreal {
-            return state == Interaction::Pressed ? stateTokens().pressed.state_layer_opacity
-                                                 : stateTokens().hover.state_layer_opacity;
-        });
-    }
+    auto active = appearanceWhen([this] {
+        return pressed() || hovered() || visualFocus();
+    });
+    active.bind(m_appearance.stateLayerColor, colorBinding(&MdColorMgr::on_surface));
+    bindStateLayerOpacity();
 }
+CardState::~CardState() { stopBindings(); }
 qreal CardState::baseElevation() const {
     const auto t = Enum::CardType(type());
     return t == Enum::CardType::CardOutlined || t == Enum::CardType::CardFilled
                ? elevationTokens().level0
                : elevationTokens().level1;
 }
-Button*        CardState::item() const { return static_cast<Button*>(inputItem()); }
-void           CardState::setItem(Button* item) { setInputItem(item); }
+ButtonControl* CardState::item() const { return inputItem(); }
+void           CardState::setItem(ButtonControl* item) { setInputItem(item, {}, {}); }
 int            CardState::type() const { return m_type.value(); }
 void           CardState::setType(int value) { m_type = value; }
 QBindable<int> CardState::bindableType() { return QBindable<int>(&m_type); }

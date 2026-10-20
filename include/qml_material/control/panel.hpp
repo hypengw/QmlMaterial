@@ -3,6 +3,7 @@
 #include <QQmlListProperty>
 
 #include "qml_material/control/control.hpp"
+#include "qml_material/input/input_host.hpp"
 
 namespace qml_material
 {
@@ -13,6 +14,7 @@ namespace qml_material
 class QML_MATERIAL_API Panel : public Control {
     Q_OBJECT
     QML_NAMED_ELEMENT(PanelBase)
+    Q_PROPERTY(bool focusVisible READ focusVisible NOTIFY focusVisibleChanged FINAL)
     Q_CLASSINFO("DefaultProperty", "contentData")
     Q_PROPERTY(QQmlListProperty<QObject> contentData READ contentData FINAL)
     Q_PROPERTY(QQmlListProperty<QQuickItem> contentChildren READ contentChildren NOTIFY
@@ -25,6 +27,8 @@ class QML_MATERIAL_API Panel : public Control {
 public:
     explicit Panel(QQuickItem* parent = nullptr);
     ~Panel() override;
+    bool          focusVisible() const { return m_focusInput.focusVisible(); }
+    Q_SIGNAL void focusVisibleChanged();
 
     QQmlListProperty<QObject>    contentData();
     QQmlListProperty<QQuickItem> contentChildren();
@@ -40,6 +44,7 @@ public:
     Q_SIGNAL void contentChildrenChanged();
 
 protected:
+    bool   event(QEvent*) override;
     QSizeF measureImplicitContent() const override;
     void   componentComplete() override;
     void   mousePressEvent(QMouseEvent* event) override;
@@ -48,10 +53,11 @@ protected:
     void   touchEvent(QTouchEvent* event) override;
 
 private:
-    QSizeF calculateContentSize() const;
-    void   observeContentItem();
-    void   observeChildren();
-    void   updateContentSize();
+    InputHost m_focusInput;
+    QSizeF    calculateContentSize() const;
+    void      observeContentItem();
+    void      observeChildren();
+    void      updateContentSize();
 
     QSizeF                         m_content_size { 0, 0 };
     std::optional<qreal>           m_content_width;

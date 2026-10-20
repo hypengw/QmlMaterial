@@ -1,46 +1,27 @@
 #include "qml_material/style/button_interaction_state.hpp"
-#include "qml_material/control/abstract_button.hpp"
+#include "qml_material/control/selection_button.hpp"
+#include "qml_material/control/toggle_button.hpp"
 #include "qml_material/control/button_group_container.hpp"
 #include "qml_material/util/qt.hpp"
 namespace qml_material
 {
-ButtonInteractionState::ButtonInteractionState(QObject* parent, FocusTreatment focus,
-                                               PressSource press)
-    : CommonState(parent) {
+ButtonInteractionState::ButtonInteractionState(QObject* parent): CommonState(parent) {
     initializeAppearance(m_bindings);
     m_hovered.setBinding([this] {
-        auto* item = inputItem();
-        return item && item->hovered();
+        return interactions().hovered;
     });
-    m_selection.setBinding([this, focus, press] {
+    m_selection.setBinding([this] {
         const auto generation = targetGeneration();
-        if (disabled()) return Selection { Interaction::Disabled, generation };
-        const auto* item   = inputItem();
-        const bool  active = press == PressSource::Down ? down() : item && item->isPressed();
-        if (active || (focus == FocusTreatment::Pressed && visualFocus()))
-            return Selection { Interaction::Pressed, generation };
-        if (hovered()) return Selection { Interaction::Hovered, generation };
-        if (focus == FocusTreatment::Separate && visualFocus())
-            return Selection { Interaction::Focus, generation };
-        return Selection { Interaction::Base, generation };
+        return Selection { disabled() ? Availability::Disabled : Availability::Base, generation };
     });
     m_inputReady = true;
 }
 void ButtonInteractionState::selectionChanged() {
     if (m_inputReady) {
         const auto selection = m_selection.value();
-        publishState(stateName(selection.state), [this, next = selection.state] {
+        applyAppearance([this, next = selection.state] {
             m_bindings.select(next);
         });
-    }
-}
-QString ButtonInteractionState::stateName(Interaction state) {
-    switch (state) {
-    case Interaction::Disabled: return QStringLiteral("disabled");
-    case Interaction::Pressed: return QStringLiteral("pressed");
-    case Interaction::Hovered: return QStringLiteral("hovered");
-    case Interaction::Focus: return QStringLiteral("focus");
-    default: return {};
     }
 }
 ButtonInteractionState::~ButtonInteractionState() {
@@ -93,9 +74,10 @@ CornersGroup ButtonInteractionState::groupCorners() const {
     const qreal full =
         std::max(qreal(0), item->height() - item->topInset() - item->bottomInset()) / 2;
     const auto pos = Enum::ItemPosition(info->position());
-    if (pos == Enum::ItemPosition::PosSingle || (! down() && checked())) return CornersGroup(full);
+    if (pos == Enum::ItemPosition::PosSingle || (! pressed() && checked()))
+        return CornersGroup(full);
     const qreal inner = std::min(
-        full, down() ? token::ButtonGroup::pressedInnerCorner : token::ButtonGroup::innerCorner);
+        full, pressed() ? token::ButtonGroup::pressedInnerCorner : token::ButtonGroup::innerCorner);
     if (pos == Enum::ItemPosition::PosMiddle) return CornersGroup(inner);
     const bool left = (pos == Enum::ItemPosition::PosFirst) != item->mirrored();
     return left ? CornersGroup(inner, inner, full, full) : CornersGroup(full, full, inner, inner);
@@ -104,68 +86,118 @@ qreal ButtonInteractionState::groupOpticalOffset(const CornersGroup& corners) co
     return .055 *
            (corners.topLeft() + corners.bottomLeft() - corners.topRight() - corners.bottomRight());
 }
-AbstractButton* ButtonInteractionState::inputItem() const { return m_item.value(); }
-bool            ButtonInteractionState::checked() const {
-    const auto item = inputItem();
-    return item && item->isChecked();
-}
+ButtonControl* ButtonInteractionState::inputItem() const { return m_item.value(); }
+bool ButtonInteractionState::checked() const { return inputItem() && m_checked && m_checked(); }
 bool ButtonInteractionState::checkable() const {
-    const auto item = inputItem();
-    return item && item->isCheckable();
+    return inputItem() && m_checkable && m_checkable();
 }
-bool ButtonInteractionState::down() const {
-    const auto item = inputItem();
-    return item && item->isDown();
-}
-bool ButtonInteractionState::hovered() const { return m_hovered.value(); }
-bool ButtonInteractionState::visualFocus() const {
-    const auto item = inputItem();
-    return item && item->visualFocus();
-}
+bool                 ButtonInteractionState::pressed() const { return interactions().pressed; }
+bool                 ButtonInteractionState::hovered() const { return m_hovered.value(); }
+bool                 ButtonInteractionState::visualFocus() const { return m_focusVisible.value(); }
 bool                 ButtonInteractionState::disabled() const { return m_disabled.value(); }
 std::optional<qreal> ButtonInteractionState::backgroundHeight() const {
     const auto item       = inputItem();
     const auto background = item ? item->background() : nullptr;
     return background ? std::optional<qreal>(background->height()) : std::nullopt;
 }
-void ButtonInteractionState::setInputItem(AbstractButton* item) {
+void ButtonInteractionState::setInputItem(SelectionButton* item) {
+    setInputItem(
+        item,
+        [item] {
+            return item->isSelected();
+        },
+        [] {
+            return true;
+        });
+}
+void ButtonInteractionState::setInputItem(ToggleButton* item) {
+    setInputItem(
+        item,
+        [item] {
+            return item->isChecked();
+        },
+        [] {
+            return true;
+        });
+}
+void ButtonValueState::setItem(ButtonControl* item) {
+    setInputItem(
+        item,
+        [this] {
+            return isSelected();
+        },
+        [this] {
+            return isToggleable();
+        });
+}
+void ButtonInteractionState::setInputItem(ButtonControl* item, std::function<bool()> checked,
+                                          std::function<bool()> checkable) {
     if (m_item == item) return;
     const QPointer<ButtonInteractionState> guard(this);
+    const auto                             revision = ++m_inputRevision;
     {
-        const QScopedPropertyUpdateGroup group;
         utils::disconnectAll(m_connections);
-        updateStateInput(m_item, item);
+        m_checked   = std::move(checked);
+        m_checkable = std::move(checkable);
+        // A target change can grow binding dependency arrays. Qt's grouped notifications
+        // retain their old observer heads, so publish the complete snapshot before notifying.
+        m_item.setValueBypassingBindings(item);
+        m_focusVisible.setValueBypassingBindings(item && item->focusVisible());
+        m_disabled.setValueBypassingBindings(item && ! item->isEnabled());
         if (item) {
+            m_connections.append(
+                connect(item, &ButtonControl::interactionSourceChanged, this, [this] {
+                    setInteractionSource(inputItem() ? inputItem()->interactionSource() : nullptr);
+                }));
+            m_connections.append(connect(item, &ButtonControl::focusVisibleChanged, this, [this] {
+                updateStateInput(m_focusVisible, inputItem() && inputItem()->focusVisible());
+            }));
             // QQuickItem::enabled has no bindable API in Qt 6.8.
-            m_connections.append(connect(item, &AbstractButton::enabledChanged, this, [this] {
+            m_connections.append(connect(item, &QQuickItem::enabledChanged, this, [this] {
                 updateStateInput(m_disabled, inputItem() && ! inputItem()->isEnabled());
             }));
             m_connections.append(connect(item, &QObject::destroyed, this, [this] {
                 utils::disconnectAll(m_connections);
                 const QPointer<ButtonInteractionState> guard(this);
-                {
-                    const QScopedPropertyUpdateGroup group;
-                    updateStateInput(m_item, nullptr);
-                    updateStateInput(m_disabled, false);
-                }
-                if (guard && isStateActive()) Q_EMIT itemChanged();
+                const auto                             revision = ++m_inputRevision;
+                m_item.setValueBypassingBindings(nullptr);
+                m_disabled.setValueBypassingBindings(false);
+                m_focusVisible.setValueBypassingBindings(false);
+                if (isStateActive()) m_item.notify();
+                if (! guard || revision != m_inputRevision) return;
+                if (isStateActive()) m_disabled.notify();
+                if (! guard || revision != m_inputRevision) return;
+                if (isStateActive()) m_focusVisible.notify();
+                if (! guard || revision != m_inputRevision) return;
+                setInteractionSource(nullptr);
+                if (guard && revision == m_inputRevision && isStateActive()) Q_EMIT itemChanged();
             }));
         }
         setTarget(item);
-        if (! guard) return;
-        updateStateInput(m_disabled, item && ! item->isEnabled());
+        if (! guard || revision != m_inputRevision) return;
+        setInteractionSource(item ? item->interactionSource() : nullptr);
+        if (! guard || revision != m_inputRevision) return;
+        if (isStateActive()) m_item.notify();
+        if (! guard || revision != m_inputRevision) return;
+        if (isStateActive()) m_focusVisible.notify();
+        if (! guard || revision != m_inputRevision) return;
+        if (isStateActive()) m_disabled.notify();
     }
-    if (guard && isStateActive()) Q_EMIT itemChanged();
+    if (guard && revision == m_inputRevision && isStateActive()) Q_EMIT itemChanged();
 }
-void ButtonInteractionState::bindStateLayerOpacity() {
-    stateBindings(Interaction::Pressed).bind(m_appearance.stateLayerOpacity, [this]() -> qreal {
-        return stateTokens().pressed.state_layer_opacity;
-    });
-    stateBindings(Interaction::Hovered).bind(m_appearance.stateLayerOpacity, [this]() -> qreal {
-        return stateTokens().hover.state_layer_opacity;
-    });
-    stateBindings(Interaction::Focus).bind(m_appearance.stateLayerOpacity, [this]() -> qreal {
+void ButtonInteractionState::bindStateLayerOpacity(bool focus) {
+    appearanceWhen([this, focus] {
+        return pressed() || hovered() || (focus && visualFocus());
+    }).bind(m_appearance.stateLayerOpacity, [this]() -> qreal {
+        if (pressed()) return stateTokens().pressed.state_layer_opacity;
+        if (hovered()) return stateTokens().hover.state_layer_opacity;
         return stateTokens().focus.state_layer_opacity;
     });
+}
+Interaction::Kind ButtonInteractionState::elevationInteraction(bool includeDrag) const {
+    return interactionAccumulator().latest({ Interaction::Press,
+                                             Interaction::Hover,
+                                             Interaction::Focus,
+                                             includeDrag ? Interaction::Drag : Interaction::None });
 }
 } // namespace qml_material

@@ -161,7 +161,7 @@ qreal Popup::implicitContentHeight() const { return m_surface->implicitContentHe
 qreal Popup::implicitBackgroundWidth() const { return m_surface->implicitBackgroundWidth(); }
 qreal Popup::implicitBackgroundHeight() const { return m_surface->implicitBackgroundHeight(); }
 bool  Popup::activeFocus() const { return m_surface->hasActiveFocus(); }
-bool  Popup::visualFocus() const { return m_surface->visualFocus(); }
+bool  Popup::visualFocus() const { return m_surface->focusVisible(); }
 bool  Popup::mirrored() const { return m_surface->mirrored(); }
 
 Popup::Popup(QObject* parent): Popup(new PopupSurface<Panel>(this), parent) {}
@@ -225,7 +225,7 @@ Popup::Popup(Panel* surface, QObject* parent)
             this,
             &Popup::implicitBackgroundHeightChanged);
     connect(m_surface, &Panel::activeFocusChanged, this, &Popup::activeFocusChanged);
-    connect(m_surface, &Panel::visualFocusChanged, this, &Popup::visualFocusChanged);
+    connect(m_surface, &Panel::focusVisibleChanged, this, &Popup::visualFocusChanged);
     connect(m_surface, &Panel::mirroredChanged, this, &Popup::mirroredChanged);
     connect(m_surface, &Panel::mirroredChanged, this, &Popup::reposition);
     connect(m_surface, &Panel::contentChildrenChanged, this, &Popup::contentChildrenChanged);
@@ -278,7 +278,7 @@ void Popup::componentComplete() {
 void Popup::setParentItem(QQuickItem* item) {
     if (m_parent == item) return;
     QPointer<Popup> guard(this);
-    if (isVisible()) dismissImmediately();
+    if (isVisible() && (! m_overlay || ! m_overlay->isWindowDestroying())) dismissImmediately();
     if (! guard) return;
     m_parent = item;
     observeParent();

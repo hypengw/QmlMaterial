@@ -5,6 +5,7 @@ MD.CheckBoxBase {
     id: control
 
     property MD.StateCheckBox mdState: MD.StateCheckBox {
+        focusIndicationEnabled: false
         item: control
     }
 
@@ -41,17 +42,15 @@ MD.CheckBoxBase {
             width: 40
             height: 40
             radius: 20
-            pressX: control.pressX
-            pressY: control.pressY
-            pressed: control.pressed
-            stateOpacity: control.mdState.stateLayerOpacity
+            interactionSource: control.interactionSource
+            indication: control.mdState.indication
             color: control.mdState.stateLayerColor
         }
 
         MD.FocusIndicator {
             parent: m_ripple
             corners: MD.Util.corners(20)
-            active: control.visualFocus
+            active: control.focusVisible
         }
     }
 
@@ -63,6 +62,7 @@ MD.CheckBoxBase {
         text: control.text
         font: control.font
         color: control.mdState.textColor
+        opacity: control.mdState.contentOpacity
         elide: Text.ElideRight
         verticalAlignment: Text.AlignVCenter
     }

@@ -1,15 +1,12 @@
 #pragma once
-#include "qml_material/control/abstract_button.hpp"
+#include "qml_material/control/selection_button.hpp"
 
 namespace qml_material
 {
-class QML_MATERIAL_API RadioButton : public AbstractButton {
+class QML_MATERIAL_API RadioButton : public SelectionButton {
     Q_OBJECT
     QML_NAMED_ELEMENT(RadioButtonBase)
 public:
-    explicit RadioButton(QQuickItem* parent = nullptr): AbstractButton(parent) {
-        setCheckable(true);
-        setAutoExclusive(true);
-    }
+    explicit RadioButton(QQuickItem* parent = nullptr): SelectionButton(parent) {}
 };
 } // namespace qml_material

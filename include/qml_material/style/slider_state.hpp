@@ -72,8 +72,17 @@ protected:
     StateBindingSet<Interaction> m_bindings { Interaction::Base };
     bool                         active() const;
     Control*                     control() const;
-    void                         setControl(Control*, std::function<bool()> pressed);
-    Q_SIGNAL void                controlChanged();
+    void setControl(Control*, std::function<bool()> pressed, std::function<bool()> hovered);
+    void setSlider(Slider*);
+    void updateFocusVisible(bool value) { updateStateInput(m_focusVisible, value); }
+    bool focusVisibleInput() const { return m_focusVisible.value(); }
+    void stopInputBindings() {
+        m_pressed.takeBinding();
+        m_hovered.takeBinding();
+        m_selection.takeBinding();
+        m_bindings.abandon();
+    }
+    Q_SIGNAL void controlChanged();
 
 private:
     void selectionChanged();
@@ -84,6 +93,8 @@ private:
     };
     QProperty<Control*>            m_control { nullptr };
     QProperty<bool>                m_pressed { false };
+    QProperty<bool>                m_hovered { false };
+    QProperty<bool>                m_focusVisible { false };
     QProperty<bool>                m_disabled { false };
     QList<QMetaObject::Connection> m_connections;
     bool                           m_ready = false;
@@ -177,6 +188,7 @@ class QML_MATERIAL_API RangeSliderState : public SliderHandleAppearance {
                    BINDABLE bindableHandleIndex FINAL)
 public:
     explicit RangeSliderState(QObject* parent = nullptr);
+    ~RangeSliderState() override;
     RangeSlider*   item() const;
     void           setItem(RangeSlider*);
     Q_SIGNAL void  itemChanged();
@@ -186,6 +198,9 @@ public:
     Q_SIGNAL void  handleIndexChanged();
 
 private:
+    void                           refreshInput();
+    QList<QMetaObject::Connection> m_rangeConnections;
+    InteractionAccumulator         m_otherInput;
     Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(RangeSliderState, int, m_handleIndex, -1,
                                          &RangeSliderState::handleIndexChanged)
 };

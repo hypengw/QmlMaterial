@@ -32,7 +32,7 @@ MD.SearchBarBase {
         spacing: 0
         layoutDirection: control.mirrored ? Qt.RightToLeft : Qt.LeftToRight
 
-        MD.IconButton {
+        MD.ActionIconButton {
             id: item_leading
             action: control.leading_action
             MD.InputBlock {
@@ -62,7 +62,7 @@ MD.SearchBarBase {
             }
         }
 
-        MD.IconButton {
+        MD.ActionIconButton {
             id: item_trailing
             action: control.trailing_action
             visible: !icon.empty
@@ -85,10 +85,8 @@ MD.SearchBarBase {
         MD.Ripple {
             anchors.fill: parent
             radius: parent.radius
-            pressX: control.pressX
-            pressY: control.pressY
-            pressed: control.pressed
-            stateOpacity: control.mdState.stateLayerOpacity
+            interactionSource: control.interactionSource
+            indication: control.mdState.indication
             color: control.mdState.stateLayerColor
         }
     }

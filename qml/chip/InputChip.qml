@@ -3,23 +3,27 @@ import QtQml.Models
 import Qcm.Material as MD
 import Qcm.Material.Layouts as Lite
 
-MD.ButtonBase {
+MD.SelectionButtonBase {
     id: control
 
     property MD.StateInputChip mdState: MD.StateInputChip {
+        focusIndicationEnabled: false
         item: control
+    }
+
+    Binding {
+        control.mdState.selected: control.selected
     }
 
     property bool edit: false
     property alias elevated: control.mdState.elevated
     property Item leadingItem: null
     property Component editDelegate: null
+    property MD.Action trailingAction: null
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
-    flat: true
-    checkable: false
     leftInset: 0
     rightInset: 0
     topInset: 0
@@ -32,8 +36,8 @@ MD.ButtonBase {
     icon.width: 18
     icon.height: 18
     icon.color: control.mdState.textColor
+    icon.actionIcon: trailingAction?.icon ?? null
 
-    action: null
     contentItem: contentItemRO
 
     property Item contentItemRO: Lite.Row {
@@ -73,7 +77,8 @@ MD.ButtonBase {
                     contentItem: MD.IconView {
                         icon: control.icon
                     }
-                    action: control.action
+                    MD.ActionCommand.action: control.trailingAction
+                    enabled: MD.ActionCommand.enabled
                 }
             }
         }
@@ -87,22 +92,20 @@ MD.ButtonBase {
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
 
-        border.width: control.checked ? 0 : 1
+        border.width: control.selected ? 0 : 1
         border.color: control.mdState.outlineColor
 
         MD.Ripple {
             anchors.fill: parent
             radius: parent.radius
-            pressX: control.pressX
-            pressY: control.pressY
-            pressed: control.pressed
-            stateOpacity: control.mdState.stateLayerOpacity
+            interactionSource: control.interactionSource
+            indication: control.mdState.indication
             color: control.mdState.stateLayerColor
         }
 
         MD.FocusIndicator {
             corners: MD.Util.corners(parent.radius)
-            active: control.visualFocus
+            active: control.focusVisible
         }
     }
 

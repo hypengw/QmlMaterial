@@ -69,6 +69,7 @@ protected:
     virtual void                       itemsChanged() {}
     virtual void                       currentItemChange() {}
     virtual int                        initialIndex() const;
+    virtual bool                       tracksCurrentItem() const { return true; }
     void                               componentComplete() override;
     void                               updatePolish() override;
     QSizeF                             measureImplicitContent() const override;
@@ -82,7 +83,7 @@ protected:
 
 private:
     void                                     updateContentSize();
-    QQuickItem*                              m_host;
+    QQuickItem*                              m_host = nullptr;
     QHash<QQuickItem*, QPointer<QQuickItem>> m_presentation_hosts;
     QList<QPointer<QQuickItem>>              m_items;
     QList<QPointer<QQuickItem>>              m_observed;

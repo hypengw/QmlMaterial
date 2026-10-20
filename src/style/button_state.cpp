@@ -1,5 +1,4 @@
 #include "qml_material/style/button_state.hpp"
-#include "qml_material/control/button.hpp"
 #include "qml_material/token/color.hpp"
 #include "qml_material/token/token.hpp"
 #include <QPointer>
@@ -8,8 +7,7 @@ namespace qml_material
 using ButtonType = Enum::ButtonType;
 using ButtonSize = Enum::ButtonSize;
 
-ButtonAppearanceState::ButtonAppearanceState(QObject* parent)
-    : ButtonInteractionState(parent, FocusTreatment::Separate) {
+ButtonAppearanceState::ButtonAppearanceState(QObject* parent): ButtonValueState(parent) {
     bindAppearance();
 }
 int            ButtonAppearanceState::type() const { return m_type.value(); }
@@ -24,9 +22,6 @@ ButtonState::ButtonState(QObject* parent): ButtonAppearanceState(parent) {
     connect(this, &ButtonState::sizeTokenChanged, this, &ButtonState::geometryChanged);
     bindTargets();
 }
-
-Button* ButtonAppearanceState::item() const { return static_cast<Button*>(inputItem()); }
-void    ButtonAppearanceState::setItem(Button* item) { setInputItem(item); }
 
 #define INPUT(Type, Name, Setter, Bindable)                                          \
     Type            ButtonAppearanceState::Name() const { return m_##Name.value(); } \
@@ -56,7 +51,7 @@ void ButtonState::bindTargets() {
     const auto base = baseBindings();
     base.bind(m_appearance.corner, [this]() -> qreal {
         const auto size = sizeToken();
-        if (down()) return size.pressed_corner_size;
+        if (pressed()) return size.pressed_corner_size;
         if (! isRound()) return size.corner_size;
         return backgroundHeight().value_or(size.container_height) / 2;
     });
@@ -74,7 +69,7 @@ void ButtonAppearanceState::bindAppearance() {
         return ButtonType(type()) == ButtonType::BtElevated ? elevationTokens().level1
                                                             : elevationTokens().level0;
     });
-    auto disabled = stateBindings(Interaction::Disabled);
+    auto disabled = disabledBindings();
     disabled.bind(m_appearance.textColor, colorBinding(&MdColorMgr::on_surface));
     disabled.bind(m_appearance.backgroundColor, [this]() -> QColor {
         const auto t = ButtonType(type());
@@ -95,25 +90,27 @@ void ButtonAppearanceState::bindAppearance() {
                                              : stateTokens().disabled_container;
     });
     bindStateLayerOpacity();
-    for (auto state : { Interaction::Pressed, Interaction::Hovered, Interaction::Focus }) {
-        auto active = stateBindings(state);
-        active.bind(m_appearance.elevation, [this, state]() -> qreal {
-            const auto type = ButtonType(this->type());
-            const auto e    = elevationTokens();
-            if (type == ButtonType::BtText || type == ButtonType::BtOutlined) return e.level0;
-            const bool elevated = type == ButtonType::BtElevated;
-            return state == Interaction::Hovered ? (elevated ? e.level2 : e.level1)
-                                                 : (elevated ? e.level1 : e.level0);
-        });
-        active.bind(m_appearance.stateLayerColor, [this] {
-            auto* p = colors();
-            if (! p) return QColor(Qt::transparent);
-            const auto t = ButtonType(type());
-            return t == ButtonType::BtFilled || t == ButtonType::BtFilledTonal
-                       ? p->getOn(backgroundColor())
-                       : p->primary();
-        });
-    }
+    appearanceWhen([this] {
+        return elevationInteraction() != qml_material::Interaction::None;
+    }).bind(m_appearance.elevation, [this]() -> qreal {
+        const auto type = ButtonType(this->type());
+        const auto e    = elevationTokens();
+        if (type == ButtonType::BtText || type == ButtonType::BtOutlined) return e.level0;
+        const bool elevated = type == ButtonType::BtElevated;
+        return elevationInteraction() == qml_material::Interaction::Hover
+                   ? (elevated ? e.level2 : e.level1)
+                   : (elevated ? e.level1 : e.level0);
+    });
+    appearanceWhen([this] {
+        return pressed() || hovered() || visualFocus();
+    }).bind(m_appearance.stateLayerColor, [this] {
+        auto* p = colors();
+        if (! p) return QColor(Qt::transparent);
+        const auto t = ButtonType(type());
+        return t == ButtonType::BtFilled || t == ButtonType::BtFilledTonal
+                   ? p->getOn(backgroundColor())
+                   : p->primary();
+    });
 }
 
 QColor ButtonAppearanceState::defaultTextColor() const {

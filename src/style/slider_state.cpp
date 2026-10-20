@@ -6,6 +6,9 @@
 namespace qml_material
 {
 SliderAppearance::SliderAppearance(QObject* parent): CommonState(parent) {
+    indicationPolicy().bindDefaultColor(Qt::makePropertyBinding([this] {
+        return backgroundColor();
+    }));
     initializeAppearance(m_bindings);
     m_trackColorKey = m_bindings.property<&SliderAppearance::bindableTrackColor>(this);
     m_trackOverlayColorKey =
@@ -56,8 +59,7 @@ SliderAppearance::SliderAppearance(QObject* parent): CommonState(parent) {
         const auto generation = targetGeneration();
         if (m_disabled.value()) return Selection { Interaction::Disabled, generation };
         if (active()) return Selection { Interaction::Pressed, generation };
-        if (control() && control()->hovered())
-            return Selection { Interaction::Hovered, generation };
+        if (m_hovered.value()) return Selection { Interaction::Hovered, generation };
         return Selection { Interaction::Base, generation };
     });
     m_ready = true;
@@ -71,18 +73,12 @@ bool     SliderAppearance::active() const { return control() && m_pressed.value(
 void     SliderAppearance::selectionChanged() {
     if (! m_ready) return;
     const auto selection = m_selection.value();
-    QString    name;
-    switch (selection.state) {
-    case Interaction::Disabled: name = QStringLiteral("disabled"); break;
-    case Interaction::Pressed: name = QStringLiteral("pressed"); break;
-    case Interaction::Hovered: name = QStringLiteral("hovered"); break;
-    default: break;
-    }
-    publishState(name, [this, next = selection.state] {
+    applyAppearance([this, next = selection.state] {
         m_bindings.select(next);
     });
 }
-void SliderAppearance::setControl(Control* value, std::function<bool()> pressed) {
+void SliderAppearance::setControl(Control* value, std::function<bool()> pressed,
+                                  std::function<bool()> hovered) {
     if (m_control == value) return;
     QPointer<SliderAppearance> guard(this);
     {
@@ -91,6 +87,9 @@ void SliderAppearance::setControl(Control* value, std::function<bool()> pressed)
         updateStateInput(m_control, value);
         m_pressed.setBinding([this, pressed = std::move(pressed)] {
             return control() && pressed();
+        });
+        m_hovered.setBinding([this, hovered = std::move(hovered)] {
+            return control() && hovered();
         });
         if (value) {
             m_connections.append(connect(value, &QQuickItem::enabledChanged, this, [this] {
@@ -104,12 +103,13 @@ void SliderAppearance::setControl(Control* value, std::function<bool()> pressed)
                     updateStateInput(m_control, nullptr);
                     updateStateInput(m_disabled, false);
                 }
+                if (guard && ! control()) setInteractionSource(nullptr);
                 if (guard && isStateActive()) Q_EMIT controlChanged();
             }));
         }
         setTarget(value);
         if (! guard) return;
-        updateStateInput(m_disabled, value && ! value->isEnabled());
+        updateStateInput(m_disabled, control() && ! control()->isEnabled());
     }
     if (guard && isStateActive()) Q_EMIT controlChanged();
 }
@@ -185,35 +185,96 @@ void           SliderHandleAppearance::resetHandleHeight() { m_handleHeightKey.r
 QBindable<int> SliderHandleAppearance::bindableHandleHeight() {
     return QBindable<int>(&m_handleHeight);
 }
+void SliderAppearance::setSlider(Slider* value) {
+    if (control() == value) return;
+    const QPointer<SliderAppearance> guard(this);
+    setControl(
+        value,
+        [this] {
+            const auto input = interactions();
+            return input.pressed || input.dragged || m_focusVisible.value();
+        },
+        [this] {
+            return interactions().hovered;
+        });
+    if (! guard || control() != value) return;
+    if (value) {
+        m_connections.append(connect(value, &Slider::interactionSourceChanged, this, [this, value] {
+            setInteractionSource(value->interactionSource());
+        }));
+        m_connections.append(connect(value, &Slider::focusVisibleChanged, this, [this, value] {
+            updateStateInput(m_focusVisible, value->focusVisible());
+        }));
+    }
+    updateStateInput(m_focusVisible, value && value->focusVisible());
+    if (! guard || control() != value) return;
+    setInteractionSource(value ? value->interactionSource() : nullptr);
+}
 SliderM2State::SliderM2State(QObject* parent): SliderAppearance(parent) {
     connect(this, &SliderM2State::controlChanged, this, &SliderM2State::itemChanged);
 }
 Slider* SliderM2State::item() const { return static_cast<Slider*>(control()); }
-void    SliderM2State::setItem(Slider* value) {
-    setControl(value, [this] {
-        return item()->pressed() || item()->visualFocus();
-    });
-}
+void    SliderM2State::setItem(Slider* value) { setSlider(value); }
 SliderState::SliderState(QObject* parent): SliderHandleAppearance(parent) {
     connect(this, &SliderState::controlChanged, this, &SliderState::itemChanged);
 }
 Slider* SliderState::item() const { return static_cast<Slider*>(control()); }
-void    SliderState::setItem(Slider* value) {
-    setControl(value, [this] {
-        return item()->pressed() || item()->visualFocus();
-    });
-}
-RangeSliderState::RangeSliderState(QObject* parent): SliderHandleAppearance(parent) {
+void    SliderState::setItem(Slider* value) { setSlider(value); }
+RangeSliderState::RangeSliderState(QObject* parent)
+    : SliderHandleAppearance(parent), m_otherInput(this) {
     connect(this, &RangeSliderState::controlChanged, this, &RangeSliderState::itemChanged);
+    connect(this, &RangeSliderState::controlChanged, this, [this] {
+        if (! item()) refreshInput();
+    });
+    connect(this, &RangeSliderState::handleIndexChanged, this, &RangeSliderState::refreshInput);
+}
+RangeSliderState::~RangeSliderState() {
+    stopInputBindings();
+    utils::disconnectAll(m_rangeConnections);
 }
 RangeSlider* RangeSliderState::item() const { return static_cast<RangeSlider*>(control()); }
 void         RangeSliderState::setItem(RangeSlider* value) {
-    setControl(value, [this] {
-        if (handleIndex() == 0 || handleIndex() == 1) {
-            const auto node = handleIndex() == 0 ? item()->first() : item()->second();
-            return node->pressed() || node->focused();
+    if (item() == value) return;
+    utils::disconnectAll(m_rangeConnections);
+    const QPointer<RangeSliderState> guard(this);
+    setControl(
+        value,
+        [this] {
+            const auto input = interactions(), other = m_otherInput.values();
+            return input.pressed || input.dragged || other.pressed || other.dragged ||
+                   focusVisibleInput();
+        },
+        [this] {
+            return interactions().hovered || m_otherInput.values().hovered;
+        });
+    if (! guard || item() != value) return;
+    if (value) {
+        for (auto* node : { value->first(), value->second() }) {
+            m_rangeConnections.append(connect(node,
+                                              &RangeSliderNode::interactionSourceChanged,
+                                              this,
+                                              &RangeSliderState::refreshInput));
+            m_rangeConnections.append(connect(node,
+                                              &RangeSliderNode::focusVisibleChanged,
+                                              this,
+                                              &RangeSliderState::refreshInput));
         }
-        return item()->pressed() || item()->visualFocus();
-    });
+    }
+    refreshInput();
+}
+void RangeSliderState::refreshInput() {
+    const QPointer<RangeSliderState> guard(this);
+    auto*                            owner = item();
+    m_otherInput.setSource(owner && handleIndex() < 0 ? owner->second()->interactionSource()
+                                                      : nullptr);
+    if (! guard || item() != owner) return;
+    setInteractionSource(
+        owner ? (handleIndex() == 1 ? owner->second() : owner->first())->interactionSource()
+              : nullptr);
+    if (! guard || item() != owner) return;
+    updateFocusVisible(owner && (handleIndex() == 0   ? owner->first()->focusVisible()
+                                 : handleIndex() == 1 ? owner->second()->focusVisible()
+                                                      : owner->first()->focusVisible() ||
+                                                            owner->second()->focusVisible()));
 }
 } // namespace qml_material

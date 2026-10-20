@@ -2,14 +2,14 @@
 #include "qml_material/style/button_interaction_state.hpp"
 #include "qml_material/token/segmented_button.hpp"
 #include "qml_material/token/type_scale.hpp"
-Q_MOC_INCLUDE("qml_material/control/button.hpp")
+Q_MOC_INCLUDE("qml_material/control/toggle_button.hpp")
 namespace qml_material
 {
-class Button;
+class ToggleButton;
 class QML_MATERIAL_API SegmentedButtonState : public ButtonInteractionState {
     Q_OBJECT
     QML_NAMED_ELEMENT(StateSegmentedButton)
-    Q_PROPERTY(qml_material::Button* item READ item WRITE setItem NOTIFY itemChanged FINAL)
+    Q_PROPERTY(qml_material::ToggleButton* item READ item WRITE setItem NOTIFY itemChanged FINAL)
     Q_PROPERTY(int position READ position WRITE setPosition NOTIFY positionChanged BINDABLE
                    bindablePosition FINAL)
     Q_PROPERTY(int size READ size WRITE setSize NOTIFY sizeChanged BINDABLE bindableSize FINAL)
@@ -28,8 +28,8 @@ class QML_MATERIAL_API SegmentedButtonState : public ButtonInteractionState {
                    NOTIFY cornerRadiusChanged BINDABLE bindableCornerRadius)
 public:
     explicit SegmentedButtonState(QObject* parent = nullptr);
-    Button*                               item() const;
-    void                                  setItem(Button*);
+    ToggleButton*                         item() const;
+    void                                  setItem(ToggleButton*);
     int                                   position() const;
     void                                  setPosition(int);
     QBindable<int>                        bindablePosition();

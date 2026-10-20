@@ -1,6 +1,8 @@
 #pragma once
 
 #include "qml_material/control/control.hpp"
+#include "qml_material/control/popup.hpp"
+#include "qml_material/input/input_host.hpp"
 #include "qml_material/model/combo_box_model.hpp"
 #include <QQmlComponent>
 #include <QValidator>
@@ -12,13 +14,15 @@ namespace qml_material
 class QML_MATERIAL_API ComboBox : public Control {
     Q_OBJECT
     QML_NAMED_ELEMENT(ComboBoxBase)
+    Q_PROPERTY(Popup* popup READ popup WRITE setPopup NOTIFY popupChanged FINAL)
     Q_PROPERTY(
-        bool popupVisible READ popupVisible WRITE setPopupVisible NOTIFY popupVisibleChanged FINAL)
-    Q_PROPERTY(bool popupActiveFocus READ popupActiveFocus WRITE setPopupActiveFocus NOTIFY
-                   popupActiveFocusChanged FINAL)
+        QQuickItem* indicator READ indicator WRITE setIndicator NOTIFY indicatorChanged FINAL)
+    Q_PROPERTY(bool popupVisible READ popupVisible NOTIFY popupVisibleChanged FINAL)
+    Q_PROPERTY(bool popupActiveFocus READ popupActiveFocus NOTIFY popupActiveFocusChanged FINAL)
+    Q_PROPERTY(InteractionSource* interactionSource READ interactionSource WRITE
+                   setInteractionSource NOTIFY interactionSourceChanged FINAL)
+    Q_PROPERTY(bool focusVisible READ focusVisible NOTIFY focusVisibleChanged FINAL)
     Q_PROPERTY(int highlightedIndex READ highlightedIndex NOTIFY highlightedIndexChanged FINAL)
-    Q_PROPERTY(bool pressed READ isPressed WRITE setPressed NOTIFY pressedChanged FINAL)
-    Q_PROPERTY(bool down READ isDown WRITE setDown RESET resetDown NOTIFY downChanged FINAL)
     Q_PROPERTY(
         bool wheelEnabled READ wheelEnabled WRITE setWheelEnabled NOTIFY wheelEnabledChanged FINAL)
     Q_PROPERTY(bool editable READ editable WRITE setEditable NOTIFY editableChanged FINAL)
@@ -50,43 +54,43 @@ class QML_MATERIAL_API ComboBox : public Control {
 public:
     explicit ComboBox(QQuickItem* parent = nullptr);
     ~ComboBox() override;
-    bool                 popupVisible() const { return m_popup_visible; }
-    void                 setPopupVisible(bool);
-    bool                 popupActiveFocus() const { return m_popup_focus; }
-    void                 setPopupActiveFocus(bool);
-    int                  highlightedIndex() const { return m_highlight; }
-    bool                 isPressed() const { return m_pressed; }
-    void                 setPressed(bool);
-    bool                 isDown() const { return m_down.value_or(m_pressed || m_popup_visible); }
-    void                 setDown(bool);
-    void                 resetDown();
-    Q_INVOKABLE void     openPopup();
-    Q_INVOKABLE void     closePopup(bool accept = false);
-    Q_INVOKABLE void     highlightIndex(int);
-    Q_SIGNAL void        popupVisibleChanged();
-    Q_SIGNAL void        popupActiveFocusChanged();
-    Q_SIGNAL void        highlightedIndexChanged();
-    Q_SIGNAL void        highlighted(int index);
-    Q_SIGNAL void        pressedChanged();
-    Q_SIGNAL void        downChanged();
-    Q_SIGNAL void        popupOpenRequested();
-    Q_SIGNAL void        popupCloseRequested();
-    bool                 wheelEnabled() const { return m_wheel_enabled; }
-    void                 setWheelEnabled(bool);
-    Q_SIGNAL void        wheelEnabledChanged();
-    Q_INVOKABLE int      find(const QString&, Qt::MatchFlags flags = Qt::MatchExactly) const;
-    Q_INVOKABLE void     incrementCurrentIndex();
-    Q_INVOKABLE void     decrementCurrentIndex();
-    bool                 editable() const { return m_editable; }
-    void                 setEditable(bool);
-    QString              editText() const { return m_edit_text; }
-    void                 setEditText(const QString&);
-    void                 resetEditText() { setEditText({}); }
-    bool                 acceptableInput() const;
-    QBindable<bool>      bindableAcceptableInput() const { return QBindable<bool>(&m_acceptable); }
-    bool                 inputMethodComposing() const;
-    QValidator*          validator() const { return m_validator; }
-    void                 setValidator(QValidator*);
+    bool               popupVisible() const { return m_popup_visible; }
+    bool               popupActiveFocus() const { return m_popup_focus; }
+    int                highlightedIndex() const { return m_highlight; }
+    Popup*             popup() const { return m_popup; }
+    void               setPopup(Popup*);
+    QQuickItem*        indicator() const { return m_indicator; }
+    void               setIndicator(QQuickItem*);
+    InteractionSource* interactionSource() { return m_input.source(); }
+    void               setInteractionSource(InteractionSource* value) { m_input.setSource(value); }
+    bool               focusVisible() const { return m_input.focusVisible(); }
+    Q_SIGNAL void      popupChanged();
+    Q_SIGNAL void      indicatorChanged();
+    Q_SIGNAL void      interactionSourceChanged();
+    Q_SIGNAL void      focusVisibleChanged();
+    Q_INVOKABLE void   openPopup();
+    Q_INVOKABLE void   closePopup(bool accept = false);
+    Q_INVOKABLE void   highlightIndex(int);
+    Q_SIGNAL void      popupVisibleChanged();
+    Q_SIGNAL void      popupActiveFocusChanged();
+    Q_SIGNAL void      highlightedIndexChanged();
+    Q_SIGNAL void      highlighted(int index);
+    bool               wheelEnabled() const { return m_wheel_enabled; }
+    void               setWheelEnabled(bool);
+    Q_SIGNAL void      wheelEnabledChanged();
+    Q_INVOKABLE int    find(const QString&, Qt::MatchFlags flags = Qt::MatchExactly) const;
+    Q_INVOKABLE void   incrementCurrentIndex();
+    Q_INVOKABLE void   decrementCurrentIndex();
+    bool               editable() const { return m_editable; }
+    void               setEditable(bool);
+    QString            editText() const { return m_edit_text; }
+    void               setEditText(const QString&);
+    void               resetEditText() { setEditText({}); }
+    bool               acceptableInput() const;
+    QBindable<bool>    bindableAcceptableInput() const { return QBindable<bool>(&m_acceptable); }
+    bool               inputMethodComposing() const;
+    QValidator*        validator() const { return m_validator; }
+    void               setValidator(QValidator*);
     Qt::InputMethodHints inputMethodHints() const { return m_input_hints; }
     void                 setInputMethodHints(Qt::InputMethodHints);
     bool                 selectTextByMouse() const { return m_select_by_mouse; }
@@ -134,9 +138,13 @@ public:
     Q_SIGNAL void currentValueChanged();
     Q_SIGNAL void currentTextChanged();
     Q_SIGNAL void displayTextChanged();
-    Q_SIGNAL void activated(int index);
+    Q_SIGNAL void selectionChangeRequested(int index, const QVariant& value);
 
 protected:
+    bool event(QEvent*) override;
+    void hoverEnterEvent(QHoverEvent*) override;
+    void hoverMoveEvent(QHoverEvent*) override;
+    void hoverLeaveEvent(QHoverEvent*) override;
     void classBegin() override;
     void componentComplete() override;
     void focusInEvent(QFocusEvent*) override;
@@ -154,19 +162,20 @@ protected:
     void inputMethodEvent(QInputMethodEvent*) override;
 
 private:
-    void                delegateClicked();
-    void                delegateHovered();
-    void                setHighlight(int, bool notify = false);
-    void                navigate(int);
-    void                checkFocus();
-    void                finishPointer(const QPointF&);
-    bool                m_popup_visible = false;
-    bool                m_popup_focus   = false;
-    bool                m_pressed       = false;
-    bool                m_pointer       = false;
-    int                 m_touch_id      = -1;
-    int                 m_highlight     = -1;
-    std::optional<bool> m_down;
+    void                           delegateClicked();
+    void                           setHighlight(int, bool notify = false);
+    void                           navigate(int);
+    void                           checkFocus();
+    void                           syncPopupState();
+    bool                           m_popup_visible = false;
+    bool                           m_popup_focus   = false;
+    int                            m_highlight     = -1;
+    InputHost                      m_input;
+    QPointer<Popup>                m_popup;
+    QPointer<QQuickItem>           m_indicator;
+    QList<QMetaObject::Connection> m_popupConnections;
+    QMetaObject::Connection        m_indicatorDestroyed;
+    quint64                        m_revision = 0;
     enum class Selection
     {
         None,

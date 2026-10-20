@@ -6,9 +6,14 @@ Column {
     id: root
     spacing: 20
 
-    component ChoiceIcon: MD.IconButton {
+    component ChoiceIcon: MD.IconToggleButton {
         icon.name: MD.Token.icon.star
-        checkable: true
+        property bool value: false
+        checked: value
+        onCheckedChangeRequested: next => {
+            if (!MD.ButtonGroup.group)
+                value = next;
+        }
         mdState.type: MD.Enum.IBtFilled
     }
 
@@ -57,11 +62,12 @@ Column {
     MD.ButtonGroupContainer {
         anchors.horizontalCenter: parent.horizontalCenter
         ChoiceIcon {}
-        MD.Button {
+        MD.ToggleButton {
+            property bool value: true
+            checked: value
+            onCheckedChangeRequested: next => value = next
             text: "Label"
             icon.name: MD.Token.icon.star
-            checkable: true
-            checked: true
             mdState.type: MD.Enum.BtFilled
         }
         ChoiceIcon {}
@@ -72,29 +78,30 @@ Column {
     }
     MD.ButtonGroup {
         id: fileSelection
+        checkedButtons: [firstFile]
     }
     MD.ButtonGroupContainer {
         objectName: "fileButtons"
         width: Math.max(0, root.width)
         variant: MD.ButtonGroupContainer.Connected
-        MD.Button {
+        MD.ToggleButton {
+            id: firstFile
             text: "My files"
-            checkable: true
-            checked: true
+            checked: MD.ButtonGroup.checked
             mdState.type: MD.Enum.BtFilledTonal
             MD.ButtonGroup.group: fileSelection
             MD.ButtonGroupContainer.weight: 1
         }
-        MD.Button {
+        MD.ToggleButton {
             text: "Shared"
-            checkable: true
+            checked: MD.ButtonGroup.checked
             mdState.type: MD.Enum.BtFilledTonal
             MD.ButtonGroup.group: fileSelection
             MD.ButtonGroupContainer.weight: 1
         }
-        MD.Button {
+        MD.ToggleButton {
             text: "Computers"
-            checkable: true
+            checked: MD.ButtonGroup.checked
             mdState.type: MD.Enum.BtFilledTonal
             MD.ButtonGroup.group: fileSelection
             MD.ButtonGroupContainer.weight: 1
@@ -102,52 +109,59 @@ Column {
     }
     MD.ButtonGroup {
         id: singleSelection
+        checkedButtons: [firstChoice]
     }
     MD.ButtonGroupContainer {
         anchors.horizontalCenter: parent.horizontalCenter
         variant: MD.ButtonGroupContainer.Connected
         ChoiceIcon {
             MD.ButtonGroup.group: singleSelection
+            checked: MD.ButtonGroup.checked
+        }
+        ChoiceIcon {
+            id: firstChoice
+            MD.ButtonGroup.group: singleSelection
+            checked: MD.ButtonGroup.checked
         }
         ChoiceIcon {
             MD.ButtonGroup.group: singleSelection
-            checked: true
+            checked: MD.ButtonGroup.checked
         }
         ChoiceIcon {
             MD.ButtonGroup.group: singleSelection
+            checked: MD.ButtonGroup.checked
         }
         ChoiceIcon {
             MD.ButtonGroup.group: singleSelection
-        }
-        ChoiceIcon {
-            MD.ButtonGroup.group: singleSelection
+            checked: MD.ButtonGroup.checked
         }
     }
     MD.ButtonGroup {
         id: multipleSelection
+        checkedButtons: [secondMultiple]
         exclusive: false
     }
     MD.ButtonGroupContainer {
         anchors.horizontalCenter: parent.horizontalCenter
         variant: MD.ButtonGroupContainer.Connected
-        MD.Button {
+        MD.ToggleButton {
             text: "One"
             icon.name: MD.Token.icon.star
-            checkable: true
+            checked: MD.ButtonGroup.checked
             mdState.type: MD.Enum.BtFilledTonal
             MD.ButtonGroup.group: multipleSelection
         }
-        MD.Button {
+        MD.ToggleButton {
+            id: secondMultiple
             text: "Two"
             icon.name: MD.Token.icon.star
-            checkable: true
-            checked: true
+            checked: MD.ButtonGroup.checked
             mdState.type: MD.Enum.BtFilledTonal
             MD.ButtonGroup.group: multipleSelection
         }
-        MD.Button {
+        MD.ToggleButton {
             text: "Three"
-            checkable: true
+            checked: MD.ButtonGroup.checked
             mdState.type: MD.Enum.BtFilledTonal
             MD.ButtonGroup.group: multipleSelection
         }
@@ -159,11 +173,12 @@ Column {
             MD.ButtonGroupContainer.weight: 1
             MD.ButtonGroupContainer.minimumWidth: 40
         }
-        MD.Button {
+        MD.ToggleButton {
+            property bool value: true
+            checked: value
+            onCheckedChangeRequested: next => value = next
             text: "Label"
             icon.name: MD.Token.icon.star
-            checkable: true
-            checked: true
             mdState.type: MD.Enum.BtFilled
             MD.ButtonGroupContainer.weight: 1
             MD.ButtonGroupContainer.minimumWidth: implicitWidth

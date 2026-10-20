@@ -37,14 +37,20 @@ Item {
                 width: 104
                 text: 'Single'
                 checked: picker.selectionMode === MD.DatePicker.Single
-                onClicked: picker.selectionMode = MD.DatePicker.Single
+                onCheckedChangeRequested: value => {
+                    if (value)
+                        picker.selectionMode = MD.DatePicker.Single;
+                }
             }
             MD.SegmentedButton {
                 objectName: 'pickerDateRangeChoice'
                 width: 104
                 text: 'Range'
                 checked: picker.selectionMode === MD.DatePicker.Range
-                onClicked: picker.selectionMode = MD.DatePicker.Range
+                onCheckedChangeRequested: value => {
+                    if (value)
+                        picker.selectionMode = MD.DatePicker.Range;
+                }
             }
         }
         MD.Flickable {
@@ -59,6 +65,8 @@ Item {
             contentHeight: height
             MD.DatePicker {
                 id: picker
+                onSelectedDateChangeRequested: date => selectedDate = date
+                onRangeChangeRequested: (start, end) => dateState.setRange(start, end)
                 objectName: 'exampleDatePicker'
                 width: displayMode === MD.DatePicker.Calendar ? implicitWidth : viewport.width
                 displayMode: root.width < implicitWidth ? MD.DatePicker.Input : MD.DatePicker.Calendar

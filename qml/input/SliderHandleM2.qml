@@ -28,8 +28,8 @@ Item {
         width: 36
         height: 36
         radius: width / 2
-        pressed: root.handlePressed || root.handleHasFocus
+        interactionSource: root.control ? root.control.interactionSource : null
+        indication: root.control ? root.control.mdState.indication : undefined
         color: root.control ? root.control.mdState.backgroundColor : "transparent"
-        stateOpacity: root.handleHovered ? MD.Token.state.hover.state_layer_opacity : 0
     }
 }

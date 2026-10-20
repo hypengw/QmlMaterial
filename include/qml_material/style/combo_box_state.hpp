@@ -60,6 +60,8 @@ public:
     qreal                           spacing() const;
 
 private:
+    QList<QMetaObject::Connection> m_inputConnections;
+    QProperty<bool>                m_expanded { false };
     Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(ComboBoxState, int, m_size, int(Enum::ButtonSize::M),
                                          &ComboBoxState::sizeChanged)
     Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(ComboBoxState, token::ComboBoxSize, m_sizeTokens,

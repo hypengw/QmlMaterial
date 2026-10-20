@@ -2,56 +2,69 @@
 
 #include <QtCore/QObject>
 #include <QtQml/qqmlregistration.h>
-#include <utility>
-#include "qml_material/anim/interpolator.hpp"
 #include "qml_material/export.hpp"
 
 namespace qml_material::token
 {
 
-/** @ingroup singleton */
-struct MotionPreset {
-    Q_GADGET_EXPORT(QML_MATERIAL_API)
-    QML_ANONYMOUS
-    Q_PROPERTY(int duration READ duration CONSTANT FINAL)
-    Q_PROPERTY(QEasingCurve easing READ easing CONSTANT FINAL)
+struct QML_MATERIAL_API SpringSpec {
+    Q_GADGET
+    QML_VALUE_TYPE(springSpec)
+    QML_STRUCTURED_VALUE
+    Q_PROPERTY(qreal stiffness MEMBER stiffness FINAL)
+    Q_PROPERTY(qreal dampingRatio MEMBER dampingRatio FINAL)
 public:
-    MotionPreset() = default;
-    MotionPreset(int duration, QEasingCurve easing)
-        : m_duration(duration), m_easing(std::move(easing)) {}
-    int          duration() const { return m_duration; }
-    QEasingCurve easing() const { return m_easing; }
-    bool         operator==(const MotionPreset&) const = default;
-
-private:
-    int          m_duration = 0;
-    QEasingCurve m_easing;
+    qreal stiffness                           = 1500;
+    qreal dampingRatio                        = 1;
+    bool  operator==(const SpringSpec&) const = default;
+    bool  valid() const;
 };
 
-/** Fixed-duration Bezier presets, not spring animation specs. @ingroup singleton */
-struct ExpressiveMotion {
+struct SpringScheme {
     Q_GADGET_EXPORT(QML_MATERIAL_API)
     QML_ANONYMOUS
-    Q_PROPERTY(qml_material::token::MotionPreset fastSpatial READ fastSpatial CONSTANT FINAL)
-    Q_PROPERTY(qml_material::token::MotionPreset defaultSpatial READ defaultSpatial CONSTANT FINAL)
-    Q_PROPERTY(qml_material::token::MotionPreset slowSpatial READ slowSpatial CONSTANT FINAL)
-    Q_PROPERTY(qml_material::token::MotionPreset defaultEffects READ defaultEffects CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::SpringSpec fastSpatial READ fastSpatial CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::SpringSpec defaultSpatial READ defaultSpatial CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::SpringSpec slowSpatial READ slowSpatial CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::SpringSpec fastEffects READ fastEffects CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::SpringSpec defaultEffects READ defaultEffects CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::SpringSpec slowEffects READ slowEffects CONSTANT FINAL)
 public:
-    MotionPreset fastSpatial() const { return { 350, anim::expressive::fast_spatial() }; }
-    MotionPreset defaultSpatial() const { return { 500, anim::expressive::default_spatial() }; }
-    MotionPreset slowSpatial() const { return { 650, anim::expressive::slow_spatial() }; }
-    MotionPreset defaultEffects() const { return { 200, anim::expressive::default_effects() }; }
-    bool         operator==(const ExpressiveMotion&) const = default;
+    bool       expressive = false;
+    SpringSpec fastSpatial() const {
+        return expressive ? SpringSpec { 800, .6 } : SpringSpec { 1400, .9 };
+    }
+    SpringSpec defaultSpatial() const {
+        return expressive ? SpringSpec { 380, .8 } : SpringSpec { 700, .9 };
+    }
+    SpringSpec slowSpatial() const {
+        return expressive ? SpringSpec { 200, .8 } : SpringSpec { 300, .9 };
+    }
+    SpringSpec fastEffects() const { return { 3800, 1 }; }
+    SpringSpec defaultEffects() const { return { 1600, 1 }; }
+    SpringSpec slowEffects() const { return { 800, 1 }; }
+    bool       operator==(const SpringScheme&) const = default;
+};
+
+struct SpringSchemes {
+    Q_GADGET_EXPORT(QML_MATERIAL_API)
+    QML_ANONYMOUS
+    Q_PROPERTY(qml_material::token::SpringScheme standard READ standard CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::SpringScheme expressive READ expressive CONSTANT FINAL)
+public:
+    SpringScheme standard() const { return {}; }
+    SpringScheme expressive() const { return { true }; }
+    bool         operator==(const SpringSchemes&) const = default;
 };
 
 /** @ingroup singleton */
 struct Motion {
     Q_GADGET_EXPORT(QML_MATERIAL_API)
     QML_ANONYMOUS
-    Q_PROPERTY(qml_material::token::ExpressiveMotion expressive READ expressive CONSTANT FINAL)
+    Q_PROPERTY(qml_material::token::SpringSchemes spring READ spring CONSTANT FINAL)
 public:
-    ExpressiveMotion expressive() const { return {}; }
-    bool             operator==(const Motion&) const = default;
+    SpringSchemes spring() const { return {}; }
+    bool          operator==(const Motion&) const = default;
 };
 
 } // namespace qml_material::token

@@ -6,6 +6,8 @@
 #include <QQmlEngine>
 #include <QVariant>
 #include <QVector>
+#include <QHash>
+#include <optional>
 
 #include <QPersistentModelIndex>
 
@@ -13,11 +15,15 @@
 #include "qml_material/carousel/carousel_strategy.hpp"
 
 class QAbstractItemModel;
+QT_BEGIN_NAMESPACE
+class QQuickScale;
+QT_END_NAMESPACE
 
 namespace qml_material
 {
 
-class CarouselView : public QQuickItem {
+class CarouselItem;
+class QML_MATERIAL_API CarouselView : public QQuickItem {
     Q_OBJECT
     QML_ELEMENT
     QML_ATTACHED(CarouselAttached)
@@ -26,6 +32,7 @@ class CarouselView : public QQuickItem {
     Q_PROPERTY(QQmlComponent* delegate READ delegate WRITE setDelegate NOTIFY delegateChanged FINAL)
     Q_PROPERTY(int count READ count NOTIFY countChanged FINAL)
     Q_PROPERTY(int layout READ layout WRITE setLayout NOTIFY layoutChanged FINAL)
+    Q_PROPERTY(bool mirrored READ mirrored WRITE setMirrored NOTIFY mirroredChanged FINAL)
     Q_PROPERTY(
         int orientation READ orientation WRITE setOrientation NOTIFY orientationChanged FINAL)
     Q_PROPERTY(qreal itemExtent READ itemExtent WRITE setItemExtent NOTIFY itemExtentChanged FINAL)
@@ -57,6 +64,10 @@ class CarouselView : public QQuickItem {
     Q_PROPERTY(qreal contentWidth READ contentWidth NOTIFY contentWidthChanged FINAL)
     Q_PROPERTY(qreal contentHeight READ contentHeight NOTIFY contentHeightChanged FINAL)
     Q_PROPERTY(QQuickItem* flickable READ flickable CONSTANT FINAL)
+    Q_PROPERTY(bool wheelNavigationEnabled READ wheelNavigationEnabled WRITE
+                   setWheelNavigationEnabled NOTIFY wheelNavigationEnabledChanged FINAL)
+    Q_PROPERTY(bool wheelRequiresShift READ wheelRequiresShift WRITE setWheelRequiresShift NOTIFY
+                   wheelRequiresShiftChanged FINAL)
 
 public:
     explicit CarouselView(QQuickItem* parent = nullptr);
@@ -70,10 +81,13 @@ public:
     void           setDelegate(QQmlComponent* delegate);
     int            count() const;
 
-    int  layout() const;
-    void setLayout(int layout);
-    int  orientation() const;
-    void setOrientation(int orientation);
+    int           layout() const;
+    void          setLayout(int layout);
+    bool          mirrored() const { return m_mirrored; }
+    void          setMirrored(bool);
+    Q_SIGNAL void mirroredChanged();
+    int           orientation() const;
+    void          setOrientation(int orientation);
 
     qreal       itemExtent() const;
     void        setItemExtent(qreal extent);
@@ -106,6 +120,10 @@ public:
     qreal       contentWidth() const;
     qreal       contentHeight() const;
     QQuickItem* flickable() const;
+    bool        wheelNavigationEnabled() const { return m_wheelNavigationEnabled; }
+    void        setWheelNavigationEnabled(bool);
+    bool        wheelRequiresShift() const { return m_wheelRequiresShift; }
+    void        setWheelRequiresShift(bool);
 
     Q_INVOKABLE void incrementCurrentIndex();
     Q_INVOKABLE void decrementCurrentIndex();
@@ -114,8 +132,6 @@ public:
     Q_INVOKABLE void setCurrentIndexAnimated(int index);
     Q_INVOKABLE void focusCurrentItem();
     Q_INVOKABLE void claimInteractionFocus();
-    Q_INVOKABLE void engageTabFocus();
-    Q_INVOKABLE void suppressFocusRing();
 
     Q_SIGNAL void modelChanged();
     Q_SIGNAL void delegateChanged();
@@ -138,14 +154,16 @@ public:
     Q_SIGNAL void contentWidthChanged();
     Q_SIGNAL void contentHeightChanged();
     Q_SIGNAL void clicked(int index);
+    Q_SIGNAL void wheelNavigationEnabledChanged();
+    Q_SIGNAL void wheelRequiresShiftChanged();
 
 protected:
+    bool eventFilter(QObject*, QEvent*) override;
     void componentComplete() override;
     void geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry) override;
     void itemChange(ItemChange change, const ItemChangeData& value) override;
 
 private Q_SLOTS:
-    void onDelegateClicked();
     void onDelegateAspectRatioChanged();
     void onSnapTick();
     void onModelRowsChanged();
@@ -153,7 +171,14 @@ private Q_SLOTS:
                             const QList<int>& roles);
 
 private:
+    friend class CarouselItem;
+    bool        ownsDelegate(const QQuickItem*) const;
+    void        delegateFocusChanged(CarouselItem*);
+    void        engageTabFocus();
+    void        suppressFocusRing();
+    void        focusCurrentItem(Qt::FocusReason);
     void        syncCurrentIndexAfterCountChange();
+    void        updateCurrentIndex(int index);
     void        rebuildItems();
     void        updateLayout();
     void        updateCount();
@@ -164,8 +189,6 @@ private:
     void        cancelSnapAnimation();
     void        applySnapAnimation(qreal targetOffset);
     void        finishSnap(qreal targetOffset);
-    qreal       snapOffsetForIndex(int index) const;
-    void        syncScrollToIndex(int index);
     qreal       snapTargetForGesture(qreal offset, qreal velocity) const;
     int         snapIndexForOffset(qreal offset) const;
     int         snapIndexForFling(qreal offset, qreal velocity) const;
@@ -173,28 +196,29 @@ private:
     bool        usesFreeScrollSnap() const;
     QVariant    modelDataAt(int index) const;
     QVariantMap initialPropertiesForDelegate(int index) const;
-    void        applyDelegateProperties(QQuickItem* item, int index) const;
+    void        applyDelegateProperties(QQuickItem* item, int index);
     void        createDelegate(int index);
-    void        destroyDelegate(int index);
+    static void retireDelegate(QPointer<QQuickItem>);
     void        positionItem(QQuickItem* item, const CarouselItemGeometry& geom, bool isActive);
     int         activeIndexForLayout(const CarouselLayoutOutput& out) const;
     void        broadcastFocusRingState();
     void        completeKeyboardNavigation();
 
     QVariant                     m_model;
-    QQmlComponent*               m_delegate = nullptr;
+    QPointer<QQmlComponent>      m_delegate;
     QPointer<QAbstractItemModel> m_item_model;
     QPersistentModelIndex        m_current_model_index;
-    int                          m_count                 = 0;
-    int                          m_layout                = 0;
-    Qt::Orientation              m_orientation           = Qt::Horizontal;
-    qreal                        m_item_extent           = 180;
-    qreal                        m_min_small_item_width  = 40;
-    qreal                        m_max_small_item_width  = 56;
-    qreal                        m_item_corner_radius    = 28;
-    bool                         m_item_snapping         = true;
-    int                          m_current_index         = 0;
-    int                          m_initial_item          = 0;
+    int                          m_count                = 0;
+    int                          m_layout               = 0;
+    Qt::Orientation              m_orientation          = Qt::Horizontal;
+    qreal                        m_item_extent          = 180;
+    qreal                        m_min_small_item_width = 40;
+    qreal                        m_max_small_item_width = 56;
+    qreal                        m_item_corner_radius   = 28;
+    bool                         m_item_snapping        = true;
+    int                          m_current_index        = 0;
+    int                          m_initial_item         = 0;
+    std::optional<int>           m_pending_index;
     qreal                        m_spacing               = 8;
     qreal                        m_content_padding_start = 0;
     qreal                        m_content_padding_end   = 0;
@@ -213,20 +237,27 @@ private:
     class QTimer* m_snap_timer    = nullptr;
     QObject*      m_snap_anim     = nullptr;
 
-    QQuickItem*                   m_flickable = nullptr;
-    QQuickItem*                   m_content   = nullptr;
-    QVector<QQuickItem*>          m_items;
-    QVector<CarouselItemGeometry> m_geometries;
-    QVector<qreal>                m_snap_offsets;
-    QVector<qreal>                m_item_aspects;
-    qreal                         m_max_scroll_offset     = 0;
-    qreal                         m_end_snap_offset       = 0;
-    qreal                         m_scroll_step           = 0;
-    bool                          m_updating              = false;
-    bool                          m_focus_ring_suppressed = true;
-    bool                          m_tab_focus_engaged     = false;
-    bool                          m_keyboard_nav_pending  = false;
-    bool                          m_suppress_tab_engage   = false;
+    QQuickItem*                               m_flickable = nullptr;
+    QQuickItem*                               m_content   = nullptr;
+    QVector<QPointer<QQuickItem>>             m_items;
+    QVector<CarouselItemGeometry>             m_geometries;
+    QVector<qreal>                            m_snap_offsets;
+    QVector<qreal>                            m_item_aspects;
+    qreal                                     m_max_scroll_offset      = 0;
+    qreal                                     m_end_snap_offset        = 0;
+    qreal                                     m_scroll_step            = 0;
+    bool                                      m_updating               = false;
+    bool                                      m_focus_ring_suppressed  = true;
+    bool                                      m_tab_focus_engaged      = false;
+    bool                                      m_keyboard_nav_pending   = false;
+    quint64                                   m_revision               = 0;
+    quint64                                   m_configurationRevision  = 0;
+    bool                                      m_destroying             = false;
+    bool                                      m_wheelNavigationEnabled = false;
+    bool                                      m_wheelRequiresShift     = true;
+    bool                                      m_mirrored               = false;
+    QQuickScale*                              m_viewMirror             = nullptr;
+    QHash<QQuickItem*, QPointer<QQuickScale>> m_itemMirrors;
 };
 
 } // namespace qml_material

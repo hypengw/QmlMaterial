@@ -3,8 +3,7 @@
 #include "qml_material/token/color.hpp"
 namespace qml_material
 {
-TableViewDelegateState::TableViewDelegateState(QObject* parent)
-    : ButtonInteractionState(parent, FocusTreatment::Separate, PressSource::Pressed) {
+TableViewDelegateState::TableViewDelegateState(QObject* parent): ButtonInteractionState(parent) {
     m_selected.setBinding([this] {
         return itemSelected() || (item() && item()->isHighlighted());
     });
@@ -19,7 +18,7 @@ TableViewDelegateState::TableViewDelegateState(QObject* parent)
     base.bind(m_appearance.outlineColor, colorBinding(&MdColorMgr::outline_variant));
     base.bind(m_appearance.supportTextColor, colorBinding(&MdColorMgr::on_surface_variant));
     base.bind(m_appearance.stateLayerColor, colorBinding(&MdColorMgr::on_surface));
-    auto disabled = stateBindings(Interaction::Disabled);
+    auto disabled = disabledBindings();
     disabled.bind(m_appearance.elevation, [this]() -> qreal {
         return elevationTokens().level0;
     });
@@ -41,7 +40,7 @@ TableViewDelegateState::~TableViewDelegateState() { stopBindings(); }
 ItemDelegate* TableViewDelegateState::item() const {
     return static_cast<ItemDelegate*>(inputItem());
 }
-void            TableViewDelegateState::setItem(ItemDelegate* item) { setInputItem(item); }
+void            TableViewDelegateState::setItem(ItemDelegate* item) { setInputItem(item, {}, {}); }
 bool            TableViewDelegateState::itemSelected() const { return m_itemSelected.value(); }
 void            TableViewDelegateState::setItemSelected(bool value) { m_itemSelected = value; }
 QBindable<bool> TableViewDelegateState::bindableItemSelected() {

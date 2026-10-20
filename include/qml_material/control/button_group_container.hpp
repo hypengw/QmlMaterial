@@ -3,11 +3,13 @@
 #include "qml_material/control/container.hpp"
 #include "qml_material/core/enum.hpp"
 #include "qml_material/token/button_group.hpp"
-#include <QVariantAnimation>
+#include "qml_material/anim/spring_motion.hpp"
+#include "qml_material/input/interaction_source.hpp"
 
 namespace qml_material
 {
 class ButtonGroupContainerAttached;
+class ItemActivity;
 class QML_MATERIAL_API ButtonGroupContainer : public MaterialContainer {
     Q_OBJECT
     QML_NAMED_ELEMENT(ButtonGroupContainer)
@@ -18,6 +20,8 @@ class QML_MATERIAL_API ButtonGroupContainer : public MaterialContainer {
     Q_PROPERTY(qreal expandedRatio READ expandedRatio WRITE setExpandedRatio NOTIFY
                    expandedRatioChanged FINAL)
     Q_PROPERTY(int size READ buttonSize WRITE setButtonSize NOTIFY sizeChanged FINAL)
+    Q_PROPERTY(qml_material::token::SpringSpec widthSpringSpec READ widthSpringSpec WRITE
+                   setWidthSpringSpec NOTIFY widthSpringSpecChanged FINAL)
 public:
     enum Variant
     {
@@ -30,17 +34,20 @@ public:
     static ButtonGroupContainerAttached* qmlAttachedProperties(QObject*);
     Variant                              variant() const { return m_variant; }
     void                                 setVariant(Variant);
-    bool          animateWidth() const { return m_animateWidth.value_or(m_variant == Standard); }
-    void          setAnimateWidth(bool);
-    void          resetAnimateWidth();
-    qreal         expandedRatio() const { return m_expandedRatio; }
-    void          setExpandedRatio(qreal);
-    int           buttonSize() const { return m_size; }
-    void          setButtonSize(int);
-    Q_SIGNAL void variantChanged();
-    Q_SIGNAL void animateWidthChanged();
-    Q_SIGNAL void expandedRatioChanged();
-    Q_SIGNAL void sizeChanged();
+    bool  animateWidth() const { return m_animateWidth.value_or(m_variant == Standard); }
+    void  setAnimateWidth(bool);
+    void  resetAnimateWidth();
+    qreal expandedRatio() const { return m_expandedRatio; }
+    void  setExpandedRatio(qreal);
+    int   buttonSize() const { return m_size; }
+    void  setButtonSize(int);
+    token::SpringSpec widthSpringSpec() const { return m_widthSpringSpec; }
+    void              setWidthSpringSpec(token::SpringSpec);
+    Q_SIGNAL void     variantChanged();
+    Q_SIGNAL void     animateWidthChanged();
+    Q_SIGNAL void     expandedRatioChanged();
+    Q_SIGNAL void     sizeChanged();
+    Q_SIGNAL void     widthSpringSpecChanged();
 
 protected:
     bool  isContent(QQuickItem*) const override;
@@ -52,8 +59,9 @@ protected:
 private:
     Variant             m_variant = Standard;
     std::optional<bool> m_animateWidth;
-    qreal               m_expandedRatio = token::ButtonGroup::expandedRatio;
-    int                 m_size          = int(Enum::ButtonSize::S);
+    qreal               m_expandedRatio   = token::ButtonGroup::expandedRatio;
+    int                 m_size            = int(Enum::ButtonSize::S);
+    token::SpringSpec   m_widthSpringSpec = token::SpringScheme {}.fastSpatial();
 };
 
 class QML_MATERIAL_API ButtonGroupContainerAttached : public QObject {
@@ -97,28 +105,27 @@ public:
     bool          connected() const;
     bool          grouped() const { return owner() != nullptr; }
     int           buttonSize() const;
-    qreal         pressProgress() const { return m_progress; }
+    qreal         pressProgress() const { return m_motion.value(); }
     Q_SIGNAL void layoutChanged();
     Q_SIGNAL void contextChanged();
 
 private:
     friend class ButtonGroupContainer;
-    void                  setPosition(int);
-    void                  membershipChanged();
-    void                  updatePress();
-    void                  animateTo(qreal);
-    void                  stopAnimation();
-    ButtonGroupContainer* owner() const;
-    void                  restoreWidth();
-    bool                  m_managedWidth       = false;
-    bool                  m_originalWidthValid = false;
-    qreal                 m_originalWidth      = 0;
-    std::optional<qreal>  m_preferredWidth, m_compressionLimit, m_minimumWidth;
-    qreal                 m_defaultMinimumWidth = 0, m_weight = 0, m_defaultCompressionLimit = 0;
-    qreal                 m_progress = 0;
-    int                   m_position = int(Enum::ItemPosition::PosSingle);
-    QVariantAnimation     m_animation;
-    bool                  m_releasing = false;
+    void                   setPosition(int);
+    void                   membershipChanged();
+    void                   updatePress();
+    void                   stopAnimation();
+    ButtonGroupContainer*  owner() const;
+    void                   restoreWidth();
+    bool                   m_managedWidth       = false;
+    bool                   m_originalWidthValid = false;
+    qreal                  m_originalWidth      = 0;
+    std::optional<qreal>   m_preferredWidth, m_compressionLimit, m_minimumWidth;
+    qreal                  m_defaultMinimumWidth = 0, m_weight = 0, m_defaultCompressionLimit = 0;
+    int                    m_position = int(Enum::ItemPosition::PosSingle);
+    PressMotion            m_motion;
+    InteractionAccumulator m_interactions;
+    std::unique_ptr<ItemActivity>  m_activity;
     QList<QMetaObject::Connection> m_ownerConnections;
 };
 } // namespace qml_material

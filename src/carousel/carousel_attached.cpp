@@ -1,4 +1,5 @@
 #include "qml_material/carousel/carousel_attached.hpp"
+#include <QPointer>
 
 namespace qml_material
 {
@@ -34,8 +35,9 @@ void CarouselAttached::setContext(int count, int orientation, int currentIndex) 
     m_orientation            = orientation;
     m_current_index          = currentIndex;
     if (count_changed) {
+        const QPointer<CarouselAttached> guard(this);
         Q_EMIT contextChanged();
-        Q_EMIT focusRingChanged();
+        if (guard) Q_EMIT focusRingChanged();
     }
 }
 
@@ -66,8 +68,9 @@ void CarouselAttached::setGeometry(qreal width, qreal height, qreal maskStart, q
     m_index          = index;
     m_is_active      = isActive;
     if (changed) {
+        const QPointer<CarouselAttached> guard(this);
         Q_EMIT geometryChanged();
-        Q_EMIT focusRingChanged();
+        if (guard) Q_EMIT focusRingChanged();
     }
 }
 

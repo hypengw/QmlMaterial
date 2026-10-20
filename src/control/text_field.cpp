@@ -2,7 +2,6 @@
 #include "qml_material/util/qt.hpp"
 #include <QGuiApplication>
 #include <QStyleHints>
-#include <QMetaMethod>
 #include <QtQuick/private/qquicktextinput_p_p.h>
 #include <QtQuick/private/qquickclipnode_p.h>
 
@@ -24,13 +23,13 @@ public:
 };
 
 TextField::TextField(QQuickItem* parent)
-    : QQuickTextInput(*new TextFieldPrivate, parent), m_background(this) {
+    : QQuickTextInput(*new TextFieldPrivate, parent), m_background(this), m_input(this, [this] {
+          Q_EMIT interactionSourceChanged();
+      }) {
     QQuickTextInputPrivate::get(this)->setImplicitResizeEnabled(false);
     setAcceptedMouseButtons(Qt::AllButtons);
     setActiveFocusOnTab(true);
     setCursor(Qt::IBeamCursor);
-    m_hold_timer.setSingleShot(true);
-    connect(&m_hold_timer, &QTimer::timeout, this, &TextField::holdTimeout);
     const auto updateCursor = [this]() {
         setCursor(isReadOnly() && ! selectByMouse() ? Qt::ArrowCursor : Qt::IBeamCursor);
     };
@@ -64,6 +63,21 @@ TextField::TextField(QQuickItem* parent)
 }
 
 TextField::~TextField() = default;
+
+bool TextField::event(QEvent* event) {
+    if (! usesEditorInput()) {
+        const QPointer<TextField> guard(this);
+        const bool                handled = m_input.observeEvent(event);
+        return ! guard || handled ? true : QQuickTextInput::event(event);
+    }
+    return QtInputAdapter::deliverToEditor(m_input, event, [this, event] {
+        return QQuickTextInput::event(event);
+    });
+}
+void TextField::mouseUngrabEvent() {
+    QQuickTextInput::mouseUngrabEvent();
+    m_input.mouseUngrabbed();
+}
 
 QFont TextField::font() const {
     auto result = m_effective_font;
@@ -108,20 +122,16 @@ void TextField::componentComplete() {
     m_background.complete();
 }
 void TextField::itemChange(ItemChange change, const ItemChangeData& data) {
+    QPointer<TextField> life(this);
     QQuickTextInput::itemChange(change, data);
+    if (! life) return;
     if (change == ItemParentHasChanged || change == ItemSceneChange) {
-        cancelPress();
         if ((change == ItemParentHasChanged && data.item) ||
             (change == ItemSceneChange && data.window)) {
             QPointer<TextField> guard(this);
             resolveFont();
             if (guard) resolveHoverEnabled();
         }
-    }
-    if ((change == ItemEnabledHasChanged && ! isEnabled()) ||
-        (change == ItemVisibleHasChanged && ! isVisible())) {
-        cancelPress();
-        setHovered(false);
     }
 }
 void TextField::geometryChange(const QRectF& geometry, const QRectF& oldGeometry) {
@@ -156,14 +166,15 @@ void TextField::setFocusReason(Qt::FocusReason value) {
     Q_EMIT focusReasonChanged();
 }
 void TextField::focusInEvent(QFocusEvent* event) {
+    QPointer<TextField> guard(this);
     QQuickTextInput::focusInEvent(event);
-    setFocusReason(event->reason());
+    if (guard) setFocusReason(event->reason());
 }
 void TextField::focusOutEvent(QFocusEvent* event) {
+    QPointer<TextField> guard(this);
     QQuickTextInput::focusOutEvent(event);
-    setFocusReason(event->reason());
+    if (guard) setFocusReason(event->reason());
 }
-void TextField::setHovered(bool value) { m_hovered = value; }
 void TextField::resolveHoverEnabled() {
     if (! utils::canUpdateControlEnvironment() || m_requested_hover) return;
     inheritHoverEnabled(utils::inheritedHoverEnabled(this));
@@ -173,10 +184,8 @@ void TextField::inheritHoverEnabled(bool value) {
 }
 void TextField::updateHoverEnabled(bool value) {
     if (! utils::canUpdateControlEnvironment() || value == hoverEnabled()) return;
-    setAcceptHoverEvents(value);
+    m_input.setHoverEnabled(value);
     QPointer<TextField> guard(this);
-    if (! value) setHovered(false);
-    if (! guard) return;
     utils::propagateHoverEnabled(this, value);
     if (guard) Q_EMIT hoverEnabledChanged();
 }
@@ -190,12 +199,10 @@ void TextField::resetHoverEnabled() {
 }
 void TextField::hoverEnterEvent(QHoverEvent* event) {
     QQuickTextInput::hoverEnterEvent(event);
-    setHovered(hoverEnabled());
     event->ignore();
 }
 void TextField::hoverLeaveEvent(QHoverEvent* event) {
     QQuickTextInput::hoverLeaveEvent(event);
-    setHovered(false);
     event->ignore();
 }
 QSGNode* TextField::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data) {
@@ -209,115 +216,6 @@ QSGNode* TextField::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     auto text = QQuickTextInput::updatePaintNode(clip->firstChild(), data);
     if (text && ! text->parent()) clip->appendChildNode(text);
     return clip;
-}
-
-void TextField::cancelPress() {
-    m_hold_timer.stop();
-    m_delayed_press.reset();
-    m_pressed = false;
-    m_held    = false;
-    QQuickTextInput::mouseUngrabEvent();
-}
-void TextField::deliverPress() {
-    auto event = std::move(m_delayed_press);
-    if (event) QQuickTextInput::mousePressEvent(event.get());
-}
-void TextField::mousePressEvent(QMouseEvent* event) {
-    cancelPress();
-    m_pressed   = true;
-    m_press_pos = event->position();
-    if (event->button() == Qt::LeftButton) {
-        m_delayed_press.reset(event->clone());
-        m_hold_timer.start(QGuiApplication::styleHints()->mousePressAndHoldInterval());
-    }
-    QQuickMouseEvent mouse;
-    mouse.reset(m_press_pos.x(),
-                m_press_pos.y(),
-                event->button(),
-                event->buttons(),
-                event->modifiers(),
-                false,
-                false);
-    mouse.setAccepted(true);
-    QPointer<TextField> guard(this);
-    Q_EMIT pressed(&mouse);
-    if (! guard) return;
-    event->setAccepted(mouse.isAccepted());
-    if (! mouse.isAccepted()) {
-        cancelPress();
-        return;
-    }
-    if (m_pressed && event->button() != Qt::LeftButton && event->button() != Qt::RightButton)
-        QQuickTextInput::mousePressEvent(event);
-}
-void TextField::mouseMoveEvent(QMouseEvent* event) {
-    if (! m_pressed || m_held) return;
-    if (qAbs(event->position().x() - m_press_pos.x()) >
-        QGuiApplication::styleHints()->startDragDistance())
-        m_hold_timer.stop();
-    if (m_hold_timer.isActive()) return;
-    QPointer<TextField> guard(this);
-    deliverPress();
-    if (! guard || ! m_pressed) return;
-    if (event->buttons().testFlag(Qt::LeftButton)) QQuickTextInput::mouseMoveEvent(event);
-}
-void TextField::mouseReleaseEvent(QMouseEvent* event) {
-    if (! m_pressed) return;
-    m_hold_timer.stop();
-    QQuickMouseEvent mouse;
-    mouse.reset(m_press_pos.x(),
-                m_press_pos.y(),
-                event->button(),
-                event->buttons(),
-                event->modifiers(),
-                false,
-                false);
-    mouse.setAccepted(true);
-    QPointer<TextField> guard(this);
-    Q_EMIT released(&mouse);
-    if (! guard) return;
-    event->setAccepted(mouse.isAccepted());
-    if (m_pressed && ! m_held && mouse.isAccepted() && event->button() != Qt::RightButton) {
-        deliverPress();
-        if (! guard) return;
-        if (m_pressed) QQuickTextInput::mouseReleaseEvent(event);
-        if (! guard) return;
-    }
-    cancelPress();
-}
-void TextField::mouseDoubleClickEvent(QMouseEvent* event) {
-    m_hold_timer.stop();
-    QPointer<TextField> guard(this);
-    deliverPress();
-    if (! guard) return;
-    if (event->button() == Qt::LeftButton) QQuickTextInput::mouseDoubleClickEvent(event);
-}
-void TextField::mouseUngrabEvent() { cancelPress(); }
-void TextField::holdTimeout() {
-    if (! m_pressed) return;
-    if (! isSignalConnected(QMetaMethod::fromSignal(&TextField::pressAndHold))) {
-        deliverPress();
-        return;
-    }
-    QQuickMouseEvent mouse;
-    mouse.reset(m_press_pos.x(),
-                m_press_pos.y(),
-                Qt::LeftButton,
-                Qt::LeftButton,
-                m_delayed_press ? m_delayed_press->modifiers() : Qt::NoModifier,
-                false,
-                true);
-    mouse.setAccepted(true);
-    m_held = true;
-    QPointer<TextField> guard(this);
-    Q_EMIT pressAndHold(&mouse);
-    if (! guard || ! m_pressed) return;
-    if (mouse.isAccepted())
-        m_delayed_press.reset();
-    else {
-        m_held = false;
-        deliverPress();
-    }
 }
 
 } // namespace qml_material

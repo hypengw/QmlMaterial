@@ -10,6 +10,7 @@ MD.TabButtonBase {
     property bool inlineLabel: true
     readonly property bool _stacked: !inlineLabel && iconStyle === MD.Enum.IconAndText && hasIcon && text.length > 0
     readonly property bool hasIcon: !icon.empty
+    selected: MD.TabBar.tabBar?.currentItem === control
 
     property MD.StateTabButton mdState: MD.StateTabButton {
         item: control
@@ -21,7 +22,7 @@ MD.TabButtonBase {
         Behavior on textColor {
             enabled: control._motion.enabled
             ColorAnimation {
-                duration: control.checked ? MD.Token.duration.short4 : MD.Token.duration.short2
+                duration: control.selected ? MD.Token.duration.short4 : MD.Token.duration.short2
                 easing: MD.Token.easing.standard
             }
         }
@@ -97,10 +98,8 @@ MD.TabButtonBase {
     background: MD.Ripple {
         implicitHeight: control._stacked ? 72 : 48
 
-        pressX: control.pressX
-        pressY: control.pressY
-        pressed: control.pressed
-        stateOpacity: control.mdState.stateLayerOpacity
+        interactionSource: control.interactionSource
+        indication: control.mdState.indication
         color: control.mdState.stateLayerColor
         // opacity: control.mdState.backgroundOpacity
     }

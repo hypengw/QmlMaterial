@@ -1,26 +1,50 @@
 #include "qml_material/input/time_dial.hpp"
 #include "qml_material/token/time_picker.hpp"
-#include <QGuiApplication>
-#include <QStyleHints>
-#include <QQuickWindow>
-#include <QMouseEvent>
-#include <QTouchEvent>
 #include <QKeyEvent>
 #include <cmath>
 #include <numbers>
 
 namespace qml_material
 {
-TimeDial::TimeDial(QQuickItem* parent): QQuickItem(parent) {
+TimeDial::TimeDial(QQuickItem* parent)
+    : QQuickItem(parent), m_input(this, [this] {
+          Q_EMIT interactionSourceChanged();
+      }) {
     setAcceptedMouseButtons(Qt::LeftButton);
     setAcceptTouchEvents(true);
     setActiveFocusOnTab(true);
-    connect(this, &QQuickItem::enabledChanged, this, [this] {
-        if (! isEnabled()) cancel();
-    });
-    connect(this, &QQuickItem::visibleChanged, this, [this] {
-        if (! isVisible()) cancel();
-    });
+    m_input.acceptsInput = [this] {
+        return m_time && m_time->acceptableInput() && radius() > 0;
+    };
+    m_input.click().pointerStarted = [this](const PointerInput&) {
+        forceActiveFocus(Qt::MouseFocusReason);
+    };
+    m_input.click().pointerClicked = [this](QPointF point) {
+        update(point, true);
+    };
+    m_input.click().clicked = [this] {
+        m_time->setSelection(m_time->selection() == TimeState::Hours ? TimeState::Minutes
+                                                                     : TimeState::Hours);
+    };
+    auto& drag = m_input.drag();
+    drag.moved = [this](QPointF point) {
+        update(point, false);
+    };
+    drag.finished = [this](QPointF point, bool cancelled) {
+        if (cancelled || ! m_time) return;
+        const QPointer<TimeDial> guard(this);
+        const auto               revision = m_revision;
+        update(point, false);
+        if (guard && revision == m_revision && m_time)
+            select(m_time->selection() == TimeState::Hours
+                       ? (m_time->is24Hour() ? m_time->hour() : m_time->hour() % 12)
+                       : m_time->minute(),
+                   true);
+    };
+}
+TimeDial::~TimeDial() {
+    disconnect(m_changed);
+    disconnect(m_destroyed);
 }
 void TimeDial::setTime(TimeState* time) {
     if (time == m_time) return;
@@ -82,108 +106,52 @@ QVariantList TimeDial::labels() const {
     }
     return result;
 }
-bool TimeDial::begin(const QPointF& point) {
-    if (m_active || ! m_time || ! isEnabled() || ! m_time->acceptableInput() || radius() <= 0)
-        return false;
-    m_start                     = point;
-    m_moved                     = false;
-    m_active                    = true;
-    const auto         revision = ++m_revision;
-    QPointer<TimeDial> guard(this);
-    forceActiveFocus(Qt::MouseFocusReason);
-    if (guard && m_active && revision == m_revision) Q_EMIT pressedChanged();
-    return guard && m_active && revision == m_revision;
-}
-void TimeDial::update(const QPointF& point, bool complete) {
-    if (! m_active || ! m_time) return;
+void TimeDial::update(const QPointF& point, bool tap) {
+    if (! m_time) return;
     const auto  offset   = point - QPointF(width() / 2, height() / 2);
     const qreal distance = std::hypot(offset.x(), offset.y());
-    m_moved |=
-        (point - m_start).manhattanLength() > QGuiApplication::styleHints()->startDragDistance();
+    if (distance < 8) return;
     qreal angle = std::atan2(offset.x(), -offset.y()) * 180 / std::numbers::pi;
     if (angle < 0) angle += 360;
     const bool minutes = m_time->selection() == TimeState::Minutes;
-    int        value   = minutes ? int(std::round(angle / (complete && ! m_moved ? 30 : 6))) *
-                                       (complete && ! m_moved ? 5 : 1) % 60
+    int        value   = minutes ? int(std::round(angle / (tap ? 30 : 6))) * (tap ? 5 : 1) % 60
                                  : int(std::round(angle / 30)) % 12;
     if (! minutes && m_time->is24Hour() && distance <= radius() * .66 + 12) value += 12;
-    QPointer<TimeDial>        guard(this);
-    const QPointer<TimeState> time = m_time;
-    if (complete) {
-        const auto revision = m_revision;
-        cancel();
-        if (! guard || m_revision != revision + 1 || time != m_time || ! time) return;
-    }
-    if (distance < 8) return;
-    const bool format    = time->is24Hour();
-    const auto selection = time->selection();
-    const int  expectedValue =
-        minutes ? time->hour() * 60 + value
-                : (format ? value : value % 12 + time->period() * 12) * 60 + time->minute();
+    select(value, tap);
+}
+void TimeDial::select(int value, bool complete) {
+    if (! m_time) return;
+    const QPointer<TimeState> time(m_time);
+    const bool                format    = time->is24Hour();
+    const auto                selection = time->selection();
+    const int                 expectedValue =
+        selection == TimeState::Minutes
+            ? time->hour() * 60 + value
+            : (format ? value : value % 12 + time->period() * 12) * 60 + time->minute();
+    const auto         revision = m_revision;
+    QPointer<TimeDial> guard(this);
     m_updating = true;
     time->selectDial(value, complete);
     if (! guard) return;
     m_updating = false;
-    if (m_active && (! time || time != m_time || time->value() != expectedValue ||
-                     time->selection() != selection || time->is24Hour() != format))
+    if (! complete &&
+        (revision != m_revision || ! time || time != m_time || time->value() != expectedValue ||
+         time->selection() != selection || time->is24Hour() != format))
         cancel();
 }
 void TimeDial::cancel() {
     ++m_revision;
-    m_touchId = -1;
-    setKeepMouseGrab(false);
-    setKeepTouchGrab(false);
-    if (! m_active) return;
-    m_active = false;
-    Q_EMIT pressedChanged();
+    m_input.cancel();
 }
-void TimeDial::mousePressEvent(QMouseEvent* event) {
-    if (event->source() != Qt::MouseEventNotSynthesized || event->button() != Qt::LeftButton) {
-        event->ignore();
-        return;
-    }
+bool TimeDial::event(QEvent* event) {
     QPointer<TimeDial> guard(this);
-    if (begin(event->position()) && guard) {
-        setKeepMouseGrab(true);
-        event->accept();
-    } else
-        event->ignore();
+    const bool         handled = m_input.event(event);
+    return ! guard || handled || QQuickItem::event(event);
 }
-void TimeDial::mouseMoveEvent(QMouseEvent* event) { update(event->position(), false); }
-void TimeDial::mouseReleaseEvent(QMouseEvent* event) { update(event->position(), true); }
-void TimeDial::mouseUngrabEvent() { cancel(); }
-void TimeDial::touchUngrabEvent() { cancel(); }
-void TimeDial::touchEvent(QTouchEvent* event) {
-    if (event->type() == QEvent::TouchCancel) {
-        cancel();
-        event->accept();
-        return;
-    }
-    if (event->type() == QEvent::TouchBegin) {
-        if (event->points().isEmpty()) {
-            event->ignore();
-            return;
-        }
-        const auto         point = event->points().first();
-        QPointer<TimeDial> guard(this);
-        if (! begin(point.position()) || ! guard) {
-            event->ignore();
-            return;
-        }
-        m_touchId = point.id();
-        setKeepTouchGrab(true);
-    }
-    for (const auto& point : event->points()) {
-        if (point.id() != m_touchId) continue;
-        if (point.state() != QEventPoint::State::Pressed)
-            update(point.position(), point.state() == QEventPoint::State::Released);
-        event->accept();
-        return;
-    }
-    event->ignore();
-}
+void TimeDial::touchUngrabEvent() { m_input.touchUngrabbed(); }
+void TimeDial::mouseUngrabEvent() { m_input.mouseUngrabbed(); }
 void TimeDial::keyPressEvent(QKeyEvent* event) {
-    if (! m_time || ! isEnabled()) {
+    if (! m_input.available()) {
         event->ignore();
         return;
     }
@@ -199,33 +167,16 @@ void TimeDial::keyPressEvent(QKeyEvent* event) {
                            : m_time->is24Hour()                      ? 23
                                                                      : 11);
         break;
-    case Qt::Key_Return:
-    case Qt::Key_Enter:
-    case Qt::Key_Space:
-        m_time->setSelection(m_time->selection() == TimeState::Hours ? TimeState::Minutes
-                                                                     : TimeState::Hours);
-        break;
     case Qt::Key_Escape: cancel(); break;
     default: event->ignore(); break;
     }
 }
 void TimeDial::geometryChange(const QRectF& now, const QRectF& before) {
+    QPointer<TimeDial> guard(this);
     QQuickItem::geometryChange(now, before);
+    if (! guard) return;
+    cancel();
+    if (! guard) return;
     Q_EMIT metricsChanged();
-}
-void TimeDial::itemChange(ItemChange change, const ItemChangeData& data) {
-    QQuickItem::itemChange(change, data);
-    if (change == ItemParentHasChanged || change == ItemSceneChange) {
-        QPointer<TimeDial> guard(this);
-        cancel();
-        if (! guard) return;
-        if (change == ItemSceneChange) {
-            disconnect(m_windowActive);
-            if (data.window)
-                m_windowActive = connect(data.window, &QWindow::activeChanged, this, [this] {
-                    if (! window() || ! window()->isActive()) cancel();
-                });
-        }
-    }
 }
 } // namespace qml_material

@@ -60,10 +60,13 @@ Item {
                         text: root.width >= 700 ? root.presetLabels[index] : ''
                         icon.name: root.width < 700 ? root.presetIcons[index] : ''
                         checked: root.presetIndex === index
-                        onClicked: root.presetIndex = index
+                        onCheckedChangeRequested: value => {
+                            if (value)
+                                root.presetIndex = index;
+                        }
                         Accessible.name: root.presetNames[index]
                         MD.ToolTip.text: root.presetNames[index]
-                        MD.ToolTip.visible: hovered
+                        MD.ToolTip.visible: mdState.interactions.hovered
                     }
                 }
             }
@@ -85,10 +88,13 @@ Item {
                         objectName: 'clockShapeChoice' + index
                         width: 64
                         checked: root.shapeIndex === index
-                        onClicked: root.shapeIndex = index
+                        onCheckedChangeRequested: value => {
+                            if (value)
+                                root.shapeIndex = index;
+                        }
                         Accessible.name: root.shapeNames[index]
                         MD.ToolTip.text: root.shapeNames[index]
-                        MD.ToolTip.visible: hovered
+                        MD.ToolTip.visible: mdState.interactions.hovered
                         contentItem: Item {
                             implicitWidth: 24
                             implicitHeight: 24
@@ -118,14 +124,20 @@ Item {
                 width: 128
                 text: 'Solid'
                 checked: !root.transparentStyle
-                onClicked: root.transparentStyle = false
+                onCheckedChangeRequested: value => {
+                    if (value)
+                        root.transparentStyle = false;
+                }
             }
             MD.SegmentedButton {
                 objectName: 'clockTransparentChoice'
                 width: 144
                 text: 'Transparent'
                 checked: root.transparentStyle
-                onClicked: root.transparentStyle = true
+                onCheckedChangeRequested: value => {
+                    if (value)
+                        root.transparentStyle = true;
+                }
             }
         }
         Flow {
@@ -140,14 +152,20 @@ Item {
                     width: 104
                     text: 'Live'
                     checked: !root.fixedTime
-                    onClicked: root.fixedTime = false
+                    onCheckedChangeRequested: value => {
+                        if (value)
+                            root.fixedTime = false;
+                    }
                 }
                 MD.SegmentedButton {
                     objectName: 'clockFixedChoice'
                     width: 104
                     text: 'Fixed'
                     checked: root.fixedTime
-                    onClicked: root.fixedTime = true
+                    onCheckedChangeRequested: value => {
+                        if (value)
+                            root.fixedTime = true;
+                    }
                 }
             }
             MD.SegmentedButtonGroup {
@@ -159,21 +177,30 @@ Item {
                     width: 96
                     text: 'Auto'
                     checked: root.formatIndex === 0
-                    onClicked: root.formatIndex = 0
+                    onCheckedChangeRequested: value => {
+                        if (value)
+                            root.formatIndex = 0;
+                    }
                 }
                 MD.SegmentedButton {
                     objectName: 'clock12HourChoice'
                     width: 96
                     text: '12h'
                     checked: root.formatIndex === 1
-                    onClicked: root.formatIndex = 1
+                    onCheckedChangeRequested: value => {
+                        if (value)
+                            root.formatIndex = 1;
+                    }
                 }
                 MD.SegmentedButton {
                     objectName: 'clock24HourChoice'
                     width: 96
                     text: '24h'
                     checked: root.formatIndex === 2
-                    onClicked: root.formatIndex = 2
+                    onCheckedChangeRequested: value => {
+                        if (value)
+                            root.formatIndex = 2;
+                    }
                 }
             }
         }
@@ -184,7 +211,7 @@ Item {
                 spacing: 8
                 MD.Switch {
                     checked: root.seconds
-                    onToggled: root.seconds = checked
+                    onCheckedChangeRequested: value => root.seconds = value
                     Accessible.name: 'Seconds'
                 }
                 MD.Label {
@@ -197,7 +224,7 @@ Item {
                 visible: root.presetIndex === 4 || root.presetIndex === 5
                 MD.Switch {
                     checked: root.period
-                    onToggled: root.period = checked
+                    onCheckedChangeRequested: value => root.period = value
                     Accessible.name: 'Period'
                 }
                 MD.Label {
@@ -210,7 +237,7 @@ Item {
                 visible: root.presetIndex !== 0 && root.presetIndex !== 3
                 MD.Switch {
                     checked: root.date
-                    onToggled: root.date = checked
+                    onCheckedChangeRequested: value => root.date = value
                     Accessible.name: 'Date'
                 }
                 MD.Label {
@@ -223,7 +250,7 @@ Item {
                 visible: root.presetIndex === 4 || root.presetIndex === 5
                 MD.Switch {
                     checked: root.showAlarm
-                    onToggled: root.showAlarm = checked
+                    onCheckedChangeRequested: value => root.showAlarm = value
                     Accessible.name: 'Alarm'
                 }
                 MD.Label {

@@ -3,7 +3,7 @@
 #include <QQmlComponent>
 #include <qqml.h>
 #include "qml_material/control/panel.hpp"
-#include "qml_material/control/abstract_button.hpp"
+#include "qml_material/control/command_button.hpp"
 
 namespace qml_material
 {
@@ -66,15 +66,15 @@ public:
     int                             count() const { return m_buttons.size(); }
     Qt::Alignment                   alignment() const { return m_alignment; }
     void                            setAlignment(Qt::Alignment);
-    Q_INVOKABLE AbstractButton*     standardButton(int) const;
-    Q_INVOKABLE AbstractButton*     itemAt(int) const;
-    Q_INVOKABLE void                addItem(AbstractButton*);
-    Q_INVOKABLE void                removeItem(AbstractButton*);
+    Q_INVOKABLE CommandButton*      standardButton(int) const;
+    Q_INVOKABLE CommandButton*      itemAt(int) const;
+    Q_INVOKABLE void                addItem(CommandButton*);
+    Q_INVOKABLE void                removeItem(CommandButton*);
     Q_SIGNAL void                   standardButtonsChanged();
     Q_SIGNAL void                   delegateChanged();
     Q_SIGNAL void                   countChanged();
     Q_SIGNAL void                   alignmentChanged();
-    Q_SIGNAL void                   clicked(AbstractButton*);
+    Q_SIGNAL void                   clicked(CommandButton*);
     Q_SIGNAL void                   accepted();
     Q_SIGNAL void                   rejected();
     Q_SIGNAL void                   applied();
@@ -87,18 +87,18 @@ protected:
     void updatePolish() override;
 
 private:
-    void                                 rebuild();
-    void                                 observe();
-    void                                 activate(AbstractButton*);
-    QPointer<QQmlComponent>              m_delegate;
-    QHash<int, QPointer<AbstractButton>> m_standard_items;
-    QList<QPointer<AbstractButton>>      m_buttons;
-    QList<QMetaObject::Connection>       m_connections;
-    int                                  m_standard_buttons = NoButton;
-    Qt::Alignment                        m_alignment        = Qt::AlignRight;
-    bool                                 m_complete         = false;
-    bool                                 m_rebuilding       = false;
-    quint64                              m_observation      = 0;
+    void                                rebuild();
+    void                                observe();
+    void                                activate(CommandButton*);
+    QPointer<QQmlComponent>             m_delegate;
+    QHash<int, QPointer<CommandButton>> m_standard_items;
+    QList<QPointer<CommandButton>>      m_buttons;
+    QList<QMetaObject::Connection>      m_connections;
+    int                                 m_standard_buttons = NoButton;
+    Qt::Alignment                       m_alignment        = Qt::AlignRight;
+    bool                                m_complete         = false;
+    bool                                m_rebuilding       = false;
+    quint64                             m_observation      = 0;
 };
 class QML_MATERIAL_API DialogButtonBoxAttached : public QObject {
     Q_OBJECT

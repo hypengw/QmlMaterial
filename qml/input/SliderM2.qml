@@ -34,9 +34,9 @@ MD.SliderBase {
         x: control.leftPadding + (control.horizontal ? control.visualPosition * (control.availableWidth - width) : (control.availableWidth - width) / 2)
         y: control.topPadding + (control.horizontal ? (control.availableHeight - height) / 2 : control.visualPosition * (control.availableHeight - height))
         value: control.value
-        handleHasFocus: control.visualFocus
-        handlePressed: control.pressed
-        handleHovered: control.hovered
+        handleHasFocus: control.focusVisible
+        handlePressed: (control.mdState.interactions.pressed || control.mdState.interactions.dragged)
+        handleHovered: control.mdState.interactions.hovered
     }
 
     background: Item {

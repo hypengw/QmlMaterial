@@ -55,7 +55,7 @@ void Dialog::setStandardButtons(int value) {
     }
     Q_EMIT standardButtonsChanged();
 }
-AbstractButton* Dialog::standardButton(int button) const {
+CommandButton* Dialog::standardButton(int button) const {
     for (auto item : { footer(), header() }) {
         if (auto box = qobject_cast<DialogButtonBox*>(item)) {
             if (auto found = box->standardButton(button)) return found;

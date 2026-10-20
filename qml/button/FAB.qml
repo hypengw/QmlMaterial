@@ -1,12 +1,14 @@
 import QtQuick
 import Qcm.Material as MD
 
-MD.ButtonBase {
+MD.CommandButtonBase {
     id: control
 
     property int color: MD.Enum.FABColorPrimary
+    property bool flat: false
     property QtObject flickable: null
     property MD.StateFAB mdState: MD.StateFAB {
+        focusIndicationEnabled: false
         item: control
     }
 
@@ -16,8 +18,6 @@ MD.ButtonBase {
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
-
-    flat: false
 
     topInset: 0
     bottomInset: 0
@@ -67,16 +67,14 @@ MD.ButtonBase {
         MD.Ripple {
             anchors.fill: parent
             radius: parent.radius
-            pressX: control.pressX
-            pressY: control.pressY
-            pressed: control.pressed
-            stateOpacity: control.mdState.stateLayerOpacity
+            interactionSource: control.interactionSource
+            indication: control.mdState.indication
             color: control.mdState.stateLayerColor
         }
 
         MD.FocusIndicator {
             corners: MD.Util.corners(parent.radius)
-            active: control.visualFocus
+            active: control.focusVisible
         }
     }
 

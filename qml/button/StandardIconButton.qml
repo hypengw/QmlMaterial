@@ -1,17 +1,17 @@
 import QtQuick
 import Qcm.Material as MD
 
-MD.ButtonBase {
+MD.CommandButtonBase {
     id: control
 
     property MD.StateStandardIconButton mdState: MD.StateStandardIconButton {
+        focusIndicationEnabled: false
         item: control
     }
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
-    flat: true
     topInset: 4
     bottomInset: 4
     leftInset: 4
@@ -49,22 +49,17 @@ MD.ButtonBase {
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
 
-        border.width: control.type == MD.Enum.IBtOutlined ? 1 : 0
-        border.color: control.mdState.ctx.color.outline
-
         MD.Ripple {
             anchors.fill: parent
             radius: control.backgroundRadius
-            pressX: control.pressX
-            pressY: control.pressY
-            pressed: control.pressed
-            stateOpacity: control.mdState.stateLayerOpacity
+            interactionSource: control.interactionSource
+            indication: control.mdState.indication
             color: control.mdState.stateLayerColor
         }
 
         MD.FocusIndicator {
             corners: MD.Util.corners(control.backgroundRadius)
-            active: control.visualFocus
+            active: control.focusVisible
         }
     }
 }

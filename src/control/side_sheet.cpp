@@ -1,13 +1,45 @@
 #include "qml_material/control/side_sheet.hpp"
 #include <algorithm>
 #include <cmath>
+#include <utility>
 
 namespace qml_material
 {
-SideSheet::SideSheet(QQuickItem* parent): Control(parent), m_sheet(new Panel(this)) {
+SideSheet::SideSheet(QQuickItem* parent)
+    : Control(parent), m_sheet(new Panel(this)), m_input(m_sheet) {
     setClip(true);
     m_sheet->setVisible(false);
     m_sheet->setZ(1);
+    m_input.acceptsInput = [this] {
+        return m_draggable && isEnabled() && m_state != Hidden;
+    };
+    m_input.click().keyboardEnabled = false;
+    auto& drag                      = m_input.drag();
+    drag.axes                       = Qt::Horizontal;
+    drag.started                    = [this](QPointF point) {
+        m_lastPoint = m_sheet->mapToItem(this, point);
+        const QPointer<SideSheet> guard(this);
+        const bool                accepted = beginDrag();
+        if (guard && ! accepted) m_input.cancelActivation();
+    };
+    drag.moved = [this](QPointF point) {
+        const auto local = m_sheet->mapToItem(this, point);
+        const auto delta = local - std::exchange(m_lastPoint, local);
+        dragBy(delta);
+    };
+    drag.finished = [this](QPointF point, bool cancelled) {
+        if (cancelled) {
+            cancelDrag();
+            return;
+        }
+        const auto velocity =
+            m_sheet->mapToItem(this, m_input.drag().velocity) - m_sheet->mapToItem(this, QPointF());
+        const auto                local = m_sheet->mapToItem(this, point);
+        const QPointer<SideSheet> guard(this);
+        dragBy(local - m_lastPoint);
+        if (guard) releaseDrag(velocity);
+    };
+    m_input.observeChildPointerInput();
     connect(this, &Control::mirroredChanged, this, &SideSheet::configurationUpdated);
     connect(this, &Control::paddingChanged, this, &SideSheet::updateLayout);
     connect(this, &Control::contentItemChanged, this, &SideSheet::updateLayout);
@@ -91,6 +123,8 @@ void SideSheet::updateLayout() {
 
 void SideSheet::configurationUpdated() {
     QPointer<SideSheet> guard(this);
+    m_input.cancelActivation();
+    if (! guard) return;
     cancelDrag();
     if (! guard) return;
     updateLayout();

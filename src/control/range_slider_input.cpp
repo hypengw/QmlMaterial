@@ -1,4 +1,5 @@
 #include "qml_material/control/range_slider.hpp"
+#include "qml_material/input/slider_key.hpp"
 #include "qml_material/util/qt.hpp"
 
 #include <QGuiApplication>
@@ -8,6 +9,8 @@
 #include <QTouchEvent>
 #include <QKeyEvent>
 #include <QWheelEvent>
+#include <QHoverEvent>
+#include <QFocusEvent>
 #include <algorithm>
 #include <cmath>
 
@@ -17,9 +20,9 @@ RangeSliderNode::~RangeSliderNode() { utils::disconnectAll(m_handleConnections);
 qreal RangeSliderNode::visualPosition() const {
     return m_owner->inverted() ? 1 - position() : position();
 }
-bool RangeSliderNode::pressed() const { return m_owner->activeHandle() == m_index; }
-bool RangeSliderNode::focused() const {
-    return m_owner->visualFocus() && m_owner->focusedHandle() == m_index;
+void RangeSliderNode::setInteractionSource(InteractionSource* source) {
+    const QPointer<RangeSliderNode> guard(this);
+    if (m_owner->prepareChange() && guard) m_input.setSource(source);
 }
 qreal RangeSliderNode::implicitHandleWidth() const {
     return m_handle ? m_handle->implicitWidth() : 0;
@@ -85,8 +88,9 @@ int                   RangeSlider::focusedHandle() const { return m_state.value(
 void                  RangeSlider::setOrientation(Qt::Orientation v) {
     if ((v != Qt::Horizontal && v != Qt::Vertical) || v == orientation() || ! prepareChange())
         return;
-    auto next        = m_state.value();
-    next.orientation = v;
+    auto next                   = m_state.value();
+    next.orientation            = v;
+    m_first.m_input.drag().axes = m_second.m_input.drag().axes = v;
     publish(next);
 }
 void RangeSlider::setLive(bool v) {
@@ -137,14 +141,18 @@ qreal RangeSlider::positionAt(const QPointF& point) const {
 
 bool RangeSlider::prepareChange() { return finish(true); }
 bool RangeSlider::finish(bool cancelled) {
-    if (m_input == Input::None) return true;
-    const int  index    = activeHandle();
-    const bool started  = m_started;
-    m_started           = false;
-    m_input             = Input::None;
-    m_touchId           = -1;
-    m_key               = 0;
-    const auto sequence = ++m_sequence;
+    if (activeHandle() < 0 && m_pointerIndex < 0 && m_keys.isEmpty()) return true;
+    const int  index   = activeHandle();
+    const bool started = std::exchange(m_started, false);
+    m_pointerIndex     = -1;
+    m_dragging         = false;
+    m_keys.clear();
+    const auto                  generation = ++m_generation;
+    const QPointer<RangeSlider> guard(this);
+    m_first.m_input.cancelActivation();
+    if (! guard || generation != m_generation) return false;
+    m_second.m_input.cancelActivation();
+    if (! guard || generation != m_generation) return false;
     setKeepMouseGrab(false);
     setKeepTouchGrab(false);
     auto next          = m_state.value();
@@ -152,146 +160,87 @@ bool RangeSlider::finish(bool cancelled) {
     const qreal length = span(next);
     for (int i = 0; i < 2; ++i)
         next.positions[i] = length > 0 ? distance(next, next.values[i]) / length : 0;
-    QPointer<RangeSlider> guard(this);
     publish(next);
-    if (guard && started) Q_EMIT interactionFinished(index, cancelled);
-    return guard && m_sequence == sequence;
+    if (! guard || generation != m_generation) return false;
+    if (started) Q_EMIT interactionFinished(index, cancelled);
+    return guard && generation == m_generation;
 }
 bool RangeSlider::activate(int index) {
-    auto next = m_state.value();
-    if (next.active == index) return true;
-    next.active = next.focused     = index;
-    const auto            sequence = m_sequence;
-    QPointer<RangeSlider> guard(this);
+    if (activeHandle() == index) return true;
+    auto next   = m_state.value();
+    next.active = next.focused             = index;
+    const auto                  generation = m_generation;
+    const QPointer<RangeSlider> guard(this);
     publish(next);
-    if (! guard || m_sequence != sequence) return false;
+    if (! guard || generation != m_generation) return false;
     m_started = true;
     Q_EMIT interactionStarted(index);
-    return guard && m_sequence == sequence;
+    return guard && generation == m_generation;
 }
-int RangeSlider::pickHandle(qreal p, bool release) const {
+int RangeSlider::pickHandle(qreal p) const {
     if (activeHandle() >= 0) return activeHandle();
     const qreal a = nodePosition(0), b = nodePosition(1);
     const qreal da = std::abs(p - a), db = std::abs(p - b);
-    const qreal slop = QGuiApplication::styleHints()->startDragDistance();
-    if (std::abs(a - b) * trackLength() <= slop &&
-        std::max(std::abs(m_pressPosition - a), std::abs(m_pressPosition - b)) * trackLength() <=
-            slop) {
-        if (std::abs(p - m_pressPosition) * trackLength() <= slop)
-            return release ? focusedHandle() : -1;
-        return p < m_pressPosition ? 0 : 1;
-    }
-    return da == db ? focusedHandle() : da < db ? 0 : 1;
+    if (da == db) return a > p ? 0 : 1;
+    return da < db ? 0 : 1;
 }
 void RangeSlider::moveTo(qreal p, bool release) {
-    const int index = pickHandle(p, release);
+    const int index = activeHandle();
     if (index < 0) return;
-    if (! activate(index)) return;
-    auto        next        = m_state.value();
-    const qreal length      = span(next);
-    const qreal other       = distance(next, next.values[1 - index]);
-    const qreal lower       = index == 0 ? 0 : std::min(length, other + next.effective);
-    const qreal upper       = index == 0 ? std::max(qreal(0), other - next.effective) : length;
-    const qreal continuous  = std::clamp(p * length, lower, upper);
-    const qreal snapped     = nearest(next, continuous, lower, upper);
-    const qreal oldPosition = next.positions[index];
-    const qreal oldValue    = next.values[index];
-    if (next.live || release) next.values[index] = value(next, snapped);
-    const bool snap                = release || next.snap == SnapAlways || m_input == Input::Key;
-    next.positions[index]          = length > 0 ? (snap ? snapped : continuous) / length : 0;
-    const auto            sequence = m_sequence;
-    QPointer<RangeSlider> guard(this);
-    publish(next);
-    if (! guard || m_sequence != sequence) return;
-    if (oldPosition != next.positions[index] || oldValue != next.values[index])
-        Q_EMIT node(index)->moved();
-    if (! guard || m_sequence != sequence) return;
-    if (release) finish(false);
+    auto        next   = m_state.value();
+    const qreal length = span(next);
+    if (next.live || release || ! m_keys.isEmpty()) {
+        next.values[index] = value(next, constrainOffset(next, index, p * length, true));
+        requestChange(next);
+    } else {
+        const qreal offset    = constrainOffset(next, index, p * length, next.snap == SnapAlways);
+        next.positions[index] = length > 0 ? offset / length : 0;
+        publish(next);
+    }
 }
-void RangeSlider::mousePressEvent(QMouseEvent* event) {
-    if (event->button() != Qt::LeftButton || m_input != Input::None ||
-        event->source() == Qt::MouseEventSynthesizedByQt) {
+void RangeSlider::finishPointer(bool cancelled) {
+    if (m_pointerIndex < 0) return;
+    const QPointer<RangeSlider> guard(this);
+    const auto                  generation = m_generation;
+    if (! cancelled) moveTo(positionAt(m_point), true);
+    if (guard && generation == m_generation) finish(cancelled);
+}
+void RangeSlider::pointerEvent(QEvent* event, int index) {
+    if (index < 0 || index > 1 || ! m_keys.isEmpty()) {
         event->ignore();
         return;
     }
-    event->accept();
-    m_input                        = Input::Mouse;
-    m_pressPoint                   = event->position();
-    m_pressPosition                = positionAt(m_pressPoint);
-    const auto            sequence = ++m_sequence;
-    QPointer<RangeSlider> guard(this);
-    if (focusPolicy() & Qt::ClickFocus) forceActiveFocus(Qt::MouseFocusReason);
-    if (! guard || m_sequence != sequence) return;
-    setKeepMouseGrab(true);
-    moveTo(m_pressPosition, false);
+    node(index)->m_input.event(event);
 }
-void RangeSlider::mouseMoveEvent(QMouseEvent* event) {
-    event->setAccepted(m_input == Input::Mouse);
-    if (m_input == Input::Mouse) moveTo(positionAt(event->position()), false);
+void RangeSlider::mousePressEvent(QMouseEvent* event) {
+    if (m_pointerIndex >= 0 || ! m_keys.isEmpty()) {
+        event->ignore();
+        return;
+    }
+    pointerEvent(event, pickHandle(positionAt(event->position())));
 }
-void RangeSlider::mouseReleaseEvent(QMouseEvent* event) {
-    const bool accepted = m_input == Input::Mouse && event->button() == Qt::LeftButton;
-    event->setAccepted(accepted);
-    if (accepted) moveTo(positionAt(event->position()), true);
-}
+void RangeSlider::mouseMoveEvent(QMouseEvent* event) { pointerEvent(event, m_pointerIndex); }
+void RangeSlider::mouseReleaseEvent(QMouseEvent* event) { pointerEvent(event, m_pointerIndex); }
 void RangeSlider::mouseUngrabEvent() {
-    if (m_input == Input::Mouse) finish(true);
+    if (m_pointerIndex >= 0) node(m_pointerIndex)->m_input.mouseUngrabbed();
 }
 void RangeSlider::touchUngrabEvent() {
-    if (m_input == Input::Touch) finish(true);
+    if (m_pointerIndex >= 0) node(m_pointerIndex)->m_input.touchUngrabbed();
 }
 void RangeSlider::touchEvent(QTouchEvent* event) {
-    if (event->type() == QEvent::TouchCancel) {
-        event->accept();
-        if (m_input == Input::Touch) finish(true);
-        return;
-    }
-    if (m_input == Input::None) {
-        for (const auto& point : event->points()) {
-            if (point.state() != QEventPoint::Pressed || ! contains(point.position())) continue;
-            m_input = Input::Touch;
-            ++m_sequence;
-            m_touchId       = point.id();
-            m_pressPoint    = point.position();
-            m_pressPosition = positionAt(m_pressPoint);
-            event->accept();
-            return;
-        }
-    }
-    event->setAccepted(m_input == Input::Touch);
-    if (m_input != Input::Touch) return;
-    for (const auto& point : event->points()) {
-        if (point.id() != m_touchId) continue;
-        const bool release = point.state() == QEventPoint::Released;
-        if (! release && point.state() != QEventPoint::Updated) return;
-        if (! keepTouchGrab() && ! release) {
-            const QPointF delta     = point.position() - m_pressPoint;
-            const qreal   primary   = std::abs(horizontal() ? delta.x() : delta.y());
-            const qreal   cross     = std::abs(horizontal() ? delta.y() : delta.x());
-            const qreal   threshold = QGuiApplication::styleHints()->startDragDistance();
-            if (cross > threshold && cross > primary) {
-                event->ignore();
-                finish(true);
-                return;
-            }
-            if (primary <= threshold) return;
-            setKeepTouchGrab(true);
-        }
-        const auto            sequence = m_sequence;
-        QPointer<RangeSlider> guard(this);
-        if (focusPolicy() & Qt::ClickFocus) forceActiveFocus(Qt::MouseFocusReason);
-        if (guard && m_sequence == sequence) moveTo(positionAt(point.position()), release);
-        return;
-    }
+    int index = m_pointerIndex;
+    if (index < 0 && event->type() == QEvent::TouchBegin && ! event->points().isEmpty())
+        index = pickHandle(positionAt(event->points().first().position()));
+    pointerEvent(event, index);
 }
 void RangeSlider::keyPressEvent(QKeyEvent* event) {
     const int key = event->key();
-    if (key == Qt::Key_Escape && m_input != Input::None) {
+    if (key == Qt::Key_Escape && activeHandle() >= 0) {
         event->accept();
         finish(true);
         return;
     }
-    if (m_input != Input::None && m_input != Input::Key) {
+    if (! isEnabled() || ! isVisible() || m_pointerIndex >= 0) {
         event->ignore();
         return;
     }
@@ -300,44 +249,38 @@ void RangeSlider::keyPressEvent(QKeyEvent* event) {
             event->ignore();
             return;
         }
-        const bool backwards =
-            key == Qt::Key_Backtab || event->modifiers().testFlag(Qt::ShiftModifier);
-        const int index = focusedHandle() + (backwards ? -1 : 1);
+        const int index =
+            focusedHandle() +
+            ((key == Qt::Key_Backtab || event->modifiers().testFlag(Qt::ShiftModifier)) ? -1 : 1);
         event->setAccepted(index >= 0 && index <= 1);
         if (event->isAccepted()) setFocusedHandle(index);
         return;
     }
-    const bool arrow = horizontal() ? key == Qt::Key_Left || key == Qt::Key_Right
-                                    : key == Qt::Key_Up || key == Qt::Key_Down;
-    if (! arrow && key != Qt::Key_Home && key != Qt::Key_End) {
+    const auto state = m_state.value();
+    const auto p     = sliderKeyPosition(key,
+                                         state.positions[state.focused],
+                                         span(state) > 0 ? state.step / span(state) : 0,
+                                         state.orientation,
+                                         inverted());
+    if (! p) {
         event->ignore();
         return;
     }
     event->accept();
-    if (m_input == Input::None) {
-        m_input = Input::Key;
-        ++m_sequence;
-    }
-    m_key = key;
-    if (! activate(focusedHandle())) return;
-    const auto state = m_state.value();
-    qreal      p     = state.positions[state.focused];
-    if (key == Qt::Key_Home || key == Qt::Key_End)
-        p = key == Qt::Key_Home ? 0 : 1;
-    else if (span(state) > 0) {
-        const bool forward =
-            horizontal() ? (key == Qt::Key_Right) != mirrored() : key == Qt::Key_Up;
-        p += (forward ? 1 : -1) * (state.step > 0 ? state.step : .1) / span(state);
-    }
-    moveTo(p, false);
+    m_keys.insert(key);
+    ++m_generation;
+    if (activate(focusedHandle())) moveTo(*p, false);
 }
 void RangeSlider::keyReleaseEvent(QKeyEvent* event) {
-    const bool accepted = m_input == Input::Key && event->key() == m_key;
+    const bool accepted = m_keys.contains(event->key());
     event->setAccepted(accepted);
-    if (accepted && ! event->isAutoRepeat()) moveTo(nodePosition(activeHandle()), true);
+    if (! accepted || event->isAutoRepeat()) return;
+    m_keys.remove(event->key());
+    if (m_keys.isEmpty()) finish(false);
 }
 void RangeSlider::wheelEvent(QWheelEvent* event) {
-    if (! wheelEnabled() || m_input != Input::None || event->angleDelta().isNull()) {
+    if (! wheelEnabled() || ! isEnabled() || ! isVisible() || activeHandle() >= 0 ||
+        event->angleDelta().isNull()) {
         event->ignore();
         return;
     }
@@ -345,23 +288,50 @@ void RangeSlider::wheelEvent(QWheelEvent* event) {
     const QPoint angle = event->angleDelta();
     const qreal  delta = (std::abs(angle.y()) >= std::abs(angle.x()) ? angle.y() : angle.x()) *
                          (event->inverted() ? -1 : 1) / 120.;
-    m_input            = Input::Key;
-    ++m_sequence;
+    ++m_generation;
     if (! activate(focusedHandle())) return;
-    const auto state = m_state.value();
+    const auto                  state = m_state.value();
+    const QPointer<RangeSlider> guard(this);
+    const auto                  generation = m_generation;
     moveTo(state.positions[state.focused] +
                (span(state) > 0 ? delta * (state.step > 0 ? state.step : .1) / span(state) : 0),
            true);
+    if (guard && generation == m_generation) finish(false);
 }
+void RangeSlider::syncFocus() {
+    const QPointer<RangeSlider> guard(this);
+    m_first.m_input.setFocusEnabled(focusedHandle() == 0);
+    if (guard) m_second.m_input.setFocusEnabled(focusedHandle() == 1);
+}
+bool RangeSlider::event(QEvent* event) {
+    if (event->type() == QEvent::FocusIn || event->type() == QEvent::FocusOut) {
+        const QPointer<RangeSlider> guard(this);
+        m_first.m_input.observeEvent(event);
+        if (! guard) return true;
+        m_second.m_input.observeEvent(event);
+        if (! guard) return true;
+    }
+    return Control::event(event);
+}
+void RangeSlider::hoverAt(const QPointF& point, bool entered) {
+    const QPointer<RangeSlider> guard(this);
+    for (int i = 0; i < 2; ++i) {
+        auto* handle = node(i)->handle();
+        node(i)->m_input.observeHover(entered && handle &&
+                                      handle->contains(handle->mapFromItem(this, point)));
+        if (! guard) return;
+    }
+}
+void RangeSlider::hoverEnterEvent(QHoverEvent* event) { hoverAt(event->position(), true); }
+void RangeSlider::hoverMoveEvent(QHoverEvent* event) { hoverAt(event->position(), true); }
+void RangeSlider::hoverLeaveEvent(QHoverEvent*) { hoverAt({}, false); }
 void RangeSlider::focusOutEvent(QFocusEvent* event) {
-    QPointer<RangeSlider> guard(this);
-    Control::focusOutEvent(event);
-    if (guard && m_input == Input::Key) finish(true);
+    const QPointer<RangeSlider> guard(this);
+    QQuickItem::focusOutEvent(event);
+    if (guard && ! m_keys.isEmpty()) finish(true);
 }
 void RangeSlider::focusInEvent(QFocusEvent* event) {
-    QPointer<RangeSlider> guard(this);
-    Control::focusInEvent(event);
-    if (! guard) return;
+    QQuickItem::focusInEvent(event);
     if (event->reason() == Qt::TabFocusReason)
         setFocusedHandle(0);
     else if (event->reason() == Qt::BacktabFocusReason)
@@ -369,13 +339,13 @@ void RangeSlider::focusInEvent(QFocusEvent* event) {
 }
 void RangeSlider::observeWindow() {
     disconnect(m_windowConnection);
-    if (auto win = window())
+    if (auto* win = window())
         m_windowConnection = connect(win, &QWindow::activeChanged, this, [this, win] {
             if (! win->isActive()) finish(true);
         });
 }
 void RangeSlider::itemChange(ItemChange change, const ItemChangeData& data) {
-    QPointer<RangeSlider> guard(this);
+    const QPointer<RangeSlider> guard(this);
     Control::itemChange(change, data);
     if (! guard) return;
     if (change == ItemSceneChange) observeWindow();

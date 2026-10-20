@@ -10,11 +10,12 @@ Item {
 
     // ---- Public Ripple API (mirrors Ripple2.qml) ----
     property real stateOpacity: 0
-    property bool pressed: false
-    property real pressX: width / 2
-    property real pressY: height / 2
 
-    property alias color: m_back.color
+    property color color: "transparent"
+    property MD.InteractionSource interactionSource: null
+    property alias indication: motion.indication
+    property real pressOpacity: MD.Token.state.pressed.state_layer_opacity
+    property bool animationsEnabled: true
     property alias corners: m_back.corners
     property alias radius: m_back.radius
 
@@ -25,7 +26,7 @@ Item {
     property bool debugEnabled: false
     property real debugProgress: 0.5      // 0..1 ripple expansion
     property real debugPhase: 5.0         // noise / turbulence phase
-    property real debugTouchX: -1         // <0 → fall back to root.pressX
+    property real debugTouchX: -1         // <0 uses the center
     property real debugTouchY: -1
     property real debugOpacity: 0.12      // shader visibility while debug
     property real debugBackOpacity: 0.12  // state-layer tint while debug
@@ -36,24 +37,20 @@ Item {
     clip: false
 
     // ---- Constants ported from rippleshadergm.cpp ----
-    readonly property int _animDuration: 1500
-    readonly property int _noiseAnimDuration: 7000
-    // MAX_NOISE_PHASE = NOISE_ANIMATION_DURATION / 214
-    readonly property real _maxNoisePhase: _noiseAnimDuration / 214.0
     readonly property real _scale: 1.5
     readonly property real _piRotateRight: Math.PI * 0.0078125
     readonly property real _piRotateLeft: Math.PI * -0.0078125
 
     // ---- Internal animated state ----
-    property real _progress: 0
-    property real _phase: 0
-    property real _runtimeOpacity: 0
+    readonly property real _progress: motion.progress
+    readonly property real _phase: motion.phase
+    readonly property real _runtimeOpacity: motion.rippleOpacity
 
     readonly property real _shaderOpacity: debugEnabled ? debugOpacity : _runtimeOpacity
     readonly property real _activeProgress: debugEnabled ? debugProgress : _progress
     readonly property real _activePhase: debugEnabled ? debugPhase : _phase
-    readonly property real _activeTouchX: (debugEnabled && debugTouchX >= 0) ? debugTouchX : pressX
-    readonly property real _activeTouchY: (debugEnabled && debugTouchY >= 0) ? debugTouchY : pressY
+    readonly property real _activeTouchX: debugEnabled ? (debugTouchX >= 0 ? debugTouchX : width / 2) : motion.origin.x
+    readonly property real _activeTouchY: debugEnabled ? (debugTouchY >= 0 ? debugTouchY : height / 2) : motion.origin.y
     readonly property real _maxCorner: Math.min(root.width, root.height) * 0.5
     readonly property vector4d _shaderCorners: Qt.vector4d(root._clampCorner(root.corners.bottomRight), root._clampCorner(root.corners.topRight), root._clampCorner(root.corners.bottomLeft), root._clampCorner(root.corners.topLeft))
 
@@ -70,15 +67,14 @@ Item {
         return Math.max(Math.hypot(tx, ty), Math.hypot(w - tx, ty), Math.hypot(tx, h - ty), Math.hypot(w - tx, h - ty));
     }
 
-    // The "state layer": uniform tint covering the whole shape. This is what
-    // gives a pressed Material control its shape-conforming look — the
-    // sparkle wave on top is just the dynamic accent. Without it, the eye
-    // sees only the circular wave (which is genuinely circular by design).
-    MD.Rectangle {
-        id: m_back
-        anchors.fill: parent
-        color: "transparent"
-        opacity: (root.debugEnabled && root.debugBackOpacity >= 0) ? root.debugBackOpacity : root.stateOpacity
+    MD.RippleMotion {
+        id: motion
+        target: root
+        interactionSource: root.interactionSource
+        stateOpacity: root.stateOpacity
+        pressOpacity: root.pressOpacity
+        color: root.color
+        enabled: root.animationsEnabled && !root.debugEnabled
     }
 
     ShaderEffect {
@@ -108,7 +104,7 @@ Item {
         property vector2d in_tRotation2: Qt.vector2d(Math.cos(_ph * root._piRotateLeft + 2.0 * Math.PI), Math.sin(_ph * root._piRotateLeft + 2.0 * Math.PI))
         property vector2d in_tRotation3: Qt.vector2d(Math.cos(_ph * root._piRotateRight + 2.75 * Math.PI), Math.sin(_ph * root._piRotateRight + 2.75 * Math.PI))
 
-        property color in_color: root.color
+        property color in_color: root.debugEnabled ? root.color : motion.ink
         property color in_sparkleColor: Qt.rgba(1, 1, 1, 0.5)
         property vector2d in_size: Qt.vector2d(root.width, root.height)
         property vector4d in_corners: root._shaderCorners
@@ -117,81 +113,10 @@ Item {
         fragmentShader: "qrc:/Qcm/Material/assets/shader/ripple.frag.qsb"
     }
 
-    // Sawtooth phase animator → noise + turbulence; only runs while the
-    // shader is actually visible and we're not in debug-frozen mode.
-    NumberAnimation {
-        id: phaseAnim
-        target: root
-        property: "_phase"
-        from: 0
-        to: root._maxNoisePhase
-        duration: root._noiseAnimDuration
-        loops: Animation.Infinite
-        running: !root.debugEnabled && root._runtimeOpacity > 0
-    }
-
-    SequentialAnimation {
-        id: pressAnim
-        NumberAnimation {
-            target: root
-            property: "_progress"
-            to: 0.4
-            duration: 450
-            easing.type: Easing.OutCubic
-        }
-    }
-
-    SequentialAnimation {
-        id: releaseAnim
-        NumberAnimation {
-            target: root
-            property: "_progress"
-            to: 1.0
-            duration: 350
-            easing.type: Easing.OutCubic
-        }
-        PropertyAction {
-            target: root
-            property: "_progress"
-            value: 0
-        }
-    }
-
-    SequentialAnimation {
-        id: m_fade
-        running: false
-        onStopped: {
-            m_back.opacity = Qt.binding(function () {
-                return root.stateOpacity;
-            });
-        }
-        NumberAnimation {
-            target: m_back
-            to: root.stateOpacity
-            duration: 150
-            property: "opacity"
-        }
-        NumberAnimation {
-            target: root
-            to: 0
-            duration: 150
-            property: "_runtimeOpacity"
-        }
-    }
-
-    onPressedChanged: {
-        if (root.debugEnabled)
-            return;
-        if (pressed) {
-            releaseAnim.stop();
-            m_fade.stop();
-            m_back.opacity = 0.12;
-            root._runtimeOpacity = 0.12;
-            pressAnim.start();
-        } else {
-            pressAnim.stop();
-            releaseAnim.start();
-            m_fade.start();
-        }
+    MD.Rectangle {
+        id: m_back
+        anchors.fill: parent
+        color: root.debugEnabled ? root.color : motion.ink
+        opacity: root.debugEnabled ? (root.debugBackOpacity >= 0 ? root.debugBackOpacity : root.stateOpacity) : motion.opacity
     }
 }

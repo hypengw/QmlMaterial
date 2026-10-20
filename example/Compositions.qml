@@ -9,7 +9,7 @@ MD.Page {
     padding: 0
 
     contentItem: MD.VerticalFlickable {
-        pressDelay: 0
+        MD.NestedScroll.pressDelay: 0
         topMargin: 24
         bottomMargin: 24
         Column {
@@ -44,7 +44,7 @@ MD.Page {
                     icon.name: MD.Token.icon.restart_alt
                     Accessible.name: 'Restore notifications'
                     MD.ToolTip.text: 'Restore notifications'
-                    MD.ToolTip.visible: hovered
+                    MD.ToolTip.visible: mdState.interactions.hovered
                     onClicked: notifications.feed.reset()
                 }
             }
@@ -72,14 +72,20 @@ MD.Page {
                         width: 128
                         text: 'Compact'
                         checked: !media.expanded
-                        onClicked: media.expanded = false
+                        onCheckedChangeRequested: value => {
+                            if (value)
+                                media.expanded = false;
+                        }
                     }
                     MD.SegmentedButton {
                         objectName: 'mediaExpandedChoice'
                         width: 128
                         text: 'Expanded'
                         checked: media.expanded
-                        onClicked: media.expanded = true
+                        onCheckedChangeRequested: value => {
+                            if (value)
+                                media.expanded = true;
+                        }
                     }
                 }
             }

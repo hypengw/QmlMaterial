@@ -36,14 +36,20 @@ Item {
                 width: 104
                 text: '12h'
                 checked: root.time.hourFormat === MD.TimeState.Hour12
-                onClicked: root.time.hourFormat = MD.TimeState.Hour12
+                onCheckedChangeRequested: value => {
+                    if (value)
+                        root.time.hourFormat = MD.TimeState.Hour12;
+                }
             }
             MD.SegmentedButton {
                 objectName: 'picker24HourChoice'
                 width: 104
                 text: '24h'
                 checked: root.time.hourFormat === MD.TimeState.Hour24
-                onClicked: root.time.hourFormat = MD.TimeState.Hour24
+                onCheckedChangeRequested: value => {
+                    if (value)
+                        root.time.hourFormat = MD.TimeState.Hour24;
+                }
             }
         }
         MD.TimePicker {

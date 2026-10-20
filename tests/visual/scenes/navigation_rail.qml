@@ -61,7 +61,7 @@ Item {
                 expand: true
                 icon.name: modelData.icon ?? ''
                 text: modelData.name ?? ''
-                checked: index === 1
+                selected: index === 1
             }
         }
     }
@@ -75,25 +75,19 @@ Item {
         MD.RailItem {
             width: 96
             iconStyle: MD.Enum.IconOnly
-            action: MD.Action {
-                text: 'Settings'
-                tooltip: 'Configure application'
-                icon.name: MD.Token.icon.settings
-                checkable: true
-                checked: true
-            }
+            text: 'Settings'
+            MD.ToolTip.text: 'Configure application'
+            icon.name: MD.Token.icon.settings
+            selected: true
         }
 
         MD.RailItem {
             expand: true
             iconStyle: MD.Enum.IconOnly
-            action: MD.Action {
-                text: 'Search'
-                tooltip: 'Search library'
-                icon.name: MD.Token.icon.search
-                checkable: true
-                checked: true
-            }
+            text: 'Search'
+            MD.ToolTip.text: 'Search library'
+            icon.name: MD.Token.icon.search
+            selected: true
         }
     }
 }

@@ -3,6 +3,7 @@
 #include <QVector>
 #include <Qt>
 #include "qml_material/token/duration.hpp"
+#include "qml_material/export.hpp"
 
 namespace qml_material
 {
@@ -72,7 +73,7 @@ struct CarouselLayoutOutput {
     int            leading_index     = 0;
 };
 
-class CarouselStrategy {
+class QML_MATERIAL_API CarouselStrategy {
 public:
     static auto compute(const CarouselLayoutInput& input) -> CarouselLayoutOutput;
 };

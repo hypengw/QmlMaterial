@@ -6,36 +6,13 @@ import Qcm.Material.Layouts as Lite
 MD.MenuItemBase {
     id: control
 
-    property Item arrow
-    onClicked: {
-        if (subMenu) {
-            if (menu) {
-                menu.openSubMenu(subMenu, control);
-            } else {
-                subMenu.parent = control;
-                subMenu.preferredPlacement = MD.PopupBase.Trailing;
-                subMenu.anchorAlignment = MD.PopupBase.Start;
-                subMenu.openFor(control);
-            }
-        } else {
-            triggered();
-        }
-    }
-
+    property alias arrow: defaultStyle.arrow
     property bool selected: false
-    readonly property int busy: {
-        const a = control.action;
-        if (a instanceof MD.Action)
-            return (a as MD.Action).busy;
-        return MD.Enum.Idle;
-    }
-    readonly property real progress: {
-        const a = control.action;
-        if (a instanceof MD.Action)
-            return (a as MD.Action).progress;
-        return 0;
-    }
-    property MD.StateMenuItem mdState: MD.StateMenuItem {
+    property bool highlighted: false
+    property int busy: MD.Enum.Idle
+    property real progress: 0
+    property MD.MenuItemStyle mdState: MD.MenuItemStyle {
+        id: defaultStyle
         item: control
     }
     Binding {
@@ -52,25 +29,7 @@ MD.MenuItemBase {
     icon.width: 24
     icon.height: 24
     icon.color: control.leadingIconColor
-    icon.fill: control.checked
-
-    /*
-    indicator: CheckIndicator {
-        x: control.text ? (control.mirrored ? control.width - width - control.rightPadding : control.leftPadding) : control.leftPadding + (control.availableWidth - width) / 2
-        y: control.topPadding + (control.availableHeight - height) / 2
-        visible: control.checkable
-        control: control
-        checkState: control.checked ? Qt.Checked : Qt.Unchecked
-    }
-    */
-
-    arrow: MD.Icon {
-        parent: content_layout
-
-        visible: control.subMenu
-        size: 24
-        name: MD.Token.icon.arrow_right
-    }
+    icon.fill: control.selected
 
     property MD.typescale typescale: MD.Token.typescale.label_large
     font.capitalization: Font.MixedCase
@@ -78,75 +37,8 @@ MD.MenuItemBase {
     font.weight: typescale.weight
     font.letterSpacing: typescale.tracking
 
-    contentItem: Lite.Row {
-        id: content_layout
-        opacity: control.mdState.contentOpacity
-        alignment: Qt.AlignVCenter
-        spacing: control.spacing
-
-        Item {
-            implicitWidth: Math.max(m_leading_icon.implicitWidth, m_leading_loader.implicitWidth)
-            implicitHeight: Math.max(m_leading_icon.implicitHeight, m_leading_loader.implicitHeight)
-            visible: !control.icon.empty || m_leading_loader.active
-
-            MD.IconView {
-                id: m_leading_icon
-                anchors.centerIn: parent
-                visible: !icon.empty && !m_leading_loader.active
-                icon: control.icon
-            }
-
-            MD.Loader {
-                id: m_leading_loader
-                anchors.centerIn: parent
-                active: control.busy !== MD.Enum.Idle
-                visible: active
-                sourceComponent: m_loading_comp
-            }
-        }
-
-        MD.Label {
-            text: control.text
-            color: control.mdState.textColor
-            useTypescale: false
-            font: control.font
-            lineHeight: control.typescale.line_height
-            wrapMode: Text.NoWrap
-            Lite.Layout.fillWidth: true
-        }
-
-        Component {
-            id: m_loading_comp
-            MD.CircularIndicator {
-                anchors.centerIn: parent
-                indeterminate: control.busy !== MD.Enum.Progress
-                running: control.busy !== MD.Enum.Progress
-                value: control.progress
-                strokeWidth: 2
-                implicitWidth: {
-                    const w = Math.min(control.icon.width, control.icon.height);
-                    return w - 6;
-                }
-                implicitHeight: implicitWidth
-            }
-        }
-    }
-
-    background: Rectangle {
-        implicitWidth: 200
-        implicitHeight: 48
-        color: control.mdState.backgroundColor
-
-        MD.Ripple {
-            anchors.fill: parent
-            radius: parent.radius
-            pressX: control.pressX
-            pressY: control.pressY
-            pressed: control.pressed
-            stateOpacity: control.mdState.stateLayerOpacity
-            color: control.mdState.stateLayerColor
-        }
-    }
+    contentItem: mdState.contentItem
+    background: mdState.background
 
     property color leadingIconColor: control.mdState.leadingIconColor
     property color trailingIconColor: control.mdState.trailingIconColor

@@ -1,39 +1,35 @@
 #pragma once
 
-#include <QJSValue>
-#include "qml_material/control/abstract_button.hpp"
+#include "qml_material/control/button_control.hpp"
 
 namespace qml_material
 {
-class QML_MATERIAL_API CheckBox : public AbstractButton {
+class QML_MATERIAL_API CheckBox : public ButtonControl {
     Q_OBJECT
     QML_NAMED_ELEMENT(CheckBoxBase)
     Q_PROPERTY(bool tristate READ isTristate WRITE setTristate NOTIFY tristateChanged BINDABLE
                    bindableTristate FINAL)
     Q_PROPERTY(Qt::CheckState checkState READ checkState WRITE setCheckState NOTIFY
-                   checkStateChanged FINAL)
-    Q_PROPERTY(QJSValue nextCheckState READ nextCheckStateCallback WRITE setNextCheckStateCallback
-                   NOTIFY nextCheckStateChanged FINAL)
+                   checkStateChanged BINDABLE bindableCheckState FINAL)
 public:
-    explicit CheckBox(QQuickItem* parent = nullptr);
-    bool            isTristate() const { return m_tristate; }
-    void            setTristate(bool);
-    QBindable<bool> bindableTristate() { return QBindable<bool>(&m_tristate); }
-    Qt::CheckState  checkState() const { return m_state; }
-    void            setCheckState(Qt::CheckState);
-    QJSValue        nextCheckStateCallback() const { return m_callback; }
-    void            setNextCheckStateCallback(const QJSValue&);
-    Q_SIGNAL void   tristateChanged();
-    Q_SIGNAL void   checkStateChanged();
-    Q_SIGNAL void   nextCheckStateChanged();
+    explicit CheckBox(QQuickItem* parent = nullptr): ButtonControl(parent) {}
+    bool                      isTristate() const { return m_tristate; }
+    void                      setTristate(bool value) { m_tristate = value; }
+    QBindable<bool>           bindableTristate() { return QBindable<bool>(&m_tristate); }
+    Qt::CheckState            checkState() const { return m_state; }
+    void                      setCheckState(Qt::CheckState);
+    QBindable<Qt::CheckState> bindableCheckState() { return &m_state; }
+    Q_INVOKABLE void          requestCheckState(Qt::CheckState);
+    Q_SIGNAL void             tristateChanged();
+    Q_SIGNAL void             checkStateChanged();
+    Q_SIGNAL void             checkStateChangeRequested(Qt::CheckState checkState);
 
 protected:
-    void nextCheckState() override;
+    void activate() override;
 
 private:
     Q_OBJECT_BINDABLE_PROPERTY(CheckBox, bool, m_tristate, &CheckBox::tristateChanged)
-    bool           m_syncing = false;
-    Qt::CheckState m_state   = Qt::Unchecked;
-    QJSValue       m_callback;
+    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(CheckBox, Qt::CheckState, m_state, Qt::Unchecked,
+                                         &CheckBox::checkStateChanged)
 };
 } // namespace qml_material

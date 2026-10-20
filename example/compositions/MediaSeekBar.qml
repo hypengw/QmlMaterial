@@ -9,7 +9,12 @@ MD.SliderBase {
     property bool seekAvailable: true
     property bool listening: true
     property real playbackPosition: 0
-    readonly property real previewPosition: valueAt(position)
+    readonly property real previewPosition: previewValue
+    readonly property bool seeking: feedback.pressed || feedback.dragged
+    MD.InteractionObserver {
+        id: feedback
+        source: root.interactionSource
+    }
     signal seekRequested(real position)
     implicitWidth: 180
     implicitHeight: 48
@@ -21,10 +26,7 @@ MD.SliderBase {
     enabled: seekAvailable
     live: false
     value: playbackPosition
-    onMoved: if (!pressed && value !== playbackPosition)
-        seekRequested(value)
-    onPressedChanged: if (!pressed && value !== playbackPosition)
-        seekRequested(value)
+    onValueChangeRequested: requestedValue => seekRequested(requestedValue)
     Accessible.name: 'Playback position'
 
     handle: Rectangle {
@@ -40,14 +42,14 @@ MD.SliderBase {
         objectName: 'mediaWave'
         Accessible.ignored: true
         progress: root.position
-        animate: root.playing && !root.pressed && root.listening
+        animate: root.playing && !root.seeking && root.listening
         animationsEnabled: root.animationsEnabled
         transitionEnabled: !root.seekAvailable
         color: root.MD.MProp.color.primary
     }
     MD.FocusIndicator {
         corners: MD.Util.corners(8)
-        active: root.visualFocus
+        active: root.focusVisible
         inset: true
     }
 }

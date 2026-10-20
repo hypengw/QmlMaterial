@@ -98,8 +98,10 @@ MD.Page {
                         text: 'Create'
                     }
 
-                    onClicked: function (model) {
-                        root.pageIndex = model.index;
+                    onCurrentIndexChangeRequested: index => {
+                        root.pageIndex = index;
+                        if (m_rail.useModal)
+                            m_rail.close();
                     }
 
                     // theme panel only fits the expanded rail
@@ -121,7 +123,7 @@ MD.Page {
                                     collapsedIconStyle: MD.Enum.IconOnly
                                     text: modelData.name
                                     icon.name: modelData.icon
-                                    onClicked: {
+                                    onSelectionRequested: {
                                         if (m_rail.useModal)
                                             m_rail.close();
                                         root.openUtilityPopup(modelData.source);
@@ -148,42 +150,25 @@ MD.Page {
 
                                 MD.Switch {
                                     checked: !MD.Token.isDarkTheme
-                                    onToggled: {
-                                        const tk = MD.Token;
-                                        if (tk.isDarkTheme) {
-                                            tk.themeMode = MD.Enum.Light;
-                                        } else {
-                                            tk.themeMode = MD.Enum.Dark;
-                                        }
-                                    }
+                                    onCheckedChangeRequested: value => MD.Token.themeMode = value ? MD.Enum.Light : MD.Enum.Dark
                                 }
                             }
 
                             MD.HorizontalListView {
                                 id: m_palette_view
+                                objectName: 'paletteChoices'
                                 Layout.fillWidth: true
                                 expand: true
                                 spacing: 8
                                 implicitHeight: 40
                                 model: MD.PaletteModel {}
-                                Component.onCompleted: currentIndex = MD.Token.color.paletteType
-                                MD.ActionGroup {
-                                    id: m_palette_group
-                                }
+                                currentIndex: MD.Token.color.paletteType
                                 delegate: MD.InputChip {
                                     required property int index
                                     required property var model
-                                    action: MD.Action {
-                                        MD.ActionGroup.group: m_palette_group
-                                        icon.name: ''
-                                        checkable: true
-                                        checked: m_palette_view.currentIndex === index
-                                        onTriggered: function (c) {
-                                            m_palette_view.currentIndex = index;
-                                            MD.Token.color.paletteType = index;
-                                        }
-                                        text: model.name
-                                    }
+                                    text: model.name
+                                    selected: MD.Token.color.paletteType === index
+                                    onSelectionRequested: MD.Token.color.paletteType = index
                                 }
                             }
 
@@ -236,8 +221,8 @@ MD.Page {
                                     MD.ColorRadio {
                                         size: 28
                                         color: modelData.color
-                                        checked: MD.Token.color.accentColor === color
-                                        onClicked: {
+                                        selected: MD.Token.color.accentColor === color
+                                        onSelectionRequested: {
                                             MD.Token.color.accentColor = color;
                                         }
                                     }
@@ -281,7 +266,7 @@ MD.Page {
                     implicitHeight: 88
 
                     MD.Flickable {
-                        id: navigation
+                        id: navigationViewport
                         objectName: 'compactNavigation'
                         anchors.fill: parent
                         anchors.rightMargin: moreButton.width
@@ -304,8 +289,8 @@ MD.Page {
                                 id: navigationRepeater
                                 model: root.pageModel
                                 Item {
-                                    width: Math.max(104, navigation.width / root.pageModel.length)
-                                    height: navigation.height
+                                    width: Math.max(104, navigationViewport.width / root.pageModel.length)
+                                    height: navigationViewport.height
                                     required property var modelData
                                     required property int index
                                     MD.BarItem {
@@ -315,10 +300,10 @@ MD.Page {
                                         anchors.bottomMargin: 16
                                         icon.name: parent.modelData.icon
                                         text: parent.modelData.name
-                                        checked: root.pageIndex == parent.index
-                                        onCheckedChanged: if (checked)
-                                            Qt.callLater(navigation.revealCurrent)
-                                        onClicked: {
+                                        selected: root.pageIndex == parent.index
+                                        onSelectedChanged: if (selected)
+                                            Qt.callLater(navigationViewport.revealCurrent)
+                                        onSelectionRequested: {
                                             root.pageIndex = parent.index;
                                         }
                                     }
@@ -338,7 +323,7 @@ MD.Page {
                         width: 88
                         text: 'More'
                         icon.name: MD.Token.icon.more_horiz
-                        onClicked: utilityMenu.openFor(moreButton)
+                        onSelectionRequested: utilityMenu.openFor(moreButton)
 
                         MD.Menu {
                             id: utilityMenu

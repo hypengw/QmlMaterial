@@ -18,7 +18,7 @@ MD.SplitViewBase {
         opacity: control.handleOpacity
         pressed: MD.SplitHandle.pressed
         hovered: MD.SplitHandle.hovered
-        visualFocus: control.visualFocus
+        visualFocus: control.focusVisible
         orientation: control.orientation
         controlHeight: control.height
         controlWidth: control.width

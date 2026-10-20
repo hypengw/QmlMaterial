@@ -4,6 +4,7 @@
 #include <QtQuick/private/qquickitemview_p.h>
 #include <QQmlInfo>
 #include <QQmlComponent>
+#include <QKeyEvent>
 #include <algorithm>
 
 namespace qml_material
@@ -15,6 +16,8 @@ Menu::Menu(QObject* parent): Popup(parent), m_model(new QQmlObjectModel(this)) {
     connect(this, &Popup::aboutToShow, this, [this] {
         if (focus() && contentItem()) contentItem()->forceActiveFocus(Qt::PopupFocusReason);
     });
+    connect(this, &Popup::contentItemChanged, this, &Menu::observeContent);
+    observeContent();
 }
 Menu::~Menu() {
     disconnect(m_parentClosing);
@@ -35,6 +38,57 @@ void Menu::setTitle(const QString& value) {
     if (m_title == value) return;
     m_title = value;
     Q_EMIT titleChanged();
+}
+void Menu::setAutoClose(bool value) {
+    if (m_autoClose == value) return;
+    m_autoClose = value;
+    Q_EMIT autoCloseChanged();
+}
+void Menu::observeContent() {
+    if (m_keyItem) m_keyItem->removeEventFilter(this);
+    m_keyItem = contentItem();
+    if (m_keyItem) m_keyItem->installEventFilter(this);
+}
+void Menu::moveCurrent(int delta) {
+    const QPointer<Menu> guard(this);
+    for (int offset = 1; offset <= count(); ++offset) {
+        const int index = (currentIndex() + delta * offset + count() * 2) % count();
+        const QPointer<ButtonControl> item(qobject_cast<ButtonControl*>(itemAt(index)));
+        if (! item || ! item->isEnabled() || ! item->isVisible()) continue;
+        setCurrentIndex(index);
+        if (! guard || ! item || itemAt(index) != item) return;
+        if (auto* view = qobject_cast<QQuickItemView*>(contentItem()))
+            view->positionViewAtIndex(index, QQuickItemView::Contain);
+        if (guard && item) item->forceActiveFocus(Qt::TabFocusReason);
+        return;
+    }
+}
+bool Menu::eventFilter(QObject* object, QEvent* event) {
+    if (object != m_keyItem || event->type() != QEvent::KeyPress)
+        return Popup::eventFilter(object, event);
+    const int key = static_cast<QKeyEvent*>(event)->key();
+    if (key == Qt::Key_Down || key == Qt::Key_Up) {
+        event->accept();
+        moveCurrent(key == Qt::Key_Down ? 1 : -1);
+        return true;
+    }
+    if (key == (mirrored() ? Qt::Key_Left : Qt::Key_Right)) {
+        if (auto* item = dynamic_cast<MenuEntry*>(itemAt(currentIndex()));
+            item && item->entry().subMenu()) {
+            event->accept();
+            if (auto* button = qobject_cast<ButtonControl*>(itemAt(currentIndex())))
+                button->click();
+            return true;
+        }
+    } else if (key == (mirrored() ? Qt::Key_Right : Qt::Key_Left)) {
+        if (const QPointer<ButtonControl> item(qobject_cast<ButtonControl*>(parentItem())); item) {
+            event->accept();
+            close();
+            if (item) item->forceActiveFocus(Qt::TabFocusReason);
+            return true;
+        }
+    }
+    return Popup::eventFilter(object, event);
 }
 void Menu::setDelegate(QQmlComponent* value) {
     if (m_delegate == value) return;
@@ -79,9 +133,9 @@ void Menu::insertItem(int index, QQuickItem* item) {
     }
     QPointer<Menu>       guard(this);
     QPointer<QQuickItem> target(item);
-    auto                 menuItem = qobject_cast<MenuItem*>(item);
-    if (menuItem && menuItem->menu() && menuItem->menu() != this) {
-        auto owner = menuItem->menu();
+    auto                 menuItem = dynamic_cast<MenuEntry*>(item);
+    if (menuItem && menuItem->entry().menu() && menuItem->entry().menu() != this) {
+        auto owner = menuItem->entry().menu();
         owner->takeItem(owner->indexOf(item));
         if (! guard || ! target) return;
     }
@@ -89,7 +143,7 @@ void Menu::insertItem(int index, QQuickItem* item) {
     m_destroyConnections.insert(item, connect(item, &QObject::destroyed, this, [this, item] {
                                     removeAt(indexOf(item));
                                 }));
-    if (menuItem) menuItem->setMenu(this);
+    if (menuItem) menuItem->entry().setMenu(this);
     if (! guard || ! target) return;
     m_model->insert(index, item);
     if (! guard) return;
@@ -115,8 +169,9 @@ void Menu::removeAt(int index) {
     QPointer<Menu> guard(this);
     m_model->remove(index);
     if (! guard) return;
-    if (auto menuItem = qobject_cast<MenuItem*>(item.data()); menuItem && menuItem->menu() == this)
-        menuItem->setMenu(nullptr);
+    if (auto menuItem = dynamic_cast<MenuEntry*>(item.data());
+        menuItem && menuItem->entry().menu() == this)
+        menuItem->entry().setMenu(nullptr);
     if (! guard) return;
     if (m_index == index)
         setCurrentIndex(-1);
@@ -186,23 +241,99 @@ void Menu::openSubMenu(Menu* child, QQuickItem* anchor) {
     if (! guard || ! target || ! item) return;
     child->openFor(item);
 }
-MenuItem::~MenuItem() {
-    disconnect(m_menuDestroyed);
-    disconnect(m_subMenuDestroyed);
+MenuEntryController::MenuEntryController(ButtonControl* item, std::function<void()> menuChanged,
+                                         std::function<void()> subMenuChanged)
+    : m_item(item),
+      m_menuChanged(std::move(menuChanged)),
+      m_subMenuChanged(std::move(subMenuChanged)) {
+    m_sourceConnection =
+        QObject::connect(item, &ButtonControl::interactionSourceChanged, item, [this] {
+            observeHover();
+        });
 }
-void MenuItem::setMenu(Menu* value) {
-    if (m_menu == value) return;
-    disconnect(m_menuDestroyed);
+MenuEntryController::~MenuEntryController() {
+    QObject::disconnect(m_hoverConnection);
+    QObject::disconnect(m_menuDestroyed);
+    QObject::disconnect(m_subMenuDestroyed);
+    QObject::disconnect(m_sourceConnection);
+}
+void MenuEntryController::observeHover() {
+    QObject::disconnect(m_hoverConnection);
+    const auto owner = m_menu;
+    const auto item  = m_item;
+    if (! owner || ! item) return;
+    auto* source = item->interactionSource();
+    if (! item || m_menu != owner) return;
+    m_hoverConnection = QObject::connect(
+        source,
+        &InteractionSource::interaction,
+        item,
+        [this, owner, item](const Interaction& event) {
+            if (! owner || ! item || m_menu != owner || ! item->isEnabled() ||
+                ! item->isVisible() || event.originItem() != item ||
+                event.kind != Interaction::Hover || event.phase != Interaction::Begin)
+                return;
+            const int index = owner->indexOf(item);
+            if (index >= 0) owner->setCurrentIndex(index);
+        });
+}
+void MenuEntryController::setMenu(Menu* value) {
+    if (m_menu == value && (value || ! m_menuDestroyed)) return;
+    QObject::disconnect(m_menuDestroyed);
     m_menu = value;
-    if (value) m_menuDestroyed = connect(value, &QObject::destroyed, this, &MenuItem::menuChanged);
-    Q_EMIT menuChanged();
+    if (value)
+        m_menuDestroyed = QObject::connect(value, &QObject::destroyed, m_item, [this] {
+            setMenu(nullptr);
+        });
+    const auto revision = ++m_revision;
+    const auto item     = m_item;
+    observeHover();
+    if (! item || revision != m_revision) return;
+    item->cancelActivation();
+    if (item && revision == m_revision) {
+        const auto notify = m_menuChanged;
+        notify();
+    }
 }
-void MenuItem::setSubMenu(Menu* value) {
-    if (m_subMenu == value) return;
-    disconnect(m_subMenuDestroyed);
+void MenuEntryController::setSubMenu(Menu* value) {
+    if (m_subMenu == value && (value || ! m_subMenuDestroyed)) return;
+    QObject::disconnect(m_subMenuDestroyed);
     m_subMenu = value;
     if (value)
-        m_subMenuDestroyed = connect(value, &QObject::destroyed, this, &MenuItem::subMenuChanged);
-    Q_EMIT subMenuChanged();
+        m_subMenuDestroyed = QObject::connect(value, &QObject::destroyed, m_item, [this] {
+            setSubMenu(nullptr);
+        });
+    const auto revision = ++m_revision;
+    const auto item     = m_item;
+    item->cancelActivation();
+    if (item && revision == m_revision) {
+        const auto notify = m_subMenuChanged;
+        notify();
+    }
+}
+void MenuEntryController::activate(std::function<void()> domain, std::function<void()> triggered) {
+    const auto item = m_item;
+    if (! item || ! item->canActivate()) return;
+    const auto revision = m_revision;
+    const auto owner = m_menu, child = m_subMenu;
+    if (child) {
+        if (owner)
+            owner->openSubMenu(child, item);
+        else {
+            child->setParentItem(item);
+            if (! item || ! child || revision != m_revision) return;
+            child->setPreferredPlacement(Popup::Trailing);
+            if (! item || ! child || revision != m_revision) return;
+            child->setAnchorAlignment(Popup::Start);
+            if (item && child && revision == m_revision) child->openFor(item);
+        }
+        return;
+    }
+    const bool close =
+        owner && (owner->autoClose() || dynamic_cast<MenuEntry*>(item.data())->closeOnActivation());
+    domain();
+    if (! item || revision != m_revision) return;
+    triggered();
+    if (item && revision == m_revision && owner && close) owner->dismiss();
 }
 } // namespace qml_material

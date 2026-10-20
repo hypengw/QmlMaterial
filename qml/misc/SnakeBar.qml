@@ -3,7 +3,7 @@ import QtQuick
 import Qcm.Material as MD
 import Qcm.Material.Layouts as Lite
 
-MD.PanelBase {
+MD.SnakeBarBase {
     id: control
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding)
@@ -17,16 +17,12 @@ MD.PanelBase {
     }
     property MD.StateSnakeBar mdStateAction: mdState
     property MD.StateSnakeBar mdStateIcon: mdState
-    readonly property alias actionControl: btn_action
-    readonly property alias iconControl: btn_icon
-
-    property MD.Action action: null
+    actionControl: btn_action
+    iconControl: btn_icon
     property bool actionOnNewLine: false
     property bool showClose: false
     property real radius: MD.Token.shape.corner.extra_small
     readonly property bool stackedAction: actionOnNewLine && !!action
-
-    signal closed
 
     padding: 0
     leftPadding: 16
@@ -59,13 +55,13 @@ MD.PanelBase {
                 Lite.Layout.fillWidth: true
             }
 
-            MD.ButtonBase {
+            MD.CommandButtonBase {
                 id: btn_action
                 parent: control.stackedAction ? stacked_action_content : inline_content
-                flat: true
                 font.capitalization: Font.MixedCase
-                visible: !!action
-                action: control.action
+                visible: !!control.action
+                enabled: control.available && !!control.action && control.action.enabled
+                text: control.action ? control.action.text : ""
 
                 implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
                 implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
@@ -100,19 +96,17 @@ MD.PanelBase {
                     MD.Ripple {
                         anchors.fill: parent
                         radius: parent.radius
-                        pressX: btn_action.pressX
-                        pressY: btn_action.pressY
-                        pressed: btn_action.pressed
-                        stateOpacity: control.mdState.stateLayerOpacity
+                        interactionSource: btn_action.interactionSource
+                        indication: control.mdState.actionIndication
                         color: control.mdState.stateLayerColor
                     }
                 }
             }
 
-            MD.ButtonBase {
+            MD.CommandButtonBase {
                 id: btn_icon
-                flat: true
                 visible: control.showClose
+                enabled: control.available
 
                 implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
                 implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
@@ -145,15 +139,11 @@ MD.PanelBase {
                     MD.Ripple {
                         anchors.fill: parent
                         radius: parent.radius
-                        pressX: btn_icon.pressX
-                        pressY: btn_icon.pressY
-                        pressed: btn_icon.pressed
-                        stateOpacity: control.mdState.iconStateLayerOpacity
+                        interactionSource: btn_icon.interactionSource
+                        indication: control.mdState.iconIndication
                         color: control.mdState.iconStateLayerColor
                     }
                 }
-
-                onClicked: control.closed()
             }
         }
 

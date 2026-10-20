@@ -21,6 +21,7 @@
 #include "qml_material/control/popup.hpp"
 #include "qml_material/control/panel.hpp"
 #include "qml_material/control/dialog.hpp"
+#include "qml_material/control/color_picker_button.hpp"
 #include "qml_material/style/material_state.hpp"
 #include "qml_material/style/list_item_state.hpp"
 #include "qml_material/style/text_field_state.hpp"
@@ -28,10 +29,12 @@
 #include "qml_material/style/drag_handle_state.hpp"
 #include "qml_material/control/text_field.hpp"
 #include "qml_material/control/slider.hpp"
+#include "qml_material/control/scroll_bar.hpp"
 #include "qml_material/control/item_delegate.hpp"
 #include "qml_material/style/theme.hpp"
 #include "qml_material/control/icon_spec.hpp"
-#include "qml_material/control/abstract_button.hpp"
+#include "qml_material/control/button_control.hpp"
+#include "qml_material/control/selection_button.hpp"
 #include "qml_material/layout/layout_container.hpp"
 #include "qml_material/view/lazy_list.hpp"
 #include "qml_material/model/item_source.hpp"
@@ -85,29 +88,6 @@ QQuickItem* itemWithLeadingItem(QQuickItem* root, QQuickItem* leadingItem) {
     return nullptr;
 }
 
-QQuickItem* itemWithAction(QQuickItem* root, QObject* action) {
-    if (qvariant_cast<QObject*>(root->property("action")) == action) {
-        return root;
-    }
-    for (auto* child : root->childItems()) {
-        if (auto* match = itemWithAction(child, action)) {
-            return match;
-        }
-    }
-    return nullptr;
-}
-
-QQuickItem* itemWithIconView(QQuickItem* root) {
-    if (auto* icon = root->property("icon").value<qml_material::IconSpec*>();
-        icon && ! icon->isEmpty()) {
-        return root;
-    }
-    for (auto* child : root->childItems()) {
-        if (auto* match = itemWithIconView(child)) return match;
-    }
-    return nullptr;
-}
-
 QQuickItem* itemWithIcon(QQuickItem* root) {
     if (! root->property("name").toString().isEmpty()) {
         return root;
@@ -136,651 +116,14 @@ qml_material::Row* layoutRow(QQuickItem* root) {
     }
     return nullptr;
 }
-
-QQuickItem* innerTextItem(QQuickItem* root) {
-    if (root->property("font").isValid() && root->property("text").isValid()) {
-        return root;
-    }
-    for (auto* child : root->childItems()) {
-        if (auto* match = innerTextItem(child)) {
-            return match;
-        }
-    }
-    return nullptr;
-}
-
-int curveRenderingType(QQmlEngine& engine) {
-    static int cached = -1;
-    if (cached >= 0) {
-        return cached;
-    }
-    QQmlComponent component(&engine);
-    component.setData(
-        QByteArrayLiteral("import QtQuick\nQtObject { property int v: Text.CurveRendering }"),
-        QUrl(QStringLiteral("qrc:/tests/curve-rendering-enum.qml")));
-    if (component.isError()) {
-        return cached = 0;
-    }
-    std::unique_ptr<QObject> object(component.create());
-    if (! object) {
-        return cached = 0;
-    }
-    return cached = object->property("v").toInt();
-}
-
 } // namespace
+
+#include "qml_material/control/application_window.hpp"
 
 class ControlLayoutTest : public QObject {
     Q_OBJECT
 
-private Q_SLOTS:
-    void lazyListScrollBarEstimates() {
-        QQmlComponent component(&m_engine);
-        component.setData(R"(
-            import QtQuick
-            import Qcm.Material as MD
-            MD.LazyList {
-                width: 300; height: 100
-                estimatedItemExtent: 80
-                cacheExtent: 0
-                source: MD.ListSnapshotSource {
-                    keyRole: "key"
-                    Component.onCompleted: {
-                        let rows = [];
-                        for (let i = 0; i < 20; ++i) rows.push({key: String(i)});
-                        items = rows;
-                    }
-                }
-                delegate: Item { required property MD.LazyRow row; implicitHeight: 40 }
-                MD.ScrollBar.vertical: MD.ScrollBar { objectName: "bar" }
-            }
-        )",
-                          QUrl());
-        std::unique_ptr<QObject> object(component.create());
-        QVERIFY2(object, qPrintable(component.errorString()));
-        auto* list = qobject_cast<qml_material::LazyList*>(object.get());
-        QVERIFY(list);
-        list->setParentItem(m_window.contentItem());
-        settle(list);
-        auto* bar = list->findChild<QQuickItem*>("bar");
-        QVERIFY(bar);
-        QVERIFY(list->estimatedContentHeight());
-        QVERIFY(list->contentHeight() > 800);
-        for (int index = 0; index < 20; ++index) {
-            QVERIFY(list->positionAtIndex(index));
-            settle(list);
-            QCOMPARE(bar->property("size").toReal(), 100.0 / list->contentHeight());
-            QCOMPARE(bar->property("position").toReal(), list->visibleArea()->yPosition());
-        }
-        QVERIFY(! list->estimatedContentHeight());
-        QCOMPARE(list->contentHeight(), 800.0);
-        qml_material::ListSnapshotSource replacement;
-        replacement.setKeyRole("key");
-        replacement.setItems({ QVariantMap { { "key", "replacement" } } });
-        list->setSource(&replacement);
-        settle(list);
-        QCOMPARE(list->contentHeight(), 40.0);
-        QCOMPARE(list->contentY(), 0.0);
-        QCOMPARE(bar->property("size").toReal(), 1.0);
-        QCOMPARE(bar->property("position").toReal(), 0.0);
-        list->setSource(nullptr);
-        settle(list);
-        QCOMPARE(list->count(), 0);
-        QCOMPARE(bar->property("position").toReal(), 0.0);
-        list->setParentItem(nullptr);
-    }
-    void lazyListScrollBarDrag() {
-        QQmlComponent component(&m_engine);
-        component.setData(R"(
-            import QtQuick
-            import Qcm.Material as MD
-            MD.LazyList {
-                width: 300; height: 300
-                estimatedItemExtent: 40
-                cacheExtent: 0
-                source: MD.ListSnapshotSource {
-                    keyRole: "key"
-                    Component.onCompleted: {
-                        let rows = [];
-                        for (let i = 0; i < 100; ++i) rows.push({key: String(i)});
-                        items = rows;
-                    }
-                }
-                delegate: Item { required property MD.LazyRow row; implicitHeight: 40 }
-                MD.ScrollBar.vertical: MD.ScrollBar {
-                    objectName: "bar"
-                    width: 16
-                    interactive: true
-                    policy: MD.ScrollBarBase.AlwaysOn
-                }
-            }
-        )",
-                          QUrl());
-        std::unique_ptr<QObject> object(component.create());
-        QVERIFY2(object, qPrintable(component.errorString()));
-        auto* list = qobject_cast<qml_material::LazyList*>(object.get());
-        QVERIFY(list);
-        QQuickWindow window;
-        window.setGeometry(0, 0, 300, 300);
-        list->setParentItem(window.contentItem());
-        window.show();
-        QVERIFY(QTest::qWaitForWindowExposed(&window));
-        settle(list);
-        auto* bar = list->findChild<QQuickItem*>("bar");
-        QVERIFY(bar);
-        const auto start = bar->mapToScene(QPointF(8, 8)).toPoint();
-        const auto end   = bar->mapToScene(QPointF(8, 180)).toPoint();
-        QTest::mousePress(&window, Qt::LeftButton, Qt::NoModifier, start);
-        QVERIFY(bar->property("pressed").toBool());
-        QTest::mouseMove(&window, end);
-        settle(list);
-        QVERIFY(bar->property("pressed").toBool());
-        QCOMPARE(window.mouseGrabberItem(), bar);
-        QVERIFY(! list->isDragging());
-        QVERIFY(list->contentY() > 1500);
-        QCOMPARE(bar->property("position").toReal(), list->visibleArea()->yPosition());
-        auto* source = qobject_cast<qml_material::ListSnapshotSource*>(list->source());
-        QVERIFY(source);
-        source->setItems(source->items().mid(0, 3));
-        settle(list);
-        QCOMPARE(list->contentY(), 0.0);
-        QCOMPARE(bar->property("size").toReal(), 1.0);
-        QTest::mouseRelease(&window, Qt::LeftButton, Qt::NoModifier, end);
-        QVERIFY(! bar->property("pressed").toBool());
-        settle(list);
-        QCOMPARE(list->contentY(), 0.0);
-        QCOMPARE(bar->property("position").toReal(), 0.0);
-        QVERIFY(! list->isDragging());
-        list->setParentItem(nullptr);
-    }
-    void popupSurfaceRegion_data() {
-        QTest::addColumn<bool>("dialog");
-        QTest::newRow("popup") << false;
-        QTest::newRow("dialog") << true;
-    }
-    void popupSurfaceRegion() {
-        QFETCH(bool, dialog);
-        std::unique_ptr<qml_material::Popup> popup;
-        if (dialog)
-            popup = std::make_unique<qml_material::Dialog>();
-        else
-            popup = std::make_unique<qml_material::Popup>();
-        popup->setParentItem(m_window.contentItem());
-        popup->setWidth(400);
-        popup->setHeight(400);
-        static_cast<QQmlParserStatus*>(popup.get())->componentComplete();
-        popup->open();
-        auto* surface = popup->surfaceItem();
-        QVERIFY(surface->contains(QPointF(100, 100)));
-        QVERIFY(! surface->contains(QPointF(500, 500)));
-        QQuickItem container(surface);
-        container.setPosition(QPointF(30, 40));
-        container.setScale(2);
-        auto hit = std::make_unique<QQuickItem>(&container);
-        hit->setSize(QSizeF(50, 50));
-        hit->setPosition(QPointF(10, 20));
-        popup->setPopupItem(hit.get());
-        auto center = [&] {
-            return hit->mapToItem(surface, QPointF(25, 25));
-        };
-        QVERIFY(surface->contains(center()));
-        QVERIFY(! surface->contains(QPointF(1, 1)));
-        auto oldCenter = center();
-        hit->setY(150);
-        QVERIFY(! surface->contains(oldCenter));
-        QVERIFY(surface->contains(center()));
-        hit->setVisible(false);
-        QVERIFY(! surface->contains(center()));
-        hit->setVisible(true);
-        QVERIFY(surface->contains(center()));
-        QQuickItem replacement(surface);
-        replacement.setSize(QSizeF(20, 20));
-        popup->setPopupItem(&replacement);
-        QVERIFY(surface->contains(QPointF(1, 1)));
-        QVERIFY(! surface->contains(center()));
-        popup->setPopupItem(hit.get());
-        hit.reset();
-        QCOMPARE(popup->popupItem(), surface);
-        QVERIFY(surface->contains(QPointF(100, 100)));
-        popup->close();
-    }
-    void dialogInRecycledDelegate_data() {
-        QTest::addColumn<bool>("reuse");
-        QTest::newRow("reused") << true;
-        QTest::newRow("not-reused") << false;
-    }
-    void dialogInRecycledDelegate() {
-        QFETCH(bool, reuse);
-        QTest::failOnWarning(QRegularExpression(".*TypeError.*"));
-        QQmlComponent component(&m_engine);
-        component.setData(R"(
-            pragma ComponentBehavior: Bound
-            import QtQuick
-            import Qcm.Material as MD
-            Item {
-                id: root
-                width: 400; height: 500
-                property int rows: 80
-                property bool reuse: true
-                property int pooled: 0
-                property int reused: 0
-                MD.BottomSheet {
-                    objectName: "sheet"
-                    parent: root
-                    animationDuration: 0
-                    preferredContentHeight: 400
-                    MD.VerticalListView {
-                        id: list
-                        objectName: "list"
-                        width: 360; height: 300
-                        model: root.rows
-                        reuseItems: root.reuse
-                        delegate: Item {
-                            required property int index
-                            width: list.contentWidth; height: 64
-                            ListView.onPooled: ++root.pooled
-                            ListView.onReused: ++root.reused
-                            MD.ColorPickerDialog {}
-                        }
-                    }
-                }
-            }
-        )",
-                          QUrl());
-        std::unique_ptr<QObject> object(component.create());
-        QVERIFY2(object, qPrintable(component.errorString()));
-        auto* root = qobject_cast<QQuickItem*>(object.get());
-        QVERIFY(root);
-        QVERIFY(root->setProperty("reuse", reuse));
-        root->setParentItem(m_window.contentItem());
-        auto* sheet = root->findChild<qml_material::Popup*>("sheet");
-        auto* list  = root->findChild<QQuickItem*>("list");
-        QVERIFY(sheet);
-        QVERIFY(list);
-        sheet->open();
-        QTRY_VERIFY(sheet->isOpened());
-        settle(root);
-        for (int i = 1; i <= 8; ++i) {
-            QVERIFY(list->setProperty("contentY", i * 320));
-            settle(root);
-        }
-        if (reuse) {
-            QVERIFY(root->property("pooled").toInt() > 0);
-            QVERIFY(root->property("reused").toInt() > 0);
-        } else {
-            QCOMPARE(root->property("pooled").toInt(), 0);
-            QCOMPARE(root->property("reused").toInt(), 0);
-        }
-        sheet->close();
-        QTRY_VERIFY(! sheet->isVisible());
-        QVERIFY(root->setProperty("rows", 0));
-        settle(root);
-        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
-        QVERIFY(root->setProperty("rows", 80));
-        sheet->open();
-        QTRY_VERIFY(sheet->isOpened());
-        settle(root);
-        sheet->close();
-    }
-    void stateDuringPageDestruction_data() {
-        QTest::addColumn<bool>("reuse");
-        QTest::addColumn<bool>("scroll");
-        QTest::addColumn<QString>("delegateFile");
-        for (const auto& file :
-             { QStringLiteral("list_item_state.qml"), QStringLiteral("control_states.qml") }) {
-            for (bool reuse : { true, false }) {
-                for (bool scroll : { true, false }) {
-                    const auto name =
-                        file + (reuse ? "-reused" : "-not-reused") + (scroll ? "-scrolled" : "");
-                    QTest::newRow(qPrintable(name)) << reuse << scroll << file;
-                }
-            }
-        }
-    }
-    void stateDuringPageDestruction() {
-        QFETCH(bool, reuse);
-        QFETCH(bool, scroll);
-        QFETCH(QString, delegateFile);
-        QTest::failOnWarning(QRegularExpression(".*TypeError.*"));
-        QQmlComponent delegate(&m_engine,
-                               QUrl::fromLocalFile(QStringLiteral(QM_LIST_ITEM_STATE_QML))
-                                   .resolved(QUrl(delegateFile)));
-        QVERIFY2(delegate.isReady(), qPrintable(delegate.errorString()));
-        QQmlComponent component(&m_engine);
-        component.setData(R"(
-            pragma ComponentBehavior: Bound
-            import QtQuick
-            import Qcm.Material as MD
-            Item {
-                id: root
-                width: 400; height: 300
-                property Component rowDelegate
-                property bool reuse: true
-                property var page: null
-                function openPage() { page = factory.createObject(root) }
-                function hidePage() { page.visible = false }
-                function closePage() { page.destroy(); page = null }
-                Component {
-                    id: factory
-                    MD.Page {
-                        width: 400; height: 300
-                        MD.PageVerticalListView {
-                            objectName: "list"
-                            anchors.fill: parent
-                            model: 80
-                            reuseItems: root.reuse
-                            cacheBuffer: 0
-                            delegate: root.rowDelegate
-                        }
-                    }
-                }
-            }
-        )",
-                          QUrl("qrc:/tests/list-item-state-destruction.qml"));
-        std::unique_ptr<QObject> object(component.createWithInitialProperties(
-            { { "rowDelegate", QVariant::fromValue(&delegate) }, { "reuse", reuse } }));
-        QVERIFY2(object, qPrintable(component.errorString()));
-        auto* root = qobject_cast<QQuickItem*>(object.get());
-        QVERIFY(root);
-        root->setParentItem(m_window.contentItem());
-        QVERIFY(QMetaObject::invokeMethod(root, "openPage"));
-        settle(root);
-        auto* list = root->findChild<QQuickItem*>("list");
-        QVERIFY(list);
-        if (scroll) {
-            for (int i = 1; i <= 5; ++i) {
-                QVERIFY(list->setProperty("contentY", i * 300));
-                settle(root);
-            }
-        }
-        QList<QPointer<QQuickItem>> trackedRows;
-        for (int i = 0; i < list->property("count").toInt(); ++i) {
-            QQuickItem* item = nullptr;
-            QVERIFY(QMetaObject::invokeMethod(
-                list, "itemAtIndex", Q_RETURN_ARG(QQuickItem*, item), Q_ARG(int, i)));
-            if (item) trackedRows.append(item);
-        }
-        QVERIFY(! trackedRows.isEmpty());
-        QPointer<QObject> page(root->property("page").value<QObject*>());
-        QVERIFY(page);
-        QVERIFY(QMetaObject::invokeMethod(root, "hidePage"));
-        for (const auto& row : trackedRows) {
-            if (row) QVERIFY(! row->isEnabled());
-        }
-        QVERIFY(QMetaObject::invokeMethod(root, "closePage"));
-        QCoreApplication::processEvents();
-        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
-        QTRY_VERIFY(page.isNull());
-        QTRY_VERIFY(std::all_of(trackedRows.cbegin(), trackedRows.cend(), [](const auto& row) {
-            return row.isNull();
-        }));
-    }
-    void listItemStateOutlivesInput() {
-        QProperty<QColor>           color(Qt::red);
-        qml_material::ListItemState state;
-        auto                        item = std::make_unique<qml_material::ItemDelegate>();
-        state.setItem(item.get());
-        state.bindableBackgroundColor().setBinding([&] {
-            return color.value();
-        });
-        item->setEnabled(false);
-        QCOMPARE(state.state(), QStringLiteral("disabled"));
-        QSignalSpy itemChanged(&state, &qml_material::ButtonInteractionState::itemChanged);
-        QSignalSpy stateChanged(&state, &qml_material::CommonState::stateChanged);
-        item.reset();
-        QVERIFY(! state.item());
-        QVERIFY(! state.target());
-        QVERIFY(! state.ctx());
-        QVERIFY(! state.colors());
-        QCOMPARE(itemChanged.count(), 1);
-        QCOMPARE(stateChanged.count(), 1);
-        QVERIFY(state.state().isEmpty());
-        QCOMPARE(state.backgroundColor(), QColor(Qt::red));
-        color = Qt::blue;
-        QCOMPARE(state.backgroundColor(), QColor(Qt::blue));
-        auto replacement = std::make_unique<qml_material::ItemDelegate>();
-        state.setItem(replacement.get());
-        QCOMPARE(state.item(), replacement.get());
-        QVERIFY(state.ctx());
-        QVERIFY(state.colors());
-        replacement->setEnabled(false);
-        QCOMPARE(state.state(), QStringLiteral("disabled"));
-        replacement->setEnabled(true);
-        QVERIFY(state.state().isEmpty());
-        QCOMPARE(state.backgroundColor(), QColor(Qt::blue));
-    }
-
-    void controlStateOutlivesInput() {
-        const auto verify =
-            []<typename State, typename Input>(
-                State& state, std::unique_ptr<Input> item, auto bindable, auto colorValue) {
-                QProperty<QColor> color(Qt::red);
-                state.setItem(item.get());
-                std::invoke(bindable, state).setBinding([&] {
-                    return color.value();
-                });
-                item->setEnabled(false);
-                QCOMPARE(state.state(), QStringLiteral("disabled"));
-                QSignalSpy changed(&state, &qml_material::CommonState::stateChanged);
-                item.reset();
-                QVERIFY(! state.item());
-                QVERIFY(! state.target());
-                QVERIFY(! state.ctx());
-                QVERIFY(! state.colors());
-                QCOMPARE(changed.size(), 1);
-                QVERIFY(state.state().isEmpty());
-                QCOMPARE(std::invoke(colorValue, state), QColor(Qt::red));
-                color = Qt::blue;
-                QCOMPARE(std::invoke(colorValue, state), QColor(Qt::blue));
-                auto replacement = std::make_unique<Input>();
-                state.setItem(replacement.get());
-                QVERIFY(state.ctx());
-                replacement->setEnabled(false);
-                replacement->setEnabled(true);
-                QCOMPARE(std::invoke(colorValue, state), QColor(Qt::blue));
-            };
-        qml_material::TextFieldState field;
-        verify(field,
-               std::make_unique<qml_material::TextField>(),
-               &qml_material::TextFieldState::bindablePlaceholderColor,
-               &qml_material::TextFieldState::placeholderColor);
-        qml_material::SliderState slider;
-        verify(slider,
-               std::make_unique<qml_material::Slider>(),
-               &qml_material::CommonState::bindableBackgroundColor,
-               &qml_material::CommonState::backgroundColor);
-        qml_material::DragHandleState handle;
-        verify(handle,
-               std::make_unique<QQuickItem>(),
-               &qml_material::CommonState::bindableTextColor,
-               &qml_material::CommonState::textColor);
-    }
-
-    void stateOutlivesContext() {
-        qml_material::MaterialState state;
-        auto                        target = std::make_unique<QObject>();
-        state.setTarget(target.get());
-        QVERIFY(state.ctx());
-        QVERIFY(state.colors());
-        QSignalSpy targetChanged(&state, &qml_material::CommonState::targetChanged);
-        QSignalSpy ctxChanged(&state, &qml_material::CommonState::ctxChanged);
-        QSignalSpy colorsChanged(&state, &qml_material::CommonState::colorsChanged);
-        target.reset();
-        QVERIFY(! state.target());
-        QVERIFY(! state.ctx());
-        QVERIFY(! state.colors());
-        QCOMPARE(targetChanged.size(), 1);
-        QCOMPARE(ctxChanged.size(), 1);
-        QCOMPARE(colorsChanged.size(), 1);
-
-        auto  contextTarget = std::make_unique<QObject>();
-        auto* context       = qobject_cast<qml_material::Theme*>(
-            qmlAttachedPropertiesObject<qml_material::Theme>(contextTarget.get(), true));
-        state.setCtx(context);
-        QCOMPARE(state.ctx(), context);
-        ctxChanged.clear();
-        colorsChanged.clear();
-        contextTarget.reset();
-        QVERIFY(! state.ctx());
-        QVERIFY(! state.colors());
-        QCOMPARE(ctxChanged.size(), 1);
-        QCOMPARE(colorsChanged.size(), 1);
-
-        auto palette = std::make_unique<qml_material::MdColorMgr>();
-        state.setColors(palette.get());
-        colorsChanged.clear();
-        palette.reset();
-        QVERIFY(! state.colors());
-        QCOMPARE(colorsChanged.size(), 1);
-    }
-    void popupExplicitImplicitSize() {
-        QQmlComponent component(&m_engine);
-        component.setData(R"(
-            import QtQuick
-            import Qcm.Material as MD
-            MD.Dialog {
-                implicitWidth: 720
-                implicitHeight: 520
-                contentItem: Item { implicitWidth: 100; implicitHeight: 80 }
-            }
-        )",
-                          QUrl());
-        std::unique_ptr<QObject> object(component.create());
-        QVERIFY2(object, qPrintable(component.errorString()));
-        auto* popup = qobject_cast<qml_material::Popup*>(object.get());
-        QVERIFY(popup);
-        QCOMPARE(popup->implicitWidth(), 720);
-        QCOMPARE(popup->implicitHeight(), 520);
-        popup->contentItem()->setImplicitWidth(900);
-        popup->contentItem()->setImplicitHeight(800);
-        QCOMPARE(popup->implicitWidth(), 720);
-        QCOMPARE(popup->implicitHeight(), 520);
-    }
-    void bottomSheetInputRegion() {
-        QQmlComponent component(&m_engine);
-        component.setData(R"(
-            import QtQuick
-            import Qcm.Material as MD
-            Item {
-                width: 400; height: 400
-                property int clicks: 0
-                property int wheels: 0
-                property int sheetClicks: 0
-                MouseArea {
-                    objectName: "wallpapers"
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    onClicked: parent.clicks++
-                    onWheel: parent.wheels++
-                }
-                MD.BottomSheet {
-                    objectName: "sheet"
-                    sheetType: MD.Enum.BottomSheetStandard
-                    animationDuration: 0
-                    Item {
-                        width: 400; height: 80
-                        MouseArea {
-                            width: 60; height: 60
-                            objectName: "sheetButton"
-                            onClicked: rootItem.sheetClicks++
-                        }
-                    }
-                }
-                id: rootItem
-            }
-        )",
-                          QUrl());
-        std::unique_ptr<QObject> object(component.create());
-        QVERIFY2(object, qPrintable(component.errorString()));
-        auto* root = qobject_cast<QQuickItem*>(object.get());
-        root->setParentItem(m_window.contentItem());
-        auto* sheet = root->findChild<qml_material::Popup*>("sheet");
-        QVERIFY(sheet);
-        sheet->open();
-        QTRY_VERIFY(sheet->isOpened());
-        settle(root);
-        auto* wallpapers = root->findChild<QQuickItem*>("wallpapers");
-        QVERIFY(wallpapers);
-        QTest::mouseMove(&m_window, QPoint(100, 100));
-        QVERIFY(wallpapers->property("containsMouse").toBool());
-        QTest::mouseClick(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 100));
-        QCOMPARE(root->property("clicks").toInt(), 1);
-        auto wheel = [&](QPoint position) {
-            QWheelEvent event(position,
-                              m_window.mapToGlobal(position),
-                              {},
-                              QPoint(0, -120),
-                              Qt::NoButton,
-                              Qt::NoModifier,
-                              Qt::NoScrollPhase,
-                              false);
-            QCoreApplication::sendEvent(&m_window, &event);
-        };
-        wheel(QPoint(100, 100));
-        QCOMPARE(root->property("wheels").toInt(), 1);
-        QTest::mouseClick(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 370));
-        wheel(QPoint(100, 370));
-        QCOMPARE(root->property("clicks").toInt(), 1);
-        QCOMPARE(root->property("wheels").toInt(), 1);
-        auto* button = root->findChild<QQuickItem*>("sheetButton");
-        QVERIFY(button);
-        const QPoint buttonPoint = button->mapToScene(QPointF(20, 20)).toPoint();
-        QTest::mouseClick(&m_window, Qt::LeftButton, Qt::NoModifier, buttonPoint);
-        QCOMPARE(root->property("sheetClicks").toInt(), 1);
-        QTest::mousePress(&m_window, Qt::LeftButton, Qt::NoModifier, buttonPoint);
-        QTest::mouseMove(&m_window, QPoint(100, 100));
-        QTest::mouseRelease(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 100));
-        QVERIFY(! button->property("pressed").toBool());
-        QCOMPARE(root->property("clicks").toInt(), 1);
-        auto* scroller = sheet->findChild<qml_material::Flickable*>();
-        QVERIFY(scroller);
-        const QPoint handlePoint = sheet->popupItem()->mapToScene(QPointF(200, 24)).toPoint();
-        QTest::mousePress(&m_window, Qt::LeftButton, Qt::NoModifier, handlePoint);
-        QTest::mouseMove(&m_window, handlePoint + QPoint(0, 40));
-        QTest::mouseMove(&m_window, handlePoint + QPoint(0, 80));
-        QVERIFY(scroller->isDragging());
-        QTest::mouseRelease(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 100));
-        QVERIFY(! scroller->isDragging());
-        QCOMPARE(root->property("clicks").toInt(), 1);
-        for (bool dim : { false, true }) {
-            sheet->setModal(true);
-            sheet->setDim(dim);
-            sheet->setClosePolicy(qml_material::Popup::NoAutoClose);
-            QTest::mouseClick(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 100));
-            wheel(QPoint(100, 100));
-            QCOMPARE(root->property("clicks").toInt(), 1);
-            QCOMPARE(root->property("wheels").toInt(), 1);
-        }
-        sheet->close();
-        QTRY_VERIFY(! sheet->isVisible());
-        QTest::mouseClick(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 100));
-        QCOMPARE(root->property("clicks").toInt(), 2);
-        sheet->setModal(false);
-        sheet->open();
-        QTRY_VERIFY(sheet->isOpened());
-        QTest::mouseClick(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 100));
-        QCOMPARE(root->property("clicks").toInt(), 3);
-        sheet->setClosePolicy(qml_material::Popup::CloseOnPressOutside);
-        QTest::mouseClick(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 100));
-        QTRY_VERIFY(! sheet->isVisible());
-        QCOMPARE(root->property("clicks").toInt(), 4);
-        qml_material::Popup blocker;
-        blocker.setParentItem(root);
-        blocker.setWidth(40);
-        blocker.setHeight(40);
-        blocker.setModal(true);
-        blocker.setDim(false);
-        blocker.setClosePolicy(qml_material::Popup::NoAutoClose);
-        static_cast<QQmlParserStatus*>(&blocker)->componentComplete();
-        blocker.open();
-        sheet->setClosePolicy(qml_material::Popup::NoAutoClose);
-        sheet->open();
-        QTRY_VERIFY(sheet->isOpened());
-        QTest::mouseClick(&m_window, Qt::LeftButton, Qt::NoModifier, QPoint(100, 100));
-        QCOMPARE(root->property("clicks").toInt(), 4);
-        sheet->close();
-        blocker.close();
-    }
+private slots:
     void scrollViewportAttachment_data() {
         QTest::addColumn<QByteArray>("type");
         QTest::newRow("qt") << QByteArray("Flickable");
@@ -801,7 +144,7 @@ private Q_SLOTS:
                           QUrl());
         std::unique_ptr<QObject> root(component.create());
         QVERIFY2(root, qPrintable(component.errorString()));
-        auto* bar       = root->findChild<QQuickItem*>("vertical");
+        auto* bar       = root->findChild<qml_material::ScrollBar*>("vertical");
         auto* indicator = root->findChild<QQuickItem*>("horizontal");
         QVERIFY(bar);
         QVERIFY(indicator);
@@ -809,7 +152,9 @@ private Q_SLOTS:
         QCOMPARE(indicator->property("size").toReal(), 0.25);
         root->setProperty("contentY", 300);
         QCOMPARE(bar->property("position").toReal(), 0.3);
-        bar->setProperty("position", 0.6);
+        bar->setPosition(.5);
+        QCOMPARE(root->property("contentY").toReal(), 300.0);
+        bar->requestPosition(0.6);
         QCOMPARE(root->property("contentY").toReal(), 600.0);
         root->setProperty("contentX", 200);
         QCOMPARE(indicator->property("position").toReal(), 0.25);
@@ -819,29 +164,17 @@ private Q_SLOTS:
         root->setProperty("topMargin", 20);
         root->setProperty("bottomMargin", 30);
         QCOMPARE(bar->property("size").toReal(), 200.0 / 1050.0);
-        bar->setProperty("position", 0.4);
+        bar->requestPosition(0.4);
         QCOMPARE(root->property("contentY").toReal(), 400.0);
     }
 
     void initTestCase() {
-        m_engine.addImportPath(QCoreApplication::applicationDirPath() +
-                               QStringLiteral("/../qml_modules"));
-        const QByteArray envPath = qgetenv("QML_IMPORT_PATH");
-        if (! envPath.isEmpty()) {
-#if defined(Q_OS_WIN)
-            const QList<QByteArray> parts = envPath.split(';');
-#else
-            const QList<QByteArray> parts = envPath.split(':');
-#endif
-            for (const QByteArray& part : parts) {
-                if (! part.isEmpty()) m_engine.addImportPath(QString::fromLocal8Bit(part));
-            }
-        }
+        m_engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));
         m_window.setGeometry(0, 0, 800, 600);
         m_window.create();
     }
 
-    void inputChipActionClick() {
+    void inputChipSelectionAndEdit() {
         QQuickWindow window;
         window.resize(400, 200);
         window.show();
@@ -854,30 +187,28 @@ private Q_SLOTS:
             import Qcm.Material as MD
             MD.InputChip {
                 id: chip
-                property int triggerCount: 0
+                text: "Rainbow"
+                property int requests: 0
+                onSelectionRequested: ++requests
                 editDelegate: TextInput {}
-                action: MD.Action {
-                    text: "Rainbow"
-                    checkable: true
-                    onTriggered: ++chip.triggerCount
-                }
             }
         )",
                           QUrl());
         QVERIFY2(component.isReady(), qPrintable(component.errorString()));
         std::unique_ptr<QObject> object(component.create());
-        auto*                    chip = qobject_cast<qml_material::AbstractButton*>(object.get());
+        auto*                    chip = qobject_cast<qml_material::SelectionButton*>(object.get());
         QVERIFY(chip);
         chip->setParentItem(window.contentItem());
         settle(chip);
         QTest::mouseClick(
             &window, Qt::LeftButton, Qt::NoModifier, QPoint(chip->width() / 2, chip->height() / 2));
-        QCOMPARE(chip->property("triggerCount").toInt(), 1);
-        QVERIFY(chip->hasActiveFocus());
+        QCOMPARE(chip->property("requests").toInt(), 1);
+        QVERIFY(! chip->hasActiveFocus());
         chip->click();
-        QCOMPARE(chip->property("triggerCount").toInt(), 2);
+        QCOMPARE(chip->property("requests").toInt(), 2);
+        chip->forceActiveFocus(Qt::TabFocusReason);
         QTest::keyClick(&window, Qt::Key_Space);
-        QCOMPARE(chip->property("triggerCount").toInt(), 3);
+        QCOMPARE(chip->property("requests").toInt(), 3);
         chip->setProperty("edit", true);
         settle(chip);
         QVERIFY(chip->contentItem()->hasActiveFocus());
@@ -1099,7 +430,7 @@ private Q_SLOTS:
         QTest::newRow("assist") << QStringLiteral("AssistChip")
                                 << QStringLiteral("icon.name: MD.Token.icon.search");
         QTest::newRow("filter") << QStringLiteral("FilterChip")
-                                << QStringLiteral("checked: true; icon.name: MD.Token.icon.close");
+                                << QStringLiteral("selected: true; icon.name: MD.Token.icon.close");
         QTest::newRow("input")
             << QStringLiteral("InputChip")
             << QStringLiteral("leadingItem: Item { implicitWidth: 18; implicitHeight: 18 }\n"
@@ -1164,71 +495,6 @@ private Q_SLOTS:
         }
     }
 
-    void iconStyles_data() {
-        QTest::addColumn<QString>("type");
-        QTest::addColumn<QString>("style");
-        QTest::addColumn<bool>("iconVisible");
-        QTest::addColumn<bool>("labelVisible");
-
-        QTest::newRow("button-icon-and-text")
-            << QStringLiteral("Button") << QStringLiteral("IconAndText") << true << true;
-        QTest::newRow("button-icon-only")
-            << QStringLiteral("Button") << QStringLiteral("IconOnly") << true << false;
-        QTest::newRow("button-text-only")
-            << QStringLiteral("Button") << QStringLiteral("TextOnly") << false << true;
-        QTest::newRow("tab-button-icon-and-text")
-            << QStringLiteral("TabButton") << QStringLiteral("IconAndText") << true << true;
-        QTest::newRow("tab-button-icon-only")
-            << QStringLiteral("TabButton") << QStringLiteral("IconOnly") << true << false;
-        QTest::newRow("tab-button-text-only")
-            << QStringLiteral("TabButton") << QStringLiteral("TextOnly") << false << true;
-    }
-
-    void iconStyles() {
-        QFETCH(QString, type);
-        QFETCH(QString, style);
-        QFETCH(bool, iconVisible);
-        QFETCH(bool, labelVisible);
-
-        const QString text   = QStringLiteral("Button label");
-        const auto    source = QStringLiteral(R"(
-            import QtQuick
-            import Qcm.Material as MD
-
-            MD.%1 {
-                text: "%2"
-                icon.name: MD.Token.icon.add
-                iconStyle: MD.Enum.%3
-            }
-        )")
-                                   .arg(type, text, style)
-                                   .toUtf8();
-
-        QQmlComponent component(&m_engine);
-        component.setData(source, QUrl(QStringLiteral("qrc:/tests/button-icon-style.qml")));
-        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
-
-        std::unique_ptr<QObject> object(component.create());
-        QVERIFY2(object, qPrintable(component.errorString()));
-        auto* control = qobject_cast<QQuickItem*>(object.get());
-        QVERIFY(control);
-        control->setParentItem(m_window.contentItem());
-        settle(control);
-
-        auto* content = qvariant_cast<QQuickItem*>(control->property("contentItem"));
-        QVERIFY(content);
-        auto* row = layoutRow(content);
-        QVERIFY(row);
-
-        auto* label = itemWithText(row, text);
-        QVERIFY(label);
-        QCOMPARE(label->isVisible(), labelVisible);
-
-        auto* icon = itemWithIconView(row);
-        QVERIFY(icon);
-        QCOMPARE(icon->isVisible(), iconVisible);
-    }
-
     void railItemIconOnly() {
         const auto source = QByteArrayLiteral(R"(
             import QtQuick
@@ -1248,14 +514,18 @@ private Q_SLOTS:
                 MD.RailItem {
                     objectName: "collapsed"
                     width: 96
-                    action: parent.railAction
+                    text: parent.railAction.text
+                    icon.actionIcon: parent.railAction.icon
+                    MD.ToolTip.text: parent.railAction.tooltip || text
                     iconStyle: MD.Enum.IconOnly
                 }
                 MD.RailItem {
                     objectName: "expanded"
                     x: 120
                     expand: true
-                    action: parent.railAction
+                    text: parent.railAction.text
+                    icon.actionIcon: parent.railAction.icon
+                    MD.ToolTip.text: parent.railAction.tooltip || text
                     iconStyle: MD.Enum.IconOnly
                 }
             }
@@ -1386,261 +656,6 @@ private Q_SLOTS:
         }
     }
 
-    void attachedToolTipLifecycle() {
-        const auto source = QByteArrayLiteral(R"(
-            import QtQuick
-            import Qcm.Material as MD
-
-            Item {
-                width: 320
-                height: 120
-
-                Item {
-                    objectName: "first"
-                    width: 80
-                    height: 40
-                    MD.ToolTip.text: "First"
-                    MD.ToolTip.delay: 0
-                    MD.ToolTip.timeout: -1
-                }
-                Item {
-                    objectName: "second"
-                    x: 100
-                    width: 80
-                    height: 40
-                    MD.ToolTip.text: "Second"
-                    MD.ToolTip.delay: 0
-                    MD.ToolTip.timeout: -1
-                }
-            }
-        )");
-
-        QQmlComponent component(&m_engine);
-        component.setData(source, QUrl(QStringLiteral("qrc:/tests/attached-tooltip.qml")));
-        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
-
-        std::unique_ptr<QObject> object(component.create());
-        QVERIFY2(object, qPrintable(component.errorString()));
-        auto* root = qobject_cast<QQuickItem*>(object.get());
-        QVERIFY(root);
-        root->setParentItem(m_window.contentItem());
-
-        auto* first  = root->findChild<QQuickItem*>(QStringLiteral("first"));
-        auto* second = root->findChild<QQuickItem*>(QStringLiteral("second"));
-        QVERIFY(first);
-        QVERIFY(second);
-
-        auto* firstAttached  = attachedToolTip(first);
-        auto* secondAttached = attachedToolTip(second);
-        QVERIFY(firstAttached);
-        QVERIFY(secondAttached);
-        QCOMPARE(firstAttached->text(), QStringLiteral("First"));
-        QCOMPARE(firstAttached->delay(), 0);
-        QCOMPARE(firstAttached->timeout(), -1);
-        QVERIFY(! firstAttached->visible());
-
-        auto* sharedToolTip = firstAttached->toolTip();
-        QVERIFY(sharedToolTip);
-        QCOMPARE(secondAttached->toolTip(), sharedToolTip);
-
-        firstAttached->show(firstAttached->text(), 0);
-        QTRY_VERIFY(firstAttached->visible());
-        QCOMPARE(sharedToolTip->property("text").toString(), QStringLiteral("First"));
-        QCOMPARE(qvariant_cast<QQuickItem*>(sharedToolTip->property("parent")), first);
-
-        secondAttached->setText(QStringLiteral("Inactive second"));
-        QCOMPARE(sharedToolTip->property("text").toString(), QStringLiteral("First"));
-        firstAttached->setText(QStringLiteral("Updated first"));
-        QCOMPARE(sharedToolTip->property("text").toString(), QStringLiteral("Updated first"));
-
-        QVERIFY(sharedToolTip->setProperty("width", 321.0));
-        QVERIFY(sharedToolTip->setProperty("height", 123.0));
-        secondAttached->show(secondAttached->text(), 0);
-        QTRY_VERIFY(secondAttached->visible());
-        QVERIFY(! firstAttached->visible());
-        QCOMPARE(qvariant_cast<QQuickItem*>(sharedToolTip->property("parent")), second);
-        QCOMPARE(sharedToolTip->property("text").toString(), QStringLiteral("Inactive second"));
-        QVERIFY(sharedToolTip->property("width").toReal() != 321.0);
-        QVERIFY(sharedToolTip->property("height").toReal() != 123.0);
-
-        firstAttached->hide();
-        QVERIFY(secondAttached->visible());
-        secondAttached->hide();
-        QTRY_VERIFY(! secondAttached->visible());
-
-        firstAttached->setTimeout(-1);
-        firstAttached->show(QStringLiteral("Before destruction"), 0);
-        QTRY_VERIFY(firstAttached->visible());
-        QPointer<QQuickItem> firstGuard(first);
-        delete first;
-        QVERIFY(firstGuard.isNull());
-        QTRY_VERIFY(! sharedToolTip->property("visible").toBool());
-
-        QQmlEngine    otherEngine;
-        QQmlComponent otherComponent(&otherEngine);
-        otherComponent.setData(
-            QByteArrayLiteral(R"(
-                import QtQuick
-                import Qcm.Material as MD
-                Item { MD.ToolTip.text: "Other engine" }
-            )"),
-            QUrl(QStringLiteral("qrc:/tests/attached-tooltip-other-engine.qml")));
-        QVERIFY2(! otherComponent.isError(), qPrintable(otherComponent.errorString()));
-        std::unique_ptr<QObject> otherObject(otherComponent.create());
-        QVERIFY2(otherObject, qPrintable(otherComponent.errorString()));
-        auto* otherAttached = attachedToolTip(otherObject.get());
-        QVERIFY(otherAttached);
-        QVERIFY(otherAttached->toolTip());
-        QVERIFY(otherAttached->toolTip() != sharedToolTip);
-    }
-
-    void toolTipTypeContract() {
-        QQmlComponent initiallyVisible(&m_engine);
-        initiallyVisible.setData(QByteArrayLiteral(R"(
-                import QtQuick
-                import Qcm.Material as MD
-                Item {
-                    width: 80
-                    height: 40
-                    MD.ToolTip.visible: true
-                    MD.ToolTip.delay: 0
-                    MD.ToolTip.text: "Initially visible"
-                }
-            )"),
-                                 QUrl(QStringLiteral("qrc:/tests/tooltip-initially-visible.qml")));
-        QVERIFY2(! initiallyVisible.isError(), qPrintable(initiallyVisible.errorString()));
-        std::unique_ptr<QObject> initiallyVisibleObject(initiallyVisible.create());
-        QVERIFY2(initiallyVisibleObject, qPrintable(initiallyVisible.errorString()));
-        auto* initiallyVisibleItem = qobject_cast<QQuickItem*>(initiallyVisibleObject.get());
-        QVERIFY(initiallyVisibleItem);
-        initiallyVisibleItem->setParentItem(m_window.contentItem());
-        auto* initiallyVisibleAttached = attachedToolTip(initiallyVisibleItem);
-        QVERIFY(initiallyVisibleAttached);
-        QTRY_VERIFY(initiallyVisibleAttached->visible());
-        QCOMPARE(initiallyVisibleAttached->toolTip()->property("text").toString(),
-                 QStringLiteral("Initially visible"));
-        initiallyVisibleAttached->hide();
-
-        QQmlComponent attachedOnly(&m_engine);
-        attachedOnly.setData(QByteArrayLiteral(R"(
-                import Qcm.Material as MD
-                MD.ToolTip {}
-            )"),
-                             QUrl(QStringLiteral("qrc:/tests/tooltip-uncreatable.qml")));
-        QVERIFY(attachedOnly.isError());
-
-        QQmlComponent plain(&m_engine);
-        plain.setData(QByteArrayLiteral(R"(
-                import Qcm.Material as MD
-                MD.PlainToolTip {}
-            )"),
-                      QUrl(QStringLiteral("qrc:/tests/plain-tooltip.qml")));
-        QVERIFY2(! plain.isError(), qPrintable(plain.errorString()));
-        std::unique_ptr<QObject> plainObject(plain.create());
-        QVERIFY2(plainObject, qPrintable(plain.errorString()));
-    }
-
-    void actionToolBarTooltips() {
-        const auto source = QByteArrayLiteral(R"(
-            import QtQuick
-            import Qcm.Material as MD
-
-            Item {
-                width: 240
-                height: 64
-
-                property MD.Action explicitAction: MD.Action {
-                    text: "Refresh"
-                    tooltip: "Reload content"
-                    icon.name: MD.Token.icon.refresh
-                }
-                property MD.Action fallbackAction: MD.Action {
-                    text: "Settings"
-                    icon.name: MD.Token.icon.settings
-                }
-
-                MD.ActionToolBar {
-                    objectName: "toolbar"
-                    anchors.fill: parent
-                    actions: [parent.explicitAction, parent.fallbackAction]
-                }
-            }
-        )");
-
-        QQmlComponent component(&m_engine);
-        component.setData(source, QUrl(QStringLiteral("qrc:/tests/action-toolbar-tooltip.qml")));
-        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
-
-        std::unique_ptr<QObject> object(component.create());
-        QVERIFY2(object, qPrintable(component.errorString()));
-        auto* root = qobject_cast<QQuickItem*>(object.get());
-        QVERIFY(root);
-        root->setParentItem(m_window.contentItem());
-        settle(root, 12);
-
-        auto* toolbar        = root->findChild<QQuickItem*>(QStringLiteral("toolbar"));
-        auto* explicitAction = qvariant_cast<QObject*>(root->property("explicitAction"));
-        auto* fallbackAction = qvariant_cast<QObject*>(root->property("fallbackAction"));
-        QVERIFY(toolbar);
-        QVERIFY(explicitAction);
-        QVERIFY(fallbackAction);
-
-        auto* explicitButton = itemWithAction(toolbar, explicitAction);
-        auto* fallbackButton = itemWithAction(toolbar, fallbackAction);
-        auto* moreAction     = qvariant_cast<QObject*>(toolbar->property("moreAction"));
-        auto* moreButton     = itemWithAction(toolbar, moreAction);
-        QVERIFY(explicitButton);
-        QVERIFY(fallbackButton);
-        QVERIFY(moreAction);
-        QVERIFY(moreButton);
-
-        QCOMPARE(explicitButton->property("toolTipText").toString(),
-                 QStringLiteral("Reload content"));
-        QCOMPARE(fallbackButton->property("toolTipText").toString(), QStringLiteral("Settings"));
-        QCOMPARE(moreButton->property("toolTipText").toString(), QStringLiteral("More actions"));
-
-        auto* explicitToolTip = attachedToolTip(explicitButton);
-        auto* fallbackToolTip = attachedToolTip(fallbackButton);
-        auto* moreToolTip     = attachedToolTip(moreButton);
-        QVERIFY(explicitToolTip);
-        QVERIFY(fallbackToolTip);
-        QVERIFY(moreToolTip);
-        QCOMPARE(explicitToolTip->text(), QStringLiteral("Reload content"));
-        QCOMPARE(fallbackToolTip->text(), QStringLiteral("Settings"));
-        QCOMPARE(moreToolTip->text(), QStringLiteral("More actions"));
-
-        auto* sharedToolTip = explicitToolTip->toolTip();
-        QVERIFY(sharedToolTip);
-        QCOMPARE(fallbackToolTip->toolTip(), sharedToolTip);
-        QCOMPARE(moreToolTip->toolTip(), sharedToolTip);
-
-        explicitToolTip->show(explicitToolTip->text(), 0);
-        QTRY_VERIFY(explicitToolTip->visible());
-        QCOMPARE(sharedToolTip->property("text").toString(), QStringLiteral("Reload content"));
-        QCOMPARE(qvariant_cast<QQuickItem*>(sharedToolTip->property("parent")), explicitButton);
-
-        fallbackToolTip->show(fallbackToolTip->text(), 0);
-        QTRY_VERIFY(fallbackToolTip->visible());
-        QVERIFY(! explicitToolTip->visible());
-        QCOMPARE(qvariant_cast<QQuickItem*>(sharedToolTip->property("parent")), fallbackButton);
-
-        explicitToolTip->hide();
-        QVERIFY(fallbackToolTip->visible());
-        fallbackToolTip->hide();
-        QTRY_VERIFY(! fallbackToolTip->visible());
-
-        moreToolTip->show(moreToolTip->text(), 0);
-        QTRY_VERIFY(moreToolTip->visible());
-        QCOMPARE(sharedToolTip->property("text").toString(), QStringLiteral("More actions"));
-        moreToolTip->hide();
-
-        QVERIFY(explicitAction->setProperty("tooltip", QStringLiteral("Reload current page")));
-        settle(root);
-        QCOMPARE(explicitButton->property("toolTipText").toString(),
-                 QStringLiteral("Reload current page"));
-        QCOMPARE(explicitToolTip->text(), QStringLiteral("Reload current page"));
-    }
-
     void expandedCenteredControlsKeepNaturalContent_data() {
         QTest::addColumn<QString>("type");
 
@@ -1688,234 +703,6 @@ private Q_SLOTS:
         auto* label = itemWithText(row, text);
         QVERIFY(label);
         QVERIFY(! label->property("truncated").toBool());
-    }
-
-    void menuItemBusyReplacesIcon() {
-        const auto source = QByteArrayLiteral(R"(
-            import QtQuick
-            import Qcm.Material as MD
-
-            MD.MenuItem {
-                text: "Syncing"
-                action: MD.Action {
-                    icon.name: MD.Token.icon.sync
-                    busy: MD.Enum.Progress
-                    progress: 0.5
-                }
-            }
-        )");
-
-        QQmlComponent component(&m_engine);
-        component.setData(source, QUrl(QStringLiteral("qrc:/tests/busy-menu-item.qml")));
-        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
-
-        std::unique_ptr<QObject> object(component.create());
-        QVERIFY2(object, qPrintable(component.errorString()));
-        auto* menuItem = qobject_cast<QQuickItem*>(object.get());
-        QVERIFY(menuItem);
-        menuItem->setParentItem(m_window.contentItem());
-        settle(menuItem);
-
-        auto* content = qvariant_cast<QQuickItem*>(menuItem->property("contentItem"));
-        auto* row     = layoutRow(content);
-        QVERIFY(row);
-        QVERIFY(! row->childItems().empty());
-        auto* leading = row->childItems().front();
-
-        QQuickItem* icon   = itemWithIconView(leading);
-        QQuickItem* loader = nullptr;
-        for (auto* child : leading->childItems()) {
-            if (child->property("active").isValid()) {
-                loader = child;
-            }
-        }
-        QVERIFY(icon);
-        QVERIFY(loader);
-        QVERIFY(! icon->isVisible());
-        QVERIFY(loader->isVisible());
-        QVERIFY(loader->property("active").toBool());
-    }
-
-    void menuConstrainsLongItem() {
-        const QString text   = QStringLiteral("long long long long long long long long long");
-        const auto    source = QStringLiteral(R"(
-            import QtQuick
-            import Qcm.Material as MD
-
-            Item {
-                width: 500
-                height: 300
-
-                MD.Menu {
-                    objectName: "menu"
-                    parent: parent
-                    width: 240
-
-                    MD.MenuItem {
-                        objectName: "longItem"
-                        text: "%1"
-                        icon.name: MD.Token.icon.description
-                    }
-                }
-            }
-        )")
-                                   .arg(text)
-                                   .toUtf8();
-
-        QQmlComponent component(&m_engine);
-        component.setData(source, QUrl(QStringLiteral("qrc:/tests/long-menu-item.qml")));
-        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
-
-        std::unique_ptr<QObject> object(component.create());
-        QVERIFY2(object, qPrintable(component.errorString()));
-        auto* root = qobject_cast<QQuickItem*>(object.get());
-        QVERIFY(root);
-        root->setParentItem(m_window.contentItem());
-
-        auto* menu = root->findChild<QObject*>(QStringLiteral("menu"));
-        QVERIFY(menu);
-        QVERIFY(QMetaObject::invokeMethod(menu, "open"));
-        QCoreApplication::processEvents();
-
-        auto* menuItem = root->findChild<QQuickItem*>(QStringLiteral("longItem"));
-        QVERIFY(menuItem);
-        settle(menuItem);
-        QVERIFY(menuItem->width() > 0);
-        QVERIFY(menuItem->width() <= 240.0);
-
-        auto* content = qvariant_cast<QQuickItem*>(menuItem->property("contentItem"));
-        QVERIFY(content);
-        auto* label = itemWithText(content, text);
-        QVERIFY(label);
-        QVERIFY(label->implicitWidth() > label->width());
-        QVERIFY(label->property("truncated").toBool());
-
-        QVERIFY(QMetaObject::invokeMethod(menu, "close"));
-    }
-
-    void menuContentDelegateReceivesWidth() {
-        const QString text = QStringLiteral(
-            "long long long long long long long long long long long long long long long");
-        const auto source = QStringLiteral(R"(
-            import QtQuick
-            import Qcm.Material as MD
-
-            Item {
-                width: 500
-                height: 300
-
-                MD.Menu {
-                    objectName: "menu"
-                    parent: parent
-                    width: 240
-                    model: ["%1"]
-                    contentDelegate: MD.MenuItem {
-                        objectName: "contentDelegateItem"
-                        required property string modelData
-                        text: modelData
-                    }
-                }
-            }
-        )")
-                                .arg(text)
-                                .toUtf8();
-
-        QQmlComponent component(&m_engine);
-        component.setData(source, QUrl(QStringLiteral("qrc:/tests/menu-content-delegate.qml")));
-        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
-
-        std::unique_ptr<QObject> object(component.create());
-        QVERIFY2(object, qPrintable(component.errorString()));
-        auto* root = qobject_cast<QQuickItem*>(object.get());
-        QVERIFY(root);
-        root->setParentItem(m_window.contentItem());
-
-        auto* menu = root->findChild<QObject*>(QStringLiteral("menu"));
-        QVERIFY(menu);
-        QVERIFY(QMetaObject::invokeMethod(menu, "open"));
-        QCoreApplication::processEvents();
-
-        QQuickItem* delegate = nullptr;
-        QTRY_VERIFY_WITH_TIMEOUT(
-            QMetaObject::invokeMethod(
-                menu, "itemAt", Q_RETURN_ARG(QQuickItem*, delegate), Q_ARG(int, 0)) &&
-                delegate,
-            3000);
-        settle(delegate);
-        QCOMPARE(menu->property("count").toInt(), 1);
-        QCOMPARE(menu->property("implicitContentWidth").toReal(), delegate->implicitWidth());
-        QCOMPARE(delegate->width(), menu->property("availableWidth").toReal());
-
-        QVERIFY(menu->setProperty("width", 180.0));
-        settle(delegate);
-        QCOMPARE(delegate->width(), menu->property("availableWidth").toReal());
-
-        auto* label = itemWithText(delegate, text);
-        QVERIFY(label);
-        QVERIFY(label->implicitWidth() > label->width());
-        QVERIFY(label->property("truncated").toBool());
-
-        QVERIFY(QMetaObject::invokeMethod(menu, "close"));
-    }
-
-    void actionMenuConstrainsLongItem() {
-        const QString text = QStringLiteral(
-            "long long long long long long long long long long long long long long long");
-        const auto source = QStringLiteral(R"(
-            import QtQuick
-            import Qcm.Material as MD
-
-            Item {
-                id: testRoot
-                width: 500
-                height: 300
-
-                property MD.Action longAction: MD.Action {
-                    text: "%1"
-                    icon.name: MD.Token.icon.description
-                }
-
-                MD.ActionMenu {
-                    objectName: "menu"
-                    parent: testRoot
-                    actions: [testRoot.longAction]
-                    itemDelegate: MD.MenuItem { objectName: "actionItem" }
-                }
-            }
-        )")
-                                .arg(text)
-                                .toUtf8();
-
-        QQmlComponent component(&m_engine);
-        component.setData(source, QUrl(QStringLiteral("qrc:/tests/long-action-menu-item.qml")));
-        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
-
-        std::unique_ptr<QObject> object(component.create());
-        QVERIFY2(object, qPrintable(component.errorString()));
-        auto* root = qobject_cast<QQuickItem*>(object.get());
-        QVERIFY(root);
-        root->setParentItem(m_window.contentItem());
-
-        auto* menu = root->findChild<QObject*>(QStringLiteral("menu"));
-        QVERIFY(menu);
-        QVERIFY(QMetaObject::invokeMethod(menu, "open"));
-        QCoreApplication::processEvents();
-
-        auto* actionItem = root->findChild<QQuickItem*>(QStringLiteral("actionItem"));
-        QVERIFY(actionItem);
-        settle(actionItem);
-
-        QCOMPARE(menu->property("maximumWidth").toReal(), 280.0);
-        QCOMPARE(menu->property("implicitContentWidth").toReal(), actionItem->implicitWidth());
-        QCOMPARE(menu->property("implicitWidth").toReal(), 280.0);
-        QCOMPARE(actionItem->width(), menu->property("availableWidth").toReal());
-
-        auto* label = itemWithText(actionItem, text);
-        QVERIFY(label);
-        QVERIFY(label->implicitWidth() > label->width());
-        QVERIFY(label->property("truncated").toBool());
-
-        QVERIFY(QMetaObject::invokeMethod(menu, "close"));
     }
 
     void embedChipIconsRecoverAfterAncestorVisibilityChange() {
@@ -2088,6 +875,7 @@ private Q_SLOTS:
             }
         }
     }
+
     void textLineHeightAlignment() {
         QFETCH(QString, type);
         QFETCH(QString, family);
@@ -2366,79 +1154,6 @@ private Q_SLOTS:
         QCOMPARE(comboBox->property("resolvedFontSize").toInt(), fontSize);
     }
 
-    void colorPickerButtonDialogLifecycle() {
-        QTest::failOnWarning(QRegularExpression(".*"));
-        QQmlComponent component(&m_engine);
-        component.setData(R"(
-            import QtQuick
-            import Qcm.Material as MD
-            MD.ColorPickerButton { color: "#123456"; showAlpha: false }
-        )",
-                          QUrl());
-        std::unique_ptr<QObject> object(component.create());
-        QVERIFY2(object, qPrintable(component.errorString()));
-        auto* button = qobject_cast<qml_material::AbstractButton*>(object.get());
-        QVERIFY(button);
-        QVERIFY(button->findChildren<qml_material::Dialog*>().isEmpty());
-        QVERIFY(QMetaObject::invokeMethod(button, "dismissPopup"));
-        QVERIFY(button->findChildren<qml_material::Dialog*>().isEmpty());
-        button->click();
-        QVERIFY(button->findChildren<qml_material::Dialog*>().isEmpty());
-        button->setParentItem(m_window.contentItem());
-        QSignalSpy accepted(button, SIGNAL(accepted(QColor)));
-        QVERIFY(accepted.isValid());
-
-        button->click();
-        QPointer<qml_material::Dialog> dialog = button->findChild<qml_material::Dialog*>();
-        QVERIFY(dialog);
-        QVERIFY(dialog->isVisible());
-        QCOMPARE(dialog->property("color").value<QColor>(), QColor("#123456"));
-        QCOMPARE(dialog->property("showAlpha").toBool(), false);
-        button->click();
-        QCOMPARE(button->findChildren<qml_material::Dialog*>().size(), 1);
-        button->setProperty("color", QColor("#abcdef"));
-        button->setProperty("showAlpha", true);
-        QCOMPARE(dialog->property("color").value<QColor>(), QColor("#abcdef"));
-        QCOMPARE(dialog->property("showAlpha").toBool(), true);
-
-        dialog->setProperty("color", QColor("#fedcba"));
-        dialog->setExit(nullptr);
-        dialog->setDeferredCompletion(true);
-        dialog->reject();
-        QVERIFY(dialog->closing());
-        button->click();
-        QCOMPARE(button->findChildren<qml_material::Dialog*>().size(), 1);
-        dialog->completeExit();
-        QTRY_VERIFY(dialog.isNull());
-        QCOMPARE(accepted.size(), 0);
-        QCOMPARE(button->property("color").value<QColor>(), QColor("#abcdef"));
-
-        button->click();
-        dialog = button->findChild<qml_material::Dialog*>();
-        QVERIFY(dialog);
-        QCOMPARE(dialog->property("color").value<QColor>(), QColor("#abcdef"));
-        dialog->setExit(nullptr);
-        dialog->setProperty("color", QColor("#2468ac"));
-        dialog->accept();
-        QCOMPARE(accepted.size(), 1);
-        QCOMPARE(accepted.at(0).at(0).value<QColor>(), QColor("#2468ac"));
-        QCOMPARE(button->property("color").value<QColor>(), QColor("#2468ac"));
-        QTRY_VERIFY(dialog.isNull());
-
-        button->click();
-        dialog = button->findChild<qml_material::Dialog*>();
-        QVERIFY(dialog);
-        QVERIFY(QMetaObject::invokeMethod(button, "dismissPopup"));
-        QVERIFY(! dialog->isVisible());
-        QTRY_VERIFY(dialog.isNull());
-        QCOMPARE(accepted.size(), 1);
-
-        button->click();
-        dialog = button->findChild<qml_material::Dialog*>();
-        QVERIFY(dialog);
-        object.reset();
-        QTRY_VERIFY(dialog.isNull());
-    }
     void colorPickerSwatchDoesNotOverlapHexText() {
         QQmlComponent component(&m_engine);
         component.setData(QByteArrayLiteral(R"(
@@ -2704,362 +1419,131 @@ private Q_SLOTS:
         QCOMPARE(snakeBar->implicitHeight(), 112.0);
     }
 
-    void iconRenderingUsesCurvePath_data() {
-        QTest::addColumn<int>("size");
-
-        QTest::newRow("18") << 18;
-        QTest::newRow("20") << 20;
-        QTest::newRow("24") << 24;
-    }
-
-    void iconRenderingUsesCurvePath() {
-        QFETCH(int, size);
-
-        const auto source = QStringLiteral(R"(
+    void targetSelection() {
+        QQmlEngine engine;
+        engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));
+        QQmlComponent component(&engine);
+        component.setData(R"(
             import QtQuick
             import Qcm.Material as MD
-
-            MD.Icon {
-                id: icon
-                name: MD.Token.icon.content_copy
-                size: %1
-            }
-        )")
-                                .arg(size)
-                                .toUtf8();
-
-        QQmlComponent component(&m_engine);
-        component.setData(source, QUrl(QStringLiteral("qrc:/tests/icon-rendering.qml")));
-        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
-
-        std::unique_ptr<QObject> object(component.create());
-        QVERIFY2(object, qPrintable(component.errorString()));
-        auto* icon = qobject_cast<QQuickItem*>(object.get());
-        QVERIFY(icon);
-        icon->setParentItem(m_window.contentItem());
-        settle(icon);
-
-        QCOMPARE(icon->implicitWidth(), qreal(size));
-        QCOMPARE(icon->implicitHeight(), qreal(size));
-
-        auto* text = innerTextItem(icon);
-        QVERIFY(text);
-        const auto font = qvariant_cast<QFont>(text->property("font"));
-        QCOMPARE(font.pixelSize(), size);
-        QCOMPARE(text->property("lineHeight").toReal(), qreal(font.pixelSize()));
-        QCOMPARE(text->scale(), 1.0);
-        QCOMPARE(text->property("renderType").toInt(), curveRenderingType(m_engine));
-    }
-
-    void iconKeepsCurveConfigurationUnderParentScale_data() {
-        QTest::addColumn<qreal>("parentScale");
-
-        QTest::newRow("zoom-out-small") << 0.3;
-        QTest::newRow("zoom-out") << 0.5;
-        QTest::newRow("zoom-in-small") << 1.5;
-        QTest::newRow("zoom-in") << 2.0;
-        QTest::newRow("zoom-in-large") << 3.0;
-    }
-
-    void iconKeepsCurveConfigurationUnderParentScale() {
-        QFETCH(qreal, parentScale);
-
-        const auto source = QByteArrayLiteral(R"(
-            import QtQuick
-            import Qcm.Material as MD
-
-            Item {
-                id: host
-                MD.Icon {
-                    name: MD.Token.icon.content_copy
-                    size: 20
-                }
-            }
-        )");
-
-        QQmlComponent component(&m_engine);
-        component.setData(source, QUrl(QStringLiteral("qrc:/tests/icon-parent-scale.qml")));
-        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
-
-        std::unique_ptr<QObject> object(component.create());
-        QVERIFY2(object, qPrintable(component.errorString()));
-        auto* host = qobject_cast<QQuickItem*>(object.get());
-        QVERIFY(host);
-        host->setScale(parentScale);
-        host->setParentItem(m_window.contentItem());
-        settle(host);
-
-        auto* icon = itemWithIcon(host);
-        QVERIFY(icon);
-        QCOMPARE(icon->property("size").toInt(), 20);
-
-        auto* text = innerTextItem(icon);
-        QVERIFY(text);
-        const auto font = qvariant_cast<QFont>(text->property("font"));
-        QCOMPARE(font.pixelSize(), 20);
-        QCOMPARE(text->property("lineHeight").toReal(), qreal(font.pixelSize()));
-        QCOMPARE(text->scale(), 1.0);
-        QCOMPARE(text->property("renderType").toInt(), curveRenderingType(m_engine));
-    }
-
-    void iconRenderTypeCanBeOverridden() {
-        const auto source = QByteArrayLiteral(R"(
-            import QtQuick
-            import Qcm.Material as MD
-
-            MD.Icon {
-                property int expectedRenderType: Text.QtRendering
-                name: MD.Token.icon.content_copy
-                renderType: Text.QtRendering
-            }
-        )");
-
-        QQmlComponent component(&m_engine);
-        component.setData(source, QUrl(QStringLiteral("qrc:/tests/icon-render-type.qml")));
-        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
-
-        std::unique_ptr<QObject> object(component.create());
-        QVERIFY2(object, qPrintable(component.errorString()));
-        auto* icon = qobject_cast<QQuickItem*>(object.get());
-        QVERIFY(icon);
-
-        const int expectedRenderType = icon->property("expectedRenderType").toInt();
-        QCOMPARE(icon->property("renderType").toInt(), expectedRenderType);
-
-        auto* text = innerTextItem(icon);
-        QVERIFY(text);
-        QCOMPARE(text->property("renderType").toInt(), expectedRenderType);
-    }
-
-    void iconButtonContentIconSize() {
-        const auto source = QByteArrayLiteral(R"(
-            import QtQuick
-            import Qcm.Material as MD
-
-            MD.IconButton {
-                id: button
-                icon.name: MD.Token.icon.delete
-            }
-        )");
-
-        QQmlComponent component(&m_engine);
-        component.setData(source, QUrl(QStringLiteral("qrc:/tests/icon-button-icon-size.qml")));
-        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
-
-        std::unique_ptr<QObject> object(component.create());
-        QVERIFY2(object, qPrintable(component.errorString()));
-        auto* button = qobject_cast<QQuickItem*>(object.get());
-        QVERIFY(button);
-        button->setParentItem(m_window.contentItem());
-        settle(button);
-
-        auto* mdState = qvariant_cast<QObject*>(button->property("mdState"));
-        QVERIFY(mdState);
-        const qreal iconSize = mdState->property("iconSize").toReal();
-        QCOMPARE(iconSize, 24.0);
-
-        auto* content = qvariant_cast<QQuickItem*>(button->property("contentItem"));
-        QVERIFY(content);
-        QCOMPARE(content->implicitWidth(), iconSize);
-        QCOMPARE(content->implicitHeight(), iconSize);
-
-        auto* icon = itemWithIcon(content);
-        QVERIFY(icon);
-        QCOMPARE(icon->property("size").toInt(), qRound(iconSize));
-
-        QVERIFY(mdState->setProperty("size", int(qml_material::Enum::ButtonSize::XS)));
-        settle(button);
-        QCOMPARE(mdState->property("iconSize").toReal(), 22.0);
-        QCOMPARE(button->property("padding").toReal(), 8.0);
-        QCOMPARE(button->implicitWidth(), 38.0);
-        QCOMPARE(button->implicitHeight(), 38.0);
-        auto* background = qvariant_cast<QQuickItem*>(button->property("background"));
-        QVERIFY(background);
-        QCOMPARE(background->implicitWidth(), 0.0);
-        QCOMPARE(background->implicitHeight(), 0.0);
-        QCOMPARE(background->width(), 30.0);
-        QCOMPARE(background->height(), 30.0);
-        QCOMPARE(icon->property("size").toInt(), 22);
-
-        QVERIFY(button->setProperty("padding", 4.0));
-        settle(button);
-        QCOMPARE(button->implicitWidth(), 30.0);
-        QCOMPARE(button->implicitHeight(), 30.0);
-
-        QVERIFY(button->setProperty("padding", 8.0));
-        QVERIFY(mdState->setProperty("size", int(qml_material::Enum::ButtonSize::S)));
-        settle(button);
-        QCOMPARE(button->implicitWidth(), 48.0);
-        QCOMPARE(button->implicitHeight(), 48.0);
-        QCOMPARE(icon->property("size").toInt(), 24);
-    }
-
-    void carouselSupportsCompactEmbedding() {
-        const auto source = QByteArrayLiteral(R"(
-            import QtQuick
-            import Qcm.Material as MD
-
-            MD.Carousel {
-                property bool expanded: true
-                minimumViewportHeight: expanded ? 120 : 72
-                wheelNavigationEnabled: false
-                model: 2
-                delegate: Item {}
-            }
-        )");
-
-        QQmlComponent component(&m_engine);
-        component.setData(source, QUrl(QStringLiteral("qrc:/tests/carousel-compact.qml")));
-        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
-
-        std::unique_ptr<QObject> object(component.create());
-        QVERIFY2(object, qPrintable(component.errorString()));
-        auto* carousel = qobject_cast<QQuickItem*>(object.get());
-        QVERIFY(carousel);
-        carousel->setParentItem(m_window.contentItem());
-        settle(carousel);
-
-        QCOMPARE(carousel->property("minimumViewportHeight").toReal(), 120.0);
-        QCOMPARE(carousel->property("wheelNavigationEnabled").toBool(), false);
-        QCOMPARE(carousel->implicitHeight(), 120.0);
-
-        carousel->setProperty("expanded", false);
-        settle(carousel);
-        QCOMPARE(carousel->implicitHeight(), 72.0);
-        QCOMPARE(carousel->height(), 72.0);
-    }
-
-    void carouselItemUsesCornerRadiusOverride() {
-        const auto source = QByteArrayLiteral(R"(
-            import QtQuick
-            import Qcm.Material as MD
-
-            MD.CarouselItem {
-                property bool masked: false
-                index: 0
-                width: 72
-                height: 72
-                cornerRadius: 12
-                maskEnd: masked ? 0.75 : 0
-            }
-        )");
-
-        QQmlComponent component(&m_engine);
-        component.setData(source, QUrl(QStringLiteral("qrc:/tests/carousel-item-corner.qml")));
-        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
-
-        std::unique_ptr<QObject> object(component.create());
-        QVERIFY2(object, qPrintable(component.errorString()));
-        QCOMPARE(object->property("effectiveCornerRadius").toReal(), 12.0);
-
-        object->setProperty("masked", true);
-        settle(qobject_cast<QQuickItem*>(object.get()));
-        QCOMPARE(object->property("effectiveCornerRadius").toReal(), 9.0);
-    }
-
-    void carouselAcceptsQmlVarItemModel() {
-        QStandardItemModel model(1, 1);
-        model.setData(model.index(0, 0), QStringLiteral("Wallpaper"));
-
-        const auto source = QByteArrayLiteral(R"(
-            pragma ComponentBehavior: Bound
-            import QtQuick
-            import Qcm.Material as MD
-
             Item {
                 id: root
-                required property var suppliedModel
-                property int delegateCount: 0
-                width: 96
-                height: 72
-
-                MD.Carousel {
-                    anchors.fill: parent
-                    model: parent.suppliedModel
-                    itemExtent: 72
-                    minimumViewportHeight: 72
-                    delegate: Item {
-                        required property int index
-                        required property var model
-                        Component.onCompleted: root.delegateCount += 1
-                    }
+                width: 600
+                height: 100
+                property string selection: "all"
+                MD.FilterChip {
+                    objectName: "all"
+                    text: "All"
+                    selected: root.selection === "all"
+                    onSelectionRequested: root.selection = "all"
+                }
+                MD.FilterChip {
+                    objectName: "a"
+                    x: 200
+                    text: "A"
+                    selected: root.selection === "a"
+                    onSelectionRequested: root.selection = "a"
+                }
+                MD.FilterChip {
+                    objectName: "b"
+                    x: 400
+                    text: "B"
+                    selected: root.selection === "b"
+                    onSelectionRequested: root.selection = "b"
                 }
             }
-        )");
-
-        QQmlComponent component(&m_engine);
-        component.setData(source, QUrl(QStringLiteral("qrc:/tests/carousel-var-model.qml")));
-        QVERIFY2(! component.isError(), qPrintable(component.errorString()));
-
-        std::unique_ptr<QObject> object(component.createWithInitialProperties(
-            { { QStringLiteral("suppliedModel"), QVariant::fromValue(&model) } }));
-        QVERIFY2(object, qPrintable(component.errorString()));
-        auto* root = qobject_cast<QQuickItem*>(object.get());
-        QVERIFY(root);
-        root->setParentItem(m_window.contentItem());
-        settle(root);
-
-        QObject* view = nullptr;
-        for (auto* child : root->findChildren<QObject*>()) {
-            if (child->property("contentWidth").isValid() &&
-                child->property("currentIndex").isValid() &&
-                child->property("itemExtent").isValid()) {
-                view = child;
-                break;
-            }
+        )",
+                          QUrl());
+        QVERIFY2(component.isReady(), qPrintable(component.errorString()));
+        QQuickWindow window;
+        window.resize(600, 100);
+        std::unique_ptr<QObject> root(component.create());
+        QVERIFY2(root, qPrintable(component.errorString()));
+        auto* item = qobject_cast<QQuickItem*>(root.get());
+        QVERIFY(item);
+        item->setParentItem(window.contentItem());
+        window.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        auto* all = root->findChild<qml_material::SelectionButton*>("all");
+        auto* a   = root->findChild<qml_material::SelectionButton*>("a");
+        auto* b   = root->findChild<qml_material::SelectionButton*>("b");
+        QVERIFY(all && a && b);
+        const auto leading = [](qml_material::SelectionButton* button) {
+            return button->contentItem()->childItems().front();
+        };
+        const auto verifyIcon = [&](qml_material::SelectionButton* selected,
+                                    qml_material::SelectionButton* deselected) {
+            auto* icon  = leading(selected);
+            auto* inner = icon->childItems().front();
+            QTRY_VERIFY(inner->implicitWidth() > 0);
+            QTRY_COMPARE(icon->implicitWidth(), inner->implicitWidth());
+            QTRY_COMPARE(icon->opacity(), 1);
+            QVERIFY(icon->isVisible());
+            QTRY_VERIFY(icon->width() > 0);
+            QTRY_COMPARE(leading(deselected)->implicitWidth(), 0);
+            QTRY_COMPARE(leading(deselected)->opacity(), 0);
+        };
+        for (int i = 0; i < 3; ++i) {
+            a->click();
+            QVERIFY(a->isSelected() && ! b->isSelected() && ! all->isSelected());
+            verifyIcon(a, all);
+            b->click();
+            QVERIFY(! a->isSelected() && b->isSelected() && ! all->isSelected());
+            verifyIcon(b, a);
+            all->click();
+            QVERIFY(! a->isSelected() && ! b->isSelected() && all->isSelected());
+            verifyIcon(all, b);
         }
-        QVERIFY(view);
-        QCOMPARE(view->property("count").toInt(), 1);
-        QCOMPARE(root->property("delegateCount").toInt(), 1);
     }
 
-    void carouselLayoutDoesNotRewriteDelegateModel() {
-        const auto source = QByteArrayLiteral(R"(
-            pragma ComponentBehavior: Bound
+    void applicationWindowOwnsContent() {
+        QTest::failOnWarning(QRegularExpression(QStringLiteral(".*contentItem.*overrides.*")));
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
             import QtQuick
             import Qcm.Material as MD
 
-            Item {
-                id: root
-                width: 480
-                height: 160
-                property int modelChangeCount: 0
+            MD.ApplicationWindow {
+                width: 320
+                height: 240
+                property alias contentChild: contentChild
+                property alias appBackground: appBackground
+                property alias appMenuBar: appMenuBar
+                property alias appHeader: appHeader
+                property alias appFooter: appFooter
 
-                MD.Carousel {
-                    id: carousel
-                    objectName: "carousel"
-                    anchors.fill: parent
-                    layout: MD.Enum.CarouselHero
-                    model: [{}, {}, {}]
-                    delegate: Item {
-                        required property int index
-                        required property var model
-                        property real itemAspectRatio: 1.5
-                        onModelChanged: root.modelChangeCount += 1
-                    }
+                background: Item { id: appBackground }
+                menuBar: Item { id: appMenuBar }
+                header: Item { id: appHeader }
+                footer: Item { id: appFooter }
+
+                Item {
+                    id: contentChild
+                    objectName: "contentChild"
+                    width: 16
+                    height: 16
                 }
             }
-        )");
-
-        QQmlComponent component(&m_engine);
-        component.setData(source, QUrl(QStringLiteral("qrc:/tests/carousel-model-lifecycle.qml")));
+        )",
+                          QUrl(QStringLiteral("qrc:/tests/application-window-content.qml")));
         QVERIFY2(! component.isError(), qPrintable(component.errorString()));
-
         std::unique_ptr<QObject> object(component.create());
         QVERIFY2(object, qPrintable(component.errorString()));
-        auto* root = qobject_cast<QQuickItem*>(object.get());
-        QVERIFY(root);
-        root->setParentItem(m_window.contentItem());
-        settle(root);
+        auto* window = qobject_cast<qml_material::ApplicationWindow*>(object.get());
+        QVERIFY(window);
 
-        auto* carousel = root->findChild<QQuickItem*>(QStringLiteral("carousel"));
-        QVERIFY(carousel);
-        const int initialModelChangeCount = root->property("modelChangeCount").toInt();
-        QVERIFY(initialModelChangeCount > 0);
-
-        carousel->setProperty("itemExtent", carousel->property("itemExtent").toReal() + 1);
-        settle(root);
-        QCOMPARE(root->property("modelChangeCount").toInt(), initialModelChangeCount);
+        auto* contentChild = qvariant_cast<QQuickItem*>(object->property("contentChild"));
+        QVERIFY(contentChild);
+        QCOMPARE(contentChild->parentItem(), window->contentItem());
+        QCOMPARE(window->background(),
+                 qvariant_cast<QQuickItem*>(object->property("appBackground")));
+        QCOMPARE(window->menuBar(), qvariant_cast<QQuickItem*>(object->property("appMenuBar")));
+        QCOMPARE(window->header(), qvariant_cast<QQuickItem*>(object->property("appHeader")));
+        QCOMPARE(window->footer(), qvariant_cast<QQuickItem*>(object->property("appFooter")));
+        QCOMPARE(window->frameItem()->parentItem(),
+                 static_cast<QQuickWindow*>(window)->contentItem());
+        QCOMPARE(window->frameItem()->size(),
+                 static_cast<QQuickWindow*>(window)->contentItem()->size());
     }
 
 private:
@@ -3068,8 +1552,9 @@ private:
 };
 
 int run_control_layout(int argc, char** argv) {
-    ControlLayoutTest tc;
-    return QTest::qExec(&tc, argc, argv);
+    ControlLayoutTest test;
+    QTEST_SET_MAIN_SOURCE_PATH
+    return QTest::qExec(&test, argc, argv);
 }
 
 #include "control_layout.moc"

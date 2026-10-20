@@ -1,11 +1,10 @@
 #include "qml_material/style/fab_state.hpp"
-#include "qml_material/control/button.hpp"
+#include "qml_material/control/button_control.hpp"
 #include "qml_material/core/enum.hpp"
 #include "qml_material/token/color.hpp"
 namespace qml_material
 {
-FABState::FABState(QObject* parent)
-    : ButtonInteractionState(parent, FocusTreatment::Pressed, PressSource::Pressed) {
+FABState::FABState(QObject* parent): ButtonInteractionState(parent) {
     auto base = baseBindings();
     base.bind(m_appearance.elevation, [this]() -> qreal {
         return elevationTokens().level3;
@@ -42,20 +41,17 @@ FABState::FABState(QObject* parent)
     base.bind(m_appearance.stateLayerColor, [this] {
         return textColor();
     });
-    for (auto state : { Interaction::Pressed, Interaction::Hovered }) {
-        auto active = stateBindings(state);
-        active.bind(m_appearance.elevation, [this, state]() -> qreal {
-            return state == Interaction::Pressed ? elevationTokens().level3
-                                                 : elevationTokens().level4;
-        });
-        active.bind(m_appearance.stateLayerOpacity, [this, state]() -> qreal {
-            return state == Interaction::Pressed ? stateTokens().pressed.state_layer_opacity
-                                                 : stateTokens().hover.state_layer_opacity;
-        });
-    }
+    appearanceWhen([this] {
+        return elevationInteraction() != qml_material::Interaction::None;
+    }).bind(m_appearance.elevation, [this]() -> qreal {
+        return elevationInteraction() == qml_material::Interaction::Hover
+                   ? elevationTokens().level4
+                   : elevationTokens().level3;
+    });
+    bindStateLayerOpacity();
 }
-Button*        FABState::item() const { return static_cast<Button*>(inputItem()); }
-void           FABState::setItem(Button* item) { setInputItem(item); }
+ButtonControl* FABState::item() const { return inputItem(); }
+void           FABState::setItem(ButtonControl* item) { setInputItem(item, {}, {}); }
 int            FABState::type() const { return m_type.value(); }
 void           FABState::setType(int value) { m_type = value; }
 QBindable<int> FABState::bindableType() { return QBindable<int>(&m_type); }

@@ -7,9 +7,8 @@ MD.Dialog {
 
     property color color
     property bool showAlpha: true
+    readonly property color selectedColor: m_picker.color
     standardButtons: MD.Dialog.Cancel | MD.Dialog.Ok
-
-    signal acceptedColor(color c)
 
     title: "Pick color"
     buttonBoxPadding: 12
@@ -25,5 +24,4 @@ MD.Dialog {
             anchors.horizontalCenter: parent.horizontalCenter
         }
     }
-    onAccepted: control.acceptedColor(m_picker.color)
 }

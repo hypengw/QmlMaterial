@@ -8,7 +8,7 @@
 
 namespace qml_material
 {
-ItemDelegate::ItemDelegate(QQuickItem* parent): AbstractButton(parent) {
+ItemDelegate::ItemDelegate(QQuickItem* parent): CombinedCommandButton(parent) {
     setFocusPolicy(Qt::NoFocus);
     setPadding(12);
     setSpacing(8);
@@ -19,7 +19,7 @@ ItemDelegate::ItemDelegate(QQuickItem* parent): AbstractButton(parent) {
             this,
             &ItemDelegate::implicitDelegateHeightChanged);
     connect(this,
-            &AbstractButton::implicitIndicatorHeightChanged,
+            &ButtonPresentation::implicitIndicatorHeightChanged,
             this,
             &ItemDelegate::implicitDelegateHeightChanged);
     connect(this, &Control::topPaddingChanged, this, &ItemDelegate::implicitDelegateHeightChanged);
@@ -31,7 +31,7 @@ qreal ItemDelegate::implicitDelegateHeight() const {
                     implicitIndicatorHeight() + topPadding() + bottomPadding());
 }
 void ItemDelegate::classBegin() {
-    AbstractButton::classBegin();
+    CombinedCommandButton::classBegin();
     auto* theme = qobject_cast<Theme*>(qmlAttachedPropertiesObject<Theme>(this, true));
     m_defaultIconColor.setBinding([theme] {
         auto* colors = theme->color();

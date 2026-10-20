@@ -28,6 +28,7 @@ MD.TextFieldEmbed {
     readonly property real __inputBottomPadding: mdState.type === MD.Enum.TextFieldFilled ? mdState.verticalPadding / 2 : mdState.verticalPadding
     property MD.StateTextField mdState: MD.StateTextField {
         item: control
+        interactionSource: control.interactionSource
     }
     Binding {
         control.mdState.type: control.type

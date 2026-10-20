@@ -2,11 +2,12 @@ import QtQuick
 import Qcm.Material as MD
 import Qcm.Material.Layouts as Lite
 
-MD.ButtonBase {
+MD.CommandButtonBase {
     id: control
 
     readonly property bool hasIcon: !icon.empty
     property MD.StateSuggestionChip mdState: MD.StateSuggestionChip {
+        focusIndicationEnabled: false
         item: control
     }
 
@@ -15,7 +16,6 @@ MD.ButtonBase {
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
-    flat: true
     leftInset: 0
     rightInset: 0
     topInset: 0
@@ -70,16 +70,14 @@ MD.ButtonBase {
         MD.Ripple {
             anchors.fill: parent
             radius: parent.radius
-            pressX: control.pressX
-            pressY: control.pressY
-            pressed: control.pressed
-            stateOpacity: control.mdState.stateLayerOpacity
+            interactionSource: control.interactionSource
+            indication: control.mdState.indication
             color: control.mdState.stateLayerColor
         }
 
         MD.FocusIndicator {
             corners: MD.Util.corners(parent.radius)
-            active: control.visualFocus
+            active: control.focusVisible
         }
     }
 }

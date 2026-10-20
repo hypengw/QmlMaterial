@@ -19,7 +19,7 @@ MD.ItemDelegate {
 
     readonly property TableView tableView: TableView.view as TableView
     readonly property QtObject mdTableView: TableView.view as QtObject
-    readonly property bool rowHovered: hovered || (mdTableView?.hoveredRow ?? -1) === row
+    readonly property bool rowHovered: mdState.interactions.hovered || (mdTableView?.hoveredRow ?? -1) === row
     property int rows: TableView.view?.rows ?? 0
     property int columns: TableView.view?.columns ?? 0
     property MD.StateTableViewDelegate mdState: MD.StateTableViewDelegate {
@@ -32,7 +32,12 @@ MD.ItemDelegate {
 
     highlighted: selected
 
-    onHoveredChanged: MD.Util.cellHoveredOn(TableView.view, hovered, row, column)
+    Connections {
+        target: control.mdState
+        function onInteractionsChanged() {
+            MD.Util.cellHoveredOn(control.TableView.view, control.mdState.interactions.hovered, control.row, control.column);
+        }
+    }
 
     contentItem: MD.Label {
         clip: false
@@ -63,10 +68,8 @@ MD.ItemDelegate {
             corners: control.corners
             width: parent.width
             height: parent.height
-            pressX: control.pressX
-            pressY: control.pressY
-            pressed: control.pressed
-            stateOpacity: control.mdState.stateLayerOpacity
+            interactionSource: control.interactionSource
+            indication: control.mdState.indication
             color: control.mdState.stateLayerColor
         }
 

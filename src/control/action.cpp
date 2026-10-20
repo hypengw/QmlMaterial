@@ -6,14 +6,12 @@
 namespace qml_material
 {
 Action::Action(QObject* parent): QObject(parent), m_icon(new ActionIcon(this)) {
-    m_checkedNotifier   = m_checked.addNotifier([this] {
-        checkedChange();
-    });
     m_checkableNotifier = m_checkable.addNotifier([this] {
         Q_EMIT checkableChanged();
     });
 }
 Action::~Action() {
+    m_destroying = true;
     if (m_group) m_group->removeAction(this);
 }
 void Action::setText(const QString& value) { m_text = value; }
@@ -77,14 +75,16 @@ void Action::setEnabled(bool value) {
     m_enabled      = value;
     if (old != isEnabled()) Q_EMIT enabledChanged();
 }
-void Action::setCheckable(bool value) { updateCheckable(value); }
-void Action::setChecked(bool value) { updateChecked(value); }
-void Action::updateChecked(bool value) { utils::updateBoundValue(m_checked, value); }
-void Action::updateCheckable(bool value) { utils::updateBoundValue(m_checkable, value); }
-void Action::checkedChange() {
-    const QPointer<Action> guard(this);
-    if (m_group) m_group->update(this);
-    if (guard) Q_EMIT checkedChanged();
+void Action::setCheckable(bool value) { utils::updateBoundValue(m_checkable, value); }
+bool Action::isChecked() const { return m_group ? m_group->isChecked(this) : m_standaloneChecked; }
+void Action::setChecked(bool value) {
+    if (m_group) {
+        m_group->setMemberChecked(this, value);
+        return;
+    }
+    if (m_standaloneChecked == value) return;
+    m_standaloneChecked = value;
+    Q_EMIT checkedChanged();
 }
 ActionGroup* Action::group() const { return m_group; }
 void         Action::setGroup(ActionGroup* value) {
@@ -94,34 +94,42 @@ void         Action::setGroup(ActionGroup* value) {
     else if (m_group)
         m_group->removeAction(this);
 }
-bool Action::canToggle() const {
-    return m_checkable && (! m_checked || ! m_group || ! m_group->isExclusive());
+bool Action::canToggle() const { return acceptsChecked(! isChecked()); }
+bool Action::acceptsChecked(bool value) const {
+    return isEnabled() && m_checkable &&
+           (value || ! isChecked() || ! m_group || ! m_group->isExclusive());
 }
 void Action::toggle(QObject* source) {
-    if (! isEnabled()) return;
+    if (! canTrigger() || ! canToggle()) return;
     QPointer<Action>  guard(this);
     QPointer<QObject> sourceGuard(source);
-    if (m_checkable) updateChecked(! m_checked);
-    if (guard) Q_EMIT toggled(sourceGuard);
-}
-void Action::trigger(QObject* source) {
-    if (! canTrigger()) return;
-    QPointer<Action>  guard(this);
-    QPointer<QObject> sourceGuard(source);
-    m_triggering = true;
-    if (canToggle()) toggle(source);
+    const bool        previous = isChecked();
+    m_triggering               = true;
+    setChecked(! previous);
     if (! guard) return;
-    if (isEnabled()) Q_EMIT triggered(sourceGuard);
+    if (isChecked() != previous) Q_EMIT toggled(sourceGuard);
     if (guard) m_triggering = false;
 }
-void Action::triggerFromControl(QObject* source, bool changed) {
-    if (! canTrigger()) return;
+bool Action::trigger(QObject* source) {
+    return activate(canToggle() ? std::optional<bool>(! isChecked()) : std::nullopt, source);
+}
+void Action::requestChecked(bool checked, QObject* source) {
+    if (! acceptsChecked(checked)) return;
+    activate(checked, source);
+}
+bool Action::activate(std::optional<bool> checked, QObject* source) {
+    if (! canTrigger()) return false;
     QPointer<Action>  guard(this);
     QPointer<QObject> sourceGuard(source);
-    m_triggering = true;
-    if (changed) Q_EMIT toggled(sourceGuard);
-    if (! guard) return;
-    if (isEnabled()) Q_EMIT triggered(sourceGuard);
+    m_triggering        = true;
+    const bool previous = isChecked();
+    if (checked) setChecked(*checked);
+    if (! guard) return false;
+    if (isChecked() != previous) Q_EMIT toggled(sourceGuard);
+    if (! guard) return false;
+    const bool dispatched = isEnabled();
+    if (dispatched) Q_EMIT triggered(sourceGuard);
     if (guard) m_triggering = false;
+    return dispatched;
 }
 } // namespace qml_material

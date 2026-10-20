@@ -1,6 +1,7 @@
 #pragma once
 
 #include "qml_material/control/panel.hpp"
+#include "qml_material/input/input_host.hpp"
 
 namespace qml_material
 {
@@ -93,28 +94,30 @@ protected:
     void   geometryChange(const QRectF&, const QRectF&) override;
 
 private:
-    qreal   margin() const { return m_detached ? 16 : 0; }
-    qreal   hiddenX() const;
-    qreal   expandedX() const;
-    qreal   sheetX() const;
-    bool    releaseOpens(QPointF velocity) const;
-    void    request(bool expanded, bool animate);
-    void    updateLayout();
-    void    configurationUpdated();
-    Panel*  m_sheet;
-    Edge    m_edge         = End;
-    State   m_state        = Hidden;
-    State   m_lastStable   = Hidden;
-    qreal   m_position     = 0;
-    qreal   m_sheetWidth   = 256;
-    qreal   m_hideFriction = 0.1;
-    bool    m_expanded     = false;
-    bool    m_detached     = false;
-    bool    m_coplanar     = false;
-    bool    m_draggable    = true;
-    bool    m_initializing = false;
-    bool    m_layoutBusy   = false;
-    bool    m_layoutDirty  = false;
-    quint32 m_revision     = 0;
+    qreal     margin() const { return m_detached ? 16 : 0; }
+    qreal     hiddenX() const;
+    qreal     expandedX() const;
+    qreal     sheetX() const;
+    bool      releaseOpens(QPointF velocity) const;
+    void      request(bool expanded, bool animate);
+    void      updateLayout();
+    void      configurationUpdated();
+    Panel*    m_sheet;
+    Edge      m_edge         = End;
+    State     m_state        = Hidden;
+    State     m_lastStable   = Hidden;
+    qreal     m_position     = 0;
+    qreal     m_sheetWidth   = 256;
+    qreal     m_hideFriction = 0.1;
+    bool      m_expanded     = false;
+    bool      m_detached     = false;
+    bool      m_coplanar     = false;
+    bool      m_draggable    = true;
+    bool      m_initializing = false;
+    bool      m_layoutBusy   = false;
+    bool      m_layoutDirty  = false;
+    quint32   m_revision     = 0;
+    QPointF   m_lastPoint;
+    InputHost m_input;
 };
 } // namespace qml_material

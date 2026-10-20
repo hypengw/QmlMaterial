@@ -58,12 +58,12 @@ MD.SliderBase {
         MD.FocusIndicator {
             anchors.fill: parent
             corners: MD.Util.corners(24)
-            active: root.visualFocus
+            active: root.focusVisible
         }
         MD.FocusIndicator {
             anchors.fill: parent
             corners: MD.Util.corners(32)
-            active: root.visualFocus
+            active: root.focusVisible
         }
     }
 }

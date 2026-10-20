@@ -81,19 +81,19 @@ public:
     Q_SIGNAL void acceptEnabledChanged();
     int           standardButtons() const { return m_standardButtons; }
     void          setStandardButtons(int);
-    Q_INVOKABLE AbstractButton* standardButton(int) const;
-    Q_INVOKABLE void            accept();
-    Q_INVOKABLE void            reject();
-    Q_INVOKABLE void            done(int);
-    void                        closeFromInput() override;
-    Q_SIGNAL void               resultChanged();
-    Q_SIGNAL void               standardButtonsChanged();
-    Q_SIGNAL void               accepted();
-    Q_SIGNAL void               rejected();
-    Q_SIGNAL void               applied();
-    Q_SIGNAL void               reset();
-    Q_SIGNAL void               discarded();
-    Q_SIGNAL void               helpRequested();
+    Q_INVOKABLE CommandButton* standardButton(int) const;
+    Q_INVOKABLE void           accept();
+    Q_INVOKABLE void           reject();
+    Q_INVOKABLE void           done(int);
+    void                       closeFromInput() override;
+    Q_SIGNAL void              resultChanged();
+    Q_SIGNAL void              standardButtonsChanged();
+    Q_SIGNAL void              accepted();
+    Q_SIGNAL void              rejected();
+    Q_SIGNAL void              applied();
+    Q_SIGNAL void              reset();
+    Q_SIGNAL void              discarded();
+    Q_SIGNAL void              helpRequested();
 
 private:
     Page*                          page() const { return static_cast<Page*>(surfaceItem()); }

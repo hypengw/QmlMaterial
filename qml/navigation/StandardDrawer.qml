@@ -3,25 +3,21 @@ import QtQuick
 
 import Qcm.Material as MD
 
-MD.Control {
+MD.StandardDrawerBase {
     id: control
     focusPolicy: Qt.NoFocus
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
     // whether to show embedded sidebar (large window) vs popup-only
-    readonly property bool useEmbed: MD.MProp.size.windowClass >= MD.Enum.WindowClassLarge
+    useEmbed: MD.MProp.size.windowClass >= MD.Enum.WindowClassLarge
     // whether items are in expanded layout (icon+label horizontal)
     readonly property bool useLarge: expanded || drawerOpened
-    // user-togglable expanded state for embedded mode
-    property bool expanded: false
-    onUseEmbedChanged: expanded = useEmbed
 
     // configurable sizes for collapsed/expanded states
     property real collapsedWidth: 96
     property real expandedWidth: 360
 
-    property int currentIndex: 0
     property var model: null
     property Component header: defaultHeader
     property Component footer: null
@@ -33,35 +29,15 @@ MD.Control {
     readonly property bool drawerOpened: m_private.drawerOpenedSet
 
     property MD.Action headerAction: defaultHeaderAction
-    readonly property MD.Action defaultHeaderAction: MD.Action {
-        icon.name: MD.Token.icon.menu
-        text: ''
-        onTriggered: control.open()
-    }
+    defaultHeaderAction.icon.name: MD.Token.icon.menu
+    drawer: m_drawer
+    headerControl: m_header_loader.item as MD.CommandButtonBase
 
     QtObject {
         id: m_private
-        readonly property bool drawerOpened: m_drawer.position > control.collapsedWidth / m_drawer.implicitWidth
+        readonly property bool drawerOpened: (m_drawer?.position ?? 0) > control.collapsedWidth / Math.max(1, m_drawer?.implicitWidth ?? control.expandedWidth)
         property bool drawerOpenedSet: false
     }
-
-    function open() {
-        if (useEmbed) {
-            expanded = !expanded;
-        } else {
-            m_drawer.open();
-        }
-    }
-
-    function close() {
-        if (useEmbed) {
-            expanded = false;
-        } else {
-            m_drawer.close();
-        }
-    }
-
-    signal clicked(var model)
 
     background: Item {
         implicitWidth: {
@@ -80,9 +56,17 @@ MD.Control {
 
     Component {
         id: m_menu_comp
-        MD.RailItem {
+        MD.StandardIconButton {
             visible: !control.useEmbed
-            action: control.headerAction
+            implicitWidth: control.collapsedWidth
+            leftInset: Math.max(4, (width - implicitBackgroundSize) / 2)
+            rightInset: leftInset
+            MD.ActionCommand.action: control.headerAction ?? control.defaultHeaderAction
+            text: MD.ActionCommand.text
+            icon.actionIcon: MD.ActionCommand.icon
+            enabled: MD.ActionCommand.enabled
+            MD.ToolTip.text: text
+            MD.ToolTip.visible: mdState.interactions.hovered && !mdState.interactions.pressed && text.length > 0
         }
     }
 
@@ -131,6 +115,7 @@ MD.Control {
         ]
         MD.VerticalFlickable {
             id: m_flick
+            enabled: control.enabled && control.visible
             topMargin: 12
             bottomMargin: 12
             implicitWidth: m_content.implicitWidth
@@ -138,8 +123,8 @@ MD.Control {
             anchors.fill: parent
 
             opacity: {
-                const v = m_drawer.position;
-                const left = control.collapsedWidth / m_drawer.implicitWidth;
+                const v = m_drawer?.position ?? 0;
+                const left = control.collapsedWidth / Math.max(1, m_drawer?.implicitWidth ?? control.expandedWidth);
                 const right = left + 0.1;
                 return MD.Util.teleportCurve(v, left, right);
             }
@@ -201,12 +186,9 @@ MD.Control {
                             }
                             text: model.name
                             expand: control.useLarge
-                            checked: control.currentIndex == index
-                            onClicked: {
-                                control.currentIndex = index;
-                                control.clicked(model);
-                                m_drawer.close();
-                            }
+                            selected: control.currentIndex == index
+                            navigation: control
+                            navigationIndex: index
                         }
                     }
                 }

@@ -1,10 +1,11 @@
 import QtQuick
 import Qcm.Material as MD
 
-MD.ButtonBase {
+MD.CommandButtonBase {
     id: control
 
     property int type: MD.Enum.CardElevated
+    property bool flat: false
     property MD.StateCard mdState: MD.StateCard {
         item: control
     }
@@ -51,10 +52,8 @@ MD.ButtonBase {
     MD.Ripple {
         anchors.fill: parent
         radius: control.mdState.radius
-        pressX: control.pressX
-        pressY: control.pressY
-        pressed: control.pressed
-        stateOpacity: control.mdState.stateLayerOpacity
+        interactionSource: control.interactionSource
+        indication: control.mdState.indication
         color: control.mdState.stateLayerColor
     }
 }

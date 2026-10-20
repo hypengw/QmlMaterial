@@ -10,7 +10,7 @@ MD.Control {
     property alias maxShowActionNum: m_layout.maxShowActionNum
     property alias alignment: m_layout.alignment
 
-    property int display: MD.ButtonBase.IconOnly
+    property int display: MD.CommandButtonBase.IconOnly
 
     property alias actions: m_layout.actions
     readonly property alias maximumContentWidth: m_layout.implicitWidth
@@ -40,7 +40,7 @@ MD.Control {
     }
 
     property string overflowIconName: "overflow-menu"
-    component ActionButton: MD.IconButton {
+    component ActionButton: MD.ActionIconButton {
         id: button
 
         readonly property string toolTipText: {
@@ -50,7 +50,7 @@ MD.Control {
 
         hoverEnabled: true
         MD.ToolTip.text: button.toolTipText
-        MD.ToolTip.visible: button.hovered && button.toolTipText.length > 0 && !button.pressed
+        MD.ToolTip.visible: button.mdState.interactions.hovered && button.toolTipText.length > 0 && !button.mdState.interactions.pressed
     }
     property Component iconDelegate: ActionButton {
         action: MD.ToolBarLayout.action

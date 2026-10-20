@@ -3,34 +3,18 @@ import QtQuick
 import QtQuick.Shapes
 import Qcm.Material as MD
 
-Item {
+MD.SliderBase {
     id: root
 
-    property real value: 0
-    property real from: 0
-    property real to: 1
     property color colorFrom: "black"
     property color colorTo: "white"
     property bool showChecker: false
     property color indicatorColor: "white"
 
-    signal moved(real v)
+    touchDragThreshold: 0
 
     implicitHeight: 20
     implicitWidth: 220
-
-    readonly property real _trackLeft: 0
-    readonly property real _trackRight: width
-    readonly property real _trackWidth: _trackRight - _trackLeft
-
-    function _toX(v) {
-        const t = (v - from) / (to - from);
-        return _trackLeft + Math.max(0, Math.min(1, t)) * _trackWidth;
-    }
-    function _fromX(x) {
-        const t = Math.max(0, Math.min(1, (x - _trackLeft) / _trackWidth));
-        return from + t * (to - from);
-    }
 
     // Optional checker pattern (alpha channel)
     Rectangle {
@@ -102,7 +86,7 @@ Item {
     }
 
     Rectangle {
-        x: root._toX(root.value) - width / 2
+        x: root.visualPosition * root.width - width / 2
         y: -2
         width: 4
         height: root.height + 4
@@ -111,7 +95,7 @@ Item {
         border.color: "white"
     }
     Rectangle {
-        x: root._toX(root.value) - width / 2
+        x: root.visualPosition * root.width - width / 2
         y: -2
         width: 4
         height: root.height + 4
@@ -120,15 +104,7 @@ Item {
         border.color: MD.Util.transparent("black", 0.4)
     }
 
-    MouseArea {
-        anchors.fill: parent
-        cursorShape: Qt.PointingHandCursor
-        onPressed: function (e) {
-            root.moved(root._fromX(e.x));
-        }
-        onPositionChanged: function (e) {
-            if (pressed)
-                root.moved(root._fromX(e.x));
-        }
-    }
+    Accessible.role: Accessible.Slider
+    Accessible.onIncreaseAction: increase()
+    Accessible.onDecreaseAction: decrease()
 }

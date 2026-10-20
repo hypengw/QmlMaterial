@@ -3,7 +3,7 @@ import QtQuick
 import QtQuick.Layouts
 import Qcm.Material as MD
 
-MD.Control {
+MD.CarouselBase {
     id: control
 
     property int layout: MD.Enum.CarouselUncontained
@@ -13,7 +13,6 @@ MD.Control {
     property Component delegate: MD.CarouselImageDelegate {}
     property real itemExtent: MD.Token.carousel.default_item_extent
     property bool itemSnapping: true
-    property alias currentIndex: m_view.currentIndex
     property int initialItem: 0
     property real itemSpacing: MD.Token.carousel.item_spacing
     property real contentPadding: MD.Token.spacing.medium
@@ -43,24 +42,9 @@ MD.Control {
     readonly property real tokenViewportHeight: control.layout === MD.Enum.CarouselFullScreen ? MD.Token.carousel.default_item_extent : control.minimumViewportHeight
     readonly property real viewportHeight: control.orientation === Qt.Vertical ? Math.max(0, control.height - control.chromeOverhead) : Math.max(control.tokenViewportHeight, Math.max(0, control.height - control.chromeOverhead))
 
-    signal clicked(int index)
-    signal indexChanged(int index)
-
-    function incrementCurrentIndex() {
-        m_view.incrementCurrentIndex();
-    }
-
-    function decrementCurrentIndex() {
-        m_view.decrementCurrentIndex();
-    }
-
-    function setCurrentIndex(index, animated) {
-        if (animated) {
-            m_view.setCurrentIndexAnimated(index);
-        } else {
-            m_view.currentIndex = index;
-        }
-    }
+    view: m_view
+    previousControl: m_previous
+    nextControl: m_next
 
     implicitWidth: orientation === Qt.Horizontal ? MD.Token.carousel.default_width : MD.Token.carousel.default_height_vertical
     implicitHeight: orientation === Qt.Vertical ? MD.Token.carousel.default_height_vertical : (tokenViewportHeight + chromeOverhead)
@@ -87,6 +71,7 @@ MD.Control {
             model: control.model
             delegate: control.delegate
             layout: control.layout
+            mirrored: control.mirrored
             orientation: control.orientation
             itemExtent: control.itemExtent
             minSmallItemWidth: control.minSmallItemWidth
@@ -102,74 +87,37 @@ MD.Control {
             itemCornerRadius: MD.Token.carousel.item_corner
             interactive: control.enabled
 
-            onClicked: index => control.clicked(index)
-            onCurrentIndexChanged: control.indexChanged(m_view.currentIndex)
+            wheelNavigationEnabled: control.wheelNavigationEnabled
+            wheelRequiresShift: control.wheelRequiresShift
         }
 
         RowLayout {
+            layoutDirection: control.layoutDirection
             visible: control.hasChromeRow
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignHCenter
             spacing: control.chromeRowSpacing
 
             MD.StandardIconButton {
-                visible: control.showNavigationButtons && m_view.count > 1
-                icon.name: control.orientation === Qt.Horizontal ? MD.Token.icon.chevron_left : MD.Token.icon.expand_less
-                enabled: m_view.currentIndex > 0
-                onClicked: {
-                    m_view.claimInteractionFocus();
-                    control.decrementCurrentIndex();
-                }
+                id: m_previous
+                visible: control.showNavigationButtons && (control.view?.count ?? 0) > 1
+                icon.name: control.orientation === Qt.Horizontal ? (control.mirrored ? MD.Token.icon.chevron_right : MD.Token.icon.chevron_left) : MD.Token.icon.expand_less
+                enabled: control.currentIndex > 0
             }
 
             MD.PageIndicator {
-                visible: control.showPageIndicator && m_view.count > 1
+                visible: control.showPageIndicator && (control.view?.count ?? 0) > 1
                 Layout.fillWidth: control.showNavigationButtons
-                count: m_view.count
-                currentIndex: m_view.currentIndex
+                count: control.view?.count ?? 0
+                currentIndex: control.currentIndex
             }
 
             MD.StandardIconButton {
-                visible: control.showNavigationButtons && m_view.count > 1
-                icon.name: control.orientation === Qt.Horizontal ? MD.Token.icon.chevron_right : MD.Token.icon.expand_more
-                enabled: m_view.currentIndex < m_view.count - 1
-                onClicked: {
-                    m_view.claimInteractionFocus();
-                    control.incrementCurrentIndex();
-                }
+                id: m_next
+                visible: control.showNavigationButtons && (control.view?.count ?? 0) > 1
+                icon.name: control.orientation === Qt.Horizontal ? (control.mirrored ? MD.Token.icon.chevron_left : MD.Token.icon.chevron_right) : MD.Token.icon.expand_more
+                enabled: control.currentIndex < (control.view?.count ?? 0) - 1
             }
-        }
-    }
-
-    MD.WheelHandler {
-        active: control.wheelNavigationEnabled
-        target: m_view.flickable
-        scrollFlickableTarget: false
-        horizontalScrollModifiers: Qt.NoModifier
-        pageScrollModifiers: Qt.NoModifier
-        onWheel: wheel => {
-            if (control.wheelRequiresShift && !(wheel.modifiers & Qt.ShiftModifier)) {
-                return;
-            }
-            if (m_view.count <= 1) {
-                return;
-            }
-
-            let delta = Math.abs(wheel.angleDelta.y) >= Math.abs(wheel.angleDelta.x) ? wheel.angleDelta.y : wheel.angleDelta.x;
-            if (wheel.inverted) {
-                delta = -delta;
-            }
-            if (delta === 0) {
-                return;
-            }
-
-            m_view.claimInteractionFocus();
-            if (delta > 0) {
-                control.incrementCurrentIndex();
-            } else {
-                control.decrementCurrentIndex();
-            }
-            wheel.accepted = true;
         }
     }
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "qml_material/control/button.hpp"
+#include "qml_material/control/command_button.hpp"
 #include <QPointer>
 
 Q_MOC_INCLUDE("qml_material/input/search_state.hpp")
@@ -11,7 +11,7 @@ namespace qml_material
 class SearchState;
 class SearchView;
 
-class QML_MATERIAL_API SearchBar : public Button {
+class QML_MATERIAL_API SearchBar : public CommandButton {
     Q_OBJECT
     QML_NAMED_ELEMENT(SearchBarBase)
     Q_PROPERTY(SearchState* searchState READ searchState WRITE setSearchState RESET resetSearchState
@@ -32,6 +32,9 @@ public:
     Q_SIGNAL void searchTextChanged();
     Q_SIGNAL void accepted();
 
+protected:
+    void activate() override;
+
 private:
     friend class SearchView;
     void                    setSearchView(SearchView*);
@@ -39,5 +42,6 @@ private:
     SearchState*            m_defaultState;
     QPointer<SearchState>   m_state;
     QMetaObject::Connection m_queryConnection, m_destroyConnection;
+    quint64                 m_revision = 0;
 };
 } // namespace qml_material

@@ -1,13 +1,13 @@
 #pragma once
 
-#include "qml_material/control/button.hpp"
+#include "qml_material/control/command_button.hpp"
 #include "qml_material/control/container.hpp"
 
 namespace qml_material
 {
 class Flickable;
 
-class QML_MATERIAL_API FABMenuItem : public Button {
+class QML_MATERIAL_API FABMenuItem : public CommandButton {
     Q_OBJECT
     QML_NAMED_ELEMENT(FABMenuItemBase)
     Q_PROPERTY(bool revealed READ revealed NOTIFY presentationChanged FINAL)
@@ -21,7 +21,7 @@ class QML_MATERIAL_API FABMenuItem : public Button {
     Q_PROPERTY(bool animating READ animating WRITE setAnimating NOTIFY animatingChanged FINAL)
     Q_PROPERTY(bool inputEnabled READ inputEnabled NOTIFY inputEnabledChanged FINAL)
 public:
-    explicit FABMenuItem(QQuickItem* parent = nullptr): Button(parent) {}
+    explicit FABMenuItem(QQuickItem* parent = nullptr): CommandButton(parent) {}
     bool          revealed() const { return m_revealed; }
     bool          motionEnabled() const { return m_motionEnabled; }
     bool          alignRight() const { return m_alignRight; }
@@ -42,6 +42,7 @@ public:
 
 protected:
     void focusInEvent(QFocusEvent*) override;
+    bool canActivate() const override { return m_inputEnabled && CommandButton::canActivate(); }
 
 private:
     friend class FABMenu;
@@ -101,6 +102,8 @@ public:
     Q_INVOKABLE void open() { setExpanded(true); }
     Q_INVOKABLE void close() { setExpanded(false); }
     Q_INVOKABLE void toggle() { setExpanded(! m_expanded); }
+    Q_INVOKABLE void requestExpanded(bool);
+    Q_SIGNAL void    expandedChangeRequested(bool expanded);
     Q_SIGNAL void    expandedChanged();
     Q_SIGNAL void    buttonChanged();
     Q_SIGNAL void    horizontalAlignmentChanged();

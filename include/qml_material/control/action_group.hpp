@@ -1,10 +1,10 @@
 #pragma once
 
 #include <QHash>
+#include <QSet>
 #include <QQmlListProperty>
 #include <qqml.h>
 #include "qml_material/control/action.hpp"
-#include "qml_material/util/selection_set.hpp"
 
 namespace qml_material
 {
@@ -24,9 +24,9 @@ public:
     ~ActionGroup() override;
     static ActionGroupAttached* qmlAttachedProperties(QObject*);
     QQmlListProperty<Action>    actions();
-    Action*                     checkedAction() const { return m_selection.selected; }
+    Action*                     checkedAction() const;
     void                        setCheckedAction(Action*);
-    bool                        isExclusive() const { return m_selection.exclusive; }
+    bool                        isExclusive() const { return m_exclusive; }
     void                        setExclusive(bool);
     bool                        isEnabled() const { return m_enabled; }
     void                        setEnabled(bool);
@@ -40,11 +40,18 @@ public:
 
 private:
     friend class Action;
-    void                                           update(Action* preferred = nullptr);
+    bool                                           isChecked(const Action*) const;
+    void                                           setMemberChecked(Action*, bool);
+    void                                           notifySelection();
     void                                           clear();
-    utils::SelectionSet<Action>                    m_selection;
+    QList<QPointer<Action>>                        m_members;
+    QSet<const Action*>                            m_checked;
+    QHash<Action*, bool>                           m_notifiedChecked;
     QHash<Action*, QList<QMetaObject::Connection>> m_connections;
     Action*                                        m_notified_selected = nullptr;
+    bool                                           m_exclusive         = true;
+    bool                                           m_notifying         = false;
+    bool                                           m_selectionDirty    = false;
     bool                                           m_enabled           = true;
     bool                                           m_destroying        = false;
 };

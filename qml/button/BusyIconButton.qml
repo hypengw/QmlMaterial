@@ -4,16 +4,8 @@ import Qcm.Material as MD
 
 MD.IconButton {
     id: control
-    property int busy: {
-        if (action instanceof MD.Action)
-            return (action as MD.Action).busy;
-        return MD.Enum.Idle;
-    }
-    property real progress: {
-        if (action instanceof MD.Action)
-            return (action as MD.Action).progress;
-        return 0;
-    }
+    property int busy: MD.Enum.Idle
+    property real progress: 0
     contentItem: Item {
         implicitWidth: control.icon.width
         implicitHeight: control.icon.height

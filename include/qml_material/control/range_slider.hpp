@@ -1,19 +1,33 @@
 #pragma once
 
 #include "qml_material/control/control.hpp"
+#include "qml_material/input/input_host.hpp"
 
 namespace qml_material
 {
 class RangeSlider;
 
+struct QML_MATERIAL_API SliderRange {
+    Q_GADGET
+    QML_VALUE_TYPE(sliderRange)
+    QML_STRUCTURED_VALUE
+    Q_PROPERTY(qreal first MEMBER first FINAL)
+    Q_PROPERTY(qreal second MEMBER second FINAL)
+public:
+    qreal first = 0, second = 1;
+    bool  operator==(const SliderRange&) const = default;
+};
+
 class QML_MATERIAL_API RangeSliderNode : public QObject {
     Q_OBJECT
     QML_ANONYMOUS
     Q_PROPERTY(qreal value READ value WRITE setValue NOTIFY valueChanged FINAL)
+    Q_PROPERTY(qreal previewValue READ previewValue NOTIFY previewValueChanged FINAL)
     Q_PROPERTY(qreal position READ position NOTIFY positionChanged FINAL)
     Q_PROPERTY(qreal visualPosition READ visualPosition NOTIFY visualPositionChanged FINAL)
-    Q_PROPERTY(bool pressed READ pressed NOTIFY pressedChanged FINAL)
-    Q_PROPERTY(bool focused READ focused NOTIFY focusedChanged FINAL)
+    Q_PROPERTY(InteractionSource* interactionSource READ interactionSource WRITE
+                   setInteractionSource NOTIFY interactionSourceChanged FINAL)
+    Q_PROPERTY(bool focusVisible READ focusVisible NOTIFY focusVisibleChanged FINAL)
     Q_PROPERTY(QQuickItem* handle READ handle WRITE setHandle NOTIFY handleChanged FINAL)
     Q_PROPERTY(
         qreal implicitHandleWidth READ implicitHandleWidth NOTIFY implicitHandleSizeChanged FINAL)
@@ -21,26 +35,29 @@ class QML_MATERIAL_API RangeSliderNode : public QObject {
         qreal implicitHandleHeight READ implicitHandleHeight NOTIFY implicitHandleSizeChanged FINAL)
 public:
     ~RangeSliderNode() override;
-    qreal            visualPosition() const;
-    bool             pressed() const;
-    bool             focused() const;
-    QQuickItem*      handle() const { return m_handle; }
-    void             setHandle(QQuickItem*);
-    qreal            implicitHandleWidth() const;
-    qreal            implicitHandleHeight() const;
-    qreal            value() const;
-    qreal            position() const;
-    void             setValue(qreal);
-    Q_INVOKABLE void increase();
-    Q_INVOKABLE void decrease();
-    Q_SIGNAL void    valueChanged();
-    Q_SIGNAL void    positionChanged();
-    Q_SIGNAL void    visualPositionChanged();
-    Q_SIGNAL void    pressedChanged();
-    Q_SIGNAL void    focusedChanged();
-    Q_SIGNAL void    handleChanged();
-    Q_SIGNAL void    implicitHandleSizeChanged();
-    Q_SIGNAL void    moved();
+    qreal              visualPosition() const;
+    InteractionSource* interactionSource() { return m_input.source(); }
+    void               setInteractionSource(InteractionSource*);
+    bool               focusVisible() const { return m_input.focusVisible(); }
+    QQuickItem*        handle() const { return m_handle; }
+    void               setHandle(QQuickItem*);
+    qreal              implicitHandleWidth() const;
+    qreal              implicitHandleHeight() const;
+    qreal              value() const;
+    qreal              previewValue() const;
+    qreal              position() const;
+    void               setValue(qreal);
+    Q_INVOKABLE void   requestValue(qreal);
+    Q_INVOKABLE void   increase();
+    Q_INVOKABLE void   decrease();
+    Q_SIGNAL void      valueChanged();
+    Q_SIGNAL void      previewValueChanged();
+    Q_SIGNAL void      positionChanged();
+    Q_SIGNAL void      visualPositionChanged();
+    Q_SIGNAL void      interactionSourceChanged();
+    Q_SIGNAL void      focusVisibleChanged();
+    Q_SIGNAL void      handleChanged();
+    Q_SIGNAL void      implicitHandleSizeChanged();
 
 private:
     friend class RangeSlider;
@@ -50,6 +67,7 @@ private:
     QPointer<QQuickItem>           m_handle;
     QList<QMetaObject::Connection> m_handleConnections;
     quint64                        m_handleRevision = 0;
+    InputHost                      m_input;
 };
 
 /** @ingroup control */
@@ -59,6 +77,8 @@ class QML_MATERIAL_API RangeSlider : public Control {
     Q_PROPERTY(qreal from READ from WRITE setFrom NOTIFY fromChanged FINAL)
     Q_PROPERTY(qreal to READ to WRITE setTo NOTIFY toChanged FINAL)
     Q_PROPERTY(qreal stepSize READ stepSize WRITE setStepSize NOTIFY stepSizeChanged FINAL)
+    Q_PROPERTY(
+        qml_material::SliderRange values READ values WRITE setValues NOTIFY valuesChanged FINAL)
     Q_PROPERTY(
         qreal minimumRange READ minimumRange WRITE setMinimumRange NOTIFY minimumRangeChanged FINAL)
     Q_PROPERTY(qreal effectiveMinimumRange READ effectiveMinimumRange NOTIFY
@@ -73,7 +93,6 @@ class QML_MATERIAL_API RangeSlider : public Control {
     Q_PROPERTY(SnapMode snapMode READ snapMode WRITE setSnapMode NOTIFY snapModeChanged FINAL)
     Q_PROPERTY(
         bool wheelEnabled READ wheelEnabled WRITE setWheelEnabled NOTIFY wheelEnabledChanged FINAL)
-    Q_PROPERTY(bool pressed READ pressed NOTIFY pressedChanged FINAL)
     Q_PROPERTY(int activeHandle READ activeHandle NOTIFY activeHandleChanged FINAL)
     Q_PROPERTY(int focusedHandle READ focusedHandle WRITE setFocusedHandle NOTIFY
                    focusedHandleChanged FINAL)
@@ -95,7 +114,6 @@ public:
     bool              live() const;
     SnapMode          snapMode() const;
     bool              wheelEnabled() const;
-    bool              pressed() const { return activeHandle() >= 0; }
     int               activeHandle() const;
     int               focusedHandle() const;
     qreal             trackStart() const;
@@ -110,7 +128,6 @@ public:
     Q_SIGNAL void     liveChanged();
     Q_SIGNAL void     snapModeChanged();
     Q_SIGNAL void     wheelEnabledChanged();
-    Q_SIGNAL void     pressedChanged();
     Q_SIGNAL void     activeHandleChanged();
     Q_SIGNAL void     focusedHandleChanged();
     Q_SIGNAL void     trackGeometryChanged();
@@ -127,7 +144,12 @@ public:
     void              setTo(qreal);
     void              setStepSize(qreal);
     void              setMinimumRange(qreal);
+    SliderRange       values() const;
+    void              setValues(const SliderRange&);
     Q_INVOKABLE void  setValues(qreal first, qreal second);
+    Q_INVOKABLE void  requestValues(const qml_material::SliderRange& values);
+    Q_SIGNAL void     valuesChanged();
+    Q_SIGNAL void     valuesChangeRequested(qml_material::SliderRange values);
     Q_INVOKABLE qreal valueAt(qreal position) const;
     Q_INVOKABLE QList<qreal> tickPositions(int maximumCount) const;
     Q_SIGNAL void            fromChanged();
@@ -137,6 +159,10 @@ public:
     Q_SIGNAL void            effectiveMinimumRangeChanged();
 
 protected:
+    bool event(QEvent*) override;
+    void hoverEnterEvent(QHoverEvent*) override;
+    void hoverMoveEvent(QHoverEvent*) override;
+    void hoverLeaveEvent(QHoverEvent*) override;
     void mousePressEvent(QMouseEvent*) override;
     void mouseMoveEvent(QMouseEvent*) override;
     void mouseReleaseEvent(QMouseEvent*) override;
@@ -164,37 +190,39 @@ private:
         int             active = -1, focused = 0;
         bool            operator==(const State&) const = default;
     };
-    static qreal span(const State&);
-    static qreal distance(const State&, qreal value);
-    static qreal value(const State&, qreal distance);
-    static qreal nearest(const State&, qreal requested, qreal lower, qreal upper);
-    static void  normalize(State&);
-    void         publish(State);
-    void         setNodeValue(int, qreal);
-    qreal        nodeValue(int) const;
-    qreal        nodePosition(int) const;
-    enum class Input
-    {
-        None,
-        Mouse,
-        Touch,
-        Key
-    };
+    static qreal            span(const State&);
+    static qreal            distance(const State&, qreal value);
+    static qreal            value(const State&, qreal distance);
+    static qreal            nearest(const State&, qreal requested, qreal lower, qreal upper);
+    static qreal            constrainOffset(const State&, int, qreal, bool snap);
+    static void             updateNodeValue(State&, int, qreal);
+    static void             normalize(State&);
+    void                    publish(State);
+    void                    setNodeValue(int, qreal);
+    void                    requestNodeValue(int, qreal);
+    bool                    requestChange(const State&);
+    qreal                   nodePreviewValue(int) const;
+    qreal                   nodeValue(int) const;
+    qreal                   nodePosition(int) const;
     bool                    prepareChange();
     bool                    finish(bool cancelled);
     bool                    activate(int index);
     void                    moveTo(qreal position, bool release);
-    int                     pickHandle(qreal position, bool release) const;
+    void                    finishPointer(bool);
+    void                    pointerEvent(QEvent*, int index);
+    void                    syncFocus();
+    void                    hoverAt(const QPointF&, bool);
+    int                     pickHandle(qreal position) const;
     void                    observeWindow();
     bool                    inverted() const { return vertical() || mirrored(); }
     RangeSliderNode*        node(int index) { return index == 0 ? &m_first : &m_second; }
     qreal                   handleExtent(int index) const;
-    Input                   m_input   = Input::None;
-    int                     m_touchId = -1, m_key = 0;
-    QPointF                 m_pressPoint;
-    qreal                   m_pressPosition = 0;
-    quint64                 m_sequence      = 0;
-    bool                    m_started       = false;
+    quint64                 m_generation   = 0;
+    int                     m_pointerIndex = -1;
+    QPointF                 m_point;
+    QSet<int>               m_keys;
+    bool                    m_dragging = false;
+    bool                    m_started  = false;
     QMetaObject::Connection m_windowConnection;
     QProperty<State>        m_state { State {} };
     RangeSliderNode         m_first, m_second;

@@ -8,6 +8,7 @@ MD.RadioButtonBase {
     font.weight: typescale.weight
     font.letterSpacing: typescale.tracking
     property MD.StateRadioButton mdState: MD.StateRadioButton {
+        focusIndicationEnabled: false
         item: control
     }
 
@@ -28,8 +29,8 @@ MD.RadioButtonBase {
             opacity: control.mdState.contentOpacity
             color: control.mdState.iconColor
             outlineColor: color
-            focusWidth: control.visualFocus ? 2.5 : 0
-            fillFactor: control.checked ? 1.0 : 0.0
+            focusWidth: control.focusVisible ? 2.5 : 0
+            fillFactor: control.selected ? 1.0 : 0.0
 
             Behavior on fillFactor {
                 NumberAnimation {
@@ -44,17 +45,15 @@ MD.RadioButtonBase {
             width: 40
             height: 40
             radius: 20
-            pressX: control.pressX
-            pressY: control.pressY
-            pressed: control.pressed
-            stateOpacity: control.mdState.stateLayerOpacity
+            interactionSource: control.interactionSource
+            indication: control.mdState.indication
             color: control.mdState.stateLayerColor
         }
 
         MD.FocusIndicator {
             parent: m_ripple
             corners: MD.Util.corners(20)
-            active: control.visualFocus
+            active: control.focusVisible
         }
     }
 

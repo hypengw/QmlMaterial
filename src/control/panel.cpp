@@ -10,7 +10,10 @@
 
 namespace qml_material
 {
-Panel::Panel(QQuickItem* parent): Control(parent) {
+Panel::Panel(QQuickItem* parent): Control(parent), m_focusInput(this) {
+    m_focusInput.focusVisibleChanged = [this] {
+        Q_EMIT focusVisibleChanged();
+    };
     setFlag(ItemIsFocusScope);
     setAcceptedMouseButtons(Qt::AllButtons);
     setAcceptTouchEvents(true);
@@ -26,6 +29,12 @@ Panel::~Panel() {
     disconnect(m_slot_connection);
     utils::disconnectAll(m_host_connections);
     utils::disconnectAll(m_child_connections);
+}
+bool Panel::event(QEvent* event) {
+    const QPointer<Panel> guard(this);
+    if (event->type() == QEvent::FocusIn || event->type() == QEvent::FocusOut)
+        m_focusInput.observeEvent(event);
+    return ! guard || Control::event(event);
 }
 
 QQmlListProperty<QObject> Panel::contentData() {

@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Qcm.Material as MD
 
-MD.ItemDelegate {
+MD.NavigationItemBase {
     id: control
 
     property alias mdState: item_state
@@ -19,12 +19,11 @@ MD.ItemDelegate {
     leftPadding: 16
     rightPadding: 24
     spacing: 0
-    checked: false
 
     icon.width: 24
     icon.height: 24
     icon.color: control.MD.MProp.color.on_background
-    icon.fill: control.checked
+    icon.fill: control.selected
 
     font.capitalization: Font.MixedCase
 
@@ -43,7 +42,7 @@ MD.ItemDelegate {
             font: control.font
             text: control.text
             typescale: MD.Token.typescale.label_large
-            maximumLineCount: control.maximumLineCount
+            maximumLineCount: 1
             verticalAlignment: Qt.AlignVCenter
         }
         MD.Control {
@@ -67,10 +66,8 @@ MD.ItemDelegate {
         MD.Ripple {
             anchors.fill: parent
             radius: parent.radius
-            pressX: control.pressX
-            pressY: control.pressY
-            pressed: control.pressed
-            stateOpacity: item_state.stateLayerOpacity
+            interactionSource: control.interactionSource
+            indication: item_state.indication
             color: item_state.stateLayerColor
         }
     }

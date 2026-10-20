@@ -73,6 +73,23 @@ endif()
 set(LIBNAME qml_material)
 
 set(SOURCES
+    include/qml_material/input/input_host.hpp
+    src/input/input_host.cpp
+    include/qml_material/input/clickable.hpp
+    src/input/clickable.cpp
+    include/qml_material/input/interactive_item.hpp
+    src/input/interactive_item.cpp
+    include/qml_material/input/toggleable.hpp
+    include/qml_material/input/selectable.hpp
+    include/qml_material/input/interaction_source.hpp
+    src/input/interaction_source.cpp
+    include/qml_material/anim/spring_motion.hpp
+    src/anim/spring_motion.cpp
+    include/qml_material/anim/ripple_motion.hpp
+    src/anim/ripple_motion.cpp
+    include/qml_material/input/slider_key.hpp
+    include/qml_material/style/indication_policy.hpp
+    src/style/indication_policy.cpp
     include/qml_material/clock/clock_source.hpp
     src/clock/clock_source.cpp
     include/qml_material/control/clock.hpp
@@ -110,6 +127,7 @@ set(SOURCES
     include/qml_material/token/text_field.hpp
     include/qml_material/util/loggingcategory.hpp
     include/qml_material/math/scalar.hpp
+    include/qml_material/math/color.hpp
     include/qml_material/math/gaussian.hpp
     include/qml_material/math/rrect.hpp
     include/qml_material/math/shadow_light.hpp
@@ -206,6 +224,8 @@ set(SOURCES
     src/util/hct.cpp
     src/control/page_context.cpp
     src/control/color_picker.cpp
+    src/control/color_picker_button.cpp
+    include/qml_material/control/color_picker_button.hpp
     src/control/application_window.cpp
     include/qml_material/control/application_window.hpp
     src/control/control.cpp
@@ -232,7 +252,26 @@ set(SOURCES
     include/qml_material/control/progress_bar.hpp
     include/qml_material/control/busy_indicator.hpp
     include/qml_material/control/tool_separator.hpp
-    src/control/abstract_button.cpp
+    src/control/button_control.cpp
+    include/qml_material/control/button_control.hpp
+    include/qml_material/control/command_button.hpp
+    include/qml_material/control/combined_command_button.hpp
+    include/qml_material/control/repeat_button.hpp
+    include/qml_material/control/number_input.hpp
+    src/control/number_input.cpp
+    include/qml_material/control/color_input.hpp
+    src/control/color_input.cpp
+    include/qml_material/control/floating_toolbar.hpp
+    src/control/floating_toolbar.cpp
+    include/qml_material/control/time_field.hpp
+    src/control/time_field.cpp
+    include/qml_material/input/date_picker_state.hpp
+    src/input/date_picker_state.cpp
+    src/input/control_accessibility.cpp
+    src/input/control_accessibility_p.hpp
+    include/qml_material/control/action_command.hpp
+    src/control/action_command.cpp
+    include/qml_material/control/toggle_button.hpp
     src/control/check_box.cpp
     src/control/switch.cpp
     src/control/tab_bar.cpp
@@ -251,6 +290,13 @@ set(SOURCES
     include/qml_material/token/button_group.hpp
     include/qml_material/control/check_box.hpp
     include/qml_material/control/radio_button.hpp
+    include/qml_material/control/selection_button.hpp
+    include/qml_material/control/navigation_control.hpp
+    src/control/navigation_control.cpp
+    include/qml_material/control/standard_drawer.hpp
+    src/control/standard_drawer.cpp
+    include/qml_material/control/navigation_rail.hpp
+    src/control/navigation_rail.cpp
     include/qml_material/control/switch.hpp
     include/qml_material/control/item_delegate.hpp
     src/control/item_delegate.cpp
@@ -267,8 +313,8 @@ set(SOURCES
     include/qml_material/control/action.hpp
     include/qml_material/control/action_group.hpp
     include/qml_material/control/button_group.hpp
-    include/qml_material/control/abstract_button.hpp
-    include/qml_material/control/button.hpp
+    include/qml_material/control/button_presentation.hpp
+    src/control/button_presentation.cpp
     include/qml_material/control/search_bar.hpp
     src/control/search_bar.cpp
     include/qml_material/control/search_view.hpp
@@ -292,6 +338,12 @@ set(SOURCES
     src/control/dialog.cpp
     src/control/menu.cpp
     include/qml_material/control/menu.hpp
+    src/control/menu_button.cpp
+    include/qml_material/control/menu_button.hpp
+    src/control/split_button.cpp
+    include/qml_material/control/split_button.hpp
+    src/control/snake_bar.cpp
+    include/qml_material/control/snake_bar.hpp
     include/qml_material/control/dialog.hpp
     include/qml_material/control/popup.hpp
     src/control/overlay.cpp
@@ -344,11 +396,15 @@ set(SOURCES
     include/qml_material/input/nested_scroll_connection.hpp
     include/qml_material/input/wheel_handler.hpp
     src/carousel/carousel_attached.cpp
+    src/carousel/carousel_control.cpp
+    src/carousel/carousel_item.cpp
     src/carousel/carousel_view.cpp
     src/carousel/carousel_strategies.cpp
     src/carousel/carousel_keylines.cpp
     src/carousel/carousel_scroll_strategy.cpp
     include/qml_material/carousel/carousel_attached.hpp
+    include/qml_material/carousel/carousel_control.hpp
+    include/qml_material/carousel/carousel_item.hpp
     include/qml_material/carousel/carousel_keylines.hpp
     include/qml_material/carousel/carousel_scroll_strategy.hpp
     include/qml_material/carousel/carousel_strategy.hpp
@@ -377,6 +433,7 @@ set(SOURCES
     include/qml_material/control/header_view.hpp
     src/model/appstream_release_model.cpp
     src/model/snake_model.cpp
+    include/qml_material/model/snake_model.hpp
     src/token/color.cpp
     src/token/icon.cpp
     src/token/token.cpp
@@ -402,6 +459,13 @@ set(QML_FILES
     qml/button/BusyButton.qml
     qml/button/BusyIconButton.qml
     qml/button/Button.qml
+    qml/button/ToggleButton.qml
+    qml/button/IconToggleButton.qml
+    qml/button/ActionButton.qml
+    qml/button/ActionIconButton.qml
+    qml/button/ButtonContent.qml
+    qml/button/IconButtonContent.qml
+    qml/button/ButtonSurface.qml
     qml/button/FAB.qml
     qml/button/ExtendedFAB.qml
     qml/button/FABMenu.qml
@@ -447,6 +511,7 @@ set(QML_FILES
     qml/input/SliderHandleM2.qml
     qml/input/SliderM2.qml
     qml/input/StepperInput.qml
+    qml/input/NumberStepperButtons.qml
     qml/input/Switch.qml
     qml/input/TextField.qml
     qml/input/TextFieldEmbed.qml
@@ -504,6 +569,10 @@ set(QML_FILES
     qml/popup/DialogHeader.qml
     qml/popup/Menu.qml
     qml/popup/MenuItem.qml
+    qml/popup/MenuItemStyle.qml
+    qml/popup/SelectionMenuItem.qml
+    qml/popup/ToggleMenuItem.qml
+    qml/popup/ActionMenuItem.qml
     qml/popup/MenuSeparator.qml
     qml/popup/Popup.qml
     qml/popup/SheetActionBar.qml
@@ -519,6 +588,9 @@ set(QML_FILES
     qml/scrollable/ListBusyFooter.qml
     qml/scrollable/ListGridBaseDelegate.qml
     qml/scrollable/ListItem.qml
+    qml/scrollable/ListItemStyle.qml
+    qml/scrollable/SelectionListItem.qml
+    qml/scrollable/ToggleListItem.qml
     qml/scrollable/ListView.qml
     qml/scrollable/PageHorizontalListView.qml
     qml/scrollable/PageVerticalFlickable.qml

@@ -7,23 +7,62 @@
 namespace qml_material
 {
 RangeSliderNode::RangeSliderNode(RangeSlider* owner, int index)
-    : QObject(owner), m_owner(owner), m_index(index) {
+    : QObject(owner), m_owner(owner), m_index(index), m_input(owner, [this] {
+          Q_EMIT interactionSourceChanged();
+      }) {
     connect(this, &RangeSliderNode::positionChanged, this, &RangeSliderNode::visualPositionChanged);
     connect(owner, &RangeSlider::orientationChanged, this, &RangeSliderNode::visualPositionChanged);
     connect(owner, &Control::mirroredChanged, this, &RangeSliderNode::visualPositionChanged);
-    connect(owner, &Control::visualFocusChanged, this, &RangeSliderNode::focusedChanged);
+    connect(this, &RangeSliderNode::valueChanged, this, &RangeSliderNode::previewValueChanged);
+    connect(this, &RangeSliderNode::positionChanged, this, &RangeSliderNode::previewValueChanged);
+    connect(owner, &RangeSlider::activeHandleChanged, this, &RangeSliderNode::previewValueChanged);
+    m_input.setFocusEnabled(index == owner->focusedHandle());
+    m_input.click().keyboardEnabled = false;
+    m_input.focusVisibleChanged     = [this] {
+        Q_EMIT focusVisibleChanged();
+    };
+    m_input.click().pointerStarted = [this](const PointerInput& input) {
+        ++m_owner->m_generation;
+        m_owner->m_pointerIndex = m_index;
+        m_owner->m_point        = input.position;
+        m_owner->activate(m_index);
+    };
+    m_input.click().pointerClicked = [this](QPointF point) {
+        m_owner->m_point = point;
+        m_owner->finishPointer(false);
+    };
+    m_input.click().pointerCancelled = [this] {
+        m_owner->finishPointer(true);
+    };
+    auto& drag   = m_input.drag();
+    drag.axes    = owner->orientation();
+    drag.started = [this](QPointF) {
+        m_owner->m_dragging = true;
+        Q_EMIT previewValueChanged();
+    };
+    drag.moved = [this](QPointF point) {
+        m_owner->m_point = point;
+        m_owner->moveTo(m_owner->positionAt(point), false);
+    };
+    drag.finished = [this](QPointF point, bool cancelled) {
+        m_owner->m_point = point;
+        m_owner->finishPointer(cancelled);
+    };
 }
 qreal RangeSliderNode::value() const { return m_owner->nodeValue(m_index); }
+qreal RangeSliderNode::previewValue() const { return m_owner->nodePreviewValue(m_index); }
 qreal RangeSliderNode::position() const { return m_owner->nodePosition(m_index); }
 void  RangeSliderNode::setValue(qreal value) { m_owner->setNodeValue(m_index, value); }
+void  RangeSliderNode::requestValue(qreal value) { m_owner->requestNodeValue(m_index, value); }
 void  RangeSliderNode::increase() {
-    setValue(value() + (m_owner->stepSize() > 0 ? m_owner->stepSize() : .1));
+    requestValue(value() + (m_owner->stepSize() > 0 ? m_owner->stepSize() : .1));
 }
 void RangeSliderNode::decrease() {
-    setValue(value() - (m_owner->stepSize() > 0 ? m_owner->stepSize() : .1));
+    requestValue(value() - (m_owner->stepSize() > 0 ? m_owner->stepSize() : .1));
 }
 
 RangeSlider::RangeSlider(QQuickItem* parent): Control(parent), m_first(this, 0), m_second(this, 1) {
+    connect(this, &RangeSlider::focusedHandleChanged, this, &RangeSlider::syncFocus);
 #ifdef Q_OS_MACOS
     setFocusPolicy(Qt::TabFocus);
 #else
@@ -39,6 +78,7 @@ RangeSlider::RangeSlider(QQuickItem* parent): Control(parent), m_first(this, 0),
     connect(this, &Control::leftPaddingChanged, this, &RangeSlider::trackGeometryChanged);
     connect(this, &Control::topPaddingChanged, this, &RangeSlider::trackGeometryChanged);
     connect(this, &RangeSlider::orientationChanged, this, &RangeSlider::trackGeometryChanged);
+    observeWindow();
 }
 qreal RangeSlider::from() const { return m_state.value().from; }
 qreal RangeSlider::to() const { return m_state.value().to; }
@@ -47,6 +87,15 @@ qreal RangeSlider::minimumRange() const { return m_state.value().minimum; }
 qreal RangeSlider::effectiveMinimumRange() const { return m_state.value().effective; }
 qreal RangeSlider::nodeValue(int index) const { return m_state.value().values[index]; }
 qreal RangeSlider::nodePosition(int index) const { return m_state.value().positions[index]; }
+qreal RangeSlider::nodePreviewValue(int index) const {
+    const auto state = m_state.value();
+    if (state.live || state.active != index || ! m_dragging) return state.values[index];
+    return value(state, constrainOffset(state, index, state.positions[index] * span(state), true));
+}
+SliderRange RangeSlider::values() const {
+    const auto state = m_state.value();
+    return { state.values[0], state.values[1] };
+}
 qreal RangeSlider::span(const State& state) { return std::abs(state.to - state.from); }
 qreal RangeSlider::distance(const State& state, qreal v) {
     // Subtract after clamping to avoid overflow for finite, opposite-sign inputs.
@@ -74,6 +123,19 @@ qreal RangeSlider::nearest(const State& state, qreal requested, qreal lower, qre
     }
     if (upper == length && std::abs(length - requested) < std::abs(best - requested)) best = length;
     return best;
+}
+
+qreal RangeSlider::constrainOffset(const State& state, int index, qreal offset, bool snap) {
+    const qreal length = span(state);
+    const qreal other  = distance(state, state.values[1 - index]);
+    const qreal lower  = index == 0 ? 0 : std::min(length, other + state.effective);
+    const qreal upper  = index == 0 ? std::max(qreal(0), other - state.effective) : length;
+    return snap ? nearest(state, offset, lower, upper) : std::clamp(offset, lower, upper);
+}
+void RangeSlider::updateNodeValue(State& state, int index, qreal requested) {
+    const qreal offset     = constrainOffset(state, index, distance(state, requested), true);
+    state.values[index]    = value(state, offset);
+    state.positions[index] = span(state) > 0 ? offset / span(state) : 0;
 }
 
 void RangeSlider::normalize(State& state) {
@@ -112,10 +174,8 @@ void RangeSlider::publish(State next) {
     if (old.snap != next.snap) m_pending |= 1 << 11;
     if (old.wheel != next.wheel) m_pending |= 1 << 12;
     if (old.active != next.active) m_pending |= 1 << 13;
-    if (old.focused != next.focused) m_pending |= (1 << 14) | (1 << 17) | (1 << 18);
-    if ((old.active == 0) != (next.active == 0)) m_pending |= 1 << 15;
-    if ((old.active == 1) != (next.active == 1)) m_pending |= 1 << 16;
-    if ((old.active >= 0) != (next.active >= 0)) m_pending |= 1 << 19;
+    if (old.focused != next.focused) m_pending |= 1 << 14;
+    if (old.values[0] != next.values[0] || old.values[1] != next.values[1]) m_pending |= 1 << 20;
     const bool notifying = m_notifying;
     m_notifying          = true;
     QPointer<RangeSlider> guard(this);
@@ -142,11 +202,7 @@ void RangeSlider::publish(State next) {
         case 12: Q_EMIT wheelEnabledChanged(); break;
         case 13: Q_EMIT activeHandleChanged(); break;
         case 14: Q_EMIT focusedHandleChanged(); break;
-        case 15: Q_EMIT m_first.pressedChanged(); break;
-        case 16: Q_EMIT m_second.pressedChanged(); break;
-        case 17: Q_EMIT m_first.focusedChanged(); break;
-        case 18: Q_EMIT m_second.focusedChanged(); break;
-        case 19: Q_EMIT pressedChanged(); break;
+        case 20: Q_EMIT valuesChanged(); break;
         }
         if (! guard) return;
     }
@@ -187,9 +243,9 @@ void RangeSlider::setMinimumRange(qreal v) {
     if (! m_initializing) normalize(next);
     publish(next);
 }
+void RangeSlider::setValues(const SliderRange& values) { setValues(values.first, values.second); }
 void RangeSlider::setValues(qreal first, qreal second) {
     if (! std::isfinite(first) || ! std::isfinite(second)) return;
-    if (! prepareChange()) return;
     State next     = m_state.value();
     next.values[0] = first;
     next.values[1] = second;
@@ -198,19 +254,36 @@ void RangeSlider::setValues(qreal first, qreal second) {
 }
 void RangeSlider::setNodeValue(int index, qreal v) {
     if (! std::isfinite(v)) return;
-    if (! prepareChange()) return;
     State next = m_state.value();
     if (m_initializing) {
         next.values[index] = v;
     } else {
-        const qreal other     = distance(next, next.values[1 - index]);
-        const qreal lower     = index == 0 ? 0 : other + next.effective;
-        const qreal upper     = index == 0 ? other - next.effective : span(next);
-        const qreal offset    = nearest(next, distance(next, v), lower, upper);
-        next.values[index]    = value(next, offset);
-        next.positions[index] = span(next) > 0 ? offset / span(next) : 0;
+        updateNodeValue(next, index, v);
     }
     publish(next);
+}
+bool RangeSlider::requestChange(const State& next) {
+    if (! isEnabled() || ! isVisible()) return false;
+    const SliderRange requested { next.values[0], next.values[1] };
+    if (requested == values()) return true;
+    const auto            sequence = m_generation;
+    QPointer<RangeSlider> guard(this);
+    Q_EMIT valuesChangeRequested(requested);
+    return guard && sequence == m_generation;
+}
+void RangeSlider::requestValues(const SliderRange& requested) {
+    if (! std::isfinite(requested.first) || ! std::isfinite(requested.second)) return;
+    auto next      = m_state.value();
+    next.values[0] = requested.first;
+    next.values[1] = requested.second;
+    normalize(next);
+    requestChange(next);
+}
+void RangeSlider::requestNodeValue(int index, qreal requested) {
+    if (! std::isfinite(requested)) return;
+    auto next = m_state.value();
+    updateNodeValue(next, index, requested);
+    requestChange(next);
 }
 qreal RangeSlider::valueAt(qreal position) const {
     const State state = m_state.value();

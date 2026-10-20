@@ -77,14 +77,7 @@ void     AppBarState::setItem(ToolBar* value) {
 void AppBarState::selectionChanged() {
     if (! m_ready) return;
     const auto next = m_selection.value();
-    QString    name;
-    switch (next.state) {
-    case Specification::Small: name = QStringLiteral("small"); break;
-    case Specification::Medium: name = QStringLiteral("meidium"); break;
-    case Specification::Large: name = QStringLiteral("large"); break;
-    default: break;
-    }
-    publishState(name, [this, specification = next.state] {
+    applyAppearance([this, specification = next.state] {
         m_bindings.select(specification);
     });
 }

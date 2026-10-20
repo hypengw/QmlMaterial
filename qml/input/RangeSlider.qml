@@ -69,19 +69,15 @@ MD.RangeSliderBase {
                 easing: MD.Token.easing.linear
             }
         }
-        value: control.valueAt(node.position)
+        value: node.previewValue
         labelBehavior: control.labelBehavior
-        handlePressed: node.pressed
-        handleHasFocus: node.focused
-        handleHovered: hover.hovered
+        handlePressed: thumbState.interactions.pressed || thumbState.interactions.dragged
+        handleHasFocus: node.focusVisible
+        handleHovered: thumbState.interactions.hovered
         opacity: control.mdState.backgroundOpacity
         z: handlePressed || handleHasFocus ? 3 : 2
         x: control.horizontal ? center - width / 2 : control.leftPadding + (control.availableWidth - width) / 2
         y: control.horizontal ? control.topPadding + (control.availableHeight - height) / 2 : center - height / 2
-        HoverHandler {
-            id: hover
-            enabled: control.enabled
-        }
     }
 
     first.handle: Thumb {

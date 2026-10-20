@@ -1,6 +1,7 @@
 #pragma once
 
 #include "qml_material/control/scroll_indicator.hpp"
+#include "qml_material/input/input_host.hpp"
 
 namespace qml_material
 {
@@ -12,7 +13,10 @@ class QML_MATERIAL_API ScrollBar : public ScrollIndicator {
     QML_NAMED_ELEMENT(ScrollBarBase)
     QML_ATTACHED(ScrollBarAttached)
     Q_PROPERTY(qreal stepSize READ stepSize WRITE setStepSize NOTIFY stepSizeChanged FINAL)
-    Q_PROPERTY(bool pressed READ pressed WRITE setPressed NOTIFY pressedChanged FINAL)
+    Q_PROPERTY(InteractionSource* interactionSource READ interactionSource WRITE
+                   setInteractionSource NOTIFY interactionSourceChanged FINAL)
+    Q_PROPERTY(qml_material::InteractionValues interactionValues READ interactionValues NOTIFY
+                   interactionValuesChanged FINAL)
     Q_PROPERTY(bool interactive READ interactive WRITE setInteractive RESET resetInteractive NOTIFY
                    interactiveChanged FINAL)
     Q_PROPERTY(SnapMode snapMode READ snapMode WRITE setSnapMode NOTIFY snapModeChanged FINAL)
@@ -36,54 +40,52 @@ public:
     ~ScrollBar() override;
     static ScrollBarAttached* qmlAttachedProperties(QObject*);
     qreal                     stepSize() const { return m_step; }
-    bool                      pressed() const { return m_pressed; }
-    bool                      interactive() const { return m_interactive; }
-    SnapMode                  snapMode() const { return m_snap; }
-    Policy                    policy() const { return m_policy; }
-    void                      setStepSize(qreal);
-    void                      setPressed(bool);
-    void                      setInteractive(bool);
-    void                      resetInteractive();
-    void                      setSnapMode(SnapMode);
-    void                      setPolicy(Policy);
-    Q_INVOKABLE void          increase();
-    Q_INVOKABLE void          decrease();
-    Q_SIGNAL void             stepSizeChanged();
-    Q_SIGNAL void             pressedChanged();
-    Q_SIGNAL void             interactiveChanged();
-    Q_SIGNAL void             snapModeChanged();
-    Q_SIGNAL void             policyChanged();
+    InteractionSource*        interactionSource() { return m_input.source(); }
+    void              setInteractionSource(InteractionSource* source) { m_input.setSource(source); }
+    InteractionValues interactionValues() const { return m_feedback.values(); }
+    bool              interactive() const { return m_interactive; }
+    SnapMode          snapMode() const { return m_snap; }
+    Policy            policy() const { return m_policy; }
+    void              setStepSize(qreal);
+    void              setInteractive(bool);
+    void              resetInteractive();
+    void              setSnapMode(SnapMode);
+    void              setPolicy(Policy);
+    Q_INVOKABLE void  increase();
+    Q_INVOKABLE void  decrease();
+    Q_INVOKABLE void  requestPosition(qreal);
+    Q_SIGNAL void     stepSizeChanged();
+    Q_SIGNAL void     interactionSourceChanged();
+    Q_SIGNAL void     interactionValuesChanged();
+    Q_SIGNAL void     positionChangeRequested(qreal position);
+    Q_SIGNAL void     interactiveChanged();
+    Q_SIGNAL void     snapModeChanged();
+    Q_SIGNAL void     policyChanged();
 
 protected:
     void setMoving(bool) override;
     void disconnectFlickable() override;
-    void mousePressEvent(QMouseEvent*) override;
-    void mouseMoveEvent(QMouseEvent*) override;
-    void mouseReleaseEvent(QMouseEvent*) override;
+    bool event(QEvent*) override;
     void mouseUngrabEvent() override;
-    void touchEvent(QTouchEvent*) override;
     void touchUngrabEvent() override;
-    void itemChange(ItemChange, const ItemChangeData&) override;
 
 private:
-    void                    updateActive();
-    void                    cancel();
-    void                    begin(const QPointF&);
-    void                    move(const QPointF&, bool release);
-    void                    step(qreal);
-    qreal                   logicalPosition(qreal) const;
-    qreal                   positionAt(const QPointF&) const;
-    void                    observeWindow();
-    qreal                   m_step        = 0;
-    qreal                   m_offset      = 0;
-    bool                    m_pressed     = false;
-    bool                    m_interactive = true;
-    bool                    m_moving      = false;
-    bool                    m_mouse       = false;
-    int                     m_touch_id    = -1;
-    SnapMode                m_snap        = NoSnap;
-    Policy                  m_policy      = AsNeeded;
-    QMetaObject::Connection m_window_connection;
+    void                   updateActive();
+    void                   cancel();
+    void                   begin(const QPointF&);
+    void                   move(const QPointF&, bool release);
+    void                   step(qreal);
+    qreal                  logicalPosition(qreal) const;
+    qreal                  positionAt(const QPointF&) const;
+    InputHost              m_input;
+    InteractionAccumulator m_feedback;
+    qreal                  m_step   = 0;
+    qreal                  m_offset = 0;
+    QPointF                m_dragPoint;
+    bool                   m_interactive = true;
+    bool                   m_moving      = false;
+    SnapMode               m_snap        = NoSnap;
+    Policy                 m_policy      = AsNeeded;
 };
 
 class QML_MATERIAL_API ScrollBarAttached : public QObject {

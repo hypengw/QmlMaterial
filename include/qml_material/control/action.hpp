@@ -4,6 +4,7 @@
 #include <QProperty>
 #include <QQmlComponent>
 #include <QQmlListProperty>
+#include <optional>
 #include "qml_material/control/icon_spec.hpp"
 
 namespace qml_material
@@ -46,7 +47,6 @@ public:
     QBindable<QString> bindableTooltip() { return QBindable<QString>(&m_tooltip); }
     QBindable<QString> bindableText() { return QBindable<QString>(&m_text); }
     QBindable<bool>    bindableCheckable() { return QBindable<bool>(&m_checkable); }
-    QBindable<bool>    bindableChecked() { return QBindable<bool>(&m_checked); }
     ~Action() override;
     QQmlListProperty<QObject> data();
     bool                      isVisible() const { return m_visible; }
@@ -82,30 +82,28 @@ public:
     void                      resetEnabled() { setEnabled(true); }
     bool                      isCheckable() const { return m_checkable; }
     void                      setCheckable(bool);
-    bool                      isChecked() const { return m_checked; }
+    bool                      isChecked() const;
     void                      setChecked(bool);
     ActionGroup*              group() const;
     void                      setGroup(ActionGroup*);
     bool                      canToggle() const;
-    bool                      canTrigger() const { return isEnabled() && ! m_triggering; }
-    Q_INVOKABLE void          toggle(QObject* source = nullptr);
-    Q_INVOKABLE void          trigger(QObject* source = nullptr);
-    // Activates a presentation that has already applied its checked transition.
-    void          triggerFromControl(QObject* source, bool toggled);
-    Q_SIGNAL void textChanged();
-    Q_SIGNAL void enabledChanged();
-    Q_SIGNAL void checkableChanged();
-    Q_SIGNAL void checkedChanged();
-    Q_SIGNAL void groupChanged();
-    Q_SIGNAL void toggled(QObject* source);
-    Q_SIGNAL void triggered(QObject* source);
+    bool             canTrigger() const { return isEnabled() && ! m_triggering && ! m_destroying; }
+    Q_INVOKABLE void toggle(QObject* source = nullptr);
+    Q_INVOKABLE bool trigger(QObject* source = nullptr);
+    // Applies an allowed selection request before activation; rejected requests do neither.
+    Q_INVOKABLE void requestChecked(bool checked, QObject* source = nullptr);
+    Q_SIGNAL void    textChanged();
+    Q_SIGNAL void    enabledChanged();
+    Q_SIGNAL void    checkableChanged();
+    Q_SIGNAL void    checkedChanged();
+    Q_SIGNAL void    groupChanged();
+    Q_SIGNAL void    toggled(QObject* source);
+    Q_SIGNAL void    triggered(QObject* source);
 
 private:
     friend class ActionGroup;
-    friend class AbstractButton;
-    void            updateChecked(bool);
-    void            updateCheckable(bool);
-    void            checkedChange();
+    bool            activate(std::optional<bool> checked, QObject* source);
+    bool            acceptsChecked(bool checked) const;
     void            appendData(QObject*);
     QList<QObject*> m_data;
     Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(Action, bool, m_visible, true, &Action::visibleChanged)
@@ -123,8 +121,9 @@ private:
     QPointer<ActionGroup> m_group;
     bool                  m_enabled = true;
     Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(Action, bool, m_checkable, false)
-    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(Action, bool, m_checked, false)
-    QPropertyNotifier m_checkedNotifier, m_checkableNotifier;
+    bool              m_standaloneChecked = false;
+    QPropertyNotifier m_checkableNotifier;
     bool              m_triggering = false;
+    bool              m_destroying = false;
 };
 } // namespace qml_material

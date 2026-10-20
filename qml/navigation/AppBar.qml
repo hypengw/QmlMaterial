@@ -121,7 +121,7 @@ MD.ToolBarBase {
             width: parent.width
             layoutDirection: control.layoutDirection
 
-            MD.IconButton {
+            MD.ActionIconButton {
                 id: m_leading
                 visible: action
             }

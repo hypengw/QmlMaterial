@@ -123,7 +123,7 @@ MD.Control {
             y: parent.height - (root.expanded ? 48 : 64)
             width: root.expanded ? parent.width : 96
             height: 48
-            readonly property bool showTime: root.expanded && seek.pressed
+            readonly property bool showTime: root.expanded && seek.seeking
             MD.IconButton {
                 objectName: 'previousTrack'
                 visible: !timeline.showTime
@@ -138,7 +138,7 @@ MD.Control {
                 icon.name: MD.Token.icon.skip_previous
                 Accessible.name: 'Previous track'
                 MD.ToolTip.text: 'Previous track'
-                MD.ToolTip.visible: hovered
+                MD.ToolTip.visible: mdState.interactions.hovered
                 onClicked: root.skip(-1)
             }
             MD.Text {
@@ -195,7 +195,7 @@ MD.Control {
                 icon.name: MD.Token.icon.skip_next
                 Accessible.name: 'Next track'
                 MD.ToolTip.text: 'Next track'
-                MD.ToolTip.visible: hovered
+                MD.ToolTip.visible: mdState.interactions.hovered
                 onClicked: root.skip(1)
             }
         }
@@ -205,7 +205,7 @@ MD.Control {
             y: parent.height - (root.expanded ? 112 : 64)
             width: 48
             height: 48
-            MD.IconButton {
+            MD.IconToggleButton {
                 id: play
                 objectName: 'playPause'
                 width: 48
@@ -221,12 +221,11 @@ MD.Control {
                 mdState.corners: MD.Util.corners(root.playing ? 16 : 24)
                 mdState.backgroundColor: root.playing ? root.MD.MProp.color.primary : root.MD.MProp.color.secondary_container
                 mdState.textColor: root.playing ? root.MD.MProp.color.on_primary : root.MD.MProp.color.on_secondary_container
-                checkable: true
                 checked: root.playing
-                onClicked: root.playing = checked
+                onCheckedChangeRequested: value => root.playing = value
                 Accessible.name: root.playing ? 'Pause' : 'Play'
                 MD.ToolTip.text: root.playing ? 'Pause' : 'Play'
-                MD.ToolTip.visible: hovered
+                MD.ToolTip.visible: mdState.interactions.hovered
             }
         }
     }

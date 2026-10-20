@@ -1,5 +1,6 @@
 #include "qml_material/control/combo_box.hpp"
-#include "qml_material/control/abstract_button.hpp"
+#include "qml_material/control/command_button.hpp"
+#include <QHoverEvent>
 #include <QtQmlModels/private/qqmlobjectmodel_p.h>
 #include <QJSValue>
 #include <QRegularExpression>
@@ -13,28 +14,125 @@
 namespace qml_material
 {
 
-ComboBox::ComboBox(QQuickItem* parent): Control(parent) {
+ComboBox::ComboBox(QQuickItem* parent)
+    : Control(parent), m_input(this, [this] {
+          Q_EMIT interactionSourceChanged();
+      }) {
     setFocusPolicy(Qt::StrongFocus);
     setFlag(QQuickItem::ItemIsFocusScope);
     setAcceptedMouseButtons(Qt::LeftButton);
     setAcceptTouchEvents(true);
+    m_input.setHoverEnabled(hoverEnabled());
+    connect(this, &Control::hoverEnabledChanged, this, [this] {
+        m_input.setHoverEnabled(hoverEnabled());
+    });
+    m_input.focusVisibleChanged = [this] {
+        Q_EMIT focusVisibleChanged();
+    };
+    m_input.click().pointerClicked = [this](QPointF) {
+        if (popupVisible())
+            closePopup();
+        else
+            openPopup();
+    };
+    m_input.click().clicked = [this] {
+        if (popupVisible())
+            closePopup(true);
+        else if (! editable())
+            openPopup();
+    };
     connect(this, &Control::contentItemChanged, this, &ComboBox::attachEditor);
-    connect(this, &QQuickItem::enabledChanged, this, [this] {
-        if (! isEnabled()) {
-            QPointer<ComboBox> guard(this);
-            mouseUngrabEvent();
+    const auto unavailable = [this] {
+        if (! isEnabled() || ! isVisible()) {
+            const QPointer<ComboBox> guard(this);
+            m_input.cancel();
             if (guard) closePopup();
         }
-    });
-    connect(this, &QQuickItem::visibleChanged, this, [this] {
-        if (! isVisible()) {
-            QPointer<ComboBox> guard(this);
-            mouseUngrabEvent();
-            if (guard) closePopup();
-        }
-    });
+    };
+    connect(this, &QQuickItem::enabledChanged, this, unavailable);
+    connect(this, &QQuickItem::visibleChanged, this, unavailable);
 }
-ComboBox::~ComboBox() { utils::disconnectAll(m_editor_connections); }
+ComboBox::~ComboBox() {
+    utils::disconnectAll(m_editor_connections);
+    utils::disconnectAll(m_popupConnections);
+    disconnect(m_indicatorDestroyed);
+    if (m_data) {
+        disconnect(m_data.get(), nullptr, this, nullptr);
+        // Popup consumers must release their delegates before the model is destroyed.
+        m_data.release()->setParent(this);
+    }
+}
+void ComboBox::setPopup(Popup* value) {
+    if (m_popup == value && (value || m_popupConnections.isEmpty())) return;
+    const auto            old = m_popup;
+    const QPointer<Popup> target(value);
+    utils::disconnectAll(m_popupConnections);
+    m_popup                           = value;
+    const auto               revision = ++m_revision;
+    const QPointer<ComboBox> guard(this);
+    m_input.cancelActivation();
+    if (! guard || revision != m_revision) return;
+    if (old) old->close();
+    if (! guard || revision != m_revision) return;
+    if (target) {
+        if (! target->parentItem()) target->setParentItem(this);
+        if (! guard || ! target || revision != m_revision) return;
+        m_popupConnections.append(
+            connect(target, &Popup::visibleChanged, this, &ComboBox::syncPopupState));
+        m_popupConnections.append(
+            connect(target, &Popup::activeFocusChanged, this, &ComboBox::syncPopupState));
+        m_popupConnections.append(connect(target, &QObject::destroyed, this, [this] {
+            setPopup(nullptr);
+        }));
+    }
+    syncPopupState();
+    if (guard && m_popup == target) Q_EMIT popupChanged();
+}
+void ComboBox::syncPopupState() {
+    const bool               visible        = m_popup && m_popup->isVisible();
+    const bool               focus          = m_popup && m_popup->activeFocus();
+    const bool               visibleChanged = std::exchange(m_popup_visible, visible) != visible;
+    const bool               focusChanged   = std::exchange(m_popup_focus, focus) != focus;
+    const QPointer<ComboBox> guard(this);
+    if (visibleChanged) {
+        const auto revision = ++m_revision;
+        m_input.cancelActivation();
+        if (! guard || revision != m_revision) return;
+        if (visible) QGuiApplication::inputMethod()->reset();
+        if (! guard || revision != m_revision) return;
+        setHighlight(visible ? m_index : -1);
+        if (! guard || revision != m_revision) return;
+        Q_EMIT popupVisibleChanged();
+    }
+    if (guard && focusChanged) Q_EMIT popupActiveFocusChanged();
+}
+void ComboBox::setIndicator(QQuickItem* value) {
+    if (m_indicator == value) return;
+    const auto                 old = m_indicator;
+    const QPointer<QQuickItem> target(value);
+    disconnect(m_indicatorDestroyed);
+    m_indicator = value;
+    const QPointer<ComboBox> guard(this);
+    if (old && old->parentItem() == this) old->setParentItem(nullptr);
+    if (! guard || m_indicator != target) return;
+    if (target) {
+        if (! target->parentItem()) target->setParentItem(this);
+        if (! guard || m_indicator != target) return;
+        m_indicatorDestroyed = connect(target, &QObject::destroyed, this, [this] {
+            Q_EMIT indicatorChanged();
+        });
+    }
+    Q_EMIT indicatorChanged();
+}
+bool ComboBox::event(QEvent* event) {
+    const QPointer<ComboBox> guard(this);
+    const bool               handled = m_input.observeEvent(event);
+    if (! guard || handled) return true;
+    return Control::event(event);
+}
+void ComboBox::hoverEnterEvent(QHoverEvent*) {}
+void ComboBox::hoverMoveEvent(QHoverEvent*) {}
+void ComboBox::hoverLeaveEvent(QHoverEvent*) {}
 
 void ComboBox::ensureModel() {
     if (m_data) return;
@@ -59,27 +157,36 @@ void ComboBox::ensureModel() {
     });
     connect(m_data.get(), &ComboBoxModel::changed, this, &ComboBox::synchronize);
     connect(m_data.get(), &ComboBoxModel::itemCreated, this, [this](QObject* object) {
-        auto button = qobject_cast<AbstractButton*>(object);
+        auto button = qobject_cast<CommandButton*>(object);
         if (! button) return;
         button->setFocusPolicy(Qt::NoFocus);
         connect(button,
-                &AbstractButton::clicked,
+                &CommandButton::clicked,
                 this,
                 &ComboBox::delegateClicked,
                 Qt::UniqueConnection);
-        connect(button,
-                &Control::hoveredChanged,
-                this,
-                &ComboBox::delegateHovered,
-                Qt::UniqueConnection);
+        auto                     subscription = std::make_shared<QMetaObject::Connection>();
+        const QPointer<ComboBox> owner(this);
+        const auto               subscribe = [owner, button, subscription] {
+            QObject::disconnect(*subscription);
+            if (! owner) return;
+            *subscription = QObject::connect(
+                button->interactionSource(),
+                &InteractionSource::interaction,
+                button,
+                [owner, button](const Interaction& event) {
+                    if (! owner || ! button->isEnabled() || event.originItem() != button ||
+                        event.kind != Interaction::Hover || event.phase != Interaction::Begin)
+                        return;
+                    const int index = owner->m_data->indexOf(button);
+                    if (index >= 0) owner->highlightIndex(index);
+                });
+        };
+        connect(button, &ButtonControl::interactionSourceChanged, button, subscribe);
+        subscribe();
     });
 }
 void ComboBox::delegateClicked() { activateIndex(m_data->indexOf(sender())); }
-void ComboBox::delegateHovered() {
-    auto      button = qobject_cast<AbstractButton*>(sender());
-    const int index  = m_data->indexOf(button);
-    if (index >= 0 && button && button->hovered() && button->isEnabled()) highlightIndex(index);
-}
 
 void ComboBox::classBegin() {
     Control::classBegin();
@@ -101,7 +208,10 @@ void ComboBox::componentComplete() {
 QVariant ComboBox::model() const { return m_data ? m_data->model() : QVariant(); }
 void     ComboBox::setModel(const QVariant& value) {
     ensureModel();
-    m_data->setModel(value);
+    const auto               revision = ++m_revision;
+    const QPointer<ComboBox> guard(this);
+    m_input.cancelActivation();
+    if (guard && revision == m_revision) m_data->setModel(value);
 }
 QQmlComponent* ComboBox::delegate() const { return m_data ? m_data->delegate() : nullptr; }
 void           ComboBox::setDelegate(QQmlComponent* value) {
@@ -188,11 +298,11 @@ void ComboBox::resetDisplayText() {
     publish(m_index, m_value);
 }
 void ComboBox::activateIndex(int index) {
-    if (! m_ready || ! isEnabled() || index < 0 || index >= count()) return;
+    if (! m_ready || ! isEnabled() || ! isVisible() || index < 0 || index >= count()) return;
     QPointer<ComboBox> guard(this);
-    publish(index, valueAt(index));
-    if (guard) Q_EMIT activated(index);
-    if (guard && m_popup_visible) closePopup();
+    const auto         revision = m_revision;
+    Q_EMIT selectionChangeRequested(index, valueAt(index));
+    if (guard && revision == m_revision && m_popup_visible) closePopup();
 }
 
 void ComboBox::setHighlight(int index, bool notify) {
@@ -206,52 +316,17 @@ void ComboBox::setHighlight(int index, bool notify) {
 void ComboBox::highlightIndex(int index) {
     if (isEnabled() && m_popup_visible) setHighlight(index, true);
 }
-void ComboBox::setPopupVisible(bool visible) {
-    if (m_popup_visible == visible) return;
-    const bool oldDown = isDown();
-    m_popup_visible    = visible;
-    QPointer<ComboBox> guard(this);
-    if (visible) QGuiApplication::inputMethod()->reset();
-    if (! guard) return;
-    setHighlight(visible ? m_index : -1);
-    if (! guard) return;
-    Q_EMIT popupVisibleChanged();
-    if (guard && oldDown != isDown()) Q_EMIT downChanged();
-}
-void ComboBox::setPopupActiveFocus(bool value) {
-    if (m_popup_focus == value) return;
-    m_popup_focus = value;
-    Q_EMIT popupActiveFocusChanged();
-}
-void ComboBox::setPressed(bool value) {
-    if (m_pressed == value) return;
-    const bool oldDown = isDown();
-    m_pressed          = value;
-    QPointer<ComboBox> guard(this);
-    Q_EMIT pressedChanged();
-    if (guard && oldDown != isDown()) Q_EMIT downChanged();
-}
-void ComboBox::setDown(bool value) {
-    const bool old = isDown();
-    m_down         = value;
-    if (old != isDown()) Q_EMIT downChanged();
-}
-void ComboBox::resetDown() {
-    const bool old = isDown();
-    m_down.reset();
-    if (old != isDown()) Q_EMIT downChanged();
-}
 void ComboBox::openPopup() {
-    if (isEnabled() && ! m_popup_visible) Q_EMIT popupOpenRequested();
+    if (isEnabled() && isVisible() && m_popup && ! popupVisible()) m_popup->open();
 }
 void ComboBox::closePopup(bool accept) {
-    QPointer<ComboBox> guard(this);
-    if (accept && m_popup_visible && m_highlight >= 0) {
+    const QPointer<ComboBox> guard(this);
+    if (accept && popupVisible() && m_highlight >= 0) {
         activateIndex(m_highlight);
         return;
     }
-    setPressed(false);
-    if (guard && m_popup_visible) Q_EMIT popupCloseRequested();
+    m_input.cancelActivation();
+    if (guard && m_popup) m_popup->close();
 }
 void ComboBox::navigate(int index) {
     if (m_popup_visible)
@@ -274,73 +349,23 @@ void ComboBox::checkFocus() {
     });
 }
 void ComboBox::focusOutEvent(QFocusEvent* event) {
+    const QPointer<ComboBox> guard(this);
     Control::focusOutEvent(event);
-    checkFocus();
+    if (guard) checkFocus();
 }
-void ComboBox::mousePressEvent(QMouseEvent* event) {
-    if (! isEnabled() || event->button() != Qt::LeftButton) {
-        event->ignore();
-        return;
-    }
-    QPointer<ComboBox> guard(this);
-    forceActiveFocus(Qt::MouseFocusReason);
-    if (! guard) return;
-    m_pointer = true;
-    setPressed(true);
-    event->accept();
-}
-void ComboBox::mouseMoveEvent(QMouseEvent* event) {
-    if (m_pointer) setPressed(contains(event->position()));
-}
-void ComboBox::finishPointer(const QPointF& position) {
-    const bool activate = m_pointer && contains(position) && isEnabled();
-    m_pointer           = false;
-    m_touch_id          = -1;
-    QPointer<ComboBox> guard(this);
-    setPressed(false);
-    if (! guard || ! activate) return;
-    if (m_popup_visible)
-        closePopup();
-    else
-        openPopup();
-}
-void ComboBox::mouseReleaseEvent(QMouseEvent* event) { finishPointer(event->position()); }
-void ComboBox::mouseUngrabEvent() {
-    m_pointer  = false;
-    m_touch_id = -1;
-    setPressed(false);
-}
-void ComboBox::touchUngrabEvent() { mouseUngrabEvent(); }
-void ComboBox::touchEvent(QTouchEvent* event) {
-    if (event->type() == QEvent::TouchCancel) {
-        mouseUngrabEvent();
-        return;
-    }
-    if (! isEnabled()) {
-        event->ignore();
-        return;
-    }
-    QPointer<ComboBox> guard(this);
-    for (const auto& point : event->points()) {
-        if (point.state() == QEventPoint::Pressed && m_touch_id < 0) {
-            m_touch_id = point.id();
-            m_pointer  = true;
-            forceActiveFocus(Qt::MouseFocusReason);
-            if (! guard) return;
-            setPressed(true);
-        } else if (point.id() == m_touch_id) {
-            if (point.state() == QEventPoint::Released)
-                finishPointer(point.position());
-            else
-                setPressed(contains(point.position()));
-        }
-        if (! guard) return;
-    }
-    event->accept();
-}
+void ComboBox::mousePressEvent(QMouseEvent* event) { m_input.event(event); }
+void ComboBox::mouseMoveEvent(QMouseEvent* event) { m_input.event(event); }
+void ComboBox::mouseReleaseEvent(QMouseEvent* event) { m_input.event(event); }
+void ComboBox::mouseUngrabEvent() { m_input.mouseUngrabbed(); }
+void ComboBox::touchUngrabEvent() { m_input.touchUngrabbed(); }
+void ComboBox::touchEvent(QTouchEvent* event) { m_input.event(event); }
 
 void ComboBox::setEditable(bool value) {
     if (m_editable == value) return;
+    const auto               revision = ++m_revision;
+    const QPointer<ComboBox> guard(this);
+    m_input.cancelActivation();
+    if (! guard || revision != m_revision) return;
     m_editable = value;
     Q_EMIT editableChanged();
 }
@@ -419,25 +444,18 @@ void ComboBox::acceptInput() {
     QPointer<ComboBox> guard(this);
     int                index = findEditText(m_edit_text);
     m_accepting              = true;
-    if (index >= 0) {
-        publish(index, valueAt(index));
-        if (! guard) return;
-        setEditText(m_text);
-        if (! guard) return;
-        if (m_editor) m_editor->deselect();
-        if (! guard) return;
-    }
     Q_EMIT accepted();
     if (! guard) return;
     // accepted handlers may insert, replace or reorder the model.
     index = findEditText(m_edit_text);
-    publish(index, valueAt(index));
+    if (index >= 0) Q_EMIT selectionChangeRequested(index, valueAt(index));
     if (! guard) return;
     m_accepting = false;
 }
 void ComboBox::focusInEvent(QFocusEvent* event) {
+    const QPointer<ComboBox> guard(this);
     Control::focusInEvent(event);
-    if (m_editable && m_editor &&
+    if (guard && m_editable && m_editor &&
         (event->reason() == Qt::TabFocusReason || event->reason() == Qt::BacktabFocusReason ||
          event->reason() == Qt::ShortcutFocusReason))
         m_editor->forceActiveFocus(event->reason());
@@ -513,16 +531,16 @@ void ComboBox::keyPressEvent(QKeyEvent* event) {
             event->ignore();
             return;
         }
-        if (! event->isAutoRepeat()) setPressed(true);
-        break;
+        m_input.event(event);
+        return;
     case Qt::Key_Return:
     case Qt::Key_Enter:
         if (! m_popup_visible) {
             event->ignore();
             return;
         }
-        if (! event->isAutoRepeat()) setPressed(true);
-        break;
+        m_input.event(event);
+        return;
     case Qt::Key_Escape:
     case Qt::Key_Back:
         if (! m_popup_visible) {
@@ -556,24 +574,7 @@ void ComboBox::keyPressEvent(QKeyEvent* event) {
     }
     event->accept();
 }
-void ComboBox::keyReleaseEvent(QKeyEvent* event) {
-    if (event->isAutoRepeat()) {
-        event->accept();
-        return;
-    }
-    if (m_pressed && (event->key() == Qt::Key_Space || event->key() == Qt::Key_Return ||
-                      event->key() == Qt::Key_Enter)) {
-        QPointer<ComboBox> guard(this);
-        setPressed(false);
-        if (! guard) return;
-        if (m_popup_visible)
-            closePopup(true);
-        else if (! m_editable && event->key() == Qt::Key_Space)
-            openPopup();
-        event->accept();
-    } else
-        event->ignore();
-}
+void ComboBox::keyReleaseEvent(QKeyEvent* event) { m_input.event(event); }
 void ComboBox::wheelEvent(QWheelEvent* event) {
     if (! m_wheel_enabled || ! isEnabled() || inputMethodComposing() ||
         event->angleDelta().y() == 0) {
@@ -599,7 +600,10 @@ bool ComboBox::eventFilter(QObject* watched, QEvent* event) {
         if (event->type() == QEvent::FocusOut) checkFocus();
         if (event->type() == QEvent::MouseButtonRelease && m_popup_visible) closePopup();
         if (! guard) return true;
-        if (event->type() == QEvent::KeyRelease && m_pressed) {
+        if (event->type() == QEvent::FocusIn || event->type() == QEvent::FocusOut)
+            m_input.observeEvent(event);
+        if (! guard) return true;
+        if (event->type() == QEvent::KeyRelease) {
             keyReleaseEvent(static_cast<QKeyEvent*>(event));
             if (event->isAccepted()) return true;
         }

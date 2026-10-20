@@ -1,4 +1,6 @@
 #include "qml_material/input/swipe_to_dismiss_state.hpp"
+#include "qml_material/control/control.hpp"
+#include "qml_material/util/qt.hpp"
 
 #include <QPointer>
 #include <algorithm>
@@ -8,6 +10,78 @@
 namespace qml_material
 {
 SwipeToDismissState::SwipeToDismissState(QObject* parent): QObject(parent) {}
+SwipeToDismissState::~SwipeToDismissState() { utils::disconnectAll(m_inputConnections); }
+Control* SwipeToDismissState::inputItem() const { return m_inputItem; }
+void     SwipeToDismissState::setInputItem(Control* item) {
+    if (m_inputItem == item && (item || ! m_input)) return;
+    const auto                          generation = ++m_inputGeneration;
+    const QPointer<SwipeToDismissState> guard(this);
+    const QPointer<Control>             next(item);
+    if (m_input) m_input->cancel();
+    if (! guard || generation != m_inputGeneration) return;
+    cancel();
+    if (! guard || generation != m_inputGeneration) return;
+    utils::disconnectAll(m_inputConnections);
+    m_input.reset();
+    m_inputItem = next;
+    if (next) {
+        m_input               = std::make_unique<InputHost>(next);
+        m_input->acceptsInput = [this] {
+            return m_gesturesEnabled && m_settled == Settled && (m_startToEnd || m_endToStart);
+        };
+        m_input->click().keyboardEnabled = false;
+        auto& drag                       = m_input->drag();
+        drag.axes                        = Qt::Horizontal;
+        drag.started                     = [this](QPointF point) {
+            m_lastPoint = point;
+            const QPointer<SwipeToDismissState> guard(this);
+            const auto                          generation = m_inputGeneration;
+            const bool                          accepted   = begin(m_presentedOffset);
+            if (! guard || generation != m_inputGeneration) return;
+            m_dragAccepted = accepted;
+            if (! accepted) m_input->cancelActivation();
+        };
+        drag.moved = [this](QPointF point) {
+            const auto delta = point - std::exchange(m_lastPoint, point);
+            if (m_dragAccepted)
+                dragBy(delta.x() * (m_inputItem && m_inputItem->mirrored() ? -1 : 1));
+        };
+        drag.finished = [this](QPointF point, bool cancelled) {
+            if (! std::exchange(m_dragAccepted, false)) return;
+            if (cancelled) {
+                cancel();
+                return;
+            }
+            const auto sign       = m_inputItem && m_inputItem->mirrored() ? -1 : 1;
+            const auto velocity   = m_input->drag().velocity.x() * sign;
+            const auto generation = m_inputGeneration;
+            const QPointer<SwipeToDismissState> guard(this);
+            dragBy((point.x() - m_lastPoint.x()) * sign);
+            if (guard && generation == m_inputGeneration) release(velocity);
+        };
+        m_input->observeChildPointerInput();
+        m_inputConnections.append(connect(next, &Control::mirroredChanged, this, [this] {
+            if (m_input) m_input->cancelActivation();
+        }));
+        m_inputConnections.append(connect(next, &QObject::destroyed, this, [this] {
+            setInputItem(nullptr);
+        }));
+    }
+    Q_EMIT inputItemChanged();
+}
+void SwipeToDismissState::setGesturesEnabled(bool value) {
+    if (m_gesturesEnabled == value) return;
+    m_gesturesEnabled = value;
+    const QPointer<SwipeToDismissState> guard(this);
+    if (! value && m_input) m_input->cancelActivation();
+    if (guard && ! value) cancel();
+    if (guard) Q_EMIT inputItemChanged();
+}
+void SwipeToDismissState::setPresentedOffset(qreal value) {
+    if (! std::isfinite(value) || m_presentedOffset == value) return;
+    m_presentedOffset = value;
+    Q_EMIT presentedOffsetChanged();
+}
 
 qreal SwipeToDismissState::progress() const {
     return m_distance > 0 ? std::abs(m_offset) / m_distance : 0;
@@ -62,8 +136,10 @@ void SwipeToDismissState::setVelocityThreshold(qreal value) {
 
 void SwipeToDismissState::anchorsChanged() {
     QPointer<SwipeToDismissState> guard(this);
-    const auto                    revision = ++m_revision;
-    emit                          configurationChanged();
+    if (m_input) m_input->cancelActivation();
+    if (! guard) return;
+    const auto revision = ++m_revision;
+    emit       configurationChanged();
     if (! guard || revision != m_revision) return;
     const auto target = allowed(m_target) && m_distance > 0 ? m_target : Settled;
     request(target, m_settling || m_dragging);

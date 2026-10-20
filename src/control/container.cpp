@@ -13,8 +13,9 @@ ContainerAttached* attached(QQuickItem* item) {
 }
 } // namespace
 
-Container::Container(QQuickItem* parent): Control(parent), m_host(new QQuickItem(this)) {
+Container::Container(QQuickItem* parent): Control(parent) {
     setFlag(ItemIsFocusScope);
+    m_host = new QQuickItem(this);
     connect(m_host, &QQuickItem::childrenChanged, this, &Container::refreshItems);
     connect(this, &Control::contentItemChanged, this, [this] {
         if (m_destroying) return;
@@ -137,7 +138,7 @@ void Container::setCurrentIndex(int value) {
         Q_EMIT currentIndexChanged();
         return;
     }
-    value                   = std::clamp(value, -1, count() - 1);
+    value = tracksCurrentItem() ? std::clamp(value, -1, count() - 1) : std::max(value, -1);
     auto*      item         = itemAt(value);
     const bool indexChanged = m_index != value;
     const bool itemChanged  = m_current_identity != item;
@@ -248,12 +249,16 @@ void Container::refreshItems() {
         itemsChanged();
         if (! guard) return;
         if (isComponentComplete()) {
-            const int  retained   = indexOf(m_current);
-            const bool unselected = m_index < 0 && ! old.isEmpty();
-            setCurrentIndex(
-                retained >= 0
-                    ? retained
-                    : (count() && ! unselected ? std::clamp(m_index, 0, count() - 1) : -1));
+            if (tracksCurrentItem()) {
+                const int  retained   = indexOf(m_current);
+                const bool unselected = m_index < 0 && ! old.isEmpty();
+                setCurrentIndex(
+                    retained >= 0
+                        ? retained
+                        : (count() && ! unselected ? std::clamp(m_index, 0, count() - 1) : -1));
+            } else {
+                setCurrentIndex(m_index);
+            }
         }
         if (! guard) return;
         polish();

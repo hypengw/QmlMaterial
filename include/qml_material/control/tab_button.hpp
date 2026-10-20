@@ -1,15 +1,15 @@
 #pragma once
-#include "qml_material/control/radio_button.hpp"
+#include "qml_material/control/selection_button.hpp"
 
 namespace qml_material
 {
-class QML_MATERIAL_API TabButton : public RadioButton {
+class QML_MATERIAL_API TabButton : public SelectionButton {
     Q_OBJECT
     QML_NAMED_ELEMENT(TabButtonBase)
     Q_PROPERTY(bool fillWidth READ fillWidth WRITE setFillWidth NOTIFY fillWidthChanged FINAL)
     Q_PROPERTY(bool fillHeight READ fillHeight WRITE setFillHeight NOTIFY fillHeightChanged FINAL)
 public:
-    explicit TabButton(QQuickItem* parent = nullptr): RadioButton(parent) {}
+    explicit TabButton(QQuickItem* parent = nullptr): SelectionButton(parent) {}
     bool fillWidth() const { return m_fill_width; }
     bool fillHeight() const { return m_fill_height; }
     void setFillWidth(bool value) {

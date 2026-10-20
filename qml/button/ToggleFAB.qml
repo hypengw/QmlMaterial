@@ -2,12 +2,13 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Qcm.Material as MD
 
-MD.ButtonBase {
+MD.ToggleButtonBase {
     id: control
 
     property bool animationsEnabled: true
     property int animationDuration: MD.Token.duration.short4
     property MD.StateFAB mdState: MD.StateFAB {
+        focusIndicationEnabled: false
         item: control
     }
     readonly property real checkedProgress: motion.progress
@@ -27,7 +28,6 @@ MD.ButtonBase {
         }
     }
 
-    checkable: true
     implicitWidth: _tokens.buttonSize
     implicitHeight: _tokens.buttonSize
     padding: 0
@@ -49,19 +49,17 @@ MD.ButtonBase {
         radius: control._tokens.closedCorner + (height / 2 - control._tokens.closedCorner) * control.checkedProgress
         color: MD.Util.mixColor(control.mdState.ctx.color.primary_container, control.mdState.ctx.color.primary, control.checkedProgress)
         elevation: control.mdState.elevation
-        elevationVisible: !control.flat && color.a > 0
+        elevationVisible: elevation > 0 && color.a > 0
         MD.Ripple {
             anchors.fill: parent
             radius: parent.radius
-            pressed: control.pressed
-            pressX: control.pressX
-            pressY: control.pressY
+            interactionSource: control.interactionSource
+            indication: control.mdState.indication
             color: control.icon.color
-            stateOpacity: control.mdState.stateLayerOpacity
         }
         MD.FocusIndicator {
             corners: MD.Util.corners(parent.radius)
-            active: control.visualFocus
+            active: control.focusVisible
         }
     }
 }

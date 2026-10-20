@@ -32,24 +32,34 @@ MD.Control {
         spacing: control.actionSpacing
         interactive: contentWidth > width
 
-        delegate: MD.ButtonBase {
+        delegate: MD.CommandButtonBase {
             id: m_button
 
             required property int index
-            readonly property MD.Action actionItem: control.actions[index]
+            readonly property MD.Action actionItem: control.actions[index] ?? null
+            readonly property bool selected: actionItem?.checked ?? false
+            readonly property MD.StateButton mdState: MD.StateButton {
+                item: m_button
+                selected: m_button.selected
+                toggleable: m_button.actionItem?.checkable ?? false
+                focusIndicationEnabled: false
+                indicationColor: m_button.selected ? m_button.MD.MProp.color.on_primary_container : m_button.MD.MProp.color.on_surface
+            }
 
             width: Math.max(control.delegateWidth, m_column.implicitWidth + control.delegateHorizontalPadding * 2)
             height: control.delegateHeight
-            action: actionItem
+            MD.ActionCommand.action: actionItem
+            text: MD.ActionCommand.text
+            icon.actionIcon: MD.ActionCommand.icon
             icon.width: 24
             icon.height: 24
             icon.color: contentColor
-            icon.fill: checked
-            enabled: actionItem ? actionItem.enabled : false
+            icon.fill: selected
+            enabled: !!actionItem && MD.ActionCommand.enabled
             readonly property color contentColor: {
                 if (!m_button.enabled)
                     return MD.Util.transparent(MD.MProp.color.on_surface, 0.38);
-                return m_button.checked ? MD.MProp.color.on_primary_container : MD.MProp.color.on_surface_variant;
+                return m_button.selected ? MD.MProp.color.on_primary_container : MD.MProp.color.on_surface_variant;
             }
 
             contentItem: Item {
@@ -72,7 +82,7 @@ MD.Control {
                         wrapMode: Text.NoWrap
                         maximumLineCount: 1
                         elide: Text.ElideNone
-                        color: m_button.enabled ? (m_button.checked ? MD.MProp.color.on_primary_container : MD.MProp.color.on_surface) : m_button.contentColor
+                        color: m_button.enabled ? (m_button.selected ? MD.MProp.color.on_primary_container : MD.MProp.color.on_surface) : m_button.contentColor
                     }
                 }
             }
@@ -81,24 +91,22 @@ MD.Control {
                 Rectangle {
                     anchors.fill: parent
                     radius: MD.Token.shape.corner.extra_large
-                    visible: m_button.checked
+                    visible: m_button.selected
                     color: MD.MProp.color.primary_container
                 }
 
                 MD.Ripple {
                     anchors.fill: parent
                     radius: MD.Token.shape.corner.extra_large
-                    pressed: m_button.pressed
-                    pressX: m_button.pressX
-                    pressY: m_button.pressY
-                    stateOpacity: m_button.hovered ? 0.08 : 0
-                    color: m_button.checked ? MD.MProp.color.on_primary_container : MD.MProp.color.on_surface
+                    interactionSource: m_button.interactionSource
+                    indication: m_button.mdState.indication
+                    color: m_button.selected ? MD.MProp.color.on_primary_container : MD.MProp.color.on_surface
                 }
 
                 MD.FocusIndicator {
                     anchors.fill: parent
                     corners: MD.Util.corners(MD.Token.shape.corner.extra_large)
-                    active: m_button.visualFocus
+                    active: m_button.focusVisible
                 }
             }
         }

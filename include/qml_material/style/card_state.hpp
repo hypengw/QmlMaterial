@@ -1,21 +1,21 @@
 #pragma once
 #include "qml_material/style/button_interaction_state.hpp"
 #include "qml_material/core/enum.hpp"
-Q_MOC_INCLUDE("qml_material/control/button.hpp")
+Q_MOC_INCLUDE("qml_material/control/button_control.hpp")
 namespace qml_material
 {
-class Button;
 class QML_MATERIAL_API CardState : public ButtonInteractionState {
     Q_OBJECT
     QML_NAMED_ELEMENT(StateCard)
-    Q_PROPERTY(qml_material::Button* item READ item WRITE setItem NOTIFY itemChanged FINAL)
+    Q_PROPERTY(qml_material::ButtonControl* item READ item WRITE setItem NOTIFY itemChanged FINAL)
     Q_PROPERTY(int type READ type WRITE setType NOTIFY typeChanged BINDABLE bindableType FINAL)
     Q_PROPERTY(
         int radius READ radius WRITE setRadius NOTIFY radiusChanged BINDABLE bindableRadius FINAL)
 public:
     explicit CardState(QObject* parent = nullptr);
-    Button*        item() const;
-    void           setItem(Button*);
+    ~CardState() override;
+    ButtonControl* item() const;
+    void           setItem(ButtonControl*);
     int            type() const;
     void           setType(int);
     QBindable<int> bindableType();

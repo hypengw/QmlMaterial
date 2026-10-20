@@ -93,7 +93,6 @@ class QML_MATERIAL_API Flickable : public QQuickItem {
                    setFlickableDirection NOTIFY flickableDirectionChanged)
 
     Q_PROPERTY(bool interactive READ isInteractive WRITE setInteractive NOTIFY interactiveChanged)
-    Q_PROPERTY(int pressDelay READ pressDelay WRITE setPressDelay NOTIFY pressDelayChanged)
     Q_PROPERTY(bool atXEnd READ isAtXEnd NOTIFY atXEndChanged)
     Q_PROPERTY(bool atYEnd READ isAtYEnd NOTIFY atYEndChanged)
     Q_PROPERTY(bool atXBeginning READ isAtXBeginning NOTIFY atXBeginningChanged)
@@ -173,9 +172,6 @@ public:
     bool isDragging() const;
     bool isDraggingHorizontally() const;
     bool isDraggingVertically() const;
-
-    int  pressDelay() const;
-    void setPressDelay(int delay);
 
     qreal maximumFlickVelocity() const;
     void  setMaximumFlickVelocity(qreal value);
@@ -262,7 +258,6 @@ public:
     Q_SIGNAL void interactiveChanged();
     Q_SIGNAL void maximumFlickVelocityChanged();
     Q_SIGNAL void flickDecelerationChanged();
-    Q_SIGNAL void pressDelayChanged();
     Q_SIGNAL void movementStarted();
     Q_SIGNAL void movementEnded();
     Q_SIGNAL void flickStarted();
@@ -396,9 +391,6 @@ private:
     auto handleMove(const QPointF& position, qint64 timestamp, Qt::MouseButtons buttons) -> void;
     auto handleRelease(const QPointF& position, qint64 timestamp) -> void;
     auto cancelInteraction() -> void;
-    bool captureDelayedPress(QQuickItem*, QPointerEvent*);
-    void clearDelayedPress();
-    void replayDelayedPress(QPointerEvent* release = nullptr);
     auto buttonsAccepted(const QSinglePointEvent* event) const -> bool;
     auto pointerAccepted(QQuickItem* receiver, QEvent* event) const -> bool;
     auto acceptsPoint(const QPointF& point) const -> bool;
@@ -406,41 +398,35 @@ private:
     auto ignorePointerEvent(QEvent* event) const -> void;
 
 private:
-    QQuickItem*                    m_contentItem { nullptr };
-    quint64                        m_geometryRevision { 0 };
-    unsigned                       m_geometryNotifications { 0 };
-    bool                           m_syncingGeometry { false };
-    QList<QObject*>                m_data;
-    AxisData                       m_hData;
-    AxisData                       m_vData;
-    QPointF                        m_dragVelocity;
-    FlickableVisibleArea*          m_visibleArea { nullptr };
-    QPointer<QQuickItem>           m_interactionItem;
-    QMetaObject::Connection        m_frameConnection;
-    QMetaObject::Connection        m_windowVisibilityConnection;
-    bool                           m_motionWindowAttached = false;
-    QElapsedTimer                  m_motionClock;
-    QBasicTimer                    m_pressDelayTimer;
-    QBasicTimer                    m_dragVelocityTimer;
-    std::unique_ptr<QPointerEvent> m_delayedPress;
-    QPointer<QQuickItem>           m_delayedReceiver;
-    QPointer<QQuickWindow>         m_delayedWindow;
-    bool                           m_replayingPress = false;
-    QPointF                        m_pressPos;
-    QPointF                        m_lastPos;
-    qint64                         m_lastPosTime { -1 };
-    qint64                         m_lastPressTime { -1 };
-    FlickableDirection             m_flickableDirection { AutoFlickDirection };
-    InputMaskMode                  m_inputMaskMode { Viewport };
-    qreal                          m_deceleration { 5000 };
-    qreal                          m_maxVelocity { 2500 };
-    int                            m_pressDelay { 0 };
-    bool                           m_pressed { false };
-    bool                           m_stealMouse { false };
-    bool                           m_interactive { true };
-    bool                           m_pixelAligned { false };
-    bool                           m_syncDrag { false };
-    Qt::MouseButtons               m_acceptedButtons { Qt::LeftButton };
+    QQuickItem*             m_contentItem { nullptr };
+    quint64                 m_geometryRevision { 0 };
+    unsigned                m_geometryNotifications { 0 };
+    bool                    m_syncingGeometry { false };
+    QList<QObject*>         m_data;
+    AxisData                m_hData;
+    AxisData                m_vData;
+    QPointF                 m_dragVelocity;
+    FlickableVisibleArea*   m_visibleArea { nullptr };
+    QPointer<QQuickItem>    m_interactionItem;
+    QMetaObject::Connection m_frameConnection;
+    QMetaObject::Connection m_windowVisibilityConnection;
+    bool                    m_motionWindowAttached = false;
+    QElapsedTimer           m_motionClock;
+    QBasicTimer             m_dragVelocityTimer;
+    QPointF                 m_pressPos;
+    QPointF                 m_lastPos;
+    qint64                  m_lastPosTime { -1 };
+    qint64                  m_lastPressTime { -1 };
+    FlickableDirection      m_flickableDirection { AutoFlickDirection };
+    InputMaskMode           m_inputMaskMode { Viewport };
+    qreal                   m_deceleration { 5000 };
+    qreal                   m_maxVelocity { 2500 };
+    bool                    m_pressed { false };
+    bool                    m_stealMouse { false };
+    bool                    m_interactive { true };
+    bool                    m_pixelAligned { false };
+    bool                    m_syncDrag { false };
+    Qt::MouseButtons        m_acceptedButtons { Qt::LeftButton };
 };
 
 } // namespace qml_material

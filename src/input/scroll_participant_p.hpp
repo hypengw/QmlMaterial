@@ -18,6 +18,7 @@ public:
     explicit ScrollParticipant(QQuickItem* item);
     QQuickItem*      item() const;
     bool             available() const;
+    int              pressDelay() const;
     QPointF          position() const;
     QPointF          bounded(QPointF) const;
     Qt::Orientations axes() const;

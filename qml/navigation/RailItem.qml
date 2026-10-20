@@ -1,7 +1,7 @@
 import QtQuick
 import Qcm.Material as MD
 
-MD.ButtonBase {
+MD.NavigationItemBase {
     id: control
 
     property int iconStyle: hasIcon ? MD.Enum.IconAndText : MD.Enum.TextOnly
@@ -9,6 +9,25 @@ MD.ButtonBase {
     property bool expand: false
     property real expansionProgress: -1
     property Item trailing: null
+    property bool animationsEnabled: true
+    property MD.springSpec selectionSpringSpec: MD.Token.motion.spring.standard.defaultSpatial
+    property MD.springSpec effectsSpringSpec: MD.Token.motion.spring.standard.defaultEffects
+    readonly property bool _motionEnabled: animationsEnabled && visible && (!Window.window || (Window.window.visible && Window.window.visibility !== Window.Minimized))
+    readonly property MD.SpringMotion _selectionMotion: MD.SpringMotion {
+        enabled: control._motionEnabled
+        targetValue: control.selected ? 1 : 0
+        spec: control.selectionSpringSpec
+    }
+    readonly property MD.ColorSpringMotion _collapsedLabelMotion: MD.ColorSpringMotion {
+        enabled: control._motionEnabled && m_collapsed_label.visible
+        targetColor: control.mdState.collapsedLabelColor
+        spec: control.effectsSpringSpec
+    }
+    readonly property MD.ColorSpringMotion _expandedLabelMotion: MD.ColorSpringMotion {
+        enabled: control._motionEnabled && m_label.visible
+        targetColor: control.mdState.expandedLabelColor
+        spec: control.effectsSpringSpec
+    }
     readonly property bool hasIcon: !icon.empty
     readonly property bool _showIcon: iconStyle !== MD.Enum.TextOnly && hasIcon
     readonly property bool _showLabel: iconStyle !== MD.Enum.IconOnly
@@ -32,7 +51,6 @@ MD.ButtonBase {
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
-    flat: false
     topInset: 0
     bottomInset: 0
     leftInset: 0
@@ -44,7 +62,7 @@ MD.ButtonBase {
     icon.width: 24
     icon.height: 24
     icon.color: control.mdState.supportTextColor
-    icon.fill: control.checked
+    icon.fill: control.selected
 
     readonly property real _indicatorMargin: 16
     readonly property real _collapsedWidth: 96
@@ -54,6 +72,7 @@ MD.ButtonBase {
     readonly property real _expandedLeadingPad: 16
     readonly property real _expandedTrailingPad: 24
     readonly property real _iconLabelSpacing: 12
+    readonly property real _expandedLabelX: _expandedLeadingPad + _indicatorMargin + (_showIcon ? icon.width + _iconLabelSpacing : 0)
     readonly property real _expandedIndicatorW: {
         if (control.iconStyle === MD.Enum.IconOnly)
             return _expandedIndicatorH;
@@ -64,8 +83,12 @@ MD.ButtonBase {
     readonly property real _collapsedHeight: _collapsedIndicatorH + (_collapsedLabel ? 4 + m_collapsed_label.implicitHeight : 0)
     readonly property real _itemHeight: _collapsedHeight + (_expandedIndicatorH - _collapsedHeight) * _progress
 
-    MD.ToolTip.text: control.action?.tooltip || control.text || ""
-    MD.ToolTip.visible: (control._progress === 0 ? !control._collapsedLabel : !control._showLabel) && control.hovered && !control.pressed && MD.ToolTip.text.length > 0
+    function _visualX(leading, itemWidth) {
+        return mirrored ? width - leading - itemWidth : leading;
+    }
+
+    MD.ToolTip.text: control.text
+    MD.ToolTip.visible: (control._progress === 0 ? !control._collapsedLabel : !control._showLabel) && control.mdState.interactions.hovered && !control.mdState.interactions.pressed && MD.ToolTip.text.length > 0
 
     contentItem: Item {
         implicitWidth: control._implicitWidth
@@ -73,9 +96,10 @@ MD.ButtonBase {
 
         MD.IconView {
             id: m_icon
+            objectName: 'railItemIcon'
             visible: control._showIcon
             icon: control.icon
-            x: (control._collapsedWidth - width) / 2 + (control._expandedLeadingPad + control._indicatorMargin - (control._collapsedWidth - width) / 2) * control._progress
+            x: control._visualX((control._collapsedWidth - width) / 2 + (control._expandedLeadingPad + control._indicatorMargin - (control._collapsedWidth - width) / 2) * control._progress, width)
             y: (control._collapsedIndicatorH - height) / 2 + (control._expandedIndicatorH - control._collapsedIndicatorH) / 2 * control._progress
         }
         MD.Text {
@@ -85,9 +109,8 @@ MD.ButtonBase {
             text: control.text
             font.capitalization: Font.MixedCase
             typescale: MD.Token.typescale.label_medium
-            prominent: control.checked
-            color: control.mdState.collapsedLabelColor
-            x: (control._collapsedWidth - implicitWidth) / 2
+            color: control._collapsedLabelMotion.color
+            x: control._visualX((control._collapsedWidth - implicitWidth) / 2, width)
             y: control._collapsedIndicatorH + 4
         }
         MD.Text {
@@ -97,11 +120,11 @@ MD.ButtonBase {
             text: control.text
             font.capitalization: Font.MixedCase
             typescale: MD.Token.typescale.label_large
-            prominent: control.checked
-            color: control.mdState.expandedLabelColor
-            x: control._expandedLeadingPad + control._indicatorMargin + (control._showIcon ? control.icon.width + control._iconLabelSpacing : 0)
+            color: control._expandedLabelMotion.color
+            x: control._visualX(control._expandedLabelX, width)
             y: (control._expandedIndicatorH - implicitHeight) / 2
-            width: Math.max(0, parent.width - x - control._expandedTrailingPad)
+            width: Math.max(0, parent.width - control._expandedLabelX - control._expandedTrailingPad)
+            horizontalAlignment: control.mirrored ? Text.AlignRight : Text.AlignLeft
             wrapMode: Text.NoWrap
             elide: Text.ElideRight
         }
@@ -110,25 +133,29 @@ MD.ButtonBase {
         implicitWidth: control._implicitWidth
         implicitHeight: control._itemHeight
 
-        MD.ElevationRectangle {
+        Item {
             id: m_indicator
-            x: (control._collapsedWidth - control._collapsedIndicatorW) / 2 + (control._indicatorMargin - (control._collapsedWidth - control._collapsedIndicatorW) / 2) * control._progress
+            objectName: 'railIndicatorBounds'
+            x: control._visualX((control._collapsedWidth - control._collapsedIndicatorW) / 2 + (control._indicatorMargin - (control._collapsedWidth - control._collapsedIndicatorW) / 2) * control._progress, width)
             y: 0
             width: control._collapsedIndicatorW + ((control.iconStyle === MD.Enum.IconOnly ? control._expandedIndicatorW : Math.max(0, control.width - control._indicatorMargin * 2)) - control._collapsedIndicatorW) * control._progress
             height: control._collapsedIndicatorH + (control._expandedIndicatorH - control._collapsedIndicatorH) * control._progress
-            radius: height / 2
-            color: control.mdState.backgroundColor
-            elevationVisible: control.enabled && color.a > 0
-            elevation: control.mdState.elevation
+            MD.Rectangle {
+                objectName: 'railSelectionIndicator'
+                width: parent.width * Math.max(0, control._selectionMotion.value)
+                height: parent.height
+                x: control._showLabel ? (control.mirrored ? parent.width - width : 0) : (parent.width - width) / 2
+                radius: height / 2
+                opacity: MD.Util.clamp(control._selectionMotion.value, 0, 1)
+                color: control.mdState.selectedIndicatorColor
+            }
 
             MD.Ripple {
+                objectName: 'railRipple'
                 anchors.fill: parent
-                readonly property point p: control.mapToItem(this, control.pressX, control.pressY)
-                radius: parent.radius
-                pressX: p.x
-                pressY: p.y
-                pressed: control.pressed
-                stateOpacity: control.mdState.stateLayerOpacity
+                radius: height / 2
+                interactionSource: control.interactionSource
+                indication: control.mdState.indication
                 color: control.mdState.stateLayerColor
             }
         }

@@ -3,9 +3,7 @@
 #include <QtQuick/private/qquicktextinput_p.h>
 #include "qml_material/util/text_control_background.hpp"
 #include "qml_material/util/control_environment.hpp"
-#include <QtQuick/private/qquickevents_p_p.h>
-#include <QTimer>
-#include <memory>
+#include "qml_material/input/input_host.hpp"
 
 namespace qml_material
 {
@@ -13,6 +11,8 @@ namespace qml_material
 /** @ingroup control */
 class QML_MATERIAL_API TextField : public QQuickTextInput, public ControlEnvironment {
     Q_OBJECT
+    Q_PROPERTY(InteractionSource* interactionSource READ interactionSource WRITE
+                   setInteractionSource NOTIFY interactionSourceChanged FINAL)
     Q_PROPERTY(qreal implicitWidth READ implicitWidth WRITE setImplicitWidth NOTIFY
                    fieldImplicitWidthChanged FINAL)
     Q_PROPERTY(qreal implicitHeight READ implicitHeight WRITE setImplicitHeight NOTIFY
@@ -23,7 +23,6 @@ class QML_MATERIAL_API TextField : public QQuickTextInput, public ControlEnviron
                    NOTIFY placeholderTextColorChanged FINAL)
     Q_PROPERTY(Qt::FocusReason focusReason READ focusReason WRITE setFocusReason NOTIFY
                    focusReasonChanged FINAL)
-    Q_PROPERTY(bool hovered READ hovered NOTIFY hoveredChanged BINDABLE bindableHovered FINAL)
     Q_PROPERTY(bool hoverEnabled READ hoverEnabled WRITE setHoverEnabled RESET resetHoverEnabled
                    NOTIFY hoverEnabledChanged FINAL)
     QML_NAMED_ELEMENT(TextFieldBase)
@@ -46,6 +45,9 @@ class QML_MATERIAL_API TextField : public QQuickTextInput, public ControlEnviron
 public:
     explicit TextField(QQuickItem* parent = nullptr);
     ~TextField() override;
+    InteractionSource* interactionSource() { return m_input.source(); }
+    void          setInteractionSource(InteractionSource* source) { m_input.setSource(source); }
+    Q_SIGNAL void interactionSourceChanged();
     QFont         font() const;
     void          setFont(const QFont&);
     void          resetFont();
@@ -84,8 +86,6 @@ public:
     void                setPlaceholderTextColor(const QColor&);
     Qt::FocusReason     focusReason() const { return m_focus_reason; }
     void                setFocusReason(Qt::FocusReason);
-    bool                hovered() const { return m_hovered; }
-    QBindable<bool>     bindableHovered() const { return QBindable<bool>(&m_hovered); }
     bool                hoverEnabled() const { return acceptHoverEvents(); }
     void                setHoverEnabled(bool);
     void                resetHoverEnabled();
@@ -95,49 +95,34 @@ public:
     Q_SIGNAL void       placeholderTextChanged();
     Q_SIGNAL void       placeholderTextColorChanged();
     Q_SIGNAL void       focusReasonChanged();
-    Q_SIGNAL void       hoveredChanged();
     Q_SIGNAL void       hoverEnabledChanged();
-    Q_SIGNAL void       pressed(QQuickMouseEvent* event);
-    Q_SIGNAL void       released(QQuickMouseEvent* event);
-    Q_SIGNAL void       pressAndHold(QQuickMouseEvent* event);
 
 protected:
-    QSGNode* updatePaintNode(QSGNode*, UpdatePaintNodeData*) override;
-    void     focusInEvent(QFocusEvent*) override;
-    void     focusOutEvent(QFocusEvent*) override;
-    void     hoverEnterEvent(QHoverEvent*) override;
-    void     hoverLeaveEvent(QHoverEvent*) override;
-    void     mousePressEvent(QMouseEvent*) override;
-    void     mouseMoveEvent(QMouseEvent*) override;
-    void     mouseReleaseEvent(QMouseEvent*) override;
-    void     mouseDoubleClickEvent(QMouseEvent*) override;
-    void     mouseUngrabEvent() override;
-    void     componentComplete() override;
-    void     itemChange(ItemChange, const ItemChangeData&) override;
-    void     geometryChange(const QRectF&, const QRectF&) override;
+    InputHost&   inputHost() { return m_input; }
+    virtual bool usesEditorInput() const { return true; }
+    bool         event(QEvent*) override;
+    QSGNode*     updatePaintNode(QSGNode*, UpdatePaintNodeData*) override;
+    void         focusInEvent(QFocusEvent*) override;
+    void         focusOutEvent(QFocusEvent*) override;
+    void         hoverEnterEvent(QHoverEvent*) override;
+    void         hoverLeaveEvent(QHoverEvent*) override;
+    void         mouseUngrabEvent() override;
+    void         componentComplete() override;
+    void         itemChange(ItemChange, const ItemChangeData&) override;
+    void         geometryChange(const QRectF&, const QRectF&) override;
 
 private:
-    void                setHovered(bool);
-    void                resolveHoverEnabled();
-    void                updateHoverEnabled(bool);
-    void                cancelPress();
-    void                deliverPress();
-    void                holdTimeout();
-    QString             m_placeholder;
-    QColor              m_placeholder_color;
-    Qt::FocusReason     m_focus_reason = Qt::OtherFocusReason;
-    std::optional<bool> m_requested_hover;
-    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(TextField, bool, m_hovered, false,
-                                         &TextField::hoveredChanged)
-    bool                         m_pressed = false;
-    bool                         m_held    = false;
-    QPointF                      m_press_pos;
-    QTimer                       m_hold_timer;
-    std::unique_ptr<QMouseEvent> m_delayed_press;
-    void                         resolveFont();
-    QFont                        m_requested_font;
-    QFont                        m_effective_font;
-    TextControlBackground        m_background;
+    void                  resolveHoverEnabled();
+    void                  updateHoverEnabled(bool);
+    QString               m_placeholder;
+    QColor                m_placeholder_color;
+    Qt::FocusReason       m_focus_reason = Qt::OtherFocusReason;
+    std::optional<bool>   m_requested_hover;
+    void                  resolveFont();
+    QFont                 m_requested_font;
+    QFont                 m_effective_font;
+    TextControlBackground m_background;
+    InputHost             m_input;
 };
 
 } // namespace qml_material

@@ -2,7 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Qcm.Material as MD
 
-Item {
+MD.CarouselItemBase {
     id: root
     required property int index
 
@@ -17,12 +17,12 @@ Item {
     property string accessibilityTitle: ''
     property real cornerRadius: MD.Token.carousel.item_corner
 
-    readonly property bool down: m_area.pressed
-    readonly property bool hovered: m_area.containsMouse
+    hoverEnabled: true
+    focusPolicy: Qt.TabFocus
+    containmentMask: m_visible
     property MD.StateCarouselItem mdState: MD.StateCarouselItem {
+        focusIndicationEnabled: false
         item: root
-        down: root.down
-        hovered: root.hovered
     }
 
     readonly property real visibleWidth: Math.max(0, width * (1 - maskStart - maskEnd))
@@ -44,10 +44,8 @@ Item {
     implicitWidth: CarouselView.itemWidth
     implicitHeight: CarouselView.itemHeight
 
-    property QtObject _carouselView: null
-
-    focus: visible && index === carouselCurrentIndex
-    activeFocusOnTab: focus
+    // Qt rejects removing the tab stop while this item still owns active focus.
+    activeFocusOnTab: activeFocus || (visible && index === carouselCurrentIndex)
 
     Accessible.role: Accessible.Button
     Accessible.name: {
@@ -58,38 +56,6 @@ Item {
     }
 
     visible: (1 - maskStart - maskEnd) > 0.001
-
-    Keys.onPressed: event => {
-        const horizontal = root.carouselOrientation === Qt.Horizontal;
-        const prevKey = horizontal ? Qt.Key_Left : Qt.Key_Up;
-        const nextKey = horizontal ? Qt.Key_Right : Qt.Key_Down;
-
-        if (event.key === prevKey) {
-            if (root._carouselView) {
-                root._carouselView.decrementCurrentIndexFromKeyboard();
-            }
-            event.accepted = true;
-        } else if (event.key === nextKey) {
-            if (root._carouselView) {
-                root._carouselView.incrementCurrentIndexFromKeyboard();
-            }
-            event.accepted = true;
-        } else if (event.key === Qt.Key_Space || event.key === Qt.Key_Return) {
-            root.clicked();
-            event.accepted = true;
-        }
-    }
-
-    onActiveFocusChanged: {
-        if (!root._carouselView) {
-            return;
-        }
-        if (activeFocus && !m_area.pressed) {
-            root._carouselView.engageTabFocus();
-        } else if (!activeFocus && root.index === root.carouselCurrentIndex) {
-            root._carouselView.suppressFocusRing();
-        }
-    }
 
     Item {
         id: m_visible
@@ -117,23 +83,9 @@ Item {
         MD.Ripple {
             anchors.fill: parent
             corners: m_bg.corners
-            pressX: m_area.mouseX
-            pressY: m_area.mouseY
-            pressed: m_area.pressed
-            stateOpacity: root.mdState.stateLayerOpacity
+            interactionSource: root.interactionSource
+            indication: root.mdState.indication
             color: root.mdState.stateLayerColor
-        }
-
-        MouseArea {
-            id: m_area
-            anchors.fill: parent
-            hoverEnabled: true
-            onPressed: {
-                if (root._carouselView) {
-                    root._carouselView.claimInteractionFocus();
-                }
-            }
-            onClicked: root.clicked()
         }
     }
 
@@ -146,6 +98,4 @@ Item {
         active: CarouselView.focusRingVisible
         corners: root.effectiveCorners
     }
-
-    signal clicked
 }

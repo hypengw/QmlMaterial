@@ -15,6 +15,7 @@ class QML_MATERIAL_API NestedScroll : public QObject {
     QML_ELEMENT
     QML_UNCREATABLE("NestedScroll is an attached property")
     QML_ATTACHED(NestedScroll)
+    Q_PROPERTY(int pressDelay READ pressDelay WRITE setPressDelay NOTIFY pressDelayChanged FINAL)
     Q_PROPERTY(bool enabled READ enabled WRITE setEnabled NOTIFY enabledChanged FINAL)
     Q_PROPERTY(Qt::Orientations axes READ axes WRITE setAxes NOTIFY axesChanged FINAL)
     Q_PROPERTY(bool wheelEnabled MEMBER m_wheelEnabled NOTIFY wheelEnabledChanged FINAL)
@@ -25,6 +26,10 @@ public:
     explicit NestedScroll(QObject* parent);
     ~NestedScroll() override;
     static NestedScroll*    qmlAttachedProperties(QObject*);
+    int                     pressDelay() const { return m_pressDelay; }
+    void                    setPressDelay(int);
+    Q_SIGNAL void           pressDelayChanged();
+    static int              childPressDelay(QQuickItem* receiver);
     static bool             coordinates(QQuickItem* receiver, QQuickItem* ancestor);
     bool                    enabled() const { return m_enabled; }
     void                    setEnabled(bool);
@@ -50,6 +55,7 @@ private:
     QPointer<NestedScrollHandler>    m_controller;
     QPointer<NestedScrollConnection> m_connection;
     QMetaObject::Connection          m_connectionDestroyed;
+    int                              m_pressDelay       = 100;
     bool                             m_enabled          = false;
     bool                             m_wheelEnabled     = true;
     bool                             m_restoreOnReverse = false;

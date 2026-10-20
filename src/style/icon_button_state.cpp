@@ -1,5 +1,4 @@
 #include "qml_material/style/icon_button_state.hpp"
-#include "qml_material/control/button.hpp"
 #include "qml_material/token/color.hpp"
 #include "qml_material/token/token.hpp"
 #include <QPointer>
@@ -8,16 +7,13 @@ namespace qml_material
 using ButtonType = Enum::IconButtonType;
 using ButtonSize = Enum::ButtonSize;
 
-IconButtonState::IconButtonState(QObject* parent): ButtonInteractionState(parent) {
+IconButtonState::IconButtonState(QObject* parent): ButtonValueState(parent) {
     enableGroupShape();
     m_size.setBinding([this] {
         return groupSize();
     });
     bindTargets();
 }
-
-Button* IconButtonState::item() const { return static_cast<Button*>(inputItem()); }
-void    IconButtonState::setItem(Button* item) { setInputItem(item); }
 
 #define INPUT(Type, Name, Setter, Bindable)                                    \
     Type            IconButtonState::Name() const { return m_##Name.value(); } \
@@ -66,11 +62,11 @@ void IconButtonState::bindTargets() {
     });
     base.bind(m_appearance.corner, [this]() -> qreal {
         const auto size = sizeToken();
-        if (down()) return size.pressed_corner_size;
+        if (pressed()) return size.pressed_corner_size;
         if (checked() || ! isRound()) return size.corner_size;
         return backgroundHeight().value_or(40) / 2;
     });
-    auto disabled = stateBindings(Interaction::Disabled);
+    auto disabled = disabledBindings();
     disabled.bind(m_appearance.textColor, colorBinding(&MdColorMgr::on_surface));
     disabled.bind(m_appearance.backgroundColor, [this]() -> QColor {
         const auto t = ButtonType(type());
@@ -88,18 +84,17 @@ void IconButtonState::bindTargets() {
         return stateTokens().disabled_container;
     });
     bindStateLayerOpacity();
-    for (auto state : { Interaction::Pressed, Interaction::Hovered }) {
-        auto active = stateBindings(state);
-        active.bind(m_appearance.elevation, [this]() -> qreal {
-            return elevationTokens().level0;
-        });
-        active.bind(m_appearance.stateLayerColor, [this, state] {
-            if (state == Interaction::Pressed && ButtonType(type()) == ButtonType::IBtOutlined &&
-                ! checked())
-                return color(&MdColorMgr::on_surface);
-            return defaultTextColor();
-        });
-    }
+    auto active = appearanceWhen([this] {
+        return pressed() || hovered() || visualFocus();
+    });
+    active.bind(m_appearance.elevation, [this]() -> qreal {
+        return elevationTokens().level0;
+    });
+    active.bind(m_appearance.stateLayerColor, [this] {
+        if (pressed() && ButtonType(type()) == ButtonType::IBtOutlined && ! checked())
+            return color(&MdColorMgr::on_surface);
+        return defaultTextColor();
+    });
 }
 
 QColor IconButtonState::defaultTextColor() const {

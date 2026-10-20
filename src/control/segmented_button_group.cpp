@@ -3,21 +3,13 @@
 
 namespace qml_material
 {
-SegmentedButtonGroup::SegmentedButtonGroup(QQuickItem* parent)
-    : MaterialContainer(parent), m_group(new ButtonGroup(this)) {
+SegmentedButtonGroup::SegmentedButtonGroup(QQuickItem* parent): MaterialContainer(parent) {
     setSpacing(-1);
-    connect(m_group, &ButtonGroup::exclusiveChanged, this, &SegmentedButtonGroup::exclusiveChanged);
     connect(this, &Control::spacingChanged, this, &QQuickItem::polish);
     connect(this, &Control::mirroredChanged, this, &QQuickItem::polish);
 }
 bool SegmentedButtonGroup::isContent(QQuickItem* item) const {
-    return qobject_cast<AbstractButton*>(item);
-}
-void SegmentedButtonGroup::itemAdded(QQuickItem* item) {
-    m_group->addButton(qobject_cast<AbstractButton*>(item));
-}
-void SegmentedButtonGroup::itemRemoved(QQuickItem* item) {
-    m_group->removeButton(qobject_cast<AbstractButton*>(item));
+    return qobject_cast<ToggleButton*>(item);
 }
 void SegmentedButtonGroup::updatePolish() {
     QPointer<SegmentedButtonGroup> guard(this);

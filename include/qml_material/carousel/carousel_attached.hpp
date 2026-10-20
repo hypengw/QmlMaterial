@@ -2,6 +2,7 @@
 
 #include <QObject>
 #include <QQmlEngine>
+#include "qml_material/export.hpp"
 
 namespace qml_material
 {
@@ -9,7 +10,7 @@ namespace qml_material
 /**
  * @brief Attached properties exposed on carousel delegates.
  */
-class CarouselAttached : public QObject {
+class QML_MATERIAL_API CarouselAttached : public QObject {
     Q_OBJECT
     QML_ANONYMOUS
     Q_PROPERTY(qreal itemWidth READ itemWidth NOTIFY geometryChanged FINAL)

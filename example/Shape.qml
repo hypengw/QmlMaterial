@@ -8,6 +8,7 @@ MD.Page {
     padding: 0
 
     property int fromIndex: 0
+    property int selectedTab: 0
     property int toIndex: 24
     property real morphProgress: 0
 
@@ -158,6 +159,8 @@ MD.Page {
         MD.TabBar {
             id: tabs
             objectName: 'shapeTabs'
+            currentIndex: root.selectedTab
+            onCurrentIndexChangeRequested: index => root.selectedTab = index
             anchors.top: parent.top
             width: parent.width
             MD.TabButton {
@@ -253,7 +256,7 @@ MD.Page {
                         model: root.shapes
                         textRole: 'name'
                         currentIndex: root.fromIndex
-                        onActivated: root.fromIndex = currentIndex
+                        onSelectionChangeRequested: (index, value) => root.fromIndex = index
                     }
                     MD.ComboBox {
                         objectName: 'toShape'
@@ -263,7 +266,7 @@ MD.Page {
                         model: root.shapes
                         textRole: 'name'
                         currentIndex: root.toIndex
-                        onActivated: root.toIndex = currentIndex
+                        onSelectionChangeRequested: (index, value) => root.toIndex = index
                     }
                 }
 
@@ -294,7 +297,7 @@ MD.Page {
                         objectName: 'morphPlayback'
                         icon.name: motion.running && !motion.paused ? MD.Token.icon.pause : MD.Token.icon.play_arrow
                         MD.ToolTip.text: motion.running && !motion.paused ? 'Pause' : 'Play'
-                        MD.ToolTip.visible: hovered
+                        MD.ToolTip.visible: mdState.interactions.hovered
                         onClicked: {
                             if (!motion.running)
                                 motion.start();
@@ -312,9 +315,9 @@ MD.Page {
                         from: 0
                         to: 1
                         value: root.morphProgress
-                        onMoved: {
+                        onValueChangeRequested: requestedValue => {
                             motion.stop();
-                            root.morphProgress = value;
+                            root.morphProgress = requestedValue;
                         }
                     }
                     MD.Text {

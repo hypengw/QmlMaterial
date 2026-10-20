@@ -1,4 +1,5 @@
 #include "qml_material/control/scroll_indicator.hpp"
+#include "qml_material/control/scroll_bar.hpp"
 #include "qml_material/util/qt.hpp"
 #include "scroll_viewport.hpp"
 #include <QQmlInfo>
@@ -174,7 +175,7 @@ void ScrollIndicatorAttached::sync(Axis& axis, bool horizontal) {
     axis.syncing = false;
 }
 
-void ScrollIndicatorAttached::scroll(Axis& axis, bool horizontal) {
+void ScrollIndicatorAttached::scroll(Axis& axis, bool horizontal, qreal requestedPosition) {
     QPointer<ScrollIndicatorAttached> guard(this);
     if (! axis.item || ! m_flickable || axis.syncing) return;
     auto       area     = m_viewport->visibleArea();
@@ -184,7 +185,7 @@ void ScrollIndicatorAttached::scroll(Axis& axis, bool horizontal) {
     if (ratio <= 0 || viewport <= 0) return;
     const auto content = m_viewport->offset(horizontal);
     const auto aligned = m_viewport->pixelAligned() ? std::round(content) : content;
-    const auto target  = aligned + (axis.item->position() - position) * viewport / ratio;
+    const auto target  = aligned + (requestedPosition - position) * viewport / ratio;
     if (! std::isfinite(target) || qFuzzyCompare(target, content)) return;
     axis.syncing = true;
     m_viewport->setOffset(horizontal, target);
@@ -253,11 +254,14 @@ void ScrollIndicatorAttached::attach(Axis& axis, ScrollIndicator* indicator, boo
             axis.connections.append(
                 connect(area, SIGNAL(yPositionChanged(qreal)), this, SLOT(syncVertical())));
         }
-        if (m_bidirectional)
-            axis.connections.append(
-                connect(item, &ScrollIndicator::positionChanged, this, [this, &axis, horizontal]() {
-                    scroll(axis, horizontal);
-                }));
+        if (auto* bar = m_bidirectional ? qobject_cast<ScrollBar*>(item.data()) : nullptr)
+            axis.connections.append(connect(bar,
+                                            &ScrollBar::positionChangeRequested,
+                                            this,
+                                            [this, &axis, horizontal, bar](qreal position) {
+                                                if (axis.item == bar)
+                                                    scroll(axis, horizontal, position);
+                                            }));
         axis.connections.append(
             connect(item,
                     horizontal ? &QQuickItem::heightChanged : &QQuickItem::widthChanged,

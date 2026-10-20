@@ -1,10 +1,8 @@
 #include "qml_material/style/chip_state.hpp"
-#include "qml_material/control/button.hpp"
 #include "qml_material/token/color.hpp"
 namespace qml_material
 {
-ChipState::ChipState(Kind kind, QObject* parent)
-    : ButtonInteractionState(parent, FocusTreatment::Separate), m_kind(kind) {
+ChipState::ChipState(Kind kind, QObject* parent): ButtonValueState(parent), m_kind(kind) {
     auto base = baseBindings();
     base.bind(m_appearance.textColor, [this] {
         return defaultTextColor();
@@ -20,7 +18,7 @@ ChipState::ChipState(Kind kind, QObject* parent)
     base.bind(m_appearance.elevation, [this]() -> qreal {
         return elevated() ? elevationTokens().level1 : elevationTokens().level0;
     });
-    auto disabled = stateBindings(Interaction::Disabled);
+    auto disabled = disabledBindings();
     disabled.bind(m_appearance.textColor, colorBinding(&MdColorMgr::on_surface));
     disabled.bind(m_appearance.outlineColor, colorBinding(&MdColorMgr::on_surface));
     disabled.bind(m_appearance.contentOpacity, [this]() -> qreal {
@@ -32,33 +30,40 @@ ChipState::ChipState(Kind kind, QObject* parent)
     if (kind == Kind::Filter)
         disabled.bind(m_appearance.backgroundColor, colorBinding(&MdColorMgr::on_surface));
     bindStateLayerOpacity();
-    for (auto state : { Interaction::Pressed, Interaction::Hovered, Interaction::Focus }) {
-        auto active = stateBindings(state);
-        active.bind(m_appearance.stateLayerColor, [this] {
+    auto active = appearanceWhen([this] {
+        return pressed() || hovered() || visualFocus();
+    });
+    active.bind(m_appearance.stateLayerColor, [this] {
+        return defaultTextColor();
+    });
+    if (kind == Kind::Assist || kind == Kind::Suggestion)
+        active.bind(m_appearance.textColor, [this] {
             return defaultTextColor();
         });
-        if (kind == Kind::Assist || kind == Kind::Suggestion)
-            active.bind(m_appearance.textColor, [this] {
-                return defaultTextColor();
-            });
-    }
-    stateBindings(Interaction::Hovered).bind(m_appearance.elevation, [this]() -> qreal {
+    appearanceWhen([this] {
+        return elevationInteraction(true) != qml_material::Interaction::None;
+    }).bind(m_appearance.elevation, [this]() -> qreal {
+        const auto interaction = elevationInteraction(true);
+        if (interaction == qml_material::Interaction::Drag) return elevationTokens().level4;
+        if (interaction != qml_material::Interaction::Hover)
+            return elevated() ? elevationTokens().level1 : elevationTokens().level0;
         return elevated()   ? elevationTokens().level2
                : selected() ? elevationTokens().level1
                             : elevationTokens().level0;
     });
-    stateBindings(Interaction::Focus).bind(m_appearance.outlineColor, [this] {
+    appearanceWhen([this] {
+        return visualFocus();
+    }).bind(m_appearance.outlineColor, [this] {
         return selected() ? color(&MdColorMgr::secondary_container) : defaultTextColor();
     });
 }
-Button*         ChipState::item() const { return static_cast<Button*>(inputItem()); }
-void            ChipState::setItem(Button* item) { setInputItem(item); }
 bool            ChipState::elevated() const { return m_elevated.value(); }
 void            ChipState::setElevated(bool value) { m_elevated = value; }
 QBindable<bool> ChipState::bindableElevated() { return QBindable<bool>(&m_elevated); }
 
 bool ChipState::selected() const {
-    return (m_kind == Kind::Filter || m_kind == Kind::Input || m_kind == Kind::Embed) && checked();
+    return (m_kind == Kind::Filter || m_kind == Kind::Input || m_kind == Kind::Embed) &&
+           isSelected();
 }
 QColor ChipState::defaultTextColor() const {
     return color(selected()               ? &MdColorMgr::on_secondary_container
@@ -75,7 +80,7 @@ SingleIconChipState::SingleIconChipState(Kind kind, QObject* parent): ChipState(
     baseBindings().bind(m_iconKey, [this] {
         return resolveIconColor(true);
     });
-    stateBindings(Interaction::Disabled).bind(m_iconKey, colorBinding(&MdColorMgr::on_surface));
+    disabledBindings().bind(m_iconKey, colorBinding(&MdColorMgr::on_surface));
 }
 QColor            SingleIconChipState::iconColor() const { return m_iconColor.value(); }
 void              SingleIconChipState::setIconColor(const QColor& value) { m_iconColor = value; }
@@ -93,7 +98,7 @@ DualIconChipState::DualIconChipState(Kind kind, QObject* parent): ChipState(kind
     baseBindings().bind(m_trailingIconKey, [this] {
         return resolveIconColor(false);
     });
-    auto disabled = stateBindings(Interaction::Disabled);
+    auto disabled = disabledBindings();
     disabled.bind(m_leadingIconKey, colorBinding(&MdColorMgr::on_surface));
     disabled.bind(m_trailingIconKey, colorBinding(&MdColorMgr::on_surface));
 }

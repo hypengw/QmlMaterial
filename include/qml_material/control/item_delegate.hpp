@@ -1,9 +1,9 @@
 #pragma once
-#include "qml_material/control/abstract_button.hpp"
+#include "qml_material/control/combined_command_button.hpp"
 
 namespace qml_material
 {
-class QML_MATERIAL_API ItemDelegate : public AbstractButton {
+class QML_MATERIAL_API ItemDelegate : public CombinedCommandButton {
     Q_OBJECT
     QML_ELEMENT
     Q_PROPERTY(bool highlighted READ isHighlighted WRITE setHighlighted NOTIFY highlightedChanged

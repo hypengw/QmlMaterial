@@ -678,6 +678,20 @@ void NestedScroll::setAxes(Qt::Orientations axes) {
     m_axes = axes;
     emit axesChanged();
 }
+void NestedScroll::setPressDelay(int delay) {
+    delay = std::max(0, delay);
+    if (m_pressDelay == delay) return;
+    m_pressDelay = delay;
+    Q_EMIT pressDelayChanged();
+}
+int NestedScroll::childPressDelay(QQuickItem* receiver) {
+    for (auto* item = receiver ? receiver->parentItem() : nullptr; item;
+         item       = item->parentItem()) {
+        const ScrollParticipant participant(item);
+        if (participant.available() && participant.axes()) return participant.pressDelay();
+    }
+    return 0;
+}
 bool NestedScroll::coordinates(QQuickItem* receiver, QQuickItem* ancestor) {
     const auto chain = chainFor(receiver);
     for (auto config : chain)

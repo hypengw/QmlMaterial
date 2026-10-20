@@ -8,30 +8,24 @@ import Qcm.Material as MD
 // expanded (220-360dp, horizontal items) share the same RailItem and transition
 // into each other. When embedded it occupies layout space; otherwise the
 // expanded rail is shown as a modal/modeless overlay (ModalWideNavigationRail).
-MD.Control {
+MD.NavigationRailBase {
     id: control
     focusPolicy: Qt.NoFocus
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, (useModal || drawerOpened ? 0 : implicitContentWidth) + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
     // -- data --
-    property int currentIndex: 0
     property var model: null
-    signal clicked(var model)
 
     // -- form state --
     // embedded (occupies space) when window is large enough
-    readonly property bool useEmbed: MD.MProp.size.windowClass >= MD.Enum.WindowClassLarge
+    useEmbed: MD.MProp.size.windowClass >= MD.Enum.WindowClassLarge
     // force the expanded rail to overlay even when it could embed
-    property bool forceModal: false
-    readonly property bool useModal: forceModal || !useEmbed
     // user-togglable expanded state for embedded mode
-    property bool expanded: false
     property bool drawerGestureEnabled: true
     // automatically expand when the window becomes large enough to embed
-    property bool autoExpand: true
     // items use the horizontal (expanded) layout
-    readonly property bool useLarge: useModal ? m_private.drawerRequested : expanded
+    readonly property bool useLarge: useModal ? drawerRequested : expanded
     readonly property real expansionProgress: drawerOpened ? m_drawer.position : (useModal ? 0 : m_private.embeddedProgress)
     readonly property bool drawerOpened: m_popup_content.current
 
@@ -56,15 +50,13 @@ MD.Control {
     readonly property Component defaultHeader: m_header_comp
 
     property MD.Action headerAction: defaultHeaderAction
-    readonly property MD.Action defaultHeaderAction: MD.Action {
-        icon.name: MD.Token.icon.menu
-        text: ''
-        onTriggered: control.toggle()
-    }
+    defaultHeaderAction.icon.name: MD.Token.icon.menu
+    drawer: m_drawer
+    popupSite: m_popup_content
+    headerControl: header === defaultHeader ? (m_header_loader.item?.menuControl ?? null) : null
 
     QtObject {
         id: m_private
-        property bool drawerRequested: false
         property bool ready: false
         property real embeddedProgress: control.drawerOpened ? m_drawer.position : (control.expanded ? 1 : 0)
         Behavior on embeddedProgress {
@@ -79,48 +71,10 @@ MD.Control {
     MD.AdaptivePresenter {
         id: m_presenter
         content: m_flick
-        destination: control.useModal && m_private.drawerRequested ? m_popup_content : m_embed_content
+        destination: control.useModal && control.drawerRequested ? m_popup_content : m_embed_content
     }
 
-    function open() {
-        if (useModal) {
-            m_private.drawerRequested = true;
-            m_drawer.open();
-        } else
-            expanded = true;
-    }
-
-    function close() {
-        if (useModal)
-            m_drawer.close();
-        else
-            expanded = false;
-    }
-
-    function toggle() {
-        if (useModal) {
-            if (m_private.drawerRequested)
-                m_drawer.close();
-            else {
-                m_private.drawerRequested = true;
-                m_drawer.open();
-            }
-        } else {
-            expanded = !expanded;
-        }
-    }
-
-    onUseEmbedChanged: {
-        if (useEmbed)
-            m_drawer.close();
-        if (autoExpand)
-            expanded = useEmbed;
-    }
-    Component.onCompleted: {
-        if (autoExpand && useEmbed)
-            expanded = true;
-        m_private.ready = true;
-    }
+    Component.onCompleted: m_private.ready = true
 
     background: Item {
         implicitWidth: {
@@ -141,6 +95,7 @@ MD.Control {
     Component {
         id: m_header_comp
         Item {
+            readonly property MD.CommandButtonBase menuControl: m_menu_btn
             implicitWidth: MD.Util.lerp(control.collapsedWidth, control.expandedWidth, control.expansionProgress)
             implicitHeight: m_menu_btn.y + m_menu_btn.height + (m_fab.visible ? m_fab.height + 12 : 0) + 12
 
@@ -151,13 +106,17 @@ MD.Control {
                 x: MD.Util.lerp((control.collapsedWidth - width) / 2, 32 - (width - 24) / 2, control.expansionProgress)
                 y: 4
                 icon.name: control.useLarge ? MD.Token.icon.menu_open : MD.Token.icon.menu
-                onClicked: control.headerAction ? control.headerAction.trigger() : control.toggle()
+                MD.ActionCommand.action: control.headerAction ?? control.defaultHeaderAction
+                enabled: MD.ActionCommand.enabled
             }
 
             // built-in morphing FAB (icon-only -> extended)
             MD.ExtendedFAB {
                 id: m_fab
-                action: control.fabAction
+                MD.ActionCommand.action: control.fabAction
+                text: MD.ActionCommand.text
+                icon.actionIcon: MD.ActionCommand.icon
+                enabled: MD.ActionCommand.enabled
                 flat: true
                 animationsEnabled: false
                 minimumExpandedWidth: 0
@@ -183,7 +142,6 @@ MD.Control {
         id: m_drawer
         revealMode: MD.DrawerBase.Expand
         width: control.expandedWidth
-        onAboutToHide: m_private.drawerRequested = false
         enter: Transition {
             NumberAnimation {
                 duration: MD.Token.duration.long2
@@ -199,7 +157,6 @@ MD.Control {
         parent: control.MD.Overlay.overlay
         modal: control.useModal
         interactive: control.drawerGestureEnabled && control.useModal
-        onClosed: m_private.drawerRequested = false
         MD.MProp.textColor: MD.MProp.color.on_surface
         MD.MProp.backgroundColor: MD.MProp.color.surface_container
 
@@ -233,7 +190,6 @@ MD.Control {
             originSite: m_embed_content
             autoOpen: false
             activationEnabled: control.useModal
-            onActivationRequested: m_private.drawerRequested = true
         }
     }
 
@@ -242,6 +198,7 @@ MD.Control {
 
         MD.VerticalFlickable {
             id: m_flick
+            enabled: control.enabled && control.visible
             topMargin: 12
             bottomMargin: 12
             contentHeight: m_content.implicitHeight
@@ -349,13 +306,9 @@ MD.Control {
                                 text: m_delegate.model.name ?? ''
                                 expand: control.useLarge
                                 expansionProgress: control.expansionProgress
-                                checked: control.currentIndex === m_delegate.index
-                                onClicked: {
-                                    control.currentIndex = m_delegate.index;
-                                    control.clicked(m_delegate.model);
-                                    if (control.useModal)
-                                        m_drawer.close();
-                                }
+                                selected: control.currentIndex === m_delegate.index
+                                navigation: control
+                                navigationIndex: m_delegate.index
                             }
                         }
                     }

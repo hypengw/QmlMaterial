@@ -72,22 +72,7 @@ auto fail(const char* msg) -> int {
 }
 
 auto findDelegateItem(CarouselView* view, int index) -> QQuickItem* {
-    auto* flick = view ? view->flickable() : nullptr;
-    if (! flick) {
-        return nullptr;
-    }
-    for (QQuickItem* content_item : flick->childItems()) {
-        for (QQuickItem* row_content : content_item->childItems()) {
-            for (QQuickItem* item : row_content->childItems()) {
-                const QVariant index_value = item->property("_carouselIndex");
-                if (! index_value.isValid() || index_value.toInt() != index) {
-                    continue;
-                }
-                return item;
-            }
-        }
-    }
-    return nullptr;
+    return view ? view->findChild<QQuickItem*>(QStringLiteral("row%1").arg(index)) : nullptr;
 }
 
 } // namespace
@@ -113,6 +98,8 @@ int run_model_data_changed(int argc, char** argv) {
     QQmlComponent delegate_component(&engine);
     delegate_component.setData(QByteArrayLiteral("import QtQuick\n"
                                                  "Item {\n"
+                                                 "    required property int index\n"
+                                                 "    objectName: \"row\" + index\n"
                                                  "    property var model\n"
                                                  "    property string title: \"\"\n"
                                                  "}\n"),

@@ -1,22 +1,68 @@
 #include "qml_material/control/slider.hpp"
+#include "qml_material/input/slider_key.hpp"
 #include "qml_material/util/qt.hpp"
-#include <QGuiApplication>
-#include <QStyleHints>
-#include <QMouseEvent>
-#include <QTouchEvent>
+#include "input/control_accessibility_p.hpp"
 #include <QKeyEvent>
 #include <QWheelEvent>
+#include <QHoverEvent>
+#include <QFocusEvent>
 #include <QQuickWindow>
+#include <QMouseEvent>
+#include <QTouchEvent>
 #include <algorithm>
 #include <cmath>
 
 namespace qml_material
 {
 
-Slider::Slider(QQuickItem* parent): Control(parent) {
-    m_pressedNotifier = m_pressed.addNotifier([this] {
-        Q_EMIT pressedChanged();
+Slider::Slider(QQuickItem* parent)
+    : Control(parent), m_input(this, [this] {
+          Q_EMIT interactionSourceChanged();
+      }) {
+    connect(this, &Slider::positionChanged, this, &Slider::previewValueChanged);
+    connect(this, &Slider::valueChanged, this, &Slider::previewValueChanged);
+    connect(this, &Slider::valueChanged, this, [this] {
+        detail::notifyAccessibleValue(this, value());
     });
+    connect(this, &Slider::liveChanged, this, &Slider::previewValueChanged);
+    m_input.setHoverEnabled(hoverEnabled());
+    connect(this, &Control::hoverEnabledChanged, this, [this] {
+        m_input.setHoverEnabled(hoverEnabled());
+    });
+    m_input.focusVisibleChanged = [this] {
+        Q_EMIT focusVisibleChanged();
+    };
+    m_input.click().keyboardEnabled = false;
+    m_input.acceptsInput            = [this] {
+        return m_keys.isEmpty();
+    };
+    m_input.click().pointerStarted = [this](const PointerInput& input) {
+        ++m_generation;
+        m_pointerActive = true;
+        m_point         = input.position;
+    };
+    m_input.click().pointerClicked = [this](QPointF point) {
+        m_point = point;
+        finishPointer(false);
+    };
+    m_input.click().pointerCancelled = [this] {
+        finishPointer(true);
+    };
+    auto& drag     = m_input.drag();
+    drag.axes      = m_orientation;
+    drag.threshold = m_touch_threshold;
+    drag.started   = [this](QPointF) {
+        m_dragging = true;
+        Q_EMIT previewValueChanged();
+    };
+    drag.moved = [this](QPointF point) {
+        m_point = point;
+        moveTo(point, false);
+    };
+    drag.finished = [this](QPointF point, bool cancelled) {
+        m_point = point;
+        finishPointer(cancelled);
+    };
 #ifdef Q_OS_MACOS
     setFocusPolicy(Qt::TabFocus);
 #else
@@ -34,22 +80,24 @@ Slider::~Slider() {
 
 void Slider::setFrom(qreal value) {
     if (! std::isfinite(value) || qFuzzyCompare(m_from, value)) return;
-    cancel();
+    if (! prepareChange()) return;
     m_from = value;
+    QPointer<Slider> guard(this);
     Q_EMIT fromChanged();
-    if (isComponentComplete()) {
+    if (guard && isComponentComplete()) {
         setValue(m_value);
-        updatePosition();
+        if (guard) updatePosition();
     }
 }
 void Slider::setTo(qreal value) {
     if (! std::isfinite(value) || qFuzzyCompare(m_to, value)) return;
-    cancel();
+    if (! prepareChange()) return;
     m_to = value;
+    QPointer<Slider> guard(this);
     Q_EMIT toChanged();
-    if (isComponentComplete()) {
+    if (guard && isComponentComplete()) {
         setValue(m_value);
-        updatePosition();
+        if (guard) updatePosition();
     }
 }
 void Slider::setValue(qreal value) {
@@ -74,20 +122,25 @@ void Slider::setPosition(qreal position) {
 void Slider::updatePosition() {
     setPosition(qFuzzyCompare(m_from, m_to) ? 0 : (m_value - m_from) / (m_to - m_from));
 }
+qreal Slider::previewValue() const {
+    if (m_live || ! m_dragging) return m_value;
+    return std::clamp(valueAt(m_position), std::min(m_from, m_to), std::max(m_from, m_to));
+}
 void Slider::setStepSize(qreal value) {
     if (! std::isfinite(value) || qFuzzyCompare(m_step, value)) return;
+    if (! prepareChange()) return;
     m_step = value;
     Q_EMIT stepSizeChanged();
 }
 void Slider::setSnapMode(SnapMode value) {
     if (m_snap == value) return;
+    if (! prepareChange()) return;
     m_snap = value;
     Q_EMIT snapModeChanged();
 }
-void Slider::setPressed(bool value) { updatePressed(value); }
-void Slider::updatePressed(bool value) { utils::updateBoundValue(m_pressed, value); }
 void Slider::setLive(bool value) {
     if (m_live == value) return;
+    if (! prepareChange()) return;
     m_live = value;
     Q_EMIT liveChanged();
 }
@@ -98,43 +151,59 @@ void Slider::setWheelEnabled(bool value) {
 }
 void Slider::setOrientation(Qt::Orientation value) {
     if (m_orientation == value) return;
-    cancel();
-    m_orientation = value;
+    if (! prepareChange()) return;
+    m_orientation       = value;
+    m_input.drag().axes = value;
+    QPointer<Slider> guard(this);
     Q_EMIT orientationChanged();
-    Q_EMIT visualPositionChanged();
+    if (guard) Q_EMIT visualPositionChanged();
 }
 qreal Slider::implicitHandleWidth() const { return m_handle ? m_handle->implicitWidth() : 0; }
 qreal Slider::implicitHandleHeight() const { return m_handle ? m_handle->implicitHeight() : 0; }
 void  Slider::setHandle(QQuickItem* item) {
     if (m_handle == item) return;
-    cancel();
-    const auto oldWidth  = implicitHandleWidth();
-    const auto oldHeight = implicitHandleHeight();
+    const auto           revision = ++m_handleRevision;
+    QPointer<Slider>     guard(this);
+    QPointer<QQuickItem> requested(item);
+    if (! prepareChange() || revision != m_handleRevision) return;
+    const auto oldWidth = implicitHandleWidth(), oldHeight = implicitHandleHeight();
     utils::disconnectAll(m_handle_connections);
-    if (m_handle) m_handle->setParentItem(nullptr);
-    m_handle = item;
-    if (item) {
-        item->setParentItem(this);
-        m_handle_connections.append(connect(
-            item, &QQuickItem::implicitWidthChanged, this, &Slider::implicitHandleWidthChanged));
-        m_handle_connections.append(connect(
-            item, &QQuickItem::implicitHeightChanged, this, &Slider::implicitHandleHeightChanged));
-        m_handle_connections.append(connect(item, &QObject::destroyed, this, [this]() {
-            utils::disconnectAll(m_handle_connections);
-            m_handle = nullptr;
-            cancel();
+    auto old = m_handle;
+    m_handle = requested;
+    if (old && old->parentItem() == this) old->setParentItem(nullptr);
+    if (! guard || revision != m_handleRevision) return;
+    if (requested) {
+        requested->setParentItem(this);
+        if (! guard || revision != m_handleRevision || ! requested) return;
+        m_handle_connections.append(connect(requested,
+                                            &QQuickItem::implicitWidthChanged,
+                                            this,
+                                            &Slider::implicitHandleWidthChanged));
+        m_handle_connections.append(connect(requested,
+                                            &QQuickItem::implicitHeightChanged,
+                                            this,
+                                            &Slider::implicitHandleHeightChanged));
+        m_handle_connections.append(connect(requested, &QObject::destroyed, this, [this] {
+            m_handle                  = nullptr;
+            const auto       revision = ++m_handleRevision;
+            QPointer<Slider> guard(this);
+            if (! prepareChange() || revision != m_handleRevision) return;
             Q_EMIT handleChanged();
+            if (! guard || revision != m_handleRevision) return;
             Q_EMIT implicitHandleWidthChanged();
-            Q_EMIT implicitHandleHeightChanged();
+            if (guard && revision == m_handleRevision) Q_EMIT implicitHandleHeightChanged();
         }));
     }
     if (! qFuzzyCompare(oldWidth, implicitHandleWidth())) Q_EMIT implicitHandleWidthChanged();
+    if (! guard || revision != m_handleRevision) return;
     if (! qFuzzyCompare(oldHeight, implicitHandleHeight())) Q_EMIT implicitHandleHeightChanged();
-    Q_EMIT handleChanged();
+    if (guard && revision == m_handleRevision) Q_EMIT handleChanged();
 }
 void Slider::setTouchDragThreshold(qreal value) {
     if (! std::isfinite(value) || qFuzzyCompare(m_touch_threshold, value)) return;
-    m_touch_threshold = value;
+    if (! prepareChange()) return;
+    m_touch_threshold        = value;
+    m_input.drag().threshold = value;
     Q_EMIT touchDragThresholdChanged();
 }
 void  Slider::resetTouchDragThreshold() { setTouchDragThreshold(-1); }
@@ -143,8 +212,19 @@ qreal Slider::valueAt(qreal position) const {
     const qreal offset = (m_to - m_from) * position;
     return m_from + (qFuzzyIsNull(m_step) ? offset : std::round(offset / m_step) * m_step);
 }
-void  Slider::increase() { setValue(m_value + (qFuzzyIsNull(m_step) ? 0.1 : m_step)); }
-void  Slider::decrease() { setValue(m_value - (qFuzzyIsNull(m_step) ? 0.1 : m_step)); }
+bool Slider::requestChange(qreal value) {
+    if (! isEnabled() || ! isVisible() || ! std::isfinite(value)) return false;
+    value = std::clamp(value, std::min(m_from, m_to), std::max(m_from, m_to));
+    if (qFuzzyIsNull(value)) value = 0;
+    if (qFuzzyCompare(value, m_value)) return true;
+    const auto       sequence = m_generation;
+    QPointer<Slider> guard(this);
+    Q_EMIT valueChangeRequested(value);
+    return guard && sequence == m_generation;
+}
+void  Slider::requestValue(qreal value) { requestChange(value); }
+void  Slider::increase() { requestValue(m_value + (qFuzzyIsNull(m_step) ? 0.1 : m_step)); }
+void  Slider::decrease() { requestValue(m_value - (qFuzzyIsNull(m_step) ? 0.1 : m_step)); }
 qreal Slider::snapPosition(qreal position) const {
     if (qFuzzyCompare(m_from, m_to) || qFuzzyIsNull(m_step)) return position;
     return std::clamp((valueAt(position) - m_from) / (m_to - m_from), qreal(0), qreal(1));
@@ -159,145 +239,109 @@ qreal Slider::positionAt(const QPointF& point) const {
     return std::clamp((distance - size / 2) / extent, qreal(0), qreal(1));
 }
 void Slider::moveTo(const QPointF& point, bool release) {
-    const auto       sequence = m_sequence;
+    const auto       sequence = m_generation;
     QPointer<Slider> guard(this);
-    const auto       old      = m_position;
     qreal            position = positionAt(point);
     if (m_snap == SnapAlways || (release && m_snap == SnapOnRelease))
         position = snapPosition(position);
-    if (m_live || release) setValue(valueAt(position));
-    if (! guard || m_sequence != sequence) return;
-    if ((! release && (! m_live || m_snap != SnapAlways)) || (release && m_snap != NoSnap))
+    if (m_live || release) {
+        if (! requestChange(valueAt(position))) return;
+    } else {
         setPosition(position);
-    if (! guard || m_sequence != sequence) return;
-    if (! qFuzzyCompare(old, position)) Q_EMIT moved();
-    if (! guard || m_sequence != sequence) return;
-    if (release) {
-        m_input    = Input::None;
-        m_touch_id = -1;
-        setKeepMouseGrab(false);
-        setKeepTouchGrab(false);
-        updatePressed(false);
     }
-}
-void Slider::cancel() {
-    ++m_sequence;
-    m_input    = Input::None;
-    m_touch_id = -1;
-    m_key      = 0;
+    if (! guard || sequence != m_generation) return;
+    if (! release) return;
+    updatePosition();
+    if (! guard || sequence != m_generation) return;
     setKeepMouseGrab(false);
     setKeepTouchGrab(false);
+}
+void Slider::finishPointer(bool cancelled) {
+    if (! m_pointerActive) return;
+    const auto       generation = m_generation;
     QPointer<Slider> guard(this);
+    if (! cancelled) moveTo(m_point, true);
+    if (! guard || generation != m_generation) return;
+    m_pointerActive = m_dragging = false;
+    ++m_generation;
     updatePosition();
-    if (guard) updatePressed(false);
+    if (! guard) return;
+    Q_EMIT previewValueChanged();
+    if (guard) Q_EMIT interactionFinished(cancelled);
 }
-void Slider::mousePressEvent(QMouseEvent* event) {
-    if (event->button() != Qt::LeftButton || m_input != Input::None ||
-        event->source() == Qt::MouseEventSynthesizedByQt) {
-        event->ignore();
-        return;
-    }
-    event->accept();
-    m_input                   = Input::Mouse;
-    const auto       sequence = ++m_sequence;
+bool Slider::prepareChange() {
+    const auto       generation = m_generation + (m_pointerActive || ! m_keys.isEmpty() ? 1 : 0);
     QPointer<Slider> guard(this);
-    if (focusPolicy() & Qt::ClickFocus) forceActiveFocus(Qt::MouseFocusReason);
-    if (! guard || sequence != m_sequence) return;
-    setKeepMouseGrab(true);
-    updatePressed(true);
-    if (guard && sequence == m_sequence) moveTo(event->position(), false);
+    cancel();
+    return guard && m_generation == generation;
 }
-void Slider::mouseMoveEvent(QMouseEvent* event) {
-    event->setAccepted(m_input == Input::Mouse);
-    if (m_input == Input::Mouse) moveTo(event->position(), false);
+void Slider::cancel() {
+    QPointer<Slider> guard(this);
+    const auto       generation = m_generation;
+    m_input.cancel();
+    if (! guard || m_generation != generation) return;
+    if (m_pointerActive) finishPointer(true);
+    if (! guard || m_keys.isEmpty()) return;
+    m_keys.clear();
+    ++m_generation;
+    updatePosition();
+    if (guard) Q_EMIT interactionFinished(true);
 }
-void Slider::mouseReleaseEvent(QMouseEvent* event) {
-    const bool accept = m_input == Input::Mouse && event->button() == Qt::LeftButton;
-    event->setAccepted(accept);
-    if (accept) moveTo(event->position(), true);
+bool Slider::event(QEvent* event) {
+    const QPointer<Slider> guard(this);
+    const bool             handled = m_input.observeEvent(event);
+    if (! guard || handled) return true;
+    return Control::event(event);
 }
-void Slider::mouseUngrabEvent() {
-    if (m_input == Input::Mouse) cancel();
-}
-void Slider::touchUngrabEvent() {
-    if (m_input == Input::Touch) cancel();
-}
-void Slider::touchEvent(QTouchEvent* event) {
-    if (event->type() == QEvent::TouchCancel) {
-        event->accept();
-        if (m_input == Input::Touch) cancel();
-        return;
-    }
-    if (m_input == Input::None) {
-        for (const auto& point : event->points()) {
-            if (point.state() != QEventPoint::Pressed || ! contains(point.position())) continue;
-            m_input             = Input::Touch;
-            const auto sequence = ++m_sequence;
-            m_touch_id          = point.id();
-            m_press_point       = point.position();
-            event->accept();
-            QPointer<Slider> guard(this);
-            if (focusPolicy() & Qt::ClickFocus) forceActiveFocus(Qt::MouseFocusReason);
-            if (guard && sequence == m_sequence) updatePressed(true);
-            return;
-        }
-    }
-    event->setAccepted(m_input == Input::Touch);
-    if (m_input != Input::Touch) return;
-    for (const auto& point : event->points()) {
-        if (point.id() != m_touch_id) continue;
-        if (point.state() == QEventPoint::Released)
-            moveTo(point.position(), true);
-        else if (point.state() == QEventPoint::Updated) {
-            const auto  delta     = point.position() - m_press_point;
-            const qreal threshold = m_touch_threshold < 0
-                                        ? QGuiApplication::styleHints()->startDragDistance()
-                                        : m_touch_threshold;
-            if (! keepTouchGrab() && std::abs(horizontal() ? delta.x() : delta.y()) > threshold)
-                setKeepTouchGrab(true);
-            if (keepTouchGrab()) moveTo(point.position(), false);
-        }
-        return;
-    }
-}
+void Slider::mousePressEvent(QMouseEvent* event) { m_input.event(event); }
+void Slider::mouseMoveEvent(QMouseEvent* event) { m_input.event(event); }
+void Slider::mouseReleaseEvent(QMouseEvent* event) { m_input.event(event); }
+void Slider::mouseDoubleClickEvent(QMouseEvent* event) { m_input.event(event); }
+void Slider::touchEvent(QTouchEvent* event) { m_input.event(event); }
+void Slider::mouseUngrabEvent() { m_input.mouseUngrabbed(); }
+void Slider::touchUngrabEvent() { m_input.touchUngrabbed(); }
+void Slider::focusInEvent(QFocusEvent* event) { QQuickItem::focusInEvent(event); }
+void Slider::hoverEnterEvent(QHoverEvent* event) { QQuickItem::hoverEnterEvent(event); }
+void Slider::hoverMoveEvent(QHoverEvent* event) { QQuickItem::hoverMoveEvent(event); }
+void Slider::hoverLeaveEvent(QHoverEvent* event) { QQuickItem::hoverLeaveEvent(event); }
 void Slider::keyPressEvent(QKeyEvent* event) {
-    if (event->key() == Qt::Key_Escape && m_input != Input::None) {
+    if (event->key() == Qt::Key_Escape && (m_pointerActive || ! m_keys.isEmpty())) {
         event->accept();
         cancel();
         return;
     }
-    const int  key    = event->key();
-    const bool accept = horizontal() ? key == Qt::Key_Left || key == Qt::Key_Right
-                                     : key == Qt::Key_Up || key == Qt::Key_Down;
-    if (! accept || (m_input != Input::None && m_input != Input::Key)) {
+    if (! isEnabled() || m_pointerActive) {
+        event->ignore();
+        return;
+    }
+    const qreal length = std::abs(m_to - m_from);
+    const auto  next   = sliderKeyPosition(event->key(),
+                                           m_position,
+                                           length > 0 ? std::abs(m_step) / length : 0,
+                                           m_orientation,
+                                           vertical() || mirrored());
+    if (! next) {
         event->ignore();
         return;
     }
     event->accept();
-    m_input                   = Input::Key;
-    m_key                     = key;
-    const auto       sequence = ++m_sequence;
-    QPointer<Slider> guard(this);
-    updatePressed(true);
-    if (! guard || sequence != m_sequence) return;
-    const auto old = m_value;
-    const bool up  = horizontal() ? (key == Qt::Key_Right) != mirrored() : key == Qt::Key_Up;
-    if (up)
-        increase();
-    else
-        decrease();
-    if (guard && sequence == m_sequence && ! qFuzzyCompare(old, m_value)) Q_EMIT moved();
+    m_keys.insert(event->key());
+    ++m_generation;
+    requestValue(valueAt(*next));
 }
 void Slider::keyReleaseEvent(QKeyEvent* event) {
-    if (m_input != Input::Key || event->key() != m_key) {
-        event->ignore();
-        return;
+    const bool accepted = m_keys.contains(event->key());
+    event->setAccepted(accepted);
+    if (! accepted || event->isAutoRepeat()) return;
+    m_keys.remove(event->key());
+    if (m_keys.isEmpty()) {
+        ++m_generation;
     }
-    event->accept();
-    if (! event->isAutoRepeat()) cancel();
+    if (m_keys.isEmpty()) Q_EMIT interactionFinished(false);
 }
 void Slider::wheelEvent(QWheelEvent* event) {
-    if (! m_wheel_enabled) {
+    if (! m_wheel_enabled || ! isEnabled() || ! isVisible() ||
+        (m_pointerActive || ! m_keys.isEmpty())) {
         event->ignore();
         return;
     }
@@ -306,15 +350,15 @@ void Slider::wheelEvent(QWheelEvent* event) {
         (std::abs(angle.y()) < std::abs(angle.x()) ? angle.x()
                                                    : (event->inverted() ? -angle.y() : angle.y())) /
         120.0;
-    const auto       old = m_value;
-    QPointer<Slider> guard(this);
-    setValue(old + delta * (qFuzzyIsNull(m_step) ? 0.1 : m_step));
     event->accept();
-    if (guard && ! qFuzzyCompare(old, m_value)) Q_EMIT moved();
+    QPointer<Slider> guard(this);
+    if (requestChange(m_value + delta * (qFuzzyIsNull(m_step) ? 0.1 : m_step)) && guard)
+        Q_EMIT interactionFinished(false);
 }
 void Slider::focusOutEvent(QFocusEvent* event) {
-    Control::focusOutEvent(event);
-    if (m_input == Input::Key) cancel();
+    QPointer<Slider> guard(this);
+    QQuickItem::focusOutEvent(event);
+    if (guard && ! m_keys.isEmpty()) cancel();
 }
 void Slider::observeWindow() {
     disconnect(m_window_connection);
@@ -324,7 +368,9 @@ void Slider::observeWindow() {
         });
 }
 void Slider::itemChange(ItemChange change, const ItemChangeData& data) {
+    QPointer<Slider> guard(this);
     Control::itemChange(change, data);
+    if (! guard) return;
     if (change == ItemSceneChange) observeWindow();
     if (change == ItemSceneChange || change == ItemParentHasChanged ||
         (change == ItemEnabledHasChanged && ! data.boolValue) ||
@@ -332,9 +378,11 @@ void Slider::itemChange(ItemChange change, const ItemChangeData& data) {
         cancel();
 }
 void Slider::componentComplete() {
+    QPointer<Slider> guard(this);
     Control::componentComplete();
+    if (! guard) return;
     setValue(m_value);
-    updatePosition();
+    if (guard) updatePosition();
 }
 
 } // namespace qml_material

@@ -10,7 +10,7 @@ Rectangle {
         id: rb
         anchors.centerIn: parent
         text: "Option"
-        checked: true
+        selected: true
 
         MD.FocusIndicator {
             parent: rb.indicator.children[1]

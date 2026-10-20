@@ -10,7 +10,7 @@ Rectangle {
         id: cb
         anchors.centerIn: parent
         text: "Accept"
-        checked: true
+        checkState: Qt.Checked
 
         MD.FocusIndicator {
             parent: cb.indicator.children[1]

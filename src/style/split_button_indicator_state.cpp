@@ -1,27 +1,30 @@
 #include "qml_material/style/split_button_indicator_state.hpp"
-#include "qml_material/control/button.hpp"
+#include "qml_material/control/button_control.hpp"
 #include "qml_material/token/color.hpp"
-#include "qml_material/util/qt.hpp"
 #include "qml_material/util/qml_util.hpp"
+#include "qml_material/util/qt.hpp"
 namespace qml_material
 {
 using Type = Enum::ButtonType;
 using Size = Enum::ButtonSize;
-SplitButtonIndicatorState::SplitButtonIndicatorState(QObject* parent): CommonState(parent) {
-    initializeAppearance(m_bindings);
-    m_baseCorner.setBinding([this] {
-        if (auto* target = item(); target && ! target->isDown() && target->isChecked())
-            return m_backgroundHeight.value().value_or(sizeToken().container_height) / 2;
-        return calcRadius(size(), isRound(), false);
-    });
-    m_innerCorner.setBinding([this] {
-        const auto token  = sizeToken();
-        auto*      target = item();
-        if (target && target->isDown()) return token.inner_corner_pressed_size;
-        if (target && target->isChecked()) return baseCorner();
-        return token.inner_corner_size;
-    });
-    auto base = m_bindings.base();
+SplitButtonIndicatorState::SplitButtonIndicatorState(QObject* parent): ButtonValueState(parent) {
+    connect(this,
+            &ButtonInteractionState::itemChanged,
+            this,
+            &SplitButtonIndicatorState::observeGeometry);
+    connect(
+        this, &ButtonValueState::selectedChanged, this, &SplitButtonIndicatorState::notifyGeometry);
+    connect(this,
+            &SplitButtonIndicatorState::sizeChanged,
+            this,
+            &SplitButtonIndicatorState::notifyGeometry);
+    connect(this,
+            &SplitButtonIndicatorState::isRoundChanged,
+            this,
+            &SplitButtonIndicatorState::notifyGeometry);
+    connect(
+        this, &CommonState::interactionsChanged, this, &SplitButtonIndicatorState::notifyGeometry);
+    auto base = baseBindings();
     base.bind(m_appearance.elevation, [this]() -> qreal {
         return Type(type()) == Type::BtElevated ? elevationTokens().level1
                                                 : elevationTokens().level0;
@@ -52,15 +55,8 @@ SplitButtonIndicatorState::SplitButtonIndicatorState(QObject* parent): CommonSta
                    ? palette->getOn(backgroundColor())
                    : palette->primary();
     });
-    base.bind(m_appearance.stateLayerOpacity, [this]() -> qreal {
-        auto* target = item();
-        if (! target) return 0;
-        if (target->isPressed()) return stateTokens().pressed.state_layer_opacity;
-        if (target->hovered()) return stateTokens().hover.state_layer_opacity;
-        if (target->visualFocus()) return stateTokens().focus.state_layer_opacity;
-        return 0;
-    });
-    auto disabled = m_bindings.state(Interaction::Disabled);
+    bindStateLayerOpacity();
+    auto disabled = disabledBindings();
     disabled.bind(m_appearance.elevation, [this]() -> qreal {
         return elevationTokens().level0;
     });
@@ -76,75 +72,31 @@ SplitButtonIndicatorState::SplitButtonIndicatorState(QObject* parent): CommonSta
     disabled.bind(m_appearance.backgroundOpacity, [this]() -> qreal {
         return stateTokens().disabled_container;
     });
-    m_selection.setBinding([this] {
-        return Selection { m_disabled.value() ? Interaction::Disabled : Interaction::Base,
-                           targetGeneration() };
-    });
-    m_ready = true;
 }
 SplitButtonIndicatorState::~SplitButtonIndicatorState() {
-    m_bindings.abandon();
-    utils::disconnectAll(m_connections);
-    utils::disconnectAll(m_backgroundConnections);
+    utils::disconnectAll(m_geometryConnections);
+    stopBindings();
 }
-void SplitButtonIndicatorState::updateBackground() {
-    utils::disconnectAll(m_backgroundConnections);
-    auto* background = item() ? item()->background() : nullptr;
-    if (background) {
-        m_backgroundConnections.append(
-            connect(background, &QQuickItem::heightChanged, this, [this, background] {
-                updateStateInput(m_backgroundHeight, std::optional<qreal>(background->height()));
-            }));
-        m_backgroundConnections.append(connect(background, &QObject::destroyed, this, [this] {
-            utils::disconnectAll(m_backgroundConnections);
-            updateStateInput(m_backgroundHeight, std::nullopt);
-        }));
+void SplitButtonIndicatorState::observeGeometry() {
+    utils::disconnectAll(m_geometryConnections);
+    if (auto* control = item()) {
+        m_geometryConnections.append(connect(control,
+                                             &Control::backgroundChanged,
+                                             this,
+                                             &SplitButtonIndicatorState::observeGeometry));
+        if (auto* background = control->background())
+            m_geometryConnections.append(connect(background,
+                                                 &QQuickItem::heightChanged,
+                                                 this,
+                                                 &SplitButtonIndicatorState::notifyGeometry));
     }
-    updateStateInput(m_backgroundHeight,
-                     background ? std::optional<qreal>(background->height()) : std::nullopt);
+    notifyGeometry();
 }
-Button* SplitButtonIndicatorState::item() const { return m_item.value(); }
-void    SplitButtonIndicatorState::setItem(Button* value) {
-    if (m_item == value) return;
-    QPointer<SplitButtonIndicatorState> guard(this);
-    {
-        const QScopedPropertyUpdateGroup group;
-        utils::disconnectAll(m_connections);
-        updateStateInput(m_item, value);
-        if (value) {
-            m_connections.append(connect(value,
-                                         &Button::backgroundChanged,
-                                         this,
-                                         &SplitButtonIndicatorState::updateBackground));
-            m_connections.append(connect(value, &QQuickItem::enabledChanged, this, [this] {
-                updateStateInput(m_disabled, item() && ! item()->isEnabled());
-            }));
-            m_connections.append(connect(value, &QObject::destroyed, this, [this] {
-                utils::disconnectAll(m_connections);
-                QPointer<SplitButtonIndicatorState> guard(this);
-                {
-                    const QScopedPropertyUpdateGroup group;
-                    updateStateInput(m_item, nullptr);
-                    updateStateInput(m_disabled, false);
-                    updateBackground();
-                }
-                if (guard && isStateActive()) Q_EMIT itemChanged();
-            }));
-        }
-        updateBackground();
-        setTarget(value);
-        if (! guard) return;
-        updateStateInput(m_disabled, value && ! value->isEnabled());
-    }
-    if (guard && isStateActive()) Q_EMIT itemChanged();
-}
-void SplitButtonIndicatorState::selectionChanged() {
-    if (! m_ready) return;
-    const auto next = m_selection.value();
-    publishState(next.state == Interaction::Disabled ? QStringLiteral("disabled") : QString(),
-                 [this, state = next.state] {
-                     m_bindings.select(state);
-                 });
+void SplitButtonIndicatorState::notifyGeometry() {
+    if (! isStateActive()) return;
+    const QPointer<SplitButtonIndicatorState> guard(this);
+    Q_EMIT baseCornerChanged();
+    if (guard && isStateActive()) Q_EMIT innerCornerChanged();
 }
 qreal SplitButtonIndicatorState::calcRadius(int size, bool round, bool pressed) const {
     if (pressed) {
@@ -157,7 +109,7 @@ qreal SplitButtonIndicatorState::calcRadius(int size, bool round, bool pressed) 
         }
     }
     if (round) {
-        const auto height = m_backgroundHeight.value();
+        const auto height = backgroundHeight();
         return height ? *height / 2 : 20;
     }
     switch (Size(size)) {
@@ -167,7 +119,17 @@ qreal SplitButtonIndicatorState::calcRadius(int size, bool round, bool pressed) 
     default: return 12;
     }
 }
-qreal SplitButtonIndicatorState::baseCorner() const { return m_baseCorner.value(); }
+qreal SplitButtonIndicatorState::baseCorner() const {
+    // Geometry notifications may retarget the state; do not cache the old target's result.
+    if (! pressed() && isSelected())
+        return backgroundHeight().value_or(sizeToken().container_height) / 2;
+    return calcRadius(size(), isRound(), false);
+}
+qreal SplitButtonIndicatorState::innerCorner() const {
+    const auto token = sizeToken();
+    if (pressed()) return token.inner_corner_pressed_size;
+    return isSelected() ? baseCorner() : token.inner_corner_size;
+}
 token::SplitButtonSizeItem SplitButtonIndicatorState::sizeToken() const {
     const token::SplitButtonSize tokens;
     switch (Size(size())) {

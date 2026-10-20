@@ -9,7 +9,8 @@ Flickable {
     clip: true
 
     synchronousDrag: true
-    pressDelay: MD.Token.flick.pressDelay
+    pressDelay: 0
+    MD.NestedScroll.pressDelay: MD.Token.flick.pressDelay
     maximumFlickVelocity: MD.Token.flick.maximumFlickVelocity
     flickDeceleration: MD.Token.flick.flickDeceleration
     boundsBehavior: Flickable.StopAtBounds

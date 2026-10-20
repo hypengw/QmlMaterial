@@ -91,23 +91,14 @@ void        InputState::setInputItem(QQuickItem* value) {
         }
         setTarget(value);
         if (! guard) return;
-        updateStateInput(m_disabled, value && ! value->isEnabled());
+        updateStateInput(m_disabled, inputItem() && ! inputItem()->isEnabled());
     }
     if (guard && isStateActive()) Q_EMIT itemChanged();
 }
 void InputState::selectionChanged() {
     if (! m_ready) return;
     const auto selection = m_selection.value();
-    QString    name;
-    switch (selection.state) {
-    case Interaction::Disabled: name = QStringLiteral("disabled"); break;
-    case Interaction::Error: name = QStringLiteral("error"); break;
-    case Interaction::ErrorHover: name = QStringLiteral("errorHover"); break;
-    case Interaction::Focus: name = QStringLiteral("focus"); break;
-    case Interaction::Hovered: name = QStringLiteral("hovered"); break;
-    default: break;
-    }
-    publishState(name, [this, next = selection.state] {
+    applyAppearance([this, next = selection.state] {
         m_bindings.select(next);
     });
 }

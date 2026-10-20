@@ -96,24 +96,36 @@ struct SplitResizeState {
 class SplitHandleInput : public QQuickItem {
 public:
     SplitHandleInput(SplitView* view, QQuickItem* handle)
-        : QQuickItem(handle), m_view(view), m_handle(handle) {
+        : QQuickItem(handle), m_view(view), m_handle(handle), m_interactions(this), m_input(this) {
         setAcceptedMouseButtons(Qt::LeftButton);
         setAcceptTouchEvents(true);
         setAcceptHoverEvents(true);
-        setKeepMouseGrab(true);
-        setKeepTouchGrab(true);
         setZ(1000);
+        m_input.click().keyboardEnabled = false;
+        auto& drag                      = m_input.drag();
+        drag.startImmediately           = true;
+        drag.started                    = [this](QPointF point) {
+            const QPointer<SplitHandleInput> guard(this);
+            const bool accepted = m_view && m_view->beginResize(m_handle, mapToScene(point));
+            if (guard && ! accepted) m_input.cancelActivation();
+        };
+        drag.moved = [this](QPointF point) {
+            if (ownsResize()) m_view->moveResize(mapToScene(point));
+        };
+        drag.finished = [this](QPointF point, bool cancelled) {
+            const QPointer<SplitHandleInput> guard(this);
+            if (! cancelled && ownsResize()) m_view->moveResize(mapToScene(point));
+            if (guard && ownsResize()) m_view->endResize();
+        };
+        m_interactions.setSource(m_input.source());
+        m_hover         = m_interactions.bindableValues().addNotifier([this] {
+            if (m_handle) handleState(m_handle)->setHovered(m_interactions.values().hovered);
+        });
         const auto size = [this] {
             if (m_handle) setSize(m_handle->size());
         };
         connect(handle, &QQuickItem::widthChanged, this, size);
         connect(handle, &QQuickItem::heightChanged, this, size);
-        connect(this, &QQuickItem::visibleChanged, this, [this] {
-            if (! isVisible()) cancel();
-        });
-        connect(this, &QQuickItem::enabledChanged, this, [this] {
-            if (! isEnabled()) cancel();
-        });
         auto* state = handleState(handle);
         connect(state, &SplitHandleAttached::resizableChanged, this, [this, state] {
             setEnabled(state->isResizable());
@@ -126,71 +138,27 @@ public:
     }
 
 protected:
-    void mousePressEvent(QMouseEvent* event) override {
-        QPointer<SplitHandleInput> guard(this);
-        const bool                 accepted =
-            m_touch_id == -1 && m_view && m_view->beginResize(m_handle, event->scenePosition());
-        event->setAccepted(accepted);
-        if (! guard) return;
+    bool event(QEvent* event) override {
+        const QPointer<SplitHandleInput> guard(this);
+        const bool                       handled = m_input.observeEvent(event);
+        return ! guard || handled ? true : QQuickItem::event(event);
     }
-    void mouseMoveEvent(QMouseEvent* event) override {
-        if (ownsResize()) m_view->moveResize(event->scenePosition());
-        event->accept();
-    }
-    void mouseReleaseEvent(QMouseEvent* event) override {
-        QPointer<SplitHandleInput> guard(this);
-        if (ownsResize()) m_view->moveResize(event->scenePosition());
-        if (guard && ownsResize()) m_view->endResize();
-        event->accept();
-    }
-    void mouseUngrabEvent() override { cancel(); }
-    void touchUngrabEvent() override { cancel(); }
-    void touchEvent(QTouchEvent* event) override {
-        if (event->type() == QEvent::TouchCancel) {
-            cancel();
-            event->accept();
-            return;
-        }
-        QPointer<SplitHandleInput> guard(this);
-        for (const auto& point : event->points()) {
-            if (m_touch_id == -1 && point.state() == QEventPoint::Pressed && m_view) {
-                if (m_view->beginResize(m_handle, point.scenePosition())) {
-                    if (! guard) return;
-                    m_touch_id = point.id();
-                    event->setExclusiveGrabber(point, this);
-                }
-            } else if (point.id() == m_touch_id) {
-                if (ownsResize()) m_view->moveResize(point.scenePosition());
-                if (! guard) return;
-                if (point.state() == QEventPoint::Released) {
-                    m_touch_id = -1;
-                    if (ownsResize()) m_view->endResize();
-                }
-            }
-            if (! guard) return;
-        }
-        event->accept();
-    }
-    void hoverEnterEvent(QHoverEvent*) override {
-        if (m_handle) handleState(m_handle)->setHovered(true);
-    }
-    void hoverLeaveEvent(QHoverEvent*) override {
-        if (m_handle) handleState(m_handle)->setHovered(false);
-    }
+    void mousePressEvent(QMouseEvent* event) override { m_input.event(event); }
+    void mouseMoveEvent(QMouseEvent* event) override { m_input.event(event); }
+    void mouseReleaseEvent(QMouseEvent* event) override { m_input.event(event); }
+    void touchEvent(QTouchEvent* event) override { m_input.event(event); }
+    void mouseUngrabEvent() override { m_input.mouseUngrabbed(); }
+    void touchUngrabEvent() override { m_input.touchUngrabbed(); }
 
 private:
     bool ownsResize() const {
         return m_view && m_view->m_resize && m_view->m_resize->handle == m_handle;
     }
-    void cancel() {
-        m_touch_id = -1;
-        QPointer<SplitHandleInput> guard(this);
-        if (m_handle) handleState(m_handle)->setHovered(false);
-        if (guard && ownsResize()) m_view->endResize();
-    }
-    QPointer<SplitView>  m_view;
-    QPointer<QQuickItem> m_handle;
-    int                  m_touch_id = -1;
+    QPointer<SplitView>    m_view;
+    QPointer<QQuickItem>   m_handle;
+    InteractionAccumulator m_interactions;
+    QPropertyNotifier      m_hover;
+    InputHost              m_input;
 };
 
 void SplitHandleAttached::setHovered(bool value) {
@@ -371,7 +339,10 @@ void SplitView::invalidateLayout() {
     if (guard) requestLayout();
 }
 
-SplitView::SplitView(QQuickItem* parent): Container(parent) {
+SplitView::SplitView(QQuickItem* parent): Container(parent), m_focusInput(this) {
+    m_focusInput.focusVisibleChanged = [this] {
+        Q_EMIT focusVisibleChanged();
+    };
     connect(this, &Control::availableWidthChanged, this, &SplitView::invalidateLayout);
     connect(this, &Control::availableHeightChanged, this, &SplitView::invalidateLayout);
     connect(this, &Control::contentItemChanged, this, &SplitView::invalidateLayout);
@@ -385,6 +356,12 @@ SplitView::SplitView(QQuickItem* parent): Container(parent) {
     connect(this, &QQuickItem::windowChanged, this, &SplitView::invalidateLayout);
     connect(contentHost(), &QQuickItem::xChanged, this, &SplitView::invalidateLayout);
     connect(contentHost(), &QQuickItem::yChanged, this, &SplitView::invalidateLayout);
+}
+bool SplitView::event(QEvent* event) {
+    const QPointer<SplitView> guard(this);
+    if (event->type() == QEvent::FocusIn || event->type() == QEvent::FocusOut)
+        m_focusInput.observeEvent(event);
+    return ! guard || Container::event(event);
 }
 SplitView::~SplitView() {
     m_destroying = true;

@@ -19,6 +19,10 @@ Item {
     property bool locationEnabled: true
     property int columns: 2
     property int rows: 4
+    property bool animationsEnabled: true
+    property int layoutDirection: Qt.application.layoutDirection
+    LayoutMirroring.enabled: layoutDirection === Qt.RightToLeft
+    LayoutMirroring.childrenInherit: true
     readonly property int pageCapacity: columns * rows
     readonly property var tileSpecs: ['wifi', 'bluetooth', 'flashlight', 'focus', 'alarm', 'airplane', 'controls', 'rotation', 'battery', 'night', 'hotspot', 'location']
     readonly property int pageCount: Math.max(1, Math.ceil(tileSpecs.length / pageCapacity))
@@ -198,7 +202,7 @@ Item {
             width: parent.width
             visible: root.expanded
             value: root.brightness
-            onMoved: root.brightness = value
+            onValueChangeRequested: requestedValue => root.brightness = requestedValue
         }
         ListView {
             id: pager
@@ -224,22 +228,51 @@ Item {
                 columns: root.columns
                 spacing: 8
                 Repeater {
+                    id: pageTiles
+                    property int membershipRevision: 0
+                    onItemAdded: membershipRevision++
+                    onItemRemoved: membershipRevision++
                     model: Math.min(root.expanded ? root.pageCapacity : root.columns, Math.max(0, root.tileSpecs.length - page.index * root.pageCapacity))
-                    delegate: QuickTile {
+                    delegate: Item {
+                        id: slot
                         required property int index
-                        readonly property string spec: page ? root.tileSpecs[page.index * root.pageCapacity + index] ?? '' : ''
-                        readonly property var tileData: root.tileState(spec)
-                        objectName: spec + 'Tile'
+                        readonly property alias tile: quickTile
+                        readonly property bool hasPrevious: index % root.columns > 0
+                        readonly property bool hasNext: index % root.columns < root.columns - 1 && index + 1 < pageTiles.count
+                        readonly property var previousTile: {
+                            pageTiles.membershipRevision;
+                            return hasPrevious ? pageTiles.itemAt(index - 1)?.tile : null;
+                        }
+                        readonly property var nextTile: {
+                            pageTiles.membershipRevision;
+                            return hasNext ? pageTiles.itemAt(index + 1)?.tile : null;
+                        }
+                        readonly property real previousBounce: previousTile?.bounce ?? 0
+                        readonly property real nextBounce: nextTile?.bounce ?? 0
+                        readonly property real startDelta: hasPrevious ? quickTile.bounce - previousBounce : 0
+                        readonly property real endDelta: hasNext ? quickTile.bounce - nextBounce : index % root.columns < root.columns - 1 ? quickTile.bounce : 0
                         width: (pager.width - (root.columns - 1) * 8) / root.columns
-                        title: tileData.title
-                        status: tileData.status
-                        symbol: tileData.symbol
-                        active: tileData.active ?? false
-                        available: tileData.available ?? true
-                        dualTarget: tileData.dual ?? false
-                        toggleable: tileData.toggleable ?? true
-                        onToggleRequested: root.toggleTile(spec)
-                        onDetailsRequested: root.showDetails(spec === 'wifi' ? 0 : 1, detailsAnchor)
+                        height: 72
+                        QuickTile {
+                            id: quickTile
+                            layoutDirection: root.layoutDirection
+                            readonly property string spec: page ? root.tileSpecs[page.index * root.pageCapacity + slot.index] ?? '' : ''
+                            readonly property var tileData: root.tileState(spec)
+                            objectName: spec + 'Tile'
+                            x: mirrored ? -slot.endDelta : -slot.startDelta
+                            width: Math.max(0, slot.width + slot.startDelta + slot.endDelta)
+                            height: slot.height
+                            animationsEnabled: root.animationsEnabled && page.index === pager.currentIndex
+                            title: tileData.title
+                            status: tileData.status
+                            symbol: tileData.symbol
+                            active: tileData.active ?? false
+                            available: tileData.available ?? true
+                            dualTarget: tileData.dual ?? false
+                            toggleable: tileData.toggleable ?? true
+                            onToggleRequested: root.toggleTile(spec)
+                            onDetailsRequested: root.showDetails(spec === 'wifi' ? 0 : 1, detailsAnchor)
+                        }
                     }
                 }
             }

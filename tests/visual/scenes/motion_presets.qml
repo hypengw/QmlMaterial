@@ -12,7 +12,6 @@ Rectangle {
         Component.onCompleted: {
             atEnd = true;
             synchronize();
-            progress = 1.1;
         }
     }
 }

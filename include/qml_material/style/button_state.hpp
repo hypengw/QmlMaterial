@@ -2,15 +2,13 @@
 #include "qml_material/style/button_interaction_state.hpp"
 #include "qml_material/token/button.hpp"
 #include <optional>
-Q_MOC_INCLUDE("qml_material/control/button.hpp")
+Q_MOC_INCLUDE("qml_material/control/button_control.hpp")
 namespace qml_material
 {
-class Button;
-class QML_MATERIAL_API ButtonAppearanceState : public ButtonInteractionState {
+class QML_MATERIAL_API ButtonAppearanceState : public ButtonValueState {
     Q_OBJECT
     QML_NAMED_ELEMENT(StateButtonBase)
     QML_UNCREATABLE("Use StateButton or StateSplitButton")
-    Q_PROPERTY(qml_material::Button* item READ item WRITE setItem NOTIFY itemChanged FINAL)
     Q_PROPERTY(int size READ size WRITE setSize NOTIFY sizeChanged BINDABLE bindableSize FINAL)
     Q_PROPERTY(bool isRound READ isRound WRITE setIsRound NOTIFY isRoundChanged BINDABLE
                    bindableIsRound FINAL)
@@ -22,8 +20,6 @@ class QML_MATERIAL_API ButtonAppearanceState : public ButtonInteractionState {
     Q_PROPERTY(int type READ type WRITE setType NOTIFY typeChanged BINDABLE bindableType FINAL)
 
 public:
-    Button*         item() const;
-    void            setItem(Button*);
     int             size() const;
     void            setSize(int);
     QBindable<int>  bindableSize();

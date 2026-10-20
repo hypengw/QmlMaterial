@@ -3,37 +3,14 @@ import QtQuick
 import QtQuick.Shapes
 import Qcm.Material as MD
 
-Item {
+MD.ColorWheelBase {
     id: root
-
-    property real hue: 0
-    property real saturation: 1
-    property real value: 1
-    property real thickness: 22
-
-    signal userHueChanged(real h)
-    signal userSvChanged(real s, real v)
 
     readonly property real _cx: width / 2
     readonly property real _cy: height / 2
-    readonly property real _outerR: Math.min(width, height) / 2 - 1
-    readonly property real _innerR: _outerR - thickness
-    readonly property real _midR: (_outerR + _innerR) / 2
 
     implicitWidth: 240
     implicitHeight: 240
-
-    function _angleFromXY(x, y) {
-        let a = Math.atan2(root._cy - y, x - root._cx) * 180 / Math.PI;
-        if (a < 0)
-            a += 360;
-        return a;
-    }
-    function _distFromCenter(x, y) {
-        const dx = x - root._cx;
-        const dy = y - root._cy;
-        return Math.sqrt(dx * dx + dy * dy);
-    }
 
     // Hue ring as an annulus filled with conical gradient.
     MD.Shape {
@@ -43,26 +20,26 @@ Item {
             strokeColor: "transparent"
             strokeWidth: 0
             fillRule: ShapePath.OddEvenFill
-            startX: root._cx + root._outerR
+            startX: root._cx + root.outerRadius
             startY: root._cy
 
             PathAngleArc {
                 centerX: root._cx
                 centerY: root._cy
-                radiusX: root._outerR
-                radiusY: root._outerR
+                radiusX: root.outerRadius
+                radiusY: root.outerRadius
                 startAngle: 0
                 sweepAngle: 360
             }
             PathMove {
-                x: root._cx + root._innerR
+                x: root._cx + root.innerRadius
                 y: root._cy
             }
             PathAngleArc {
                 centerX: root._cx
                 centerY: root._cy
-                radiusX: root._innerR
-                radiusY: root._innerR
+                radiusX: root.innerRadius
+                radiusY: root.innerRadius
                 startAngle: 0
                 sweepAngle: 360
             }
@@ -105,9 +82,8 @@ Item {
 
     // Hue indicator: radial line across the ring (not a circle).
     Item {
-        readonly property real _ang: root.hue * 2 * Math.PI
-        x: root._cx + root._midR * Math.cos(_ang) - width / 2
-        y: root._cy - root._midR * Math.sin(_ang) - height / 2
+        x: root.handlePosition.x - width / 2
+        y: root.handlePosition.y - height / 2
         width: root.thickness + 8
         height: 4
         rotation: -root.hue * 360
@@ -125,40 +101,14 @@ Item {
     MD.ColorTriangle {
         id: m_tri
         anchors.centerIn: parent
-        width: 2 * root._innerR
-        height: 2 * root._innerR
+        width: 2 * root.innerRadius
+        height: 2 * root.innerRadius
         hue: root.hue
         saturation: root.saturation
         value: root.value
-        onUserSvChanged: function (s, v) {
-            root.userSvChanged(s, v);
-        }
     }
 
-    MouseArea {
-        id: m_ringArea
-        anchors.fill: parent
-        property bool dragging: false
-        cursorShape: Qt.PointingHandCursor
-
-        onPressed: function (e) {
-            const d = root._distFromCenter(e.x, e.y);
-            if (d >= root._innerR && d <= root._outerR + 2) {
-                m_ringArea.dragging = true;
-                const a = root._angleFromXY(e.x, e.y);
-                root.userHueChanged(a / 360);
-                e.accepted = true;
-            } else {
-                e.accepted = false;
-            }
-        }
-        onPositionChanged: function (e) {
-            if (!m_ringArea.dragging)
-                return;
-            const a = root._angleFromXY(e.x, e.y);
-            root.userHueChanged(a / 360);
-        }
-        onReleased: m_ringArea.dragging = false
-        onCanceled: m_ringArea.dragging = false
-    }
+    triangle: m_tri
+    Accessible.role: Accessible.Slider
+    Accessible.name: qsTr("Hue")
 }

@@ -20,8 +20,6 @@ MD.FABMenuBase {
 
     button: MD.ToggleFAB {
         checked: control.expanded
-        checkable: false
         animationsEnabled: control.animationsEnabled
-        onClicked: control.toggle()
     }
 }

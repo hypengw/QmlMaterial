@@ -9,7 +9,7 @@ MD.Menu {
     property list<MD.Action> actions
 
     property Component submenuComponent
-    property Component itemDelegate: MD.MenuItem {}
+    property Component itemDelegate: MD.ActionMenuItem {}
     property Component separatorDelegate: MD.MenuSeparator {
         property MD.Action action
     }

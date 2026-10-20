@@ -6,9 +6,10 @@ namespace qml_material
 {
 
 struct Keyline {
-    qreal offset     = 0; // center position in viewport (main axis)
-    qreal size       = 0;
-    int   size_class = 2;
+    qreal offset            = 0; // center position in viewport (main axis)
+    qreal size              = 0;
+    int   size_class        = 2;
+    qreal unadjusted_offset = 0;
 };
 
 struct KeylineList {
@@ -19,7 +20,7 @@ struct KeylineList {
     qreal            small_size  = 0;
 };
 
-class CarouselKeylines {
+class QML_MATERIAL_API CarouselKeylines {
 public:
     static auto buildList(const CarouselLayoutInput& input) -> KeylineList;
     static auto layoutItems(const CarouselLayoutInput& input, const KeylineList& keylines)
@@ -52,8 +53,6 @@ struct HeroMetrics {
 auto computeMetrics(const CarouselLayoutInput& in) -> HeroMetrics;
 auto phaseKeylines(const CarouselLayoutInput& in, HeroPhase phase, bool keep_leading_peek)
     -> KeylineList;
-void computeHeroSnapOffsets(CarouselLayoutOutput& out, const CarouselLayoutInput& in,
-                            bool keep_leading_peek);
 auto keepLeadingPeek(const CarouselLayoutInput& in) -> bool;
 
 } // namespace CarouselHeroKeylines

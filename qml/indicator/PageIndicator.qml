@@ -16,10 +16,9 @@ MD.PageIndicatorBase {
 
         radius: width / 2
         color: MD.Token.color.on_background
-        opacity: index === control.currentIndex ? 0.95 : pressed ? 0.7 : 0.45
+        opacity: index === control.currentIndex ? 0.95 : index === control.highlightedIndex ? 0.7 : 0.45
 
         required property int index
-        required property bool pressed
 
         Behavior on opacity {
             OpacityAnimator {

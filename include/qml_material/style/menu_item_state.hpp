@@ -1,13 +1,12 @@
 #pragma once
 #include "qml_material/style/button_interaction_state.hpp"
-Q_MOC_INCLUDE("qml_material/control/button.hpp")
+Q_MOC_INCLUDE("qml_material/control/button_control.hpp")
 namespace qml_material
 {
-class Button;
 class QML_MATERIAL_API MenuItemState : public ButtonInteractionState {
     Q_OBJECT
     QML_NAMED_ELEMENT(StateMenuItem)
-    Q_PROPERTY(qml_material::Button* item READ item WRITE setItem NOTIFY itemChanged FINAL)
+    Q_PROPERTY(qml_material::ButtonControl* item READ item WRITE setItem NOTIFY itemChanged FINAL)
     Q_PROPERTY(bool selected READ selected WRITE setSelected NOTIFY selectedChanged BINDABLE
                    bindableSelected FINAL)
     Q_PROPERTY(QColor leadingIconColor READ leadingIconColor WRITE setLeadingIconColor RESET
@@ -18,8 +17,8 @@ class QML_MATERIAL_API MenuItemState : public ButtonInteractionState {
                        bindableTrailingIconColor FINAL)
 public:
     explicit MenuItemState(QObject* parent = nullptr);
-    Button*           item() const;
-    void              setItem(Button*);
+    ButtonControl*    item() const;
+    void              setItem(ButtonControl*);
     bool              selected() const;
     void              setSelected(bool);
     QBindable<bool>   bindableSelected();

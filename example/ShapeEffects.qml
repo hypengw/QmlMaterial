@@ -43,6 +43,8 @@ MD.Page {
 
                     MD.Slider {
                         id: m_slider_radius
+
+                        onValueChangeRequested: requestedValue => value = requestedValue
                         Layout.fillWidth: true
                         Layout.leftMargin: 16
                         Layout.rightMargin: 16
@@ -414,10 +416,7 @@ MD.Page {
             MD.RippleShape {
                 color: MD.MProp.color.primary
                 corners: rc_root.cellCorners
-                stateOpacity: rc_ma.containsMouse ? 0.08 : 0
-                pressed: rc_ma.pressed
-                pressX: rc_ma.mouseX
-                pressY: rc_ma.mouseY
+                interactionSource: rc_input.interactionSource
             }
         }
         Component {
@@ -425,10 +424,7 @@ MD.Page {
             MD.RippleSkia {
                 color: MD.MProp.color.primary
                 corners: rc_root.cellCorners
-                stateOpacity: rc_ma.containsMouse ? 0.08 : 0
-                pressed: rc_ma.pressed
-                pressX: rc_ma.mouseX
-                pressY: rc_ma.mouseY
+                interactionSource: rc_input.interactionSource
             }
         }
 
@@ -438,8 +434,9 @@ MD.Page {
             typescale: MD.Token.typescale.label_medium
         }
 
-        MouseArea {
-            id: rc_ma
+        MD.CommandButtonBase {
+            id: rc_input
+            objectName: "rippleInput"
             anchors.fill: parent
             hoverEnabled: true
         }

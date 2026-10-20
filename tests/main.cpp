@@ -65,6 +65,7 @@ int main(int argc, char** argv) {
         qputenv("QT_ENABLE_HIGHDPI_SCALING", "0");
         qputenv("QT_SCALE_FACTOR", "1");
     }
+    if (qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM")) qputenv("QT_QPA_PLATFORM", "offscreen");
     std::unique_ptr<QCoreApplication> app;
     if (selected->application == Application::Gui)
         app = std::make_unique<QGuiApplication>(count, arguments.data());

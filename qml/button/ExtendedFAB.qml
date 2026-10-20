@@ -2,10 +2,11 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Qcm.Material as MD
 
-MD.ButtonBase {
+MD.CommandButtonBase {
     id: control
 
     property bool expanded: true
+    property bool flat: false
     property bool animationsEnabled: true
     property int expandDuration: MD.Token.duration.short4
     property int collapseDuration: MD.Token.duration.medium2
@@ -18,6 +19,7 @@ MD.ButtonBase {
     property int color: MD.Enum.FABColorPrimary
     property MD.typescale typescale: MD.Token.typescale.label_large
     property MD.StateFAB mdState: MD.StateFAB {
+        focusIndicationEnabled: false
         item: control
     }
     readonly property real expandedWidth: Math.max(minimumExpandedWidth, leftPadding + rightPadding + label.implicitWidth + (icon.empty ? 0 : icon.width + spacing))
@@ -102,14 +104,12 @@ MD.ButtonBase {
             anchors.fill: parent
             radius: parent.radius
             color: control.mdState.stateLayerColor
-            pressed: control.pressed
-            pressX: control.pressX
-            pressY: control.pressY
-            stateOpacity: control.mdState.stateLayerOpacity
+            interactionSource: control.interactionSource
+            indication: control.mdState.indication
         }
         MD.FocusIndicator {
             corners: MD.Util.corners(parent.radius)
-            active: control.visualFocus
+            active: control.focusVisible
         }
     }
 }

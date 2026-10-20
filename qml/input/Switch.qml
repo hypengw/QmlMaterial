@@ -5,6 +5,9 @@ MD.SwitchBase {
     id: control
 
     property alias mdState: m_sh
+    property bool animationsEnabled: true
+    property MD.springSpec springSpec: MD.Token.motion.spring.standard.fastSpatial
+    readonly property bool motionEnabled: control.animationsEnabled && control.visible && control.enabled && (!control.Window.window || (control.Window.window.visible && control.Window.window.visibility !== Window.Minimized))
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding, implicitIndicatorHeight + topPadding + bottomPadding)
@@ -45,38 +48,28 @@ MD.SwitchBase {
 
         Rectangle {
             id: handle
+            objectName: 'switchHandle'
             opacity: control.mdState.contentOpacity
-            x: Math.max(offset, Math.min(parent.width - offset - width, control.visualPosition * parent.width - (width / 2)))
+            x: (control.mirrored ? indicator.width - positionMotion.value : positionMotion.value) - width / 2
             y: (parent.height - height) / 2
-            // We use scale to allow us to enlarge the circle from the center,
-            // as using width/height will cause it to jump due to the position x/y bindings.
-            // However, a large enough scale on certain displays will show the triangles
-            // that make up the circle, so instead we make sure that the circle is always
-            // its largest size so that more triangles are used, and downscale instead.
-            width: normalSize * largestScale
-            height: normalSize * largestScale
+            width: Math.max(0, sizeMotion.value)
+            height: width
             radius: width / 2
             color: control.mdState.handleColor
-            scale: normalSize / largestSize
-
-            readonly property int offset: 2
-            readonly property real normalSize: control.mdState.handleSize
-            readonly property real largestSize: 28
-            readonly property real largestScale: largestSize / normalSize
             readonly property bool hasIcon: !control.icon.empty
-
-            Behavior on x {
-                enabled: !control.pressed
-                SmoothedAnimation {
-                    duration: MD.Token.duration.medium2
-                }
+            MD.SpringMotion {
+                id: sizeMotion
+                objectName: 'switchSizeMotion'
+                targetValue: control.mdState.handleSize
+                spec: control.springSpec
+                enabled: control.motionEnabled && !control.mdState.interactions.pressed && !control.dragging
             }
-
-            Behavior on scale {
-                NumberAnimation {
-                    duration: MD.Token.duration.short2
-                    easing: MD.Token.easing.linear
-                }
+            MD.SpringMotion {
+                id: positionMotion
+                objectName: 'switchPositionMotion'
+                targetValue: indicator.height / 2 + control.position * Math.max(0, indicator.width - indicator.height)
+                spec: control.springSpec
+                enabled: control.motionEnabled && !control.dragging
             }
 
             Behavior on color {
@@ -88,7 +81,6 @@ MD.SwitchBase {
 
             MD.IconView {
                 anchors.centerIn: parent
-                scale: handle.scale === 0 ? 0 : 1 / handle.scale
                 icon: control.icon
                 visible: handle.hasIcon
             }
@@ -100,17 +92,16 @@ MD.SwitchBase {
             width: 28
             height: 28
             radius: parent.radius
-            pressed: control.pressed
-            pressX: control.pressX
-            pressY: control.pressY
+            interactionSource: control.interactionSource
+            indication: control.mdState.indication
+            animationsEnabled: control.animationsEnabled
             color: control.mdState.stateLayerColor
-            stateOpacity: control.mdState.stateLayerOpacity
         }
 
         MD.FocusIndicator {
             parent: m_ripple
             corners: MD.Util.corners(m_ripple.width / 2)
-            active: control.visualFocus
+            active: control.focusVisible
         }
     }
 
@@ -121,6 +112,7 @@ MD.SwitchBase {
 
     MD.StateSwitch {
         id: m_sh
+        focusIndicationEnabled: false
         item: control
     }
 }

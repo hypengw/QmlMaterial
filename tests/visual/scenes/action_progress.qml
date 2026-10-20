@@ -16,7 +16,11 @@ Rectangle {
     MD.BusyIconButton {
         x: 172
         y: 72
-        action: MD.Action {
+        icon.actionIcon: MD.ActionCommand.icon
+        text: MD.ActionCommand.text
+        busy: MD.ActionCommand.action.busy
+        progress: MD.ActionCommand.action.progress
+        MD.ActionCommand.action: MD.Action {
             icon.name: MD.Token.icon.download
             busy: MD.Enum.Progress
             progress: 0.62
@@ -26,7 +30,11 @@ Rectangle {
     MD.BusyButton {
         x: 252
         y: 76
-        action: MD.Action {
+        icon.actionIcon: MD.ActionCommand.icon
+        text: MD.ActionCommand.text
+        busy: MD.ActionCommand.action.busy
+        progress: MD.ActionCommand.action.progress
+        MD.ActionCommand.action: MD.Action {
             text: "Upload"
             icon.name: MD.Token.icon.upload
             busy: MD.Enum.Progress
@@ -38,7 +46,11 @@ Rectangle {
         x: 132
         y: 160
         width: 256
-        action: MD.Action {
+        icon.actionIcon: MD.ActionCommand.icon
+        text: MD.ActionCommand.text
+        busy: MD.ActionCommand.action.busy
+        progress: MD.ActionCommand.action.progress
+        MD.ActionCommand.action: MD.Action {
             text: "Syncing"
             icon.name: MD.Token.icon.sync
             busy: MD.Enum.Progress

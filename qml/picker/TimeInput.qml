@@ -73,9 +73,22 @@ MD.Control {
             }
         }
     }
-    component Field: MD.TextFieldEmbed {
+    component Field: MD.TimeFieldBase {
         id: field
         required property bool hourField
+        property MD.typescale typescale: MD.Token.typescale.display_large
+        time: control.time
+        selection: hourField ? MD.TimeState.Hours : MD.TimeState.Minutes
+        implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding)
+        implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)
+        font.capitalization: Font.MixedCase
+        font.pixelSize: typescale.size
+        font.weight: typescale.weight
+        font.letterSpacing: typescale.tracking
+        cursorDelegate: MD.CursorDelegate {}
+        selectionColor: MD.Token.color.primary
+        selectedTextColor: MD.Token.color.getOn(selectionColor)
+        verticalAlignment: TextInput.AlignVCenter
         readonly property bool selected: control.time.selection === (hourField ? MD.TimeState.Hours : MD.TimeState.Minutes)
         readonly property bool valid: hourField ? control.time.hourAcceptable : control.time.minuteAcceptable
         width: Math.max(0, (fields.fieldsWidth - control.tokens.separatorWidth) / 2)
@@ -85,7 +98,6 @@ MD.Control {
         activeFocusOnTab: true
         inputMethodHints: Qt.ImhDigitsOnly
         maximumLength: 2
-        typescale: MD.Token.typescale.display_large
         horizontalAlignment: TextInput.AlignHCenter
         topPadding: 0
         bottomPadding: 0
@@ -97,8 +109,7 @@ MD.Control {
             border.width: !field.valid || (field.activeFocus && control.editable) ? 2 : 0
             border.color: field.valid ? MD.Token.color.primary : MD.Token.color.error
         }
-        onActiveFocusChanged: if (activeFocus)
-            control.time.selection = hourField ? MD.TimeState.Hours : MD.TimeState.Minutes
+        onInputRequested: control.inputRequested()
         onTextEdited: {
             if (hourField)
                 control.time.editHour(text);
@@ -125,11 +136,6 @@ MD.Control {
                 control.focusSelection();
                 event.accepted = true;
             }
-        }
-        TapHandler {
-            enabled: !control.editable
-            onTapped: control.time.selection = field.hourField ? MD.TimeState.Hours : MD.TimeState.Minutes
-            onDoubleTapped: control.inputRequested()
         }
         MD.Label {
             visible: control.editable

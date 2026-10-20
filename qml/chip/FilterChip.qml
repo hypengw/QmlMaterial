@@ -2,11 +2,16 @@ import QtQuick
 import Qcm.Material as MD
 import Qcm.Material.Layouts as Lite
 
-MD.ButtonBase {
+MD.SelectionButtonBase {
     id: control
 
     property MD.StateFilterChip mdState: MD.StateFilterChip {
+        focusIndicationEnabled: false
         item: control
+    }
+
+    Binding {
+        control.mdState.selected: control.selected
     }
 
     property alias elevated: control.mdState.elevated
@@ -14,14 +19,12 @@ MD.ButtonBase {
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
 
-    flat: true
-    checkable: true
     leftInset: 0
     rightInset: 0
     topInset: 0
     bottomInset: 0
     verticalPadding: 0
-    leftPadding: control.checked ? 8 : 16
+    leftPadding: control.selected ? 8 : 16
     rightPadding: !icon.empty ? 8 : 16
     spacing: 8
 
@@ -55,9 +58,9 @@ MD.ButtonBase {
             // render thread and never ticks the QML-side opacity value, so
             // an opacity-derived visible would only flip at the animation
             // edges and the icon would pop instead of fade.
-            implicitWidth: control.checked ? m_leading_inner.implicitWidth : 0
+            implicitWidth: control.selected ? m_leading_inner.implicitWidth : 0
             implicitHeight: m_leading_inner.implicitHeight
-            opacity: control.checked ? 1 : 0
+            opacity: control.selected ? 1 : 0
             visible: implicitWidth > 0
 
             Behavior on implicitWidth {
@@ -114,23 +117,21 @@ MD.ButtonBase {
         color: control.mdState.backgroundColor
         opacity: control.mdState.backgroundOpacity
 
-        border.width: control.checked ? 0 : 1
+        border.width: control.selected ? 0 : 1
         border.color: control.mdState.outlineColor
         elevation: control.mdState.elevation
 
         MD.Ripple {
             anchors.fill: parent
             radius: parent.radius
-            pressX: control.pressX
-            pressY: control.pressY
-            pressed: control.pressed
-            stateOpacity: control.mdState.stateLayerOpacity
+            interactionSource: control.interactionSource
+            indication: control.mdState.indication
             color: control.mdState.stateLayerColor
         }
 
         MD.FocusIndicator {
             corners: MD.Util.corners(parent.radius)
-            active: control.visualFocus
+            active: control.focusVisible
         }
     }
 }

@@ -57,6 +57,8 @@ MD.Dialog {
         contentHeight: m_picker.implicitHeight
         MD.DatePicker {
             id: m_picker
+            onSelectedDateChangeRequested: date => selectedDate = date
+            onRangeChangeRequested: (start, end) => dateState.setRange(start, end)
             locale: control.locale
             anchors.horizontalCenter: parent.horizontalCenter
         }

@@ -1,21 +1,21 @@
 #pragma once
 #include "qml_material/style/button_interaction_state.hpp"
-Q_MOC_INCLUDE("qml_material/control/button.hpp")
+Q_MOC_INCLUDE("qml_material/control/button_control.hpp")
 namespace qml_material
 {
-class Button;
+class ButtonControl;
 class QML_MATERIAL_API FABState : public ButtonInteractionState {
     Q_OBJECT
     QML_NAMED_ELEMENT(StateFAB)
-    Q_PROPERTY(qml_material::Button* item READ item WRITE setItem NOTIFY itemChanged FINAL)
+    Q_PROPERTY(qml_material::ButtonControl* item READ item WRITE setItem NOTIFY itemChanged FINAL)
     Q_PROPERTY(int type READ type WRITE setType NOTIFY typeChanged BINDABLE bindableType FINAL)
     Q_PROPERTY(int color READ color WRITE setColor NOTIFY colorChanged BINDABLE bindableColor FINAL)
     Q_PROPERTY(qml_material::token::Shape shapeTokens READ shapeTokens WRITE setShapeTokens NOTIFY
                    shapeTokensChanged BINDABLE bindableShapeTokens FINAL)
 public:
     explicit FABState(QObject* parent = nullptr);
-    Button*                 item() const;
-    void                    setItem(Button*);
+    ButtonControl*          item() const;
+    void                    setItem(ButtonControl*);
     int                     type() const;
     void                    setType(int);
     QBindable<int>          bindableType();

@@ -10,8 +10,13 @@ Rectangle {
         y: 24
         spacing: 24
         MD.ExtendedFAB {
-            text: "Create"
-            icon.name: "add"
+            MD.ActionCommand.action: MD.Action {
+                text: "Create"
+                icon.name: "add"
+            }
+            text: MD.ActionCommand.text
+            icon.actionIcon: MD.ActionCommand.icon
+            enabled: MD.ActionCommand.enabled
         }
         MD.ExtendedFAB {
             text: "Create"

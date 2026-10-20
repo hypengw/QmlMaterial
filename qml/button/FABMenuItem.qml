@@ -9,12 +9,12 @@ MD.FABMenuItemBase {
     property int spatialDuration: MD.Token.duration.short4
     property int effectDuration: MD.Token.duration.short2
     property MD.StateFAB mdState: MD.StateFAB {
+        focusIndicationEnabled: false
         item: control
     }
     property MD.typescale typescale: MD.Token.typescale.title_medium
     readonly property var _tokens: MD.Token.fab_menu
 
-    flat: true
     opacity: alphaProgress
     focusPolicy: inputEnabled ? Qt.StrongFocus : Qt.NoFocus
     Accessible.ignored: !inputEnabled
@@ -87,15 +87,13 @@ MD.FABMenuItemBase {
         MD.Ripple {
             anchors.fill: parent
             radius: parent.radius
-            pressed: control.pressed
-            pressX: control.pressX
-            pressY: control.pressY
+            interactionSource: control.interactionSource
+            indication: control.mdState.indication
             color: control.mdState.stateLayerColor
-            stateOpacity: control.mdState.stateLayerOpacity
         }
         MD.FocusIndicator {
             corners: MD.Util.corners(parent.radius)
-            active: control.visualFocus
+            active: control.focusVisible
         }
     }
 }

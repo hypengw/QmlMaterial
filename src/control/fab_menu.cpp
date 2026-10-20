@@ -1,4 +1,5 @@
 #include "qml_material/control/fab_menu.hpp"
+#include "qml_material/control/toggle_button.hpp"
 #include "qml_material/scrollable/flickable.hpp"
 #include "qml_material/token/fab_menu.hpp"
 #include "qml_material/util/qt.hpp"
@@ -27,26 +28,21 @@ public:
 };
 } // namespace
 bool FABMenuItem::contains(const QPointF& point) const {
-    return m_inputEnabled && Button::contains(point);
+    return m_inputEnabled && CommandButton::contains(point);
 }
 void FABMenuItem::focusInEvent(QFocusEvent* event) {
     if (! m_inputEnabled) {
         setFocus(false);
         return;
     }
-    Button::focusInEvent(event);
+    CommandButton::focusInEvent(event);
 }
 void FABMenuItem::setInputEnabled(bool value) {
     if (m_inputEnabled == value) return;
     m_inputEnabled = value;
     QPointer<FABMenuItem> guard(this);
     if (! value) {
-        mouseUngrabEvent();
-        if (! guard) return;
-        touchUngrabEvent();
-        if (! guard) return;
-        QHoverEvent leave(QEvent::HoverLeave, QPointF(), QPointF(), QPointF());
-        hoverLeaveEvent(&leave);
+        cancelInput();
         if (! guard) return;
     }
     Q_EMIT inputEnabledChanged();
@@ -151,6 +147,9 @@ void FABMenu::setButton(QQuickItem* value) {
             polish();
             Q_EMIT buttonChanged();
         }));
+        if (auto* toggle = qobject_cast<ToggleButton*>(value))
+            m_buttonConnections.append(connect(
+                toggle, &ToggleButton::checkedChangeRequested, this, &FABMenu::requestExpanded));
     }
     polish();
     Q_EMIT buttonChanged();
@@ -169,6 +168,9 @@ void FABMenu::setExpanded(bool value) {
     if (! guard) return;
     polish();
     Q_EMIT expandedChanged();
+}
+void FABMenu::requestExpanded(bool value) {
+    if (isEnabled() && isVisible() && value != expanded()) Q_EMIT expandedChangeRequested(value);
 }
 void FABMenu::setHorizontalAlignment(Qt::Alignment value) {
     if (m_alignment == value) return;
@@ -343,7 +345,7 @@ bool FABMenu::eventFilter(QObject* object, QEvent* event) {
                        (key->key() == Qt::Key_Tab && key->modifiers().testFlag(Qt::ShiftModifier));
     const bool  forward = key->key() == Qt::Key_Down || (key->key() == Qt::Key_Tab && ! back);
     if (key->key() == Qt::Key_Escape) {
-        close();
+        requestExpanded(false);
         return true;
     }
     const int index = entries.indexOf(qobject_cast<FABMenuItem*>(object));

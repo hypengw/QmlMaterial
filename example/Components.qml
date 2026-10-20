@@ -6,6 +6,17 @@ import "carousel" as CarouselDemo
 
 MD.Page {
     id: root
+    component ExampleIconToggle: MD.IconToggleButton {
+        property bool value: false
+        checked: value
+        onCheckedChangeRequested: next => value = next
+    }
+    component ExampleSegments: MD.SegmentedButtonGroup {
+        readonly property MD.ButtonGroup selection: MD.ButtonGroup {}
+    }
+    component ExampleSegment: MD.SegmentedButton {
+        checked: MD.ButtonGroup.checked
+    }
     title: 'Components'
     padding: 0
     rightInset: twoColumns ? width - m_first_pane.width : 0
@@ -176,84 +187,117 @@ MD.Page {
                         ComponentCard {
                             title: 'Segmented buttons'
 
-                            MD.SegmentedButtonGroup {
+                            ExampleSegments {
+                                id: calendarSegments
                                 Layout.alignment: Qt.AlignHCenter
-                                MD.SegmentedButton {
+                                selection.checkedButtons: [week]
+                                ExampleSegment {
+                                    id: day
                                     text: 'Day'
+                                    MD.ButtonGroup.group: calendarSegments.selection
                                 }
-                                MD.SegmentedButton {
+                                ExampleSegment {
+                                    id: week
                                     text: 'Week'
-                                    checked: true
+                                    MD.ButtonGroup.group: calendarSegments.selection
                                 }
-                                MD.SegmentedButton {
+                                ExampleSegment {
+                                    id: month
                                     text: 'Month'
+                                    MD.ButtonGroup.group: calendarSegments.selection
                                 }
-                                MD.SegmentedButton {
+                                ExampleSegment {
+                                    id: year
                                     text: 'Year'
+                                    MD.ButtonGroup.group: calendarSegments.selection
                                 }
                             }
-
-                            MD.SegmentedButtonGroup {
+                            ExampleSegments {
+                                id: optionSegments
                                 Layout.alignment: Qt.AlignHCenter
-                                exclusive: false
-                                MD.SegmentedButton {
-                                    icon.name: MD.Token.icon.check
+                                selection.exclusive: false
+                                ExampleSegment {
+                                    id: option1
                                     text: 'Option 1'
+                                    MD.ButtonGroup.group: optionSegments.selection
                                 }
-                                MD.SegmentedButton {
+                                ExampleSegment {
+                                    id: option2
                                     text: 'Option 2'
+                                    MD.ButtonGroup.group: optionSegments.selection
                                 }
-                                MD.SegmentedButton {
+                                ExampleSegment {
+                                    id: option3
                                     text: 'Option 3'
+                                    MD.ButtonGroup.group: optionSegments.selection
                                 }
                             }
-
                             MD.Label {
                                 text: "Sizes"
                                 Layout.alignment: Qt.AlignHCenter
                                 typescale: MD.Token.typescale.title_medium
                             }
-
-                            MD.SegmentedButtonGroup {
+                            ExampleSegments {
+                                id: xsSegments
                                 Layout.alignment: Qt.AlignHCenter
                                 size: MD.Enum.XS
-                                MD.SegmentedButton {
+                                selection.checkedButtons: [xsSecond]
+                                ExampleSegment {
+                                    id: xsFirst
                                     text: 'XS'
+                                    MD.ButtonGroup.group: xsSegments.selection
                                 }
-                                MD.SegmentedButton {
+                                ExampleSegment {
+                                    id: xsSecond
                                     text: 'XS'
-                                    checked: true
+                                    MD.ButtonGroup.group: xsSegments.selection
                                 }
-                                MD.SegmentedButton {
+                                ExampleSegment {
+                                    id: xsThird
                                     text: 'XS'
+                                    MD.ButtonGroup.group: xsSegments.selection
                                 }
                             }
-                            MD.SegmentedButtonGroup {
+                            ExampleSegments {
+                                id: smallSegments
                                 Layout.alignment: Qt.AlignHCenter
                                 size: MD.Enum.S
-                                MD.SegmentedButton {
+                                selection.checkedButtons: [smallSecond]
+                                ExampleSegment {
+                                    id: smallFirst
                                     text: 'S'
+                                    MD.ButtonGroup.group: smallSegments.selection
                                 }
-                                MD.SegmentedButton {
+                                ExampleSegment {
+                                    id: smallSecond
                                     text: 'S'
-                                    checked: true
+                                    MD.ButtonGroup.group: smallSegments.selection
                                 }
-                                MD.SegmentedButton {
+                                ExampleSegment {
+                                    id: smallThird
                                     text: 'S'
+                                    MD.ButtonGroup.group: smallSegments.selection
                                 }
                             }
-                            MD.SegmentedButtonGroup {
+                            ExampleSegments {
+                                id: mediumSegments
                                 Layout.alignment: Qt.AlignHCenter
                                 size: MD.Enum.M
-                                MD.SegmentedButton {
+                                selection.checkedButtons: [mediumSecond]
+                                ExampleSegment {
+                                    id: mediumFirst
                                     text: 'M'
+                                    MD.ButtonGroup.group: mediumSegments.selection
                                 }
-                                MD.SegmentedButton {
+                                ExampleSegment {
+                                    id: mediumSecond
                                     text: 'M'
-                                    checked: true
+                                    MD.ButtonGroup.group: mediumSegments.selection
                                 }
-                                MD.SegmentedButton {
+                                ExampleSegment {
+                                    id: mediumThird
                                     text: 'M'
+                                    MD.ButtonGroup.group: mediumSegments.selection
                                 }
                             }
                         }
@@ -348,52 +392,48 @@ MD.Page {
                                 Layout.alignment: Qt.AlignHCenter
                                 spacing: 36
 
-                                MD.IconButton {
+                                ExampleIconToggle {
                                     mdState.type: MD.Enum.IBtStandard
                                     icon.name: MD.Token.icon.settings
-                                    checkable: true
                                 }
-                                MD.IconButton {
+                                ExampleIconToggle {
                                     mdState.type: MD.Enum.IBtFilled
                                     icon.name: MD.Token.icon.settings
-                                    checkable: true
                                 }
-                                MD.IconButton {
+                                ExampleIconToggle {
                                     mdState.type: MD.Enum.IBtFilledTonal
                                     icon.name: MD.Token.icon.settings
-                                    checkable: true
                                 }
-                                MD.IconButton {
+                                ExampleIconToggle {
                                     mdState.type: MD.Enum.IBtOutlined
                                     icon.name: MD.Token.icon.settings
-                                    checkable: true
                                 }
                             }
                             RowLayout {
                                 Layout.alignment: Qt.AlignHCenter
                                 spacing: 36
-                                MD.IconButton {
+                                ExampleIconToggle {
                                     mdState.type: MD.Enum.IBtStandard
                                     icon.name: MD.Token.icon.settings
-                                    checkable: true
+
                                     enabled: false
                                 }
-                                MD.IconButton {
+                                ExampleIconToggle {
                                     mdState.type: MD.Enum.IBtFilled
                                     icon.name: MD.Token.icon.settings
-                                    checkable: true
+
                                     enabled: false
                                 }
-                                MD.IconButton {
+                                ExampleIconToggle {
                                     mdState.type: MD.Enum.IBtFilledTonal
                                     icon.name: MD.Token.icon.settings
-                                    checkable: true
+
                                     enabled: false
                                 }
-                                MD.IconButton {
+                                ExampleIconToggle {
                                     mdState.type: MD.Enum.IBtOutlined
                                     icon.name: MD.Token.icon.settings
-                                    checkable: true
+
                                     enabled: false
                                 }
                             }
@@ -503,10 +543,10 @@ MD.Page {
                             RowLayout {
                                 spacing: 0
                                 Item {
-                                    MD.IconButton {
+                                    ExampleIconToggle {
                                         id: m_loading_indicator_play
                                         anchors.verticalCenter: parent.verticalCenter
-                                        checkable: true
+
                                         icon.name: checked ? MD.Token.icon.pause : MD.Token.icon.play_arrow
                                     }
                                 }
@@ -528,7 +568,10 @@ MD.Page {
                             Row {
                                 Layout.alignment: Qt.AlignHCenter
                                 MD.BusyIconButton {
-                                    action: MD.Action {
+                                    icon.actionIcon: MD.ActionCommand.icon
+                                    busy: m_icon_busy_action.busy
+                                    progress: m_icon_busy_action.progress
+                                    MD.ActionCommand.action: MD.Action {
                                         id: m_icon_busy_action
                                         icon.name: MD.Token.icon.add
                                         onTriggered: {
@@ -629,6 +672,7 @@ MD.Page {
                                 spacing: 8
                                 MD.Slider {
                                     id: m_progress
+                                    onValueChangeRequested: requestedValue => value = requestedValue
                                     Layout.fillWidth: true
                                     from: 0
                                     to: 1
@@ -730,7 +774,7 @@ MD.Page {
                                 MD.Button {
                                     mdState.type: MD.Enum.BtFilledTonal
                                     text: 'Plain'
-                                    MD.ToolTip.visible: hovered || down
+                                    MD.ToolTip.visible: mdState.interactions.hovered || mdState.interactions.pressed
                                     MD.ToolTip.text: 'Add to favorites'
                                 }
 
@@ -768,19 +812,25 @@ MD.Page {
                         }
 
                         ComponentCard {
+                            id: listItemExamples
                             title: 'List items'
                             spacing: 0
+                            property bool selectedItem: false
+                            property bool downloadsEnabled: true
 
-                            MD.ListItem {
+                            MD.SelectionListItem {
+                                selected: listItemExamples.selectedItem
+                                onSelectionRequested: listItemExamples.selectedItem = true
                                 Layout.fillWidth: true
                                 text: 'Notifications'
                                 icon.name: 'notifications'
-                                checkable: true
                                 trailing: MD.Icon {
                                     name: 'chevron_right'
                                 }
                             }
-                            MD.ListItem {
+                            MD.ToggleListItem {
+                                checked: listItemExamples.downloadsEnabled
+                                onCheckedChangeRequested: value => listItemExamples.downloadsEnabled = value
                                 Layout.fillWidth: true
                                 text: 'Downloads'
                                 supportText: 'Files available offline'
@@ -789,22 +839,34 @@ MD.Page {
                         }
 
                         ComponentCard {
+                            id: checkboxExamples
                             title: 'Checkboxes'
                             spacing: 12
+                            property int firstState: Qt.Unchecked
+                            property int secondState: Qt.PartiallyChecked
 
                             MD.CheckBox {
                                 text: 'option 1'
+                                checkState: checkboxExamples.firstState
+                                onCheckStateChangeRequested: value => checkboxExamples.firstState = value
                             }
                             MD.CheckBox {
                                 text: 'option 2'
+                                tristate: true
+                                checkState: checkboxExamples.secondState
+                                onCheckStateChangeRequested: value => checkboxExamples.secondState = value
                             }
                             MD.CheckBox {
-                                text: 'option 3'
+                                text: 'Read only'
+                                checkState: Qt.Checked
                             }
                         }
 
                         ComponentCard {
+                            id: chipExamples
                             title: 'Chips'
+                            property bool filterSelected: false
+                            property bool inputSelected: false
                             RowLayout {
                                 spacing: 12
 
@@ -814,11 +876,18 @@ MD.Page {
                                     onClicked: elevated = !elevated
                                 }
                                 MD.FilterChip {
-                                    id: m_filter_chip
                                     text: 'Filter'
+                                    selected: chipExamples.filterSelected
+                                    onSelectionRequested: chipExamples.filterSelected = !chipExamples.filterSelected
                                 }
                                 MD.InputChip {
                                     text: 'Input'
+                                    selected: chipExamples.inputSelected
+                                    onSelectionRequested: chipExamples.inputSelected = !chipExamples.inputSelected
+                                    trailingAction: MD.Action {
+                                        icon.name: MD.Token.icon.close
+                                        onTriggered: chipExamples.inputSelected = false
+                                    }
                                 }
                                 MD.SuggestionChip {
                                     text: 'Suggestion'
@@ -840,11 +909,12 @@ MD.Page {
                                 MD.FilterChip {
                                     text: 'Filter'
                                     enabled: false
-                                    checked: m_filter_chip.checked
+                                    selected: chipExamples.filterSelected
                                 }
                                 MD.InputChip {
                                     text: 'Input'
                                     enabled: false
+                                    selected: chipExamples.inputSelected
                                 }
                                 MD.SuggestionChip {
                                     text: 'Suggestion'
@@ -870,17 +940,39 @@ MD.Page {
                         }
 
                         ComponentCard {
+                            id: radioExamples
                             title: 'Radio buttons'
                             spacing: 12
+                            property int selectedIndex: 0
+                            property bool readOnly: false
 
+                            RowLayout {
+                                MD.Switch {
+                                    checked: radioExamples.readOnly
+                                    onCheckedChangeRequested: value => radioExamples.readOnly = value
+                                    Accessible.name: 'Read only'
+                                }
+                                MD.Label {
+                                    text: 'Read only'
+                                }
+                            }
                             MD.RadioButton {
                                 text: 'option 1'
+                                selected: radioExamples.selectedIndex === 0
+                                onSelectionRequested: if (!radioExamples.readOnly)
+                                    radioExamples.selectedIndex = 0
                             }
                             MD.RadioButton {
                                 text: 'option 2'
+                                selected: radioExamples.selectedIndex === 1
+                                onSelectionRequested: if (!radioExamples.readOnly)
+                                    radioExamples.selectedIndex = 1
                             }
                             MD.RadioButton {
                                 text: 'option 3'
+                                selected: radioExamples.selectedIndex === 2
+                                onSelectionRequested: if (!radioExamples.readOnly)
+                                    radioExamples.selectedIndex = 2
                             }
                         }
 
@@ -899,10 +991,15 @@ MD.Page {
                                     MD.MenuItem {
                                         text: 'First'
                                     }
-                                    MD.MenuItem {
+                                    MD.SelectionMenuItem {
+                                        selected: m_menu.currentIndex === 1
+                                        onSelectionRequested: m_menu.currentIndex = 1
                                         text: 'Second'
                                     }
-                                    MD.MenuItem {
+                                    MD.ToggleMenuItem {
+                                        property bool enabledChoice: false
+                                        checked: enabledChoice
+                                        onCheckedChangeRequested: value => enabledChoice = value
                                         text: 'Third'
                                     }
                                     MD.MenuItem {
@@ -944,27 +1041,33 @@ MD.Page {
                                 spacing: 8
                                 Layout.alignment: Qt.AlignHCenter
                                 MD.ComboBox {
+                                    onSelectionChangeRequested: (index, value) => currentIndex = index
                                     model: ["XS"]
                                     mdState.size: MD.Enum.XS
                                 }
                                 MD.ComboBox {
+                                    onSelectionChangeRequested: (index, value) => currentIndex = index
                                     model: ["S"]
                                     mdState.size: MD.Enum.S
                                 }
                                 MD.ComboBox {
+                                    onSelectionChangeRequested: (index, value) => currentIndex = index
                                     model: ["M"]
                                     mdState.size: MD.Enum.M
                                 }
                                 MD.ComboBox {
+                                    onSelectionChangeRequested: (index, value) => currentIndex = index
                                     model: ["L"]
                                     mdState.size: MD.Enum.L
                                 }
                                 MD.ComboBox {
+                                    onSelectionChangeRequested: (index, value) => currentIndex = index
                                     model: ["XL"]
                                     mdState.size: MD.Enum.XL
                                 }
                             }
                             MD.ComboBox {
+                                onSelectionChangeRequested: (index, value) => currentIndex = index
                                 Layout.alignment: Qt.AlignHCenter
                                 Layout.preferredWidth: 200
                                 label: "Size"
@@ -1050,9 +1153,15 @@ MD.Page {
                             }
                         }
                         ComponentCard {
+                            id: switchExamples
                             title: 'Switches'
+                            property bool firstChecked: false
+                            property bool iconChecked: true
+                            property bool markedChecked: false
                             MD.Switch {
                                 Layout.alignment: Qt.AlignHCenter
+                                checked: switchExamples.firstChecked
+                                onCheckedChangeRequested: value => switchExamples.firstChecked = value
                             }
                             MD.Switch {
                                 Layout.alignment: Qt.AlignHCenter
@@ -1060,11 +1169,14 @@ MD.Page {
                             }
                             MD.Switch {
                                 Layout.alignment: Qt.AlignHCenter
-                                checked: true
+                                checked: switchExamples.iconChecked
+                                onCheckedChangeRequested: value => switchExamples.iconChecked = value
                                 icon.name: checked ? MD.Token.icon.check : ''
                             }
                             MD.Switch {
                                 Layout.alignment: Qt.AlignHCenter
+                                checked: switchExamples.markedChecked
+                                onCheckedChangeRequested: value => switchExamples.markedChecked = value
                                 icon.name: checked ? MD.Token.icon.check : MD.Token.icon.close
                             }
                         }
@@ -1155,9 +1267,10 @@ MD.Page {
                                     }
                                     MD.CheckBox {
                                         text: 'Detached'
-                                        onToggled: {
-                                            m_side_sheet.detached = checked;
-                                            m_side_dialog.detached = checked;
+                                        checkState: m_side_sheet.detached ? Qt.Checked : Qt.Unchecked
+                                        onCheckStateChangeRequested: value => {
+                                            m_side_sheet.detached = value === Qt.Checked;
+                                            m_side_dialog.detached = value === Qt.Checked;
                                         }
                                     }
                                 }
@@ -1231,8 +1344,8 @@ MD.Page {
                                             Layout.alignment: Qt.AlignHCenter
                                             icon.name: MD.Token.icon.explore
                                             text: 'explore'
-                                            checked: m_nav_bar.idx == 1
-                                            onClicked: {
+                                            selected: m_nav_bar.idx == 1
+                                            onSelectionRequested: {
                                                 m_nav_bar.idx = 1;
                                             }
                                         }
@@ -1240,8 +1353,8 @@ MD.Page {
                                             Layout.alignment: Qt.AlignHCenter
                                             icon.name: MD.Token.icon.pets
                                             text: 'pets'
-                                            checked: m_nav_bar.idx == 2
-                                            onClicked: {
+                                            selected: m_nav_bar.idx == 2
+                                            onSelectionRequested: {
                                                 m_nav_bar.idx = 2;
                                             }
                                         }
@@ -1249,8 +1362,8 @@ MD.Page {
                                             Layout.alignment: Qt.AlignHCenter
                                             icon.name: MD.Token.icon.person
                                             text: 'account'
-                                            checked: m_nav_bar.idx == 3
-                                            onClicked: {
+                                            selected: m_nav_bar.idx == 3
+                                            onSelectionRequested: {
                                                 m_nav_bar.idx = 3;
                                             }
                                         }
@@ -1277,13 +1390,10 @@ MD.Page {
                                             Layout.alignment: Qt.AlignHCenter
                                             Layout.preferredWidth: 96
                                             iconStyle: MD.Enum.IconOnly
-                                            action: MD.Action {
-                                                text: 'Settings'
-                                                tooltip: 'Configure application'
-                                                icon.name: MD.Token.icon.settings
-                                                checkable: true
-                                                checked: true
-                                            }
+                                            text: 'Settings'
+                                            MD.ToolTip.text: 'Configure application'
+                                            icon.name: MD.Token.icon.settings
+                                            selected: true
                                         }
                                     }
 
@@ -1303,21 +1413,22 @@ MD.Page {
                                             Layout.preferredWidth: 88
                                             expand: true
                                             iconStyle: MD.Enum.IconOnly
-                                            action: MD.Action {
-                                                text: 'Search'
-                                                tooltip: 'Search library'
-                                                icon.name: MD.Token.icon.search
-                                                checkable: true
-                                                checked: true
-                                            }
+                                            text: 'Search'
+                                            MD.ToolTip.text: 'Search library'
+                                            icon.name: MD.Token.icon.search
+                                            selected: true
                                         }
                                     }
                                 }
                             }
                             ComponentCard {
+                                id: tabExamples
                                 title: 'Tabs'
+                                property int selectedIndex: 0
                                 MD.TabBar {
                                     Layout.fillWidth: true
+                                    currentIndex: tabExamples.selectedIndex
+                                    onCurrentIndexChangeRequested: index => tabExamples.selectedIndex = index
                                     MD.TabButton {
                                         text: 'Video'
                                     }
@@ -1493,6 +1604,7 @@ MD.Page {
                                 title: 'Scrolling app bar'
                                 MD.ComboBox {
                                     id: m_app_bar_mode
+                                    onSelectionChangeRequested: (index, value) => currentIndex = index
                                     Layout.fillWidth: true
                                     model: ['Pinned', 'Enter always', 'Exit until collapsed']
                                     currentIndex: 2
@@ -1680,8 +1792,45 @@ MD.Page {
                             }
 
                             ComponentCard {
+                                id: controlledSliderExamples
                                 title: 'M3'
                                 spacing: 12
+                                property real committedValue: 40
+                                property bool readOnly: false
+                                property MD.sliderRange committedRange: ({
+                                        first: 20,
+                                        second: 80
+                                    })
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    MD.Text {
+                                        text: 'Volume'
+                                        Layout.fillWidth: true
+                                    }
+                                    MD.Text {
+                                        text: 'Read only'
+                                    }
+                                    MD.Switch {
+                                        id: sliderReadOnly
+                                        checked: controlledSliderExamples.readOnly
+                                        onCheckedChangeRequested: value => controlledSliderExamples.readOnly = value
+                                        Accessible.name: 'Read only'
+                                    }
+                                }
+                                MD.Slider {
+                                    objectName: 'controlledSlider'
+                                    Layout.fillWidth: true
+                                    from: 0
+                                    to: 100
+                                    live: false
+                                    value: controlledSliderExamples.committedValue
+                                    labelBehavior: MD.Enum.SliderLabelVisible
+                                    onValueChangeRequested: requestedValue => {
+                                        if (!sliderReadOnly.checked)
+                                            controlledSliderExamples.committedValue = requestedValue;
+                                    }
+                                }
 
                                 RowLayout {
                                     Layout.fillWidth: true
@@ -1697,6 +1846,7 @@ MD.Page {
                                             opacity: 0.8
                                         }
                                         MD.Slider {
+                                            onValueChangeRequested: requestedValue => value = requestedValue
                                             Layout.fillWidth: true
                                             from: 0
                                             to: 100
@@ -1708,6 +1858,7 @@ MD.Page {
                                             opacity: 0.8
                                         }
                                         MD.Slider {
+                                            onValueChangeRequested: requestedValue => value = requestedValue
                                             Layout.fillWidth: true
                                             from: 0
                                             to: 100
@@ -1721,6 +1872,7 @@ MD.Page {
                                             opacity: 0.8
                                         }
                                         MD.Slider {
+                                            onValueChangeRequested: requestedValue => value = requestedValue
                                             Layout.fillWidth: true
                                             snapMode: MD.SliderBase.SnapAlways
                                             from: 0
@@ -1736,6 +1888,7 @@ MD.Page {
                                             opacity: 0.8
                                         }
                                         MD.Slider {
+                                            onValueChangeRequested: requestedValue => value = requestedValue
                                             Layout.fillWidth: true
                                             snapMode: MD.SliderBase.SnapAlways
                                             from: 0
@@ -1749,6 +1902,7 @@ MD.Page {
                                             opacity: 0.8
                                         }
                                         MD.Slider {
+                                            onValueChangeRequested: requestedValue => value = requestedValue
                                             Layout.fillWidth: true
                                             snapMode: MD.SliderBase.SnapAlways
                                             from: 0
@@ -1763,6 +1917,7 @@ MD.Page {
                                             opacity: 0.8
                                         }
                                         MD.Slider {
+                                            onValueChangeRequested: requestedValue => value = requestedValue
                                             Layout.fillWidth: true
                                             from: 0
                                             to: 100
@@ -1778,8 +1933,12 @@ MD.Page {
                                             Layout.fillWidth: true
                                             from: 0
                                             to: 100
-                                            first.value: 20
-                                            second.value: 80
+                                            values: controlledSliderExamples.committedRange
+                                            live: false
+                                            onValuesChangeRequested: requestedValues => {
+                                                if (!sliderReadOnly.checked)
+                                                    controlledSliderExamples.committedRange = requestedValues;
+                                            }
                                         }
                                         MD.Text {
                                             text: 'Discrete range · minimum 20'
@@ -1790,8 +1949,11 @@ MD.Page {
                                             Layout.fillWidth: true
                                             from: 0
                                             to: 100
-                                            first.value: 20
-                                            second.value: 80
+                                            values: ({
+                                                    first: 20,
+                                                    second: 80
+                                                })
+                                            onValuesChangeRequested: requestedValues => values = requestedValues
                                             stepSize: 10
                                             minimumRange: 20
                                             snapMode: MD.RangeSliderBase.SnapAlways
@@ -1802,6 +1964,7 @@ MD.Page {
                                             opacity: 0.8
                                         }
                                         MD.Slider {
+                                            onValueChangeRequested: requestedValue => value = requestedValue
                                             Layout.fillWidth: true
                                             from: 0
                                             to: 100
@@ -1829,6 +1992,7 @@ MD.Page {
                                                 opacity: 0.8
                                             }
                                             MD.Slider {
+                                                onValueChangeRequested: requestedValue => value = requestedValue
                                                 Layout.alignment: Qt.AlignHCenter
                                                 Layout.preferredHeight: 160
                                                 orientation: Qt.Vertical
@@ -1846,6 +2010,7 @@ MD.Page {
                                                 opacity: 0.8
                                             }
                                             MD.Slider {
+                                                onValueChangeRequested: requestedValue => value = requestedValue
                                                 Layout.alignment: Qt.AlignHCenter
                                                 Layout.preferredHeight: 160
                                                 orientation: Qt.Vertical
@@ -1865,6 +2030,7 @@ MD.Page {
                                                 opacity: 0.8
                                             }
                                             MD.Slider {
+                                                onValueChangeRequested: requestedValue => value = requestedValue
                                                 Layout.alignment: Qt.AlignHCenter
                                                 Layout.preferredHeight: 160
                                                 orientation: Qt.Vertical
@@ -1885,6 +2051,7 @@ MD.Page {
                                                 opacity: 0.8
                                             }
                                             MD.Slider {
+                                                onValueChangeRequested: requestedValue => value = requestedValue
                                                 Layout.alignment: Qt.AlignHCenter
                                                 Layout.preferredHeight: 240
                                                 orientation: Qt.Vertical
@@ -1919,6 +2086,7 @@ MD.Page {
                                             opacity: 0.8
                                         }
                                         MD.SliderM2 {
+                                            onValueChangeRequested: requestedValue => value = requestedValue
                                             Layout.alignment: Qt.AlignHCenter
                                         }
 
@@ -1928,6 +2096,7 @@ MD.Page {
                                             opacity: 0.8
                                         }
                                         MD.SliderM2 {
+                                            onValueChangeRequested: requestedValue => value = requestedValue
                                             Layout.alignment: Qt.AlignHCenter
                                             snapMode: MD.SliderBase.SnapAlways
                                             from: 0
@@ -1946,6 +2115,7 @@ MD.Page {
                                             opacity: 0.8
                                         }
                                         MD.SliderM2 {
+                                            onValueChangeRequested: requestedValue => value = requestedValue
                                             Layout.alignment: Qt.AlignHCenter
                                             orientation: Qt.Vertical
                                         }
@@ -2078,10 +2248,14 @@ MD.Page {
                             }
 
                             ComponentCard {
+                                id: searchExamples
                                 title: 'Search'
+                                property bool fullScreen: false
                                 MD.CheckBox {
                                     id: fullScreenSearch
                                     text: 'Full-screen results'
+                                    checkState: searchExamples.fullScreen ? Qt.Checked : Qt.Unchecked
+                                    onCheckStateChangeRequested: value => searchExamples.fullScreen = value === Qt.Checked
                                 }
                                 MD.SearchBar {
                                     id: exampleSearch
@@ -2091,7 +2265,7 @@ MD.Page {
                                 MD.SearchView {
                                     id: searchResults
                                     searchBar: exampleSearch
-                                    presentation: fullScreenSearch.checked ? MD.SearchView.FullScreen : MD.SearchView.Docked
+                                    presentation: searchExamples.fullScreen ? MD.SearchView.FullScreen : MD.SearchView.Docked
                                     placeholderText: exampleSearch.placeholderText
                                     onAccepted: close()
                                     MD.VerticalFlickable {

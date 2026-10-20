@@ -4,17 +4,26 @@
 
 namespace qml_material
 {
-SearchBar::SearchBar(QQuickItem* parent): Button(parent), m_defaultState(new SearchState(this)) {
+SearchBar::SearchBar(QQuickItem* parent)
+    : CommandButton(parent), m_defaultState(new SearchState(this)) {
     resetSearchState();
-    connect(this, &AbstractButton::clicked, this, [this] {
-        if (m_searchView) m_searchView->open();
-    });
+}
+void SearchBar::activate() {
+    if (! canActivate()) return;
+    const QPointer<SearchBar> guard(this);
+    const auto                target   = m_searchView;
+    const auto                revision = m_revision;
+    CommandButton::activate();
+    if (guard && revision == m_revision && target) target->open();
 }
 SearchView* SearchBar::searchView() const { return m_searchView; }
 void        SearchBar::setSearchView(SearchView* view) {
     if (m_searchView == view) return;
-    m_searchView = view;
-    Q_EMIT searchViewChanged();
+    m_searchView                       = view;
+    const auto                revision = ++m_revision;
+    const QPointer<SearchBar> guard(this);
+    cancelActivation();
+    if (guard && revision == m_revision) Q_EMIT searchViewChanged();
 }
 SearchState* SearchBar::searchState() const { return m_state; }
 QString      SearchBar::searchText() const { return m_state ? m_state->query() : QString(); }
@@ -33,8 +42,11 @@ void SearchBar::setSearchState(SearchState* state) {
     if (state != m_defaultState)
         m_destroyConnection =
             connect(state, &QObject::destroyed, this, &SearchBar::resetSearchState);
+    const auto          revision = ++m_revision;
     QPointer<SearchBar> guard(this);
+    cancelActivation();
+    if (! guard || revision != m_revision) return;
     Q_EMIT searchStateChanged();
-    if (guard && m_state == state) Q_EMIT searchTextChanged();
+    if (guard && revision == m_revision && m_state == state) Q_EMIT searchTextChanged();
 }
 } // namespace qml_material

@@ -11,43 +11,9 @@ MD.ComboBoxBase {
     property real popupMaximumHeight: 0
     property real popupMaximumWidth: 280
     property string label
-    property Item indicator
-    property Item __indicatorItem
     readonly property real implicitIndicatorWidth: indicator ? indicator.implicitWidth : 0
     readonly property real implicitIndicatorHeight: indicator ? indicator.implicitHeight : 0
-    property MD.PopupBase popup
-    property MD.PopupBase __popupObject
-    function __syncIndicator() {
-        if (__indicatorItem === indicator)
-            return;
-        if (__indicatorItem && __indicatorItem.parent === control)
-            __indicatorItem.parent = null;
-        __indicatorItem = indicator;
-        if (indicator && !indicator.parent)
-            indicator.parent = control;
-    }
-    function __syncPopup() {
-        if (__popupObject === popup)
-            return;
-        if (__popupObject)
-            __popupObject.close();
-        __popupObject = popup;
-        if (popup && !popup.parent)
-            popup.parent = control;
-    }
-    onIndicatorChanged: __syncIndicator()
-    onPopupChanged: __syncPopup()
-    Component.onCompleted: {
-        __syncIndicator();
-        __syncPopup();
-        __labelAnimationsEnabled = true;
-    }
-    popupVisible: popup ? popup.visible : false
-    popupActiveFocus: popup ? popup.activeFocus : false
-    onPopupOpenRequested: if (popup)
-        popup.open()
-    onPopupCloseRequested: if (popup)
-        popup.close()
+    Component.onCompleted: __labelAnimationsEnabled = true
     property MD.StateComboBox mdState: MD.StateComboBox {
         item: control
     }
@@ -96,9 +62,11 @@ MD.ComboBoxBase {
         size: control.mdState.indicatorSize
     }
 
-    contentItem: MD.TextInput {
+    contentItem: MD.TextFieldBase {
+        interactionSource: control.interactionSource
         opacity: control.mdState.contentOpacity
-        typescale: control.mdState.typescale
+        font: control.font
+        cursorDelegate: MD.CursorDelegate {}
         clip: true
 
         padding: 0
@@ -166,10 +134,9 @@ MD.ComboBoxBase {
     popup: MD.Menu {
         id: popupMenu
         parent: control
-        y: control.editable ? control.height - 5 : 0
+        anchorItem: control
         height: control.popupMaximumHeight > 0 ? Math.min(implicitHeight, control.popupMaximumHeight) : implicitHeight
         maximumWidth: control.popupMaximumWidth
-        transformOrigin: Item.Top
         modal: false
         focus: false
         model: control.delegateModel

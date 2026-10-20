@@ -1,4 +1,5 @@
 #include "scroll_participant_p.hpp"
+#include "qml_material/input/nested_scroll.hpp"
 #include <QtQuick/private/qquickflickable_p_p.h>
 #include <algorithm>
 
@@ -46,6 +47,12 @@ bool ScrollParticipant::available() const {
     auto* view = item();
     return view && view->isVisible() && view->isEnabled() &&
            (m_owned ? m_owned->isInteractive() : m_qt->isInteractive());
+}
+int ScrollParticipant::pressDelay() const {
+    if (m_qt && m_qt->pressDelay() > 0) return 0;
+    auto* config =
+        qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(item(), false));
+    return config ? config->pressDelay() : 100;
 }
 QPointF ScrollParticipant::position() const {
     if (m_owned) return { m_owned->contentX(), m_owned->contentY() };

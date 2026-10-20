@@ -1,30 +1,31 @@
 import QtQuick
 import Qcm.Material as MD
 
-MD.Label {
+MD.CommandButtonBase {
     id: root
-    typescale: MD.Token.typescale.body_medium
-    verticalAlignment: Qt.AlignVCenter
-    color: m_area.containsMouse ? MD.MProp.color.primary : MD.MProp.color.on_background
-    text: action ? action.text : ""
-
+    property MD.typescale typescale: MD.Token.typescale.body_medium
+    property alias color: label.color
+    property alias maximumLineCount: label.maximumLineCount
+    property alias verticalAlignment: label.verticalAlignment
     property MD.Action action: null
+    MD.ActionCommand.action: action
+    text: MD.ActionCommand.text
+    enabled: MD.ActionCommand.enabled
+    implicitWidth: implicitContentWidth + leftPadding + rightPadding
+    implicitHeight: implicitContentHeight + topPadding + bottomPadding
+    Accessible.role: Accessible.Button
+    Accessible.name: text
+    Accessible.onPressAction: click()
 
-    Component.onCompleted: {
-        if (action) {
-            data.push(action);
-        }
+    MD.InteractionObserver {
+        id: interactions
+        source: root.interactionSource
     }
-
-    MouseArea {
-        id: m_area
-        anchors.fill: parent
-        cursorShape: Qt.PointingHandCursor
-        hoverEnabled: true
-        onClicked: {
-            if (root.action) {
-                root.action.trigger();
-            }
-        }
+    contentItem: MD.Label {
+        id: label
+        text: root.text
+        typescale: root.typescale
+        font: root.font
+        color: interactions.values.hovered ? root.MD.MProp.color.primary : root.MD.MProp.color.on_background
     }
 }

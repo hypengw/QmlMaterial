@@ -9,7 +9,6 @@ MD.MenuBase {
     id: control
 
     property alias mdState: item_state
-    property bool autoClose: false
     property real maximumWidth: 280
     readonly property bool cascade: true
     default property list<QtObject> entries
@@ -64,7 +63,7 @@ MD.MenuBase {
     }
     function actionAt(index: int): MD.Action {
         const item = itemAt(index);
-        return item instanceof MD.AbstractButtonBase ? item.action : null;
+        return item instanceof MD.ActionMenuItem ? item.action : null;
     }
     function removeAction(action: MD.Action) {
         for (let index = count - 1; index >= 0; --index) {
@@ -109,21 +108,6 @@ MD.MenuBase {
         Qt.callLater(__syncEntries);
     }
     onAboutToPrepare: __syncEntries()
-    function __dismissChain() {
-        dismiss();
-    }
-    function __moveCurrent(delta: int) {
-        for (let offset = 1; offset <= count; ++offset) {
-            const index = (currentIndex + delta * offset + count * 2) % count;
-            const item = itemAt(index);
-            if (item instanceof MD.AbstractButtonBase && item.enabled && item.visible) {
-                currentIndex = index;
-                contentItem.positionViewAtIndex(index, ListView.Contain);
-                item.forceActiveFocus(Qt.TabFocusReason);
-                return;
-            }
-        }
-    }
 
     implicitWidth: {
         const preferredWidth = Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding);
@@ -137,7 +121,7 @@ MD.MenuBase {
 
     transformOrigin: anchorItem ? anchorTransformOrigin : (!cascade ? Item.Top : (mirrored ? Item.TopRight : Item.TopLeft))
 
-    delegate: MD.MenuItem {}
+    delegate: MD.ActionMenuItem {}
 
     property var model: null
     property alias contentDelegate: m_instantiator.delegate
@@ -175,25 +159,6 @@ MD.MenuBase {
     }
 
     contentItem: MD.ListView {
-        Keys.onPressed: event => {
-            if (event.key === Qt.Key_Down || event.key === Qt.Key_Up) {
-                control.__moveCurrent(event.key === Qt.Key_Down ? 1 : -1);
-                event.accepted = true;
-            } else if (event.key === (control.mirrored ? Qt.Key_Left : Qt.Key_Right)) {
-                const item = control.itemAt(control.currentIndex) as MD.MenuItemBase;
-                if (item?.subMenu) {
-                    item.click();
-                    event.accepted = true;
-                }
-            } else if (event.key === (control.mirrored ? Qt.Key_Right : Qt.Key_Left)) {
-                const parentItem = control.parent as MD.MenuItemBase;
-                if (parentItem) {
-                    control.close();
-                    parentItem.forceActiveFocus(Qt.TabFocusReason);
-                    event.accepted = true;
-                }
-            }
-        }
         implicitWidth: {
             let preferredWidth = 0;
             for (let index = 0; index < control.count; ++index) {
@@ -231,18 +196,6 @@ MD.MenuBase {
             readonly property Item item: {
                 const count = control.count;
                 return index < count ? control.itemAt(index) : null;
-            }
-            readonly property MD.MenuItemBase menuItem: item as MD.MenuItemBase
-            property Connections events: Connections {
-                target: menuItem
-                function onTriggered() {
-                    if (!menuItem.action || (menuItem.action as MD.Action)?.closeMenu || control.autoClose)
-                        control.__dismissChain();
-                }
-                function onHoveredChanged() {
-                    if (menuItem.hovered && menuItem.enabled)
-                        control.currentIndex = index;
-                }
             }
             property Binding itemWidth: Binding {
                 target: item

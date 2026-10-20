@@ -16,6 +16,11 @@ namespace qml_material
 {
 namespace detail
 {
+struct StateBindingCondition {
+    QProperty<bool>   value;
+    QPropertyNotifier notifier;
+};
+
 struct StateBindingOwner {
     std::function<bool()> alive;
     bool                  stopped = false;
@@ -40,8 +45,11 @@ struct StateProperty {
 
 template<typename T>
 struct StatePropertyOf : StateProperty {
-    std::function<QBindable<T>()>         access;
-    std::map<qint64, QPropertyBinding<T>> overrides;
+    std::function<QBindable<T>()>                                                       access;
+    std::map<qint64, QPropertyBinding<T>>                                               overrides;
+    std::vector<std::pair<std::shared_ptr<StateBindingCondition>, QPropertyBinding<T>>> conditions;
+    std::optional<qint64>        appliedState;
+    const StateBindingCondition* appliedCondition = nullptr;
     // Reconstruct handles; Qt 6.11's copy assignment can free the replacement binding.
     std::optional<QPropertyBinding<T>> base, saved;
     T                                  initial {}, savedValue {};
@@ -83,9 +91,26 @@ struct StatePropertyOf : StateProperty {
 
     void apply(std::optional<qint64> state) override {
         if (! isActive()) return;
-        const auto next = state ? overrides.find(*state) : overrides.end();
+        const auto next      = state ? overrides.find(*state) : overrides.end();
+        const auto nextState = next != overrides.end() ? state : std::nullopt;
+        std::optional<QPropertyBinding<T>> binding;
+        const StateBindingCondition*       condition = nullptr;
         if (next != overrides.end()) {
-            const auto binding = next->second;
+            binding.emplace(next->second);
+        } else {
+            const auto candidates = conditions;
+            for (const auto& candidate : candidates) {
+                const bool matches = candidate.first->value.value();
+                if (! isActive()) return;
+                if (matches) {
+                    binding.emplace(candidate.second);
+                    condition = candidate.first.get();
+                }
+            }
+        }
+        if (binding) {
+            if (covered && appliedState == nextState && appliedCondition == condition) return;
+            const auto replacement = *binding;
             if (! covered) {
                 const auto original = access().binding();
                 if (! isActive()) return;
@@ -95,9 +120,13 @@ struct StatePropertyOf : StateProperty {
                 savedValue = value;
                 covered    = true;
             }
-            install(binding);
+            appliedState     = nextState;
+            appliedCondition = condition;
+            install(replacement);
         } else if (covered) {
-            covered             = false;
+            covered = false;
+            appliedState.reset();
+            appliedCondition    = nullptr;
             const auto original = std::move(*saved);
             saved.reset();
             const auto value = savedValue;
@@ -114,6 +143,7 @@ struct StatePropertyOf : StateProperty {
         saved.reset();
         base.reset();
         overrides.clear();
+        conditions.clear();
     }
 };
 
@@ -121,12 +151,18 @@ struct StateBindingData {
     std::shared_ptr<StateBindingOwner>          lifetime = std::make_shared<StateBindingOwner>();
     std::vector<std::shared_ptr<StateProperty>> properties;
     std::map<qint64, std::vector<std::shared_ptr<StateProperty>>> states;
+    std::vector<std::shared_ptr<StateBindingCondition>>           conditions;
     std::optional<qint64>                                         current;
-    bool frozen = false, switching = false, stopped = false;
+    std::optional<std::optional<qint64>>                          pending;
+    bool frozen = false, switching = false, stopped = false, refreshPending = false;
 
     void abandon() {
         if (std::exchange(stopped, true)) return;
         lifetime->stopped = true;
+        for (const auto& condition : conditions) {
+            condition->notifier = {};
+            condition->value.takeBinding();
+        }
         for (const auto& property : properties) property->abandon();
     }
 
@@ -136,32 +172,45 @@ struct StateBindingData {
         return false;
     }
 
-    bool select(std::optional<qint64> next) {
+    bool select(std::optional<qint64> next, bool refresh = false) {
         if (! isActive()) return false;
         if (switching) {
-            qWarning("StateBindings: recursive state change");
-            return false;
+            if (! refresh || ! pending) pending.emplace(next);
+            refreshPending |= refresh;
+            return true;
         }
         frozen = true;
-        if (current == next) return true;
-        auto affected = current ? states[*current] : std::vector<std::shared_ptr<StateProperty>> {};
-        if (next) {
-            for (const auto& property : states[*next]) {
-                if (std::find(affected.begin(), affected.end(), property) == affected.end())
-                    affected.push_back(property);
+        for (int changes = 0; changes < 64; ++changes) {
+            pending.reset();
+            refresh |= std::exchange(refreshPending, false);
+            if (current == next && ! refresh) return true;
+            auto affected =
+                current ? states[*current] : std::vector<std::shared_ptr<StateProperty>> {};
+            if (next) {
+                for (const auto& property : states[*next]) {
+                    if (std::find(affected.begin(), affected.end(), property) == affected.end())
+                        affected.push_back(property);
+                }
             }
-        }
-        switching = true;
-        current   = next;
-        {
-            const QScopedPropertyUpdateGroup group;
-            for (const auto& property : affected) {
-                if (! isActive()) break;
-                property->apply(next);
+            if (refresh) affected = properties;
+            refresh   = false;
+            switching = true;
+            current   = next;
+            {
+                const QScopedPropertyUpdateGroup group;
+                for (const auto& property : affected) {
+                    if (! isActive()) break;
+                    property->apply(next);
+                }
             }
+            switching = false;
+            if (! isActive()) return false;
+            if (! pending) return true;
+            next = *pending;
         }
-        switching = false;
-        return isActive();
+        pending.reset();
+        qWarning("StateBindings: cyclic state changes");
+        return false;
     }
 };
 
@@ -197,10 +246,12 @@ public:
 class StateBindings {
     template<typename>
     friend class StateBindingSet;
-    std::shared_ptr<detail::StateBindingData> m_data;
-    std::optional<qint64>                     m_state;
-    StateBindings(std::shared_ptr<detail::StateBindingData> data, std::optional<qint64> state)
-        : m_data(std::move(data)), m_state(state) {}
+    std::shared_ptr<detail::StateBindingData>      m_data;
+    std::optional<qint64>                          m_state;
+    std::shared_ptr<detail::StateBindingCondition> m_condition;
+    StateBindings(std::shared_ptr<detail::StateBindingData> data, std::optional<qint64> state,
+                  std::shared_ptr<detail::StateBindingCondition> condition = {})
+        : m_data(std::move(data)), m_state(state), m_condition(std::move(condition)) {}
 
 public:
     template<typename T>
@@ -213,7 +264,18 @@ public:
             return false;
         }
         const auto property = key.m_property;
-        if (m_state) {
+        if (m_condition) {
+            if (std::any_of(property->conditions.begin(),
+                            property->conditions.end(),
+                            [this](const auto& candidate) {
+                                return candidate.first == m_condition;
+                            })) {
+                qWarning("StateBindings: duplicate conditional declaration");
+                return false;
+            }
+            property->conditions.emplace_back(m_condition, binding);
+            property->apply(data->current);
+        } else if (m_state) {
             if (! property->overrides.emplace(*m_state, binding).second) {
                 qWarning("StateBindings: duplicate property declaration");
                 return false;
@@ -297,6 +359,22 @@ public:
     }
 
     StateBindings base() const { return { m_data, {} }; }
+    // Explicit states override conditions; otherwise the last matching condition wins per property.
+    StateBindings when(std::function<bool()> predicate) {
+        const auto data      = m_data;
+        auto       condition = std::make_shared<detail::StateBindingCondition>();
+        if (! data->isActive() || data->frozen) {
+            qWarning("StateBindings: invalid or frozen conditional declaration");
+            return { data, {}, condition };
+        }
+        condition->value.setBinding(std::move(predicate));
+        if (! data->isActive()) return { data, {}, condition };
+        condition->notifier = condition->value.addNotifier([weak = std::weak_ptr(data)] {
+            if (const auto owner = weak.lock()) owner->select(owner->current, true);
+        });
+        data->conditions.push_back(condition);
+        return { data, {}, condition };
+    }
     StateBindings state(StateId id) const {
         return { m_data, id == m_base ? std::nullopt : std::optional<qint64>(qint64(id)) };
     }
@@ -305,8 +383,12 @@ public:
         return data->select(id == m_base ? std::nullopt : std::optional<qint64>(qint64(id)));
     }
     bool detach() {
-        const auto data     = m_data;
-        const bool restored = data->select({});
+        const auto data = m_data;
+        for (const auto& condition : data->conditions) {
+            condition->notifier = {};
+            condition->value    = false;
+        }
+        const bool restored = data->select({}, true);
         data->abandon();
         return restored;
     }

@@ -1,7 +1,7 @@
 import QtQuick
 import Qcm.Material as MD
 
-MD.Control {
+MD.SplitButtonBase {
     id: control
     property MD.StateSplitButton mdState: MD.StateSplitButton {
         item: m_button
@@ -22,7 +22,7 @@ MD.Control {
     property alias text: m_button.text
     property alias icon: m_button.icon
     property alias menu: m_indicator.menu
-    signal clicked
+    leadingControl: m_button
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
@@ -34,17 +34,17 @@ MD.Control {
         implicitHeight: Math.max(m_button.implicitHeight, m_indicator.implicitHeight)
         implicitWidth: m_button.implicitWidth + m_indicator.implicitWidth + control.spacing
 
-        MD.Button {
+        MD.ActionButton {
             id: m_button
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             mdState: control.mdState
-            onClicked: control.clicked()
             width: parent.width - m_indicator.width - control.spacing
         }
 
         MD.SplitButtonIndicator {
             id: m_indicator
+            menuAnchor: control
             mdState: control.indicatorMdState
             anchors.verticalCenter: parent.verticalCenter
             anchors.right: parent.right

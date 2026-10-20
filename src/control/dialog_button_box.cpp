@@ -114,15 +114,15 @@ void DialogButtonBox::setAlignment(Qt::Alignment value) {
     polish();
     Q_EMIT alignmentChanged();
 }
-AbstractButton* DialogButtonBox::standardButton(int value) const {
+CommandButton* DialogButtonBox::standardButton(int value) const {
     auto* button = m_standard_items.value(value).data();
     return button && button->parentItem() == contentItem() ? button : nullptr;
 }
-AbstractButton* DialogButtonBox::itemAt(int index) const { return m_buttons.value(index); }
-void            DialogButtonBox::addItem(AbstractButton* item) {
+CommandButton* DialogButtonBox::itemAt(int index) const { return m_buttons.value(index); }
+void           DialogButtonBox::addItem(CommandButton* item) {
     if (item) item->setParentItem(contentItem());
 }
-void DialogButtonBox::removeItem(AbstractButton* item) {
+void DialogButtonBox::removeItem(CommandButton* item) {
     if (item && item->parentItem() == contentItem()) item->setParentItem(nullptr);
 }
 void DialogButtonBox::componentComplete() {
@@ -158,17 +158,17 @@ void DialogButtonBox::rebuild() {
             if (object) object->deleteLater();
             return;
         }
-        auto* button = qobject_cast<AbstractButton*>(object);
+        auto* button = qobject_cast<CommandButton*>(object);
         if (! button) {
             if (object) object->deleteLater();
-            qmlWarning(this) << "delegate must create AbstractButtonBase";
+            qmlWarning(this) << "delegate must create CommandButtonBase";
             continue;
         }
         button->setParent(this);
         m_standard_items.insert(entry.button, button);
         auto* attached = qobject_cast<DialogButtonBoxAttached*>(
             qmlAttachedPropertiesObject<DialogButtonBox>(button, true));
-        QPointer<AbstractButton> alive(button);
+        QPointer<CommandButton> alive(button);
         attached->setButtonRole(entry.role);
         if (! guard) return;
         if (! alive) continue;
@@ -188,7 +188,7 @@ void DialogButtonBox::observe() {
     m_buttons.clear();
     if (contentItem()) {
         for (auto* item : contentItem()->childItems()) {
-            if (auto* button = qobject_cast<AbstractButton*>(item)) m_buttons.append(button);
+            if (auto* button = qobject_cast<CommandButton*>(item)) m_buttons.append(button);
         }
     }
     std::stable_sort(
@@ -225,7 +225,7 @@ void DialogButtonBox::observe() {
             if (! guard || revision != m_observation) return;
             if (! button || button->parentItem() != contentItem()) continue;
         }
-        m_connections.append(connect(button, &AbstractButton::clicked, this, [this, button]() {
+        m_connections.append(connect(button, &CommandButton::clicked, this, [this, button]() {
             if (button) activate(button);
         }));
         m_connections.append(
@@ -242,8 +242,8 @@ void DialogButtonBox::updatePolish() {
     QPointer<DialogButtonBox> guard(this);
     Panel::updatePolish();
     if (! guard) return;
-    qreal                           total = 0, height = 0;
-    QList<QPointer<AbstractButton>> visible;
+    qreal                          total = 0, height = 0;
+    QList<QPointer<CommandButton>> visible;
     for (const auto& button : m_buttons)
         if (button && (! isVisible() || button->isVisible())) {
             if (! visible.isEmpty()) total += spacing();
@@ -270,7 +270,7 @@ void DialogButtonBox::updatePolish() {
         x += button->width() + spacing();
     }
 }
-void DialogButtonBox::activate(AbstractButton* button) {
+void DialogButtonBox::activate(CommandButton* button) {
     auto* attached = qobject_cast<DialogButtonBoxAttached*>(
         qmlAttachedPropertiesObject<DialogButtonBox>(button, true));
     const auto                role = attached->buttonRole();

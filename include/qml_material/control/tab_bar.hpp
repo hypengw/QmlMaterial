@@ -1,7 +1,6 @@
 #pragma once
 #include "qml_material/control/container.hpp"
 #include "qml_material/control/tab_button.hpp"
-#include "qml_material/control/button_group.hpp"
 
 namespace qml_material
 {
@@ -54,31 +53,30 @@ public:
     Q_INVOKABLE TabButton* itemAt(int index) const {
         return qobject_cast<TabButton*>(Container::itemAt(index));
     }
-    void          incrementCurrentIndex() override;
-    void          decrementCurrentIndex() override;
-    Q_SIGNAL void positionChanged();
+    void             incrementCurrentIndex() override;
+    void             decrementCurrentIndex() override;
+    Q_INVOKABLE void requestCurrentIndex(int);
+    Q_SIGNAL void    currentIndexChangeRequested(int currentIndex);
+    Q_SIGNAL void    positionChanged();
 
 protected:
     bool isContent(QQuickItem*) const override;
     void itemAdded(QQuickItem*) override;
     void itemRemoved(QQuickItem*) override;
     void itemsChanged() override;
-    void currentItemChange() override;
-    int  initialIndex() const override;
+    int  initialIndex() const override { return 0; }
+    bool tracksCurrentItem() const override { return false; }
     void updatePolish() override;
     void keyPressEvent(QKeyEvent*) override;
 
 private:
     void                                               navigate(int);
-    ButtonGroup*                                       m_group;
     QHash<QQuickItem*, QList<QMetaObject::Connection>> m_connections;
     Position                                           m_position        = Header;
     Mode                                               m_mode            = Fixed;
     qreal                                              m_minimumTabWidth = 90;
     qreal                                              m_edgePadding     = 52;
     qreal                                              m_autoGutter      = 16;
-    bool                                               m_selecting       = false;
-    bool                                               m_selection_dirty = false;
 };
 class QML_MATERIAL_API TabBarAttached : public QObject {
     Q_OBJECT

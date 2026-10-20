@@ -1,10 +1,28 @@
 #include "qml_material/style/snake_bar_state.hpp"
 #include "qml_material/control/control.hpp"
-#include "qml_material/control/abstract_button.hpp"
+#include "qml_material/control/button_control.hpp"
 #include "qml_material/token/color.hpp"
 namespace qml_material
 {
-SnakeBarState::SnakeBarState(QObject* parent): CommonState(parent) {
+SnakeBarState::SnakeBarState(QObject* parent)
+    : CommonState(parent),
+      m_actionIndication(this,
+                         [this] {
+                             if (isStateActive()) Q_EMIT actionIndicationChanged();
+                         }),
+      m_iconIndication(this, [this] {
+          if (isStateActive()) Q_EMIT iconIndicationChanged();
+      }) {
+    m_actionIndication.bindDefaultColor(Qt::makePropertyBinding([this] {
+        return textColor();
+    }));
+    m_iconIndication.bindDefaultColor(Qt::makePropertyBinding([this] {
+        return iconColor();
+    }));
+    for (auto* indication : { &m_actionIndication, &m_iconIndication })
+        indication->bindDefaultTokens(Qt::makePropertyBinding([this] {
+            return stateTokens();
+        }));
     initializeAppearance(m_bindings);
     connect(this, &CommonState::targetChanged, this, &SnakeBarState::itemChanged);
     m_iconColorKey      = m_bindings.property<&SnakeBarState::bindableIconColor>(this);
@@ -19,100 +37,78 @@ SnakeBarState::SnakeBarState(QObject* parent): CommonState(parent) {
     base.bind(m_appearance.supportTextColor, colorBinding(&MdColorMgr::inverse_on_surface));
     base.bind(m_appearance.backgroundColor, colorBinding(&MdColorMgr::inverse_surface));
     base.bind(m_iconColorKey, colorBinding(&MdColorMgr::inverse_on_surface));
-    base.bind(m_iconLayerColorKey, [] {
-        return QColor(Qt::transparent);
+    base.bind(m_appearance.stateLayerColor, colorBinding(&MdColorMgr::inverse_primary));
+    base.bind(m_iconLayerColorKey, colorBinding(&MdColorMgr::inverse_on_surface));
+    const auto opacity = [this](const IndicationPolicy& policy) -> qreal {
+        const auto values = policy.interactions().values();
+        if (values.pressed) return stateTokens().pressed.state_layer_opacity;
+        return policy.values().opacity;
+    };
+    base.bind(m_appearance.stateLayerOpacity, [this, opacity] {
+        return opacity(m_actionIndication);
     });
-    base.bind(m_iconLayerOpacityKey, [] {
-        return qreal(0);
+    base.bind(m_iconLayerOpacityKey, [this, opacity] {
+        return opacity(m_iconIndication);
     });
-    for (auto interaction : { Interaction::ActionHover,
-                              Interaction::ActionFocus,
-                              Interaction::ActionPress,
-                              Interaction::IconHover,
-                              Interaction::IconFocus,
-                              Interaction::IconPress }) {
-        const bool action = interaction == Interaction::ActionHover ||
-                            interaction == Interaction::ActionFocus ||
-                            interaction == Interaction::ActionPress;
-        auto       active = m_bindings.state(interaction);
-        active.bind(
-            action ? m_appearance.textColor : m_iconColorKey,
-            colorBinding(action ? &MdColorMgr::inverse_primary : &MdColorMgr::inverse_on_surface));
-        active.bind(
-            action ? m_appearance.stateLayerColor : m_iconLayerColorKey,
-            colorBinding(action ? &MdColorMgr::inverse_primary : &MdColorMgr::inverse_on_surface));
-        active.bind(action ? m_appearance.stateLayerOpacity : m_iconLayerOpacityKey,
-                    [this, interaction]() -> qreal {
-                        if (interaction == Interaction::ActionHover ||
-                            interaction == Interaction::IconHover)
-                            return stateTokens().hover.state_layer_opacity;
-                        if (interaction == Interaction::ActionFocus ||
-                            interaction == Interaction::IconFocus)
-                            return stateTokens().focus.state_layer_opacity;
-                        return stateTokens().pressed.state_layer_opacity;
-                    });
-    }
-    m_selection.setBinding([this] {
-        auto* action = actionItem();
-        auto* icon   = iconItem();
-        return Selection { action && action->hovered()       ? Interaction::ActionHover
-                           : action && action->visualFocus() ? Interaction::ActionFocus
-                           : action && action->isDown()      ? Interaction::ActionPress
-                           : icon && icon->hovered()         ? Interaction::IconHover
-                           : icon && icon->visualFocus()     ? Interaction::IconFocus
-                           : icon && icon->isDown()          ? Interaction::IconPress
-                                                             : Interaction::Base,
-                           targetGeneration() };
-    });
-    m_ready = true;
 }
 SnakeBarState::~SnakeBarState() {
     m_bindings.abandon();
     disconnect(m_actionDestroyed);
     disconnect(m_iconDestroyed);
+    disconnect(m_actionSourceChanged);
+    disconnect(m_iconSourceChanged);
 }
-Control*        SnakeBarState::item() const { return static_cast<Control*>(target()); }
-void            SnakeBarState::setItem(Control* value) { setTarget(value); }
-AbstractButton* SnakeBarState::actionItem() const { return m_actionItem.value(); }
-void            SnakeBarState::setActionItem(AbstractButton* value) {
+Control*       SnakeBarState::item() const { return static_cast<Control*>(target()); }
+void           SnakeBarState::setItem(Control* value) { setTarget(value); }
+ButtonControl* SnakeBarState::actionItem() const { return m_actionItem.value(); }
+void           SnakeBarState::setActionItem(ButtonControl* value) {
     if (m_actionItem == value) return;
     QPointer<SnakeBarState> guard(this);
+    QPointer<ButtonControl> input(value);
     disconnect(m_actionDestroyed);
+    disconnect(m_actionSourceChanged);
+    if (value)
+        m_actionSourceChanged =
+            connect(value, &ButtonControl::interactionSourceChanged, this, [this] {
+                auto* item = actionItem();
+                m_actionIndication.setSource(item ? item->interactionSource() : nullptr);
+            });
     if (value)
         m_actionDestroyed = connect(value, &QObject::destroyed, this, [this] {
             setActionItem(nullptr);
         });
     updateStateInput(m_actionItem, value);
+    if (guard && isStateActive() && actionItem() == input) {
+        m_actionIndication.setTarget(input.data());
+        if (guard && actionItem() == input)
+            m_actionIndication.setSource(input ? input->interactionSource() : nullptr);
+    }
     if (guard && isStateActive()) Q_EMIT actionItemChanged();
 }
-AbstractButton* SnakeBarState::iconItem() const { return m_iconItem.value(); }
-void            SnakeBarState::setIconItem(AbstractButton* value) {
+ButtonControl* SnakeBarState::iconItem() const { return m_iconItem.value(); }
+void           SnakeBarState::setIconItem(ButtonControl* value) {
     if (m_iconItem == value) return;
     QPointer<SnakeBarState> guard(this);
+    QPointer<ButtonControl> input(value);
     disconnect(m_iconDestroyed);
+    disconnect(m_iconSourceChanged);
+    if (value)
+        m_iconSourceChanged =
+            connect(value, &ButtonControl::interactionSourceChanged, this, [this] {
+                auto* item = iconItem();
+                m_iconIndication.setSource(item ? item->interactionSource() : nullptr);
+            });
     if (value)
         m_iconDestroyed = connect(value, &QObject::destroyed, this, [this] {
             setIconItem(nullptr);
         });
     updateStateInput(m_iconItem, value);
-    if (guard && isStateActive()) Q_EMIT iconItemChanged();
-}
-void SnakeBarState::selectionChanged() {
-    if (! m_ready) return;
-    const auto next = m_selection.value();
-    QString    name;
-    switch (next.state) {
-    case Interaction::ActionHover: name = QStringLiteral("hovered:action"); break;
-    case Interaction::ActionFocus: name = QStringLiteral("focus:action"); break;
-    case Interaction::ActionPress: name = QStringLiteral("pressed:action"); break;
-    case Interaction::IconHover: name = QStringLiteral("hovered:icon"); break;
-    case Interaction::IconFocus: name = QStringLiteral("focus:icon"); break;
-    case Interaction::IconPress: name = QStringLiteral("pressed:icon"); break;
-    default: break;
+    if (guard && isStateActive() && iconItem() == input) {
+        m_iconIndication.setTarget(input.data());
+        if (guard && iconItem() == input)
+            m_iconIndication.setSource(input ? input->interactionSource() : nullptr);
     }
-    publishState(name, [this, state = next.state] {
-        m_bindings.select(state);
-    });
+    if (guard && isStateActive()) Q_EMIT iconItemChanged();
 }
 QColor            SnakeBarState::iconColor() const { return m_iconColor.value(); }
 void              SnakeBarState::setIconColor(const QColor& value) { m_iconColor = value; }

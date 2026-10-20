@@ -1,7 +1,7 @@
 #include "qml_material/control/button_group_container.hpp"
-#include "qml_material/control/abstract_button.hpp"
+#include "qml_material/control/button_control.hpp"
 #include "qml_material/util/qt.hpp"
-#include "qml_material/token/duration.hpp"
+#include "qml_material/core/item_activity.hpp"
 #include <QtQuick/private/qquickitem_p.h>
 #include <algorithm>
 #include <cmath>
@@ -69,8 +69,13 @@ void ButtonGroupContainer::setButtonSize(int value) {
     m_size = value;
     Q_EMIT sizeChanged();
 }
+void ButtonGroupContainer::setWidthSpringSpec(token::SpringSpec value) {
+    if (! value.valid() || value == m_widthSpringSpec) return;
+    m_widthSpringSpec = value;
+    Q_EMIT widthSpringSpecChanged();
+}
 bool ButtonGroupContainer::isContent(QQuickItem* item) const {
-    return qobject_cast<AbstractButton*>(item);
+    return qobject_cast<ButtonControl*>(item);
 }
 void ButtonGroupContainer::itemAdded(QQuickItem* item) {
     connect(attached(item),
@@ -136,9 +141,10 @@ void ButtonGroupContainer::updatePolish() {
         weightSum += weights[i];
         if (weights[i] == 0) fixed += base[i];
         natural += base[i];
-        height      = std::max(height, item->height());
-        budgets[i]  = boundWidth[i] ? 0 : info->compressionLimit();
-        progress[i] = animateWidth() && ! boundWidth[i] ? info->pressProgress() : 0;
+        height     = std::max(height, item->height());
+        budgets[i] = boundWidth[i] ? 0 : info->compressionLimit();
+        progress[i] =
+            animateWidth() && ! boundWidth[i] ? std::max(qreal(0), info->pressProgress()) : 0;
     }
     setImplicitContentSize(QSizeF(std::max(qreal(0), natural), height));
     if (! guard) return;
@@ -228,26 +234,27 @@ void ButtonGroupContainer::updatePolish() {
 }
 
 ButtonGroupContainerAttached::ButtonGroupContainerAttached(QObject* object)
-    : QObject(object), m_animation(this) {
-    m_animation.setDuration(int(token::Duration {}.short4));
-    m_animation.setEasingCurve(QEasingCurve::OutCubic);
-    connect(&m_animation, &QVariantAnimation::valueChanged, this, [this](const QVariant& value) {
-        m_progress = value.toReal();
-        Q_EMIT layoutChanged();
-    });
-    connect(&m_animation, &QVariantAnimation::finished, this, [this] {
-        if (m_releasing && m_progress > 0) animateTo(0);
-    });
-    auto* item = qobject_cast<AbstractButton*>(object);
+    : QObject(object), m_motion(this), m_interactions(this, [this] {
+          updatePress();
+      }) {
+    m_motion.setSpec(token::SpringScheme {}.fastSpatial());
+    connect(
+        &m_motion, &SpringMotion::valueChanged, this, &ButtonGroupContainerAttached::layoutChanged);
+    auto* item = qobject_cast<ButtonControl*>(object);
     if (! item) return;
+    m_activity = std::make_unique<ItemActivity>(item);
+    connect(
+        m_activity.get(), &ItemActivity::changed, this, &ButtonGroupContainerAttached::updatePress);
     auto* membership =
         qobject_cast<ContainerAttached*>(qmlAttachedPropertiesObject<Container>(item, true));
     connect(membership,
             &ContainerAttached::containerChanged,
             this,
             &ButtonGroupContainerAttached::membershipChanged);
-    connect(item, &AbstractButton::downChanged, this, &ButtonGroupContainerAttached::updatePress);
-    connect(item, &AbstractButton::canceled, this, &ButtonGroupContainerAttached::stopAnimation);
+    connect(item, &ButtonControl::interactionSourceChanged, this, [this, item] {
+        m_interactions.setSource(item->interactionSource());
+    });
+    m_interactions.setSource(item->interactionSource());
     connect(item, &QQuickItem::enabledChanged, this, &ButtonGroupContainerAttached::updatePress);
     connect(item, &QQuickItem::visibleChanged, this, &ButtonGroupContainerAttached::updatePress);
     membershipChanged();
@@ -257,7 +264,14 @@ ButtonGroupContainerAttached::~ButtonGroupContainerAttached() {
 }
 void ButtonGroupContainerAttached::membershipChanged() {
     utils::disconnectAll(m_ownerConnections);
+    QPointer<ButtonGroupContainerAttached> guard(this);
     if (auto* group = owner()) {
+        m_motion.setSpec(group->widthSpringSpec());
+        if (! guard || group != owner()) return;
+        m_ownerConnections.append(
+            connect(group, &ButtonGroupContainer::widthSpringSpecChanged, this, [this] {
+                if (const auto* group = owner()) m_motion.setSpec(group->widthSpringSpec());
+            }));
         m_ownerConnections.append(connect(group,
                                           &ButtonGroupContainer::variantChanged,
                                           this,
@@ -271,7 +285,6 @@ void ButtonGroupContainerAttached::membershipChanged() {
                                           this,
                                           &ButtonGroupContainerAttached::updatePress));
     }
-    QPointer<ButtonGroupContainerAttached> guard(this);
     stopAnimation();
     if (! guard) return;
     restoreWidth();
@@ -295,19 +308,10 @@ void ButtonGroupContainerAttached::setPosition(int value) {
     m_position = value;
     Q_EMIT contextChanged();
 }
-void ButtonGroupContainerAttached::animateTo(qreal target) {
-    m_animation.stop();
-    if (m_progress == target) return;
-    m_animation.setStartValue(m_progress);
-    m_animation.setEndValue(target);
-    m_animation.start();
-}
 void ButtonGroupContainerAttached::stopAnimation() {
-    m_animation.stop();
-    m_releasing = false;
-    if (m_progress == 0) return;
-    m_progress = 0;
-    Q_EMIT layoutChanged();
+    QPointer<ButtonGroupContainerAttached> guard(this);
+    m_motion.setActive(false);
+    if (guard) m_motion.setPressed(false);
 }
 void ButtonGroupContainerAttached::restoreWidth() {
     if (! m_managedWidth) return;
@@ -320,17 +324,15 @@ void ButtonGroupContainerAttached::restoreWidth() {
         item->resetWidth();
 }
 void ButtonGroupContainerAttached::updatePress() {
-    const auto* item = qobject_cast<AbstractButton*>(parent());
+    const auto* item = qobject_cast<ButtonControl*>(parent());
     if (! item || ! owner() || ! owner()->animateWidth() || ! item->isEnabled() ||
-        ! item->isVisible()) {
+        ! item->isVisible() || (item->window() && ! m_activity->active())) {
         stopAnimation();
         return;
     }
-    m_releasing = ! item->isDown();
-    if (! m_releasing)
-        animateTo(1);
-    else if (m_progress >= .75 || m_animation.state() != QAbstractAnimation::Running)
-        animateTo(0);
+    QPointer<ButtonGroupContainerAttached> guard(this);
+    m_motion.setActive(true);
+    if (guard) m_motion.setPressed(m_interactions.values().pressed);
 }
 #define VALUE(Upper, Member)                                                \
     void ButtonGroupContainerAttached::set##Upper(qreal value) {            \

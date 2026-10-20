@@ -3,8 +3,12 @@
 #include "qml_material/token/color.hpp"
 namespace qml_material
 {
-CheckBoxState::CheckBoxState(QObject* parent)
-    : ButtonInteractionState(parent, FocusTreatment::Separate, PressSource::Pressed) {
+CheckBoxState::CheckBoxState(QObject* parent): ButtonInteractionState(parent) {
+    indicationPolicy().bindDefaultColor(Qt::makePropertyBinding([this] {
+        return color(error()     ? &MdColorMgr::error
+                     : checked() ? &MdColorMgr::primary
+                                 : &MdColorMgr::on_surface);
+    }));
     m_iconKey           = bindingSet().property<&CheckBoxState::bindableIconColor>(this);
     m_iconBackgroundKey = bindingSet().property<&CheckBoxState::bindableIconBackgroundColor>(this);
     const auto base     = baseBindings();
@@ -18,28 +22,42 @@ CheckBoxState::CheckBoxState(QObject* parent)
     base.bind(m_iconBackgroundKey, [this] {
         return color(error() ? &MdColorMgr::error : &MdColorMgr::primary);
     });
-    const auto disabled = stateBindings(Interaction::Disabled);
-    disabled.bind(m_appearance.outlineColor, colorBinding(&MdColorMgr::on_surface));
-    disabled.bind(m_iconKey, colorBinding(&MdColorMgr::on_surface));
-    disabled.bind(m_iconBackgroundKey, colorBinding(&MdColorMgr::on_surface));
+    const auto disabled          = disabledBindings();
+    auto       disabledContainer = [this] {
+        auto ink = color(&MdColorMgr::on_surface);
+        ink.setAlphaF(stateTokens().disabled_content);
+        return ink;
+    };
+    disabled.bind(m_appearance.outlineColor, disabledContainer);
+    disabled.bind(m_iconKey, colorBinding(&MdColorMgr::surface));
+    disabled.bind(m_iconBackgroundKey, disabledContainer);
     disabled.bind(m_appearance.contentOpacity, [this]() -> qreal {
         return stateTokens().disabled_content;
     });
     bindStateLayerOpacity();
-    for (auto state : { Interaction::Pressed, Interaction::Hovered, Interaction::Focus }) {
-        auto active = stateBindings(state);
-        active.bind(m_appearance.outlineColor, [this] {
-            return color(error() ? &MdColorMgr::error : &MdColorMgr::on_surface);
-        });
-        active.bind(m_appearance.stateLayerColor, [this] {
-            return color(error()     ? &MdColorMgr::error
-                         : checked() ? &MdColorMgr::primary
-                                     : &MdColorMgr::on_surface);
-        });
-    }
+    auto active = appearanceWhen([this] {
+        return pressed() || hovered() || visualFocus();
+    });
+    active.bind(m_appearance.outlineColor, [this] {
+        return color(error() ? &MdColorMgr::error : &MdColorMgr::on_surface);
+    });
+    active.bind(m_appearance.stateLayerColor, [this] {
+        return color(error()     ? &MdColorMgr::error
+                     : checked() ? &MdColorMgr::primary
+                                 : &MdColorMgr::on_surface);
+    });
 }
-CheckBox*         CheckBoxState::item() const { return static_cast<CheckBox*>(inputItem()); }
-void              CheckBoxState::setItem(CheckBox* item) { setInputItem(item); }
+CheckBox* CheckBoxState::item() const { return static_cast<CheckBox*>(inputItem()); }
+void      CheckBoxState::setItem(CheckBox* item) {
+    setInputItem(
+        item,
+        [item] {
+            return item->checkState() != Qt::Unchecked;
+        },
+        [] {
+            return true;
+        });
+}
 bool              CheckBoxState::error() const { return m_error.value(); }
 void              CheckBoxState::setError(bool value) { m_error = value; }
 QBindable<bool>   CheckBoxState::bindableError() { return QBindable<bool>(&m_error); }
