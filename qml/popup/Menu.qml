@@ -177,6 +177,8 @@ MD.MenuBase {
         }
         interactive: contentHeight > control.availableHeight
         keyNavigationEnabled: false
+        // Menu owns navigation; the view must not focus its first item on open.
+        currentIndex: -1
         MD.ScrollIndicator.vertical: MD.ScrollIndicator {}
     }
 

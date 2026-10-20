@@ -13,6 +13,7 @@
 #include "qml_material/control/action.hpp"
 #include "qml_material/control/action_command.hpp"
 #include "qml_material/control/button_control.hpp"
+#include "qml_material/style/menu_item_state.hpp"
 #include "../input_test.hpp"
 #include "qml_material/control/overlay.hpp"
 #include "qml_material/control/panel.hpp"
@@ -63,6 +64,46 @@ private slots:
         QVERIFY(! popup.modal());
         QVERIFY(! popup.focus());
         QVERIFY(! popup.dim());
+    }
+    void openingDoesNotFocusFirstItem() {
+        QTest::failOnWarning(QRegularExpression(".*"));
+        QVERIFY(create(R"(
+            Rectangle { id: anchor; x: 500; y: 20; width: 40; height: 40 }
+            MD.Menu {
+                objectName: "menu"
+                parent: root
+                anchorItem: anchor
+                enter: null
+                exit: null
+                MD.MenuItem { text: "List" }
+                MD.MenuItem { text: "Grid"; selected: true }
+                MD.MenuItem { text: "Card Grid" }
+            }
+        )"));
+        window.requestActivate();
+        QVERIFY(QTest::qWaitForWindowActive(&window));
+        QTest::mouseMove(&window, { 4, 4 });
+        menu()->open();
+        QTRY_VERIFY(menu()->surfaceItem()->isVisible());
+        QCOMPARE(menu()->count(), 3);
+        auto* first    = qobject_cast<MenuItem*>(menu()->itemAt(0));
+        auto* selected = qobject_cast<MenuItem*>(menu()->itemAt(1));
+        QVERIFY(first && selected);
+        QVERIFY(! first->property("selected").toBool());
+        QVERIFY(selected->property("selected").toBool());
+        QVERIFY(! first->hasActiveFocus());
+        auto* state = first->findChild<MenuItemState*>();
+        QVERIFY(state);
+        flushInteractions();
+        QCOMPARE(state->indication().opacity, 0);
+        QTest::keyClick(&window, Qt::Key_Down);
+        QCOMPARE(menu()->currentIndex(), 0);
+        QTRY_VERIFY(first->hasActiveFocus());
+        QVERIFY(first->focusVisible());
+        QTRY_VERIFY(state->indication().opacity > 0);
+        QVERIFY(! first->property("selected").toBool());
+        QVERIFY(selected->property("selected").toBool());
+        menu()->close();
     }
     void commandInterfaces() {
         MenuItem item;
