@@ -1,4 +1,28 @@
 <releases>
+  <release version="0.6.0" date="2026-10-21">
+    <description>
+      <p>Breaking changes:</p>
+      <ul>
+        <li>Replace AbstractButton with InputHost-based controls.</li>
+        <li>Handle input change requests in caller-owned state using checkState or selected.</li>
+        <li>Replace pressed, hovered, pressX, and pressY with InteractionSource events and InteractionObserver or mdState.interactions.</li>
+      </ul>
+      <p>Added:</p>
+      <ul>
+        <li>Standard and expressive spring motion presets, plus Clock and ClockSource with analog and digital presets.</li>
+        <li>Example compositions for clock widgets, media controls, quick settings, notifications, and pickers.</li>
+      </ul>
+      <p>Changed:</p>
+      <ul>
+        <li>Use spring-based control feedback and update Material Symbols fonts and icon mappings.</li>
+      </ul>
+      <p>Fixed:</p>
+      <ul>
+        <li>Fix Switch dragging and transitions, Menu keyboard focus and dismissal, and ComboBox popup placement.</li>
+        <li>Fix toolbar overflow, Carousel layout and input, and interaction cancellation during control changes or destruction.</li>
+      </ul>
+    </description>
+  </release>
   <release version="0.5.0" date="2026-10-13">
     <description>
       <p>Added:</p>

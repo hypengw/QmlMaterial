@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(QM_VERSION 0.5.0)
+set(QM_VERSION 0.6.0)
 project(
   QmlMaterial
   VERSION ${QM_VERSION}
