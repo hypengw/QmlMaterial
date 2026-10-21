@@ -77,6 +77,7 @@ set(QM_TEST_SOURCES
   layout/lite_layout.cpp
   layout/menu_layout.cpp
   layout/page_layout.cpp
+  layout/page_stack_transition.cpp
   layout/split_view.cpp
   layout/text_field_form.cpp
   layout/toolbar_dynamic_visibility.cpp

@@ -46,10 +46,11 @@ protected:
 } // namespace
 struct PageStack::State {
     struct Page {
-        QPointer<QQuickItem> item;
-        QPointer<QQuickItem> parent;
-        bool                 widthExplicit  = false;
-        bool                 heightExplicit = false;
+        QPointer<QQuickItem>           item;
+        QPointer<QQuickItem>           parent;
+        bool                           widthExplicit  = false;
+        bool                           heightExplicit = false;
+        QList<QMetaObject::Connection> sizeConnections;
     };
     PageStackEntries                          entries;
     QMap<quint64, Page>                       pages;
@@ -67,10 +68,12 @@ struct PageStack::State {
         qreal                        scale   = 1;
         std::shared_ptr<StackMotion> runner;
     };
-    QList<Motion>  motions;
-    quint64        motionId       = 0;
-    int            pendingMotions = 0;
-    TransitionMode mode           = Animated;
+    QList<Motion>                  motions;
+    quint64                        motionId       = 0;
+    int                            pendingMotions = 0;
+    TransitionMode                 mode           = Animated;
+    QPointer<SizeTransition>       sizeTransition;
+    QList<QMetaObject::Connection> sizeConnections;
 };
 
 static PageStackAttached* attached(QQuickItem* item) {
@@ -119,8 +122,34 @@ PageStack::~PageStack() {
 PageStackAttached* PageStack::qmlAttachedProperties(QObject* object) {
     return new PageStackAttached(object);
 }
-int  PageStack::depth() const { return m_state->entries.depth(); }
-bool PageStack::busy() const { return m_state->notifiedBusy; }
+int             PageStack::depth() const { return m_state->entries.depth(); }
+bool            PageStack::busy() const { return m_state->notifiedBusy; }
+SizeTransition* PageStack::sizeTransition() const { return m_state->sizeTransition; }
+void            PageStack::setSizeTransition(SizeTransition* transition) {
+    const auto state = m_state;
+    if (state->sizeTransition == transition) return;
+    for (const auto& connection : state->sizeConnections) disconnect(connection);
+    state->sizeConnections.clear();
+    state->sizeTransition = transition;
+    if (transition) {
+        state->sizeConnections.append(
+            connect(transition, &SizeTransition::runningChanged, this, [this] {
+                QTimer::singleShot(0, this, &PageStack::tryFinishTransition);
+            }));
+        state->sizeConnections.append(connect(transition, &QObject::destroyed, this, [this] {
+            QPointer<PageStack> guard(this);
+            Q_EMIT sizeTransitionChanged();
+            if (guard) QTimer::singleShot(0, this, &PageStack::tryFinishTransition);
+        }));
+    }
+    QPointer<PageStack> guard(this);
+    Q_EMIT sizeTransitionChanged();
+    if (guard) QTimer::singleShot(0, this, &PageStack::tryFinishTransition);
+}
+QSizeF PageStack::measureImplicitContent() const {
+    const auto item = currentItem();
+    return item ? QSizeF(item->implicitWidth(), item->implicitHeight()) : QSizeF(0, 0);
+}
 #define QM_STACK_TRANSITION(Name, Setter, Index)                                      \
     QQuickTransition* PageStack::Name() const { return m_state->transitions[Index]; } \
     void              PageStack::Setter(QQuickTransition* transition) {               \
@@ -211,6 +240,14 @@ void PageStack::synchronize() {
             auto p = QQuickItemPrivate::get(item);
             state->pages.insert(entry.id,
                                 { item, item->parentItem(), p->widthValid(), p->heightValid() });
+            auto&      page    = state->pages[entry.id];
+            const auto measure = [this, item] {
+                if (currentItem() == item) updateImplicitMetrics();
+            };
+            page.sizeConnections.append(
+                connect(item, &QQuickItem::implicitWidthChanged, this, measure));
+            page.sizeConnections.append(
+                connect(item, &QQuickItem::implicitHeightChanged, this, measure));
             attached(item)->m_view = this;
             Q_EMIT entryAdded(entry.id, item);
             if (! guard || ! item) return;
@@ -225,6 +262,8 @@ void PageStack::synchronize() {
         }
     }
     layoutPages();
+    if (! guard) return;
+    updateImplicitMetrics();
     if (! guard) return;
     for (const auto& entry : state->entries.entries()) {
         QPointer<QQuickItem> item = entry.item;
@@ -262,7 +301,9 @@ void PageStack::startTransition(quint64 id) {
     const auto transition = state->entries.transition();
     if (! transition || transition->id != id) return;
     if (state->mode == Immediate) {
-        state->entries.finish(id);
+        QPointer<PageStack> guard(this);
+        if (sizeTransition()) sizeTransition()->complete();
+        if (guard) state->entries.finish(id);
         return;
     }
     const int offset = transition->operation == PageStackEntries::Operation::Push      ? 0
@@ -286,7 +327,7 @@ void PageStack::startTransition(quint64 id) {
         state->motions.append({ item, item->position(), item->opacity(), item->scale(), runner });
         ++state->pendingMotions;
     }
-    if (! state->pendingMotions) {
+    if (! state->pendingMotions && (! sizeTransition() || ! sizeTransition()->running())) {
         state->motionId = 0;
         state->entries.finish(id);
         return;
@@ -305,7 +346,15 @@ void PageStack::startTransition(quint64 id) {
 void PageStack::motionFinished(quint64 id) {
     const auto state = m_state;
     if (state->motionId != id || state->closing) return;
-    if (--state->pendingMotions == 0) completeTransition();
+    --state->pendingMotions;
+    tryFinishTransition();
+}
+void PageStack::tryFinishTransition() {
+    const auto state = m_state;
+    if (state->closing || state->operating || ! state->motionId || state->pendingMotions ||
+        (sizeTransition() && sizeTransition()->running()))
+        return;
+    completeTransition();
 }
 void PageStack::stopMotions() {
     const auto state      = m_state;
@@ -324,10 +373,14 @@ void PageStack::completeTransition() {
     const auto state = m_state;
     if (state->operating || state->closing) return;
     const auto transition = state->entries.transition();
-    if (! transition) return;
+    if (! transition) {
+        if (sizeTransition()) sizeTransition()->complete();
+        return;
+    }
     state->operating = true;
     QPointer<PageStack> guard(this);
     stopMotions();
+    if (guard && sizeTransition()) sizeTransition()->complete();
     if (guard) state->entries.finish(transition->id);
     state->operating = false;
 }
@@ -351,8 +404,9 @@ void PageStack::geometryChange(const QRectF& geometry, const QRectF& old) {
     if (guard) layoutPages();
 }
 void PageStack::removePage(quint64 id) {
-    const auto                  state = m_state;
-    const auto                  page  = state->pages.take(id);
+    const auto state = m_state;
+    const auto page  = state->pages.take(id);
+    for (const auto& connection : page.sizeConnections) disconnect(connection);
     QPointer<PageStack>         guard(this);
     QPointer<PageStackAttached> properties = page.item ? attached(page.item) : nullptr;
     if (properties) properties->m_removing = true;

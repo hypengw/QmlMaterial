@@ -2,6 +2,7 @@
 
 #include "qml_material/control/control.hpp"
 #include <memory>
+#include "qml_material/anim/size_transition.hpp"
 
 QT_BEGIN_NAMESPACE
 class QQuickTransition;
@@ -19,6 +20,8 @@ class QML_MATERIAL_API PageStack : public Control {
     Q_PROPERTY(int depth READ depth NOTIFY depthChanged FINAL)
     Q_PROPERTY(bool empty READ empty NOTIFY depthChanged FINAL)
     Q_PROPERTY(bool busy READ busy NOTIFY busyChanged FINAL)
+    Q_PROPERTY(SizeTransition* sizeTransition READ sizeTransition WRITE setSizeTransition NOTIFY
+                   sizeTransitionChanged FINAL)
     Q_PROPERTY(QQuickTransition* pushEnter READ pushEnter WRITE setPushEnter NOTIFY
                    transitionsChanged FINAL)
     Q_PROPERTY(
@@ -55,6 +58,9 @@ public:
     int                       depth() const;
     bool                      empty() const { return depth() == 0; }
     bool                      busy() const;
+    SizeTransition*           sizeTransition() const;
+    void                      setSizeTransition(SizeTransition*);
+    Q_SIGNAL void             sizeTransitionChanged();
     QQuickTransition*         pushEnter() const;
     QQuickTransition*         pushExit() const;
     QQuickTransition*         popEnter() const;
@@ -85,9 +91,10 @@ public:
     Q_SIGNAL void             entryAdded(quint64 id, QQuickItem* item);
 
 protected:
-    void componentComplete() override;
-    void geometryChange(const QRectF&, const QRectF&) override;
-    bool childMouseEventFilter(QQuickItem*, QEvent*) override;
+    void   componentComplete() override;
+    void   geometryChange(const QRectF&, const QRectF&) override;
+    bool   childMouseEventFilter(QQuickItem*, QEvent*) override;
+    QSizeF measureImplicitContent() const override;
 
 private:
     struct State;
@@ -98,6 +105,7 @@ private:
     void                   removePage(quint64);
     void                   startTransition(quint64);
     void                   motionFinished(quint64);
+    void                   tryFinishTransition();
     void                   stopMotions();
 };
 

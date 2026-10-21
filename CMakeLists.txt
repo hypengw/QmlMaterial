@@ -324,6 +324,8 @@ set(SOURCES
     src/control/panel.cpp
     src/control/page.cpp
     src/control/page_stack.cpp
+    src/anim/size_transition.cpp
+    include/qml_material/anim/size_transition.hpp
     src/control/page_container.cpp
     include/qml_material/control/page_container.hpp
     src/control/page_stack_entries.cpp
