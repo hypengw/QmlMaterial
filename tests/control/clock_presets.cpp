@@ -109,6 +109,47 @@ private slots:
         QCOMPARE(clock.dateTime(), previous);
     }
 
+    void localAndUtc() {
+        const auto  instant = utc("2026-12-31T23:59:59Z");
+        ClockSource source;
+        source.setMode(ClockSource::Fixed);
+        source.setFixedDateTime(instant);
+        TestClock clock;
+        clock.setSource(&source);
+        clock.componentComplete();
+        const auto verifyTime = [&](const QDateTime& expected) {
+            QCOMPARE(clock.dateTime().toMSecsSinceEpoch(), instant.toMSecsSinceEpoch());
+            QCOMPARE(clock.dateTime().date(), expected.date());
+            QCOMPARE(clock.dateTime().time(), expected.time());
+            QCOMPARE(clock.dateTime().offsetFromUtc(), expected.offsetFromUtc());
+        };
+        QVERIFY(clock.timeZoneId().isEmpty());
+        verifyTime(instant.toLocalTime());
+        QSignalSpy zones(&clock, &Clock::timeZoneIdChanged);
+        clock.setTimeZoneId("UTC");
+        QCOMPARE(clock.timeZoneId(), QByteArray("UTC"));
+        QCOMPARE(zones.size(), 1);
+        verifyTime(instant.toUTC());
+        clock.setTimeZoneId("UTC");
+        QCOMPARE(zones.size(), 1);
+        clock.setTimeZoneId("Invalid/Zone");
+        QCOMPARE(clock.timeZoneId(), QByteArray("UTC"));
+        QCOMPARE(zones.size(), 1);
+        verifyTime(instant.toUTC());
+#if ! QT_CONFIG(timezone)
+        clock.setTimeZoneId("Asia/Shanghai");
+        QCOMPARE(clock.timeZoneId(), QByteArray("UTC"));
+        QCOMPARE(zones.size(), 1);
+        verifyTime(instant.toUTC());
+#endif
+        clock.setTimeZoneId({});
+        QVERIFY(clock.timeZoneId().isEmpty());
+        QCOMPARE(zones.size(), 2);
+        verifyTime(instant.toLocalTime());
+        clock.setTimeZoneId({});
+        QCOMPARE(zones.size(), 2);
+    }
+
     void zonesAndDst() {
         ClockSource source;
         source.setMode(ClockSource::Fixed);

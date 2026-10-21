@@ -53,9 +53,10 @@ public:
     Q_ENUM(Preset)
     explicit Clock(QQuickItem* parent = nullptr);
     ~Clock() override;
-    ClockSource*          source() const;
-    void                  setSource(ClockSource*);
-    void                  resetSource();
+    ClockSource* source() const;
+    void         setSource(ClockSource*);
+    void         resetSource();
+    // An empty ID uses local time; UTC is supported even without Qt's timezone feature.
     QByteArray            timeZoneId() const;
     void                  setTimeZoneId(const QByteArray&);
     TimeState::HourFormat hourFormat() const;

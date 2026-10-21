@@ -17,8 +17,9 @@ struct Clock::Private {
     std::unique_ptr<ClockSource::Subscription> subscription;
     std::unique_ptr<ItemActivity>              activity;
     QByteArray                                 zone;
-    TimeState::HourFormat                      format = TimeState::LocaleFormat;
-    Preset                                     preset = Analog;
+    QTimeZone                                  timeZone = QTimeZone::LocalTime;
+    TimeState::HourFormat                      format   = TimeState::LocaleFormat;
+    Preset                                     preset   = Analog;
     bool seconds = false, date = false, period = true, complete = false, active = false;
     struct Snapshot {
         QDateTime time;
@@ -98,8 +99,19 @@ void Clock::updateActivity() {
 }
 QByteArray Clock::timeZoneId() const { return d->zone; }
 void       Clock::setTimeZoneId(const QByteArray& value) {
-    if (d->zone == value || (! value.isEmpty() && ! QTimeZone(value).isValid())) return;
-    d->zone = value;
+    if (d->zone == value) return;
+    QTimeZone timeZone = QTimeZone::LocalTime;
+    if (! value.isEmpty()) {
+#if QT_CONFIG(timezone)
+        timeZone = QTimeZone(value);
+#else
+        if (value != "UTC") return;
+        timeZone = QTimeZone::UTC;
+#endif
+        if (! timeZone.isValid()) return;
+    }
+    d->zone     = value;
+    d->timeZone = timeZone;
     QPointer<Clock> guard(this);
     refreshSnapshot();
     if (guard && ! QQmlData::wasDeleted(this)) Q_EMIT timeZoneIdChanged();
@@ -167,8 +179,7 @@ qreal     Clock::secondAngle() const { return d->snapshot.secondAngle; }
 void      Clock::updateSnapshot(const QDateTime& instant) {
     if (! d->complete || ! instant.isValid() || QQmlData::wasDeleted(this)) return;
     Private::Snapshot next;
-    next.time =
-        instant.toTimeZone(d->zone.isEmpty() ? QTimeZone::systemTimeZone() : QTimeZone(d->zone));
+    next.time       = instant.toTimeZone(d->timeZone);
     const auto time = next.time.time();
     const auto loc  = locale();
     next.is24       = d->format == TimeState::LocaleFormat ? time_format::uses24Hour(loc)
