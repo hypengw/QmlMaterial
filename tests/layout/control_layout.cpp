@@ -2,6 +2,7 @@
 #include <QColor>
 #include <QFont>
 #include <QFontDatabase>
+#include <QFontMetricsF>
 #include <QFile>
 #include <QGuiApplication>
 #include <QQmlComponent>
@@ -22,6 +23,7 @@
 #include "qml_material/control/panel.hpp"
 #include "qml_material/control/dialog.hpp"
 #include "qml_material/control/color_picker_button.hpp"
+#include "qml_material/control/combo_box.hpp"
 #include "qml_material/style/material_state.hpp"
 #include "qml_material/style/list_item_state.hpp"
 #include "qml_material/style/text_field_state.hpp"
@@ -1152,6 +1154,80 @@ private slots:
         QCOMPARE(comboBox->property("rightPadding").toReal(),
                  horizontalPadding + indicatorSize + indicatorSpacing);
         QCOMPARE(comboBox->property("resolvedFontSize").toInt(), fontSize);
+    }
+
+    void comboBoxImplicitContentWidth_data() {
+        QTest::addColumn<bool>("editable");
+        QTest::newRow("display") << false;
+        QTest::newRow("editable") << true;
+    }
+
+    void comboBoxImplicitContentWidth() {
+        QFETCH(bool, editable);
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+
+            MD.ComboBox {
+                property bool rtl: false
+                LayoutMirroring.enabled: rtl
+                textRole: "text"
+                valueRole: "value"
+                model: ListModel {}
+                Component.onCompleted: {
+                    model.append({ text: "Standard", value: 0 });
+                    model.append({ text: "Higher", value: 1 });
+                    model.append({ text: "Exhigh", value: 2 });
+                    model.append({ text: "Lossless", value: 3 });
+                    currentIndex = indexOfValue(2);
+                }
+            }
+        )",
+                          QUrl(QStringLiteral("qrc:/tests/combo-box-implicit-width.qml")));
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* combo = qobject_cast<qml_material::ComboBox*>(object.get());
+        QVERIFY(combo);
+        combo->setParentItem(m_window.contentItem());
+        combo->setEditable(editable);
+        QString    widthFailure;
+        const auto fits = [&] {
+            settle(combo);
+            const auto text      = editable ? combo->editText() : combo->displayText();
+            const auto textWidth = QFontMetricsF(combo->font()).horizontalAdvance(text);
+            widthFailure  = QStringLiteral("text=%1 width=%2 implicit=%3 content=%4 expected=%5")
+                                .arg(text)
+                                .arg(combo->width())
+                                .arg(combo->implicitWidth())
+                                .arg(combo->contentItem()->width())
+                                .arg(textWidth);
+            auto* display = itemWithText(combo->contentItem(), combo->displayText());
+            return combo->contentItem()->width() + 0.01 >= textWidth &&
+                   (editable || (display && display->property("truncated").isValid() &&
+                                 ! display->property("truncated").toBool()));
+        };
+        QCOMPARE(combo->currentText(), QStringLiteral("Exhigh"));
+        QVERIFY2(fits(), qPrintable(widthFailure));
+        combo->setCurrentIndex(3);
+        QCOMPARE(combo->currentText(), QStringLiteral("Lossless"));
+        QVERIFY(fits());
+        if (editable)
+            combo->setEditText(QStringLiteral("A longer editable quality"));
+        else
+            combo->setDisplayText(QStringLiteral("A longer display quality"));
+        QVERIFY(fits());
+        auto font = combo->font();
+        font.setPixelSize(28);
+        combo->setFont(font);
+        QVERIFY(fits());
+        combo->setProperty("rtl", true);
+        QVERIFY(fits());
+        combo->setWidth(64);
+        settle(combo);
+        QCOMPARE(combo->width(), 64);
+        combo->resetWidth();
+        QVERIFY(fits());
     }
 
     void colorPickerSwatchDoesNotOverlapHexText() {

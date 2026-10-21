@@ -63,6 +63,8 @@ MD.ComboBoxBase {
     }
 
     contentItem: MD.TextFieldBase {
+        implicitWidth: control.editable ? contentWidth : m_display_text.implicitWidth
+        implicitHeight: control.editable ? contentHeight : m_display_text.implicitHeight
         interactionSource: control.interactionSource
         opacity: control.mdState.contentOpacity
         font: control.font
@@ -83,6 +85,7 @@ MD.ComboBoxBase {
         verticalAlignment: TextInput.AlignVCenter
 
         MD.Text {
+            id: m_display_text
             anchors.fill: parent
             visible: !control.editable
             text: control.displayText
