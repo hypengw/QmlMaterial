@@ -913,8 +913,7 @@ endif()
 
 if(NOT QML_MATERIAL_BUILD_TYPE MATCHES STATIC)
   include(CMakePackageConfigHelpers)
-  install(FILES doc/licenses/androidx-shapes-Apache-2.0.txt
-                doc/material-shapes-sources.md
+  install(FILES LICENSE.androidx
           DESTINATION share/licenses/qml_material)
   write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/${LIBNAME}-config-version.cmake"
