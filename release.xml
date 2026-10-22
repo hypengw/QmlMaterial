@@ -1,4 +1,13 @@
 <releases>
+  <release version="0.6.1" date="2026-10-22">
+    <description>
+      <ul>
+        <li>Add SizeTransition and PageStack size coordination.</li>
+        <li>Fix ComboBox implicit content sizing.</li>
+        <li>Fix license installation.</li>
+      </ul>
+    </description>
+  </release>
   <release version="0.6.0" date="2026-10-21">
     <description>
       <p>Breaking changes:</p>
