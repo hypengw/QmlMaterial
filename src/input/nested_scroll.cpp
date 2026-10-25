@@ -539,37 +539,36 @@ private:
         event->point(0).setAccepted();
         event->accept();
         QPointer<NestedScrollHandler> guard(this);
+        QPointF                       delta = -QPointF(event->pixelDelta());
+        const bool smooth                   = delta.isNull() && event->phase() == Qt::NoScrollPhase;
+        if (delta.isNull())
+            delta = -QPointF(event->angleDelta()) / 120 *
+                    (24.0 * qGuiApp->styleHints()->wheelScrollLines());
+        if (smooth && delta.isNull()) return;
+        if (m_wheel && m_smoothWheel != smooth) stop(false);
+        if (! guard) return;
         if (! m_wheel) {
             stop();
             if (! guard) return;
             watch(chainFor(m_config->item()));
-            m_wheel = true;
+            m_wheel       = true;
+            m_smoothWheel = smooth;
             if (! begin()) return;
             m_motionPosition = {};
         }
-        QPointF    delta  = -QPointF(event->pixelDelta());
-        const bool smooth = delta.isNull() && event->phase() == Qt::NoScrollPhase;
-        if (delta.isNull())
-            delta = -QPointF(event->angleDelta()) / 120 *
-                    (24.0 * qGuiApp->styleHints()->wheelScrollLines());
         delta = vectorToScene(m_config->item(), delta);
         if (smooth) {
-            const auto x = m_motionX.active()
-                               ? m_motionX.sample(now())
-                               : ScrollMotion::Sample { m_motionPosition.x(), 0, true };
-            const auto y = m_motionY.active()
-                               ? m_motionY.sample(now())
-                               : ScrollMotion::Sample { m_motionPosition.y(), 0, true };
-            m_motionX.smooth(m_motionPosition.x(),
-                             x.velocity,
-                             (m_motionX.active() ? m_motionX.target() : m_motionPosition.x()) +
-                                 delta.x(),
-                             now());
-            m_motionY.smooth(m_motionPosition.y(),
-                             y.velocity,
-                             (m_motionY.active() ? m_motionY.target() : m_motionPosition.y()) +
-                                 delta.y(),
-                             now());
+            const qreal time = now();
+            if (delta.x())
+                m_motionX.wheel(m_motionPosition.x(),
+                                (m_motionX.active() ? m_motionX.target() : m_motionPosition.x()) +
+                                    delta.x(),
+                                time);
+            if (delta.y())
+                m_motionY.wheel(m_motionPosition.y(),
+                                (m_motionY.active() ? m_motionY.target() : m_motionPosition.y()) +
+                                    delta.y(),
+                                time);
             requestFrame();
         } else {
             QPointer<NestedScrollHandler> guard(this);
@@ -588,9 +587,10 @@ private:
     }
     void advance() {
         if (! m_motionX.active() && ! m_motionY.active()) return;
-        const auto x = m_motionX.active() ? m_motionX.sample(now())
+        const auto time = now();
+        const auto x = m_motionX.active() ? m_motionX.sample(time)
                                           : ScrollMotion::Sample { m_motionPosition.x(), 0, true };
-        const auto y = m_motionY.active() ? m_motionY.sample(now())
+        const auto y = m_motionY.active() ? m_motionY.sample(time)
                                           : ScrollMotion::Sample { m_motionPosition.y(), 0, true };
         const QPointF next(x.position, y.position);
         const auto    delta = next - m_motionPosition;
@@ -616,8 +616,8 @@ private:
     QPointer<QQuickWindow>                  m_window;
     QPointer<ScrollFrameItem>               m_frame;
     int                                     m_pointId = -1;
-    bool          m_pressed = false, m_dragging = false, m_wheel = false, m_stopping = false,
-                  m_started  = false;
+    bool          m_pressed = false, m_dragging = false, m_wheel = false, m_smoothWheel = false,
+                  m_stopping = false, m_started = false;
     bool          m_applying = false;
     quint64       m_revision = 0;
     QPointF       m_press, m_last, m_velocity, m_motionPosition;

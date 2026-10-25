@@ -210,6 +210,125 @@ private slots:
         motion.fling(10, -1000, 1000, 5);
         QCOMPARE(motion.sample(6).position, -490.0);
     }
+    void wheelDuration_data() {
+        QTest::addColumn<double>("distance");
+        QTest::addColumn<double>("duration");
+        QTest::newRow("notch") << 72.0 << 0.2;
+        QTest::newRow("medium") << 300.0 << 0.15;
+        QTest::newRow("fast") << 480.0 << 0.1;
+        QTest::newRow("large-reverse") << -1000.0 << 0.1;
+    }
+    void wheelDuration() {
+        QFETCH(double, distance);
+        QFETCH(double, duration);
+        ScrollMotion motion;
+        motion.wheel(0, distance, 0);
+        QCOMPARE(motion.mode(), ScrollMotion::Mode::Wheel);
+        QVERIFY(std::abs(motion.sample(duration / 2).position - distance / 2) < 1e-8);
+        QVERIFY(! motion.sample(duration - 0.00001).finished);
+        QCOMPARE(motion.sample(duration).position, distance);
+        QCOMPARE(motion.sample(duration).velocity, 0.0);
+        QVERIFY(motion.sample(duration).finished);
+    }
+    void wheelRetargetBetweenFrames() {
+        ScrollMotion motion;
+        motion.wheel(0, 72, 0);
+        const auto shown  = motion.sample(0.016);
+        const auto before = motion.sample(0.025);
+        QVERIFY(before.position > shown.position);
+        motion.wheel(shown.position, 144, 0.025);
+        QCOMPARE(motion.sample(0.025).position, before.position);
+        QCOMPARE(motion.sample(0.025).velocity, before.velocity);
+        const auto sameTarget = motion.sample(0.03);
+        motion.wheel(shown.position, 144, 0.03);
+        QCOMPARE(motion.sample(0.03).position, sameTarget.position);
+        QCOMPARE(motion.sample(0.03).velocity, sameTarget.velocity);
+        motion.translate(200);
+        QCOMPARE(motion.sample(0.03).position, sameTarget.position + 200);
+        QCOMPARE(motion.sample(1).position, 344.0);
+    }
+    void freeSpinningWheel_data() {
+        QTest::addColumn<int>("hz");
+        for (int hz : { 60, 90, 120, 144 }) QTest::newRow(qPrintable(QString::number(hz))) << hz;
+    }
+    void freeSpinningWheel() {
+        QFETCH(int, hz);
+        ScrollMotion motion;
+        double       shown = 0, target = 0, previous = 0;
+        int          nextFrame = 0;
+        for (int event = 0; event < 1000; ++event) {
+            const double time = event / 1000.0;
+            if (time >= double(nextFrame) / hz) {
+                shown = motion.active() ? motion.sample(time).position : 0;
+                ++nextFrame;
+            }
+            const auto before =
+                motion.active() ? motion.sample(time) : ScrollMotion::Sample { 0, 0, true };
+            // High-resolution wheel events accelerate and then decay during free spin.
+            target += event < 100 ? 0.1 + event * 0.1 : 10 * std::exp(-(event - 100) / 180.0);
+            motion.wheel(shown, target, time);
+            const auto after = motion.sample(time);
+            QCOMPARE(after.position, before.position);
+            QVERIFY(std::abs(after.velocity - before.velocity) < 1e-8);
+            QVERIFY(after.position >= previous);
+            QVERIFY(after.position <= target);
+            previous = after.position;
+        }
+        QCOMPARE(motion.sample(1.2).position, target);
+        QVERIFY(motion.sample(1.2).finished);
+    }
+    void wheelVelocityBoundAndReverse() {
+        ScrollMotion motion;
+        motion.wheel(0, 1000, 0);
+        const auto fast = motion.sample(0.05);
+        QVERIFY(fast.velocity > 1000);
+        motion.wheel(0, fast.position + 1, 0.05);
+        QCOMPARE(motion.sample(0.05).velocity, fast.velocity);
+        for (int i = 0; i <= 100; ++i) {
+            const auto sample = motion.sample(0.05 + i * 0.0001);
+            QVERIFY(sample.position >= fast.position);
+            QVERIFY(sample.position <= fast.position + 1.000001);
+        }
+        QVERIFY(motion.sample(0.06).finished);
+        motion.wheel(fast.position + 1, 0, 0.06);
+        QCOMPARE(motion.sample(0.06).position, fast.position + 1);
+        QCOMPARE(motion.sample(0.3).position, 0.0);
+        QVERIFY(motion.sample(0.3).finished);
+        motion.wheel(0, 100, 0.4);
+        const auto forward = motion.sample(0.45);
+        motion.wheel(0, -100, 0.45);
+        QCOMPARE(motion.sample(0.45).position, forward.position);
+        QCOMPARE(motion.sample(0.45).velocity, forward.velocity);
+        QCOMPARE(motion.sample(0.7).position, -100.0);
+        motion.stop();
+        motion.wheel(100, 100, 1);
+        QCOMPARE(motion.sample(1).position, 100.0);
+        QVERIFY(motion.sample(1).finished);
+    }
+    void wheelBurstAndDirectTakeover() {
+        QQuickRenderControl render;
+        QQuickWindow        window(&render);
+        Flickable           item(window.contentItem());
+        item.setSize({ 100, 100 });
+        item.setContentWidth(2000);
+        item.setContentHeight(2000);
+        item.setFlickableDirection(Flickable::HorizontalAndVerticalFlick);
+        for (int i = 0; i < 100; ++i) {
+            const auto result = item.consumeScroll({ 0.75, 0.75 }, Flickable::ScrollInput::Smooth);
+            QCOMPARE(result.consumed, QPointF(0.75, 0.75));
+        }
+        QVERIFY(item.isMoving());
+        // Precision input replaces queued wheel motion, even without ScrollBegin.
+        const qreal before  = item.contentY();
+        const qreal beforeX = item.contentX();
+        item.consumeScroll({ 0, 10 }, Flickable::ScrollInput::Direct, Qt::ScrollMomentum);
+        QCOMPARE(item.contentY(), before + 10);
+        item.consumeScroll({}, Flickable::ScrollInput::Direct, Qt::ScrollEnd);
+        QVERIFY(! item.isMoving());
+        render.polishItems();
+        QCOMPARE(item.contentY(), before + 10);
+        QCOMPARE(item.contentX(), beforeX);
+    }
     void translationAndRetarget() {
         ScrollMotion motion;
         motion.fling(0, 1000, 1000, 0);

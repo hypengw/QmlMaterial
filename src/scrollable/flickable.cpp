@@ -1176,21 +1176,22 @@ auto Flickable::consumeScroll(QPointF delta, ScrollInput input, Qt::ScrollPhase 
     const qreal now = m_motionClock.nsecsElapsed() / 1e9;
     for (Axis axis : { HorizontalAxis, VerticalAxis }) {
         auto& data = axisData(axis);
+        if (input == ScrollInput::Direct && data.motion.mode() == ScrollMotion::Mode::Wheel)
+            stopAxisMotion(axis);
+        if (! guard) return result;
         if (phase == Qt::ScrollEnd) data.platformScrolling = false;
         const qreal requested = axis == HorizontalAxis ? delta.x() : delta.y();
         if (! axisCanFlick(axis) || qFuzzyIsNull(requested)) continue;
         const bool  smooth   = input == ScrollInput::Smooth && window();
-        const bool  retarget = smooth && data.motion.mode() == ScrollMotion::Mode::Target;
+        const bool  retarget = smooth && data.motion.mode() == ScrollMotion::Mode::Wheel;
         const qreal current  = axisPosition(axis);
         const qreal base     = retarget ? data.motion.target() : current;
         const qreal target   = boundedPosition(axis, base + requested);
         qreal       consumed = target - base;
         if (smooth) {
             if (qFuzzyIsNull(consumed)) continue;
-            const auto  sample     = data.motion.sample(now);
-            const qreal velocity   = data.motion.active() ? sample.velocity : 0;
             data.platformScrolling = false;
-            data.motion.smooth(current, velocity, target, now);
+            data.motion.wheel(current, target, now);
             const bool wasFlicking = isFlicking();
             setAxisFlicking(axis, false);
             if (wasFlicking && ! isFlicking()) emit flickEnded();

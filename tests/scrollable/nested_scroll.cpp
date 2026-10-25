@@ -881,6 +881,52 @@ MD.Scrollable {
         QCOMPARE(inner->contentY(), 400);
         QTRY_VERIFY(! inner->isMoving() && ! outer->isMoving());
     }
+    void highResolutionWheelBurst() {
+        inner->setContentY(390);
+        for (int i = 0; i < 120; ++i) {
+            QWheelEvent event({ 100, 100 },
+                              window.mapToGlobal(QPoint(100, 100)),
+                              {},
+                              { 0, -2 },
+                              Qt::NoButton,
+                              Qt::NoModifier,
+                              Qt::NoScrollPhase,
+                              false);
+            QCoreApplication::sendEvent(&window, &event);
+            QVERIFY(event.isAccepted());
+        }
+        const qreal expected = 2 * 24 * qGuiApp->styleHints()->wheelScrollLines() - 10;
+        QTRY_VERIFY(std::abs(outer->contentY() - expected) < 0.001);
+        QTRY_VERIFY(! inner->isMoving() && ! outer->isMoving());
+        QCOMPARE(inner->contentY(), 400.0);
+        QVERIFY(std::abs(outer->contentY() - expected) < 0.001);
+        // Reversing after the burst must not encounter a stale target at the edge.
+        wheel({ 0, 20 }, Qt::ScrollBegin);
+        QCOMPARE(inner->contentY(), 400.0);
+        QVERIFY(std::abs(outer->contentY() - (expected - 20)) < 0.001);
+        wheel({}, Qt::ScrollEnd);
+    }
+    void precisionWheelReplacesSmooth() {
+        QWheelEvent event({ 100, 100 },
+                          window.mapToGlobal(QPoint(100, 100)),
+                          {},
+                          { 0, -120 },
+                          Qt::NoButton,
+                          Qt::NoModifier,
+                          Qt::NoScrollPhase,
+                          false);
+        QCoreApplication::sendEvent(&window, &event);
+        // A stream can change granularity without a platform ScrollBegin.
+        wheel({ 0, -12 });
+        QCOMPARE(inner->contentY(), 12.0);
+        wheel({}, Qt::ScrollEnd);
+        QVERIFY(! inner->isMoving() && ! outer->isMoving());
+        QSignalSpy frames(&window, &QQuickWindow::afterAnimating);
+        window.update();
+        QTRY_VERIFY(! frames.isEmpty());
+        QCOMPARE(inner->contentY(), 12.0);
+        QCOMPARE(outer->contentY(), 0.0);
+    }
     void marginsAndOrigin() {
         inner->setTopMargin(20);
         inner->setContentY(-10);
