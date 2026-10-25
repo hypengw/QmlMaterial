@@ -7,8 +7,6 @@
 #include <QQmlEngine>
 #include <QQmlListProperty>
 #include <QQuickItem>
-#include <QVector>
-#include <QPointerEvent>
 #include <memory>
 #include <optional>
 #include "qml_material/scrollable/scroll_motion.hpp"
@@ -219,6 +217,27 @@ public:
     Q_INVOKABLE void flick(qreal xVelocity, qreal yVelocity);
     Q_INVOKABLE void cancelFlick();
 
+    enum class ScrollSource
+    {
+        Drag,
+        Wheel,
+        Fling
+    };
+    enum class ScrollEnd
+    {
+        Finished,
+        Cancelled
+    };
+    Qt::Orientations scrollAxes() const;
+    QPointF          boundedScrollPosition(QPointF position) const;
+    bool             acceptsScrollPoint(QPointF position) const;
+    void             beginScroll(ScrollSource source);
+    void             cancelScrollActivity();
+    // Ends pointer dragging while the same activity may continue as a fling.
+    void releaseScroll(QPointF velocity);
+    void updateScrollActivity(ScrollSource source, Qt::Orientations axes, QPointF velocity = {});
+    void endScroll(ScrollEnd reason);
+
     enum class ScrollInput
     {
         Direct,
@@ -228,10 +247,14 @@ public:
         QPointF consumed;
         QPointF remaining;
     };
+    // Applies actual content displacement synchronously, without animation or propagation.
+    ScrollConsumption applyScrollDelta(QPointF delta, ScrollSource source, QPointF velocity = {});
     // Positive deltas increase content offsets; smooth consumption reserves target distance.
     ScrollConsumption consumeScroll(QPointF delta, ScrollInput input,
                                     Qt::ScrollPhase phase = Qt::NoScrollPhase);
 
+    Q_SIGNAL void scrollInterrupted();
+    Q_SIGNAL void scrollGeometryAdjusted(QPointF delta);
     Q_SIGNAL void contentWidthChanged();
     Q_SIGNAL void contentHeightChanged();
     Q_SIGNAL void contentXChanged();
@@ -283,18 +306,10 @@ protected:
     virtual void scrollActivityCancelled();
     void         setVerticalScrollTarget(qreal position);
     void         setHorizontalScrollTarget(qreal position);
-    auto         childMouseEventFilter(QQuickItem* item, QEvent* event) -> bool override;
-    auto         mousePressEvent(QMouseEvent* event) -> void override;
-    auto         mouseMoveEvent(QMouseEvent* event) -> void override;
-    auto         mouseReleaseEvent(QMouseEvent* event) -> void override;
-    auto         touchEvent(QTouchEvent* event) -> void override;
-    auto         wheelEvent(QWheelEvent* event) -> void override;
     auto         timerEvent(QTimerEvent* event) -> void override;
     auto         updatePolish() -> void override;
     auto geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry) -> void override;
     auto componentComplete() -> void override;
-    auto mouseUngrabEvent() -> void override;
-    auto touchUngrabEvent() -> void override;
 
 protected:
     virtual auto minXExtent() const -> qreal;
@@ -309,7 +324,6 @@ protected:
 
 private:
     friend class FlickableVisibleArea;
-    friend class ScrollParticipant;
 
     enum Axis
     {
@@ -318,29 +332,18 @@ private:
     };
 
     struct AxisData {
-        qreal                         position { 0 };
-        qreal                         viewSize { -1 };
-        qreal                         startMargin { 0 };
-        qreal                         endMargin { 0 };
-        qreal                         pressPos { 0 };
-        qreal                         pressContentPos { 0 };
-        qreal                         lastPos { 0 };
-        qreal                         dragStartOffset { 0 };
-        qreal                         previousDragDelta { 0 };
-        qreal                         velocity { 0 };
-        qreal                         smoothVelocity { 0 };
-        ScrollMotion                  motion;
-        QVector<QPair<qint64, qreal>> velocityBuffer;
-        bool                          atEnd { false };
-        bool                          atBeginning { true };
-        bool                          moving { false };
-        bool                          flicking { false };
-        bool                          dragging { false };
-        bool                          platformScrolling { false };
-
-        auto resetDrag() -> void;
-        auto addVelocitySample(qint64 timestamp, qreal position, qreal maxVelocity) -> void;
-        auto updateVelocity() -> void;
+        qreal        position { 0 };
+        qreal        viewSize { -1 };
+        qreal        startMargin { 0 };
+        qreal        endMargin { 0 };
+        qreal        smoothVelocity { 0 };
+        ScrollMotion motion;
+        bool         atEnd { false };
+        bool         atBeginning { true };
+        bool         moving { false };
+        bool         flicking { false };
+        bool         dragging { false };
+        bool         platformScrolling { false };
     };
 
     static auto dataAppend(QQmlListProperty<QObject>* property, QObject* object) -> void;
@@ -384,20 +387,9 @@ private:
     auto stopAxisMotion(Axis axis) -> void;
     auto requestMotionFrame() -> void;
     auto attachMotionWindow(QQuickWindow* window) -> void;
-    void cancelScrollActivity();
     auto advanceAxis(Axis axis, qreal now) -> void;
     auto fixup(Axis axis) -> void;
     auto isAxisAnimating(Axis axis) const -> bool;
-
-    auto handlePress(const QPointF& position, qint64 timestamp) -> void;
-    auto handleMove(const QPointF& position, qint64 timestamp, Qt::MouseButtons buttons) -> void;
-    auto handleRelease(const QPointF& position, qint64 timestamp) -> void;
-    auto cancelInteraction() -> void;
-    auto buttonsAccepted(const QSinglePointEvent* event) const -> bool;
-    auto pointerAccepted(QQuickItem* receiver, QEvent* event) const -> bool;
-    auto acceptsPoint(const QPointF& point) const -> bool;
-    auto eventPosition(QQuickItem* receiver, QEvent* event) const -> QPointF;
-    auto ignorePointerEvent(QEvent* event) const -> void;
 
 private:
     QQuickItem*             m_contentItem { nullptr };
@@ -415,16 +407,12 @@ private:
     bool                    m_motionWindowAttached = false;
     QElapsedTimer           m_motionClock;
     QBasicTimer             m_dragVelocityTimer;
-    QPointF                 m_pressPos;
-    QPointF                 m_lastPos;
-    qint64                  m_lastPosTime { -1 };
-    qint64                  m_lastPressTime { -1 };
     FlickableDirection      m_flickableDirection { AutoFlickDirection };
     InputMaskMode           m_inputMaskMode { Viewport };
     qreal                   m_deceleration { 5000 };
     qreal                   m_maxVelocity { 2500 };
-    bool                    m_pressed { false };
-    bool                    m_stealMouse { false };
+    bool                    m_scrollActive { false };
+    quint64                 m_activityRevision { 0 };
     bool                    m_interactive { true };
     bool                    m_pixelAligned { false };
     bool                    m_syncDrag { false };

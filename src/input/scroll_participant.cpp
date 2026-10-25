@@ -60,22 +60,17 @@ QPointF ScrollParticipant::position() const {
     return {};
 }
 QPointF ScrollParticipant::bounded(QPointF p) const {
-    if (m_owned)
-        return { m_owned->boundedPosition(Flickable::HorizontalAxis, p.x()),
-                 m_owned->boundedPosition(Flickable::VerticalAxis, p.y()) };
+    if (m_owned) return m_owned->boundedScrollPosition(p);
     return m_qt ? QtViewportAccess::bound(m_qt, p) : QPointF();
 }
 Qt::Orientations ScrollParticipant::axes() const {
     if (m_qt) return QtViewportAccess::directions(m_qt);
-    Qt::Orientations result;
-    if (m_owned && m_owned->xflick()) result |= Qt::Horizontal;
-    if (m_owned && m_owned->yflick()) result |= Qt::Vertical;
-    return result;
+    return m_owned ? m_owned->scrollAxes() : Qt::Orientations();
 }
 bool ScrollParticipant::accepts(QPointF scene) const {
     if (! available()) return false;
     const auto p = item()->mapFromScene(scene);
-    return m_owned ? m_owned->acceptsPoint(p) : m_qt->contains(p);
+    return m_owned ? m_owned->acceptsScrollPoint(p) : m_qt->contains(p);
 }
 qreal ScrollParticipant::deceleration() const {
     return m_owned ? m_owned->flickDeceleration() : m_qt ? m_qt->flickDeceleration() : 1500;
@@ -83,12 +78,12 @@ qreal ScrollParticipant::deceleration() const {
 qreal ScrollParticipant::maximumVelocity() const {
     return m_owned ? m_owned->maximumFlickVelocity() : m_qt ? m_qt->maximumFlickVelocity() : 2500;
 }
-void ScrollParticipant::begin() {
+bool ScrollParticipant::synchronousDrag() const {
+    return m_owned ? m_owned->synchronousDrag() : m_qt && m_qt->synchronousDrag();
+}
+void ScrollParticipant::begin(Flickable::ScrollSource source) {
     if (m_owned) {
-        m_owned->scrollInputStarted();
-        if (! m_owned) return;
-        m_owned->cancelInteraction();
-        if (m_owned) m_owned->cancelFlick();
+        m_owned->beginScroll(source);
     } else if (m_qt) {
         auto* d = QQuickFlickablePrivate::get(m_qt);
         d->clearDelayedPress();
@@ -104,34 +99,20 @@ QPointF ScrollParticipant::consume(QPointF delta, Activity activity, QPointF vel
         return available() && current();
     };
     if (! live()) return {};
+    if (m_owned) {
+        const auto source = activity == Activity::Drag    ? Flickable::ScrollSource::Drag
+                            : activity == Activity::Fling ? Flickable::ScrollSource::Fling
+                                                          : Flickable::ScrollSource::Wheel;
+        return m_owned->applyScrollDelta(delta, source, velocity).consumed;
+    }
     const auto before    = position();
     auto       after     = bounded(before + delta);
     const auto direction = axes();
     if (! direction.testFlag(Qt::Horizontal)) after.setX(before.x());
     if (! direction.testFlag(Qt::Vertical)) after.setY(before.y());
-    if (m_owned && activity == Activity::Drag && (after != before || m_owned->isDragging())) {
-        m_owned->setDragVelocity(velocity);
-        if (! live()) return {};
-    }
     if (after == before) return {};
     const bool x = after.x() != before.x(), y = after.y() != before.y();
-    if (m_owned) {
-        m_owned->setAxisPosition(Flickable::HorizontalAxis, after.x());
-        if (! live()) return after - before;
-        m_owned->setAxisPosition(Flickable::VerticalAxis, after.y());
-        if (! live()) return after - before;
-        if (activity == Activity::Drag) m_owned->draggingStarting(x, y);
-        if (! live()) return after - before;
-        if (activity == Activity::Fling) m_owned->flickingStarted(x, y);
-        if (! live()) return after - before;
-        if (x) m_owned->m_hData.platformScrolling = true;
-        if (y) m_owned->m_vData.platformScrolling = true;
-        m_owned->movementStarting();
-        if (! live()) return after - before;
-        m_owned->setAxisVelocity(Flickable::HorizontalAxis, x ? velocity.x() : 0);
-        if (! live()) return after - before;
-        m_owned->setAxisVelocity(Flickable::VerticalAxis, y ? velocity.y() : 0);
-    } else if (m_qt) {
+    if (m_qt) {
         auto* d = QQuickFlickablePrivate::get(m_qt);
         d->hData.move.setValue(-after.x());
         if (! live()) return after - before;
@@ -151,16 +132,19 @@ QPointF ScrollParticipant::consume(QPointF delta, Activity activity, QPointF vel
     }
     return position() - before;
 }
-void ScrollParticipant::end(std::optional<QPointF> releaseVelocity) {
+void ScrollParticipant::release(QPointF velocity) {
+    if (m_owned)
+        m_owned->releaseScroll(velocity);
+    else if (m_qt) {
+        auto* d = QQuickFlickablePrivate::get(m_qt);
+        releaseNativeGrab(d);
+        d->draggingEnding();
+    }
+}
+void ScrollParticipant::end(bool cancelled) {
     if (m_owned) {
-        m_owned->m_hData.platformScrolling = false;
-        m_owned->m_vData.platformScrolling = false;
-        m_owned->draggingEnding(releaseVelocity);
-        if (! m_owned) return;
-        m_owned->setAxisVelocity(Flickable::HorizontalAxis, 0);
-        if (! m_owned) return;
-        m_owned->setAxisVelocity(Flickable::VerticalAxis, 0);
-        if (m_owned) m_owned->movementEnding();
+        m_owned->endScroll(cancelled ? Flickable::ScrollEnd::Cancelled
+                                     : Flickable::ScrollEnd::Finished);
     } else if (m_qt) {
         auto* d = QQuickFlickablePrivate::get(m_qt);
         releaseNativeGrab(d);

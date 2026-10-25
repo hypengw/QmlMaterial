@@ -3,22 +3,77 @@
 #include <QQuickWindow>
 #include <QWheelEvent>
 #include <QtTest>
+#include <QtQuick/private/qquickwindow_p.h>
+#include <QtQuick/private/qquickdeliveryagent_p_p.h>
 
 using namespace qml_material;
 
 class GeometryFlickable : public Flickable {
 public:
     using Flickable::Flickable;
-    using Flickable::mouseMoveEvent;
-    using Flickable::mousePressEvent;
-    using Flickable::touchEvent;
-    using Flickable::touchUngrabEvent;
     using Flickable::updateContentGeometry;
 };
 
 class ScrollMotionTest : public QObject {
     Q_OBJECT
+    QQuickWindow inputWindow;
+    void         deliver(Flickable& item, QEvent* event) {
+        if (! item.window()) item.setParentItem(inputWindow.contentItem());
+        QCoreApplication::sendEvent(&inputWindow, event);
+    }
 private slots:
+    void init() {
+        inputWindow.resize(100, 100);
+        inputWindow.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&inputWindow));
+    }
+    void cleanup() { inputWindow.hide(); }
+
+    void actualConsumption() {
+        Flickable item;
+        item.setSize({ 100, 100 });
+        item.setContentWidth(150);
+        item.setContentHeight(180);
+        item.setFlickableDirection(Flickable::HorizontalAndVerticalFlick);
+        QSignalSpy released(&item, &Flickable::dragReleased);
+        item.beginScroll(Flickable::ScrollSource::Drag);
+        const auto first =
+            item.applyScrollDelta({ 30, 70 }, Flickable::ScrollSource::Drag, { 300, 700 });
+        QCOMPARE(first.consumed, QPointF(30, 70));
+        QCOMPARE(first.remaining, QPointF());
+        const auto second = item.applyScrollDelta({ 30, 30 }, Flickable::ScrollSource::Drag);
+        QCOMPARE(second.consumed, QPointF(20, 10));
+        QCOMPARE(second.remaining, QPointF(10, 20));
+        QCOMPARE(QPointF(item.contentX(), item.contentY()), first.consumed + second.consumed);
+        item.releaseScroll({ 300, 0 });
+        QCOMPARE(released.size(), 1);
+        QVERIFY(! item.isDragging());
+        QVERIFY(item.isMoving());
+        item.endScroll(Flickable::ScrollEnd::Finished);
+        QVERIFY(! item.isMoving());
+        item.beginScroll(Flickable::ScrollSource::Drag);
+        item.applyScrollDelta({ -10, 0 }, Flickable::ScrollSource::Drag);
+        item.endScroll(Flickable::ScrollEnd::Cancelled);
+        QCOMPARE(released.size(), 1);
+        QVERIFY(! item.isDragging());
+    }
+    void consumptionInterruptedByCallback() {
+        Flickable item;
+        item.setSize({ 100, 100 });
+        item.setContentHeight(1000);
+        item.beginScroll(Flickable::ScrollSource::Drag);
+        bool interrupted = false;
+        connect(&item, &Flickable::contentYChanged, &item, [&] {
+            if (! interrupted) {
+                interrupted = true;
+                item.setContentY(200);
+            }
+        });
+        item.applyScrollDelta({ 0, 50 }, Flickable::ScrollSource::Drag, { 0, 1000 });
+        QCOMPARE(item.contentY(), 200.0);
+        QVERIFY(! item.isDragging());
+        QVERIFY(! item.isMoving());
+    }
     void directPositionReplacesInput_data() {
         QTest::addColumn<bool>("horizontal");
         QTest::addColumn<bool>("drag");
@@ -46,10 +101,10 @@ private slots:
                               Qt::LeftButton,
                               Qt::LeftButton,
                               Qt::NoModifier);
-            item.mousePressEvent(&press);
+            deliver(item, &press);
             QMouseEvent move(
                 QEvent::MouseMove, moved, moved, Qt::NoButton, Qt::LeftButton, Qt::NoModifier);
-            item.mouseMoveEvent(&move);
+            deliver(item, &move);
             QVERIFY(item.isDragging());
         } else {
             item.consumeScroll(horizontal ? QPointF(50, 0) : QPointF(0, 50),
@@ -67,7 +122,7 @@ private slots:
         QVERIFY(! item.keepTouchGrab());
         QMouseEvent stale(
             QEvent::MouseMove, moved, moved, Qt::NoButton, Qt::LeftButton, Qt::NoModifier);
-        item.mouseMoveEvent(&stale);
+        deliver(item, &stale);
         QCOMPARE(horizontal ? item.contentX() : item.contentY(), 300.0);
         QCOMPARE(horizontal ? item.horizontalVelocity() : item.verticalVelocity(), 0.0);
     }
@@ -83,14 +138,14 @@ private slots:
                           Qt::LeftButton,
                           Qt::LeftButton,
                           Qt::NoModifier);
-        item.mousePressEvent(&press);
+        deliver(item, &press);
         QMouseEvent move(QEvent::MouseMove,
                          QPointF(50, 40),
                          QPointF(50, 40),
                          Qt::NoButton,
                          Qt::LeftButton,
                          Qt::NoModifier);
-        item.mouseMoveEvent(&move);
+        deliver(item, &move);
         QVERIFY(item.isDragging());
         const auto consumed =
             item.consumeScroll({ 0, 20 }, Flickable::ScrollInput::Direct, Qt::ScrollBegin);
@@ -106,7 +161,7 @@ private slots:
                               Qt::NoButton,
                               Qt::LeftButton,
                               Qt::NoModifier);
-        item.mouseMoveEvent(&staleMove);
+        deliver(item, &staleMove);
         QCOMPARE(item.contentY(), 70.0);
     }
     void samplingCadence_data() {
@@ -160,7 +215,7 @@ private slots:
         QTest::addColumn<int>("termination");
         QTest::newRow("empty-cancel") << 0;
         QTest::newRow("release-outside") << 1;
-        QTest::newRow("ungrab") << 2;
+        QTest::newRow("window-deactivate") << 2;
     }
     void touchTermination() {
         QFETCH(int, termination);
@@ -169,12 +224,21 @@ private slots:
         item.setContentHeight(1000);
         item.setFlickableDirection(Flickable::VerticalFlick);
         item.setSynchronousDrag(true);
-        auto*      device = QTest::createTouchDevice();
-        const auto touch  = [&](QEvent::Type type, QEventPoint::State state, int y, ulong time) {
-            QEventPoint point(0, state, QPointF(50, y), QPointF(50, y));
-            QTouchEvent event(type, device, Qt::NoModifier, { point });
-            event.setTimestamp(time);
-            item.touchEvent(&event);
+        item.setParentItem(inputWindow.contentItem());
+        item.setMaximumFlickVelocity(0);
+        static auto* device = QTest::createTouchDevice();
+        const auto   touch  = [&](QEvent::Type, QEventPoint::State state, int y, ulong) {
+            auto sequence = QTest::touchEvent(&inputWindow, device);
+            if (state == QEventPoint::Pressed)
+                sequence.press(0, { 50, y });
+            else if (state == QEventPoint::Released)
+                sequence.release(0, { 50, y });
+            else
+                sequence.move(0, { 50, y });
+            sequence.commit();
+            QQuickWindowPrivate::get(&inputWindow)
+                ->deliveryAgentPrivate()
+                ->flushFrameSynchronousEvents(&inputWindow);
         };
         touch(QEvent::TouchBegin, QEventPoint::State::Pressed, 90, 1000);
         touch(QEvent::TouchUpdate, QEventPoint::State::Updated, 40, 1050);
@@ -182,10 +246,10 @@ private slots:
         QCOMPARE(item.contentY(), 50.0);
         if (termination == 0) {
             QTouchEvent event(QEvent::TouchCancel, device);
-            item.touchEvent(&event);
-            QVERIFY(event.isAccepted());
+            deliver(item, &event);
         } else if (termination == 2) {
-            item.touchUngrabEvent();
+            QEvent event(QEvent::WindowDeactivate);
+            deliver(item, &event);
         } else {
             touch(QEvent::TouchUpdate, QEventPoint::State::Updated, -20, 1100);
             QCOMPARE(item.contentY(), 110.0);
@@ -197,6 +261,7 @@ private slots:
         const qreal offset = item.contentY();
         touch(QEvent::TouchUpdate, QEventPoint::State::Updated, 20, 1600);
         QCOMPARE(item.contentY(), offset);
+        QTest::touchEvent(&inputWindow, device).release(0, { 50, 20 }).commit();
     }
     void analyticFling() {
         ScrollMotion motion;
@@ -391,7 +456,6 @@ private slots:
         class WheelItem : public Flickable {
         public:
             using Flickable::Flickable;
-            using Flickable::wheelEvent;
         };
         WheelItem outer;
         outer.setSize({ 100, 100 });
@@ -409,13 +473,13 @@ private slots:
                           Qt::NoModifier,
                           Qt::ScrollUpdate,
                           true);
-        inner.wheelEvent(&event);
+        deliver(outer, &event);
         QVERIFY(event.isAccepted());
         QCOMPARE(inner.contentY(), 20.0);
         QCOMPARE(outer.contentY(), 30.0);
         QWheelEvent end(
             { 10, 10 }, { 10, 10 }, {}, {}, Qt::NoButton, Qt::NoModifier, Qt::ScrollEnd, false);
-        inner.wheelEvent(&end);
+        deliver(outer, &end);
         QVERIFY(! inner.isMoving());
         QVERIFY(! outer.isMoving());
     }
@@ -464,14 +528,14 @@ private slots:
                           Qt::LeftButton,
                           Qt::LeftButton,
                           Qt::NoModifier);
-        item.mousePressEvent(&press);
+        deliver(item, &press);
         QMouseEvent move(QEvent::MouseMove,
                          QPointF(50, 40),
                          QPointF(50, 40),
                          Qt::NoButton,
                          Qt::LeftButton,
                          Qt::NoModifier);
-        item.mouseMoveEvent(&move);
+        deliver(item, &move);
         QCOMPARE(item.contentY(), 50.0);
         item.updateContentGeometry({ 100, 1200 }, { 0, 200 });
         QMouseEvent next(QEvent::MouseMove,
@@ -480,7 +544,7 @@ private slots:
                          Qt::NoButton,
                          Qt::LeftButton,
                          Qt::NoModifier);
-        item.mouseMoveEvent(&next);
+        deliver(item, &next);
         QCOMPARE(item.contentY(), 260.0);
         QMouseEvent outside(QEvent::MouseMove,
                             QPointF(50, -10),
@@ -488,7 +552,7 @@ private slots:
                             Qt::NoButton,
                             Qt::LeftButton,
                             Qt::NoModifier);
-        item.mouseMoveEvent(&outside);
+        deliver(item, &outside);
         QCOMPARE(item.contentY(), 300.0);
     }
     void geometryDeletion() {

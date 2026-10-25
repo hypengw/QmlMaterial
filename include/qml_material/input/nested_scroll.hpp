@@ -8,7 +8,7 @@
 
 namespace qml_material
 {
-class NestedScrollHandler;
+class ScrollInputHandler;
 
 class QML_MATERIAL_API NestedScroll : public QObject {
     Q_OBJECT
@@ -31,6 +31,8 @@ public:
     Q_SIGNAL void           pressDelayChanged();
     static int              childPressDelay(QQuickItem* receiver);
     static bool             coordinates(QQuickItem* receiver, QQuickItem* ancestor);
+    bool                    restoreOnReverse() const { return m_restoreOnReverse; }
+    bool                    wheelEnabled() const { return m_wheelEnabled; }
     bool                    enabled() const { return m_enabled; }
     void                    setEnabled(bool);
     Qt::Orientations        axes() const { return m_axes; }
@@ -49,10 +51,11 @@ public:
     Q_SIGNAL void scrollFinished(bool cancelled);
 
 private:
-    friend class NestedScrollHandler;
+    friend class ScrollInputHandler;
+    friend class ScrollInputAdapter;
     QPointer<QQuickItem>             m_item;
-    QPointer<NestedScrollHandler>    m_handler;
-    QPointer<NestedScrollHandler>    m_controller;
+    QPointer<ScrollInputHandler>     m_handler;
+    QPointer<ScrollInputHandler>     m_controller;
     QPointer<NestedScrollConnection> m_connection;
     QMetaObject::Connection          m_connectionDestroyed;
     int                              m_pressDelay       = 100;

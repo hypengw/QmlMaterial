@@ -244,10 +244,10 @@ bool LazyList::positionAtKey(const QString& key, qreal alignment, qreal offset, 
     QPointer<LazyList> guard(this);
     finishPositioning(false);
     if (! guard || d->position) return false;
+    cancelScrollActivity();
+    if (! guard || d->position) return false;
     d->position = Private::PositionRequest { key, alignment, offset, mode };
     ++d->generation;
-    cancelFlick();
-    if (! guard) return false;
     scheduleLayout();
     emit positioningChanged();
     return true;

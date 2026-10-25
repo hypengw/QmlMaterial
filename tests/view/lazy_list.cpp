@@ -13,14 +13,6 @@
 
 using namespace qml_material;
 
-class InputLazyList : public LazyList {
-public:
-    using Flickable::mouseMoveEvent;
-    using Flickable::mousePressEvent;
-    using Flickable::mouseReleaseEvent;
-    using LazyList::LazyList;
-};
-
 class DelegateCallback : public QObject {
     Q_OBJECT
 public:
@@ -321,7 +313,8 @@ private slots:
         QQmlEngine          engine;
         QQuickRenderControl render;
         QQuickWindow        window(&render);
-        QQmlComponent       delegate(&engine);
+        window.setGeometry(0, 0, 300, 200);
+        QQmlComponent delegate(&engine);
         delegate.setData("import QtQuick\nimport Test 1.0\nItem { required property LazyRow row; "
                          "property real extraHeight: 0; implicitHeight: 48 + extraHeight }",
                          QUrl());
@@ -329,7 +322,7 @@ private slots:
         ListSnapshotSource source;
         source.setKeyRole("id");
         source.setItems(rows(1000));
-        InputLazyList view(window.contentItem());
+        LazyList view(window.contentItem());
         QQmlEngine::setContextForObject(&view, engine.rootContext());
         view.setSize({ 300, 200 });
         view.setCacheExtent(150);
@@ -348,12 +341,7 @@ private slots:
                               type == QEvent::MouseButtonRelease ? Qt::NoButton : Qt::LeftButton,
                               Qt::NoModifier);
             event.setTimestamp(time);
-            if (type == QEvent::MouseButtonPress)
-                view.mousePressEvent(&event);
-            else if (moving)
-                view.mouseMoveEvent(&event);
-            else
-                view.mouseReleaseEvent(&event);
+            QCoreApplication::sendEvent(&window, &event);
         };
         mouse(QEvent::MouseButtonPress, 180, 1000);
         mouse(QEvent::MouseMove, 130, 1050);

@@ -1,15 +1,8 @@
 #include "qml_material/scrollable/flickable.hpp"
-#include "qml_material/input/nested_scroll.hpp"
+#include "../input/scroll_input_p.hpp"
 
-#include <QCoreApplication>
-#include <QGuiApplication>
-#include <QMouseEvent>
-#include <QScreen>
 #include <QQuickWindow>
-#include <QStyleHints>
 #include <QTimerEvent>
-#include <QTouchEvent>
-#include <QWheelEvent>
 #include <QWindow>
 #include <algorithm>
 #include <cmath>
@@ -19,8 +12,7 @@ using namespace qml_material;
 namespace
 {
 
-constexpr qreal MinimumFlickVelocity = 75.0;
-constexpr qreal Epsilon              = 0.0001;
+constexpr qreal Epsilon = 0.0001;
 
 auto fuzzyLessThanOrEqualTo(qreal a, qreal b) -> bool {
     if (a == 0.0 || b == 0.0) {
@@ -28,22 +20,6 @@ auto fuzzyLessThanOrEqualTo(qreal a, qreal b) -> bool {
         b += 1.0;
     }
     return a <= b || qFuzzyCompare(a, b);
-}
-
-auto eventTimestamp(QInputEvent* event) -> qint64 {
-    if (event && event->timestamp() != 0) return static_cast<qint64>(event->timestamp());
-    return QDateTime::currentMSecsSinceEpoch();
-}
-
-auto isMouseEvent(QEvent* event) -> bool {
-    return event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseMove ||
-           event->type() == QEvent::MouseButtonRelease ||
-           event->type() == QEvent::MouseButtonDblClick;
-}
-
-auto isTouchEvent(QEvent* event) -> bool {
-    return event->type() == QEvent::TouchBegin || event->type() == QEvent::TouchUpdate ||
-           event->type() == QEvent::TouchEnd || event->type() == QEvent::TouchCancel;
 }
 
 } // namespace
@@ -119,44 +95,6 @@ auto FlickableVisibleArea::updateVisible() -> void {
     if (heightChanged) emit heightRatioChanged(m_heightRatio);
 }
 
-auto Flickable::AxisData::resetDrag() -> void {
-    velocityBuffer.clear();
-    dragStartOffset   = 0;
-    previousDragDelta = 0;
-    pressPos          = 0;
-    pressContentPos   = 0;
-    lastPos           = 0;
-}
-
-auto Flickable::AxisData::addVelocitySample(qint64 timestamp, qreal position, qreal maxVelocity)
-    -> void {
-    velocityBuffer.append({ timestamp, position });
-    while (velocityBuffer.size() > 10) {
-        velocityBuffer.removeFirst();
-    }
-    while (velocityBuffer.size() > 2 && timestamp - velocityBuffer.first().first > 140) {
-        velocityBuffer.removeFirst();
-    }
-    updateVelocity();
-    velocity = std::clamp(velocity, -maxVelocity, maxVelocity);
-}
-
-auto Flickable::AxisData::updateVelocity() -> void {
-    if (velocityBuffer.size() < 2) {
-        velocity = 0;
-        return;
-    }
-
-    const auto  first = velocityBuffer.first();
-    const auto  last  = velocityBuffer.last();
-    const qreal dt    = qreal(last.first - first.first) / 1000.0;
-    if (dt <= 0) {
-        velocity = 0;
-        return;
-    }
-    velocity = (last.second - first.second) / dt;
-}
-
 Flickable::Flickable(QQuickItem* parent): QQuickItem(parent) {
     m_contentItem = new QQuickItem(this);
     m_contentItem->setObjectName(QStringLiteral("contentItem"));
@@ -164,7 +102,7 @@ Flickable::Flickable(QQuickItem* parent): QQuickItem(parent) {
 
     m_visibleArea = new FlickableVisibleArea(this);
 
-    setFiltersChildMouseEvents(true);
+    ScrollInputAdapter::attach(this);
     setAcceptTouchEvents(true);
     setAcceptedMouseButtons(m_acceptedButtons);
     setFlag(QQuickItem::ItemIsFocusScope, false);
@@ -185,6 +123,7 @@ Flickable::Flickable(QQuickItem* parent): QQuickItem(parent) {
 }
 
 Flickable::~Flickable() {
+    ScrollInputAdapter::cancel(this);
     disconnect(m_frameConnection);
     disconnect(m_windowVisibilityConnection);
     // QQuickItem emits window/visibility changes while its base destructor runs.
@@ -234,7 +173,11 @@ auto Flickable::setContentY(qreal position) -> void { setContentPosition(Vertica
 void Flickable::setContentPosition(Axis axis, qreal position) {
     if (! std::isfinite(position)) return;
     QPointer<Flickable> guard(this);
-    cancelInteraction();
+    emit                scrollInterrupted();
+    if (! guard) return;
+    ScrollInputAdapter::cancel(this);
+    if (! guard) return;
+    endScroll(ScrollEnd::Cancelled);
     if (! guard) return;
     axisData(axis).platformScrolling = false;
     stopAxisMotion(axis);
@@ -248,7 +191,7 @@ auto Flickable::topMargin() const -> qreal { return m_vData.startMargin; }
 auto Flickable::setTopMargin(qreal value) -> void {
     if (qFuzzyCompare(m_vData.startMargin, value)) return;
     m_vData.startMargin = value;
-    if (! m_pressed) fixup(VerticalAxis);
+    if (! isDragging()) fixup(VerticalAxis);
     emit topMarginChanged();
     updateBeginningEnd();
 }
@@ -258,7 +201,7 @@ auto Flickable::bottomMargin() const -> qreal { return m_vData.endMargin; }
 auto Flickable::setBottomMargin(qreal value) -> void {
     if (qFuzzyCompare(m_vData.endMargin, value)) return;
     m_vData.endMargin = value;
-    if (! m_pressed) fixup(VerticalAxis);
+    if (! isDragging()) fixup(VerticalAxis);
     emit bottomMarginChanged();
     updateBeginningEnd();
 }
@@ -268,7 +211,7 @@ auto Flickable::leftMargin() const -> qreal { return m_hData.startMargin; }
 auto Flickable::setLeftMargin(qreal value) -> void {
     if (qFuzzyCompare(m_hData.startMargin, value)) return;
     m_hData.startMargin = value;
-    if (! m_pressed) fixup(HorizontalAxis);
+    if (! isDragging()) fixup(HorizontalAxis);
     emit leftMarginChanged();
     updateBeginningEnd();
 }
@@ -278,7 +221,7 @@ auto Flickable::rightMargin() const -> qreal { return m_hData.endMargin; }
 auto Flickable::setRightMargin(qreal value) -> void {
     if (qFuzzyCompare(m_hData.endMargin, value)) return;
     m_hData.endMargin = value;
-    if (! m_pressed) fixup(HorizontalAxis);
+    if (! isDragging()) fixup(HorizontalAxis);
     emit rightMarginChanged();
     updateBeginningEnd();
 }
@@ -412,6 +355,7 @@ void Flickable::updateContentGeometry(QSizeF extent, QPointF anchorDelta) {
     if (m_vData.viewSize != extent.height()) m_geometryNotifications |= 2;
     m_hData.viewSize = extent.width();
     m_vData.viewSize = extent.height();
+    const QPointF before(contentX(), contentY());
     for (Axis axis : { HorizontalAxis, VerticalAxis }) {
         auto&       data       = axisData(axis);
         const qreal correction = axis == HorizontalAxis ? anchorDelta.x() : anchorDelta.y();
@@ -419,13 +363,15 @@ void Flickable::updateContentGeometry(QSizeF extent, QPointF anchorDelta) {
         const qreal position   = boundedPosition(axis, aligned(desired));
         const qreal applied    = position - data.position;
         data.motion.translate(applied);
-        data.pressContentPos += applied;
         if (position != data.position) m_geometryNotifications |= axis == HorizontalAxis ? 4 : 8;
         data.position = position;
         if (desired < minExtent(axis) || desired > maxExtent(axis)) data.motion.stop();
     }
     ++m_geometryRevision;
-    flushContentGeometry();
+    const QPointer<Flickable> guard(this);
+    const QPointF             adjusted = QPointF(contentX(), contentY()) - before;
+    if (! adjusted.isNull()) emit scrollGeometryAdjusted(adjusted);
+    if (guard) flushContentGeometry();
 }
 
 void Flickable::flushContentGeometry() {
@@ -472,12 +418,10 @@ void Flickable::flick(qreal xVelocity, qreal yVelocity) {
     QPointer<Flickable> guard(this);
     scrollInputStarted();
     if (! guard) return;
-    cancelInteraction();
+    ScrollInputAdapter::cancel(this);
     if (! guard) return;
     cancelFlick();
     if (! guard) return;
-    m_hData.resetDrag();
-    m_vData.resetDrag();
     bool flickedX = false;
     bool flickedY = false;
     if (xflick() && ! qFuzzyIsNull(xVelocity)) {
@@ -497,6 +441,8 @@ void Flickable::flick(qreal xVelocity, qreal yVelocity) {
 
 void Flickable::cancelFlick() {
     QPointer<Flickable> guard(this);
+    ScrollInputAdapter::cancelMotion(this);
+    if (! guard) return;
     m_hData.platformScrolling = false;
     m_vData.platformScrolling = false;
     stopAxisMotion(HorizontalAxis);
@@ -825,7 +771,7 @@ auto Flickable::attachMotionWindow(QQuickWindow* target) -> void {
 
 void Flickable::cancelScrollActivity() {
     QPointer<Flickable> guard(this);
-    cancelInteraction();
+    ScrollInputAdapter::cancel(this);
     if (! guard) return;
     cancelFlick();
     if (guard) scrollActivityCancelled();
@@ -870,400 +816,108 @@ auto Flickable::fixup(Axis axis) -> void { setAxisPosition(axis, axisPosition(ax
 
 auto Flickable::isAxisAnimating(Axis axis) const -> bool { return axisData(axis).motion.active(); }
 
-auto Flickable::handlePress(const QPointF& position, qint64 timestamp) -> void {
-    QPointer<Flickable> guard(this);
-    scrollInputStarted();
-    if (! guard) return;
-    cancelFlick();
-    m_pressed       = true;
-    m_stealMouse    = false;
-    m_pressPos      = position;
-    m_lastPos       = position;
-    m_lastPressTime = timestamp;
-    m_lastPosTime   = timestamp;
-
-    auto setupAxis = [this, timestamp, position](Axis axis) -> void {
-        auto& data = axisData(axis);
-        data.resetDrag();
-        data.pressPos        = axis == HorizontalAxis ? position.x() : position.y();
-        data.lastPos         = data.pressPos;
-        data.pressContentPos = axisPosition(axis);
-        data.addVelocitySample(timestamp, data.pressPos, m_maxVelocity);
-    };
-    setupAxis(HorizontalAxis);
-    setupAxis(VerticalAxis);
-}
-
-auto Flickable::handleMove(const QPointF& position, qint64 timestamp, Qt::MouseButtons buttons)
-    -> void {
-    if (! m_pressed || buttons == Qt::NoButton) return;
-
-    QPointer<Flickable> guard(this);
-    const auto          elapsed = timestamp - m_lastPosTime;
-    setDragVelocity(elapsed > 0 && elapsed < 150 ? (m_lastPos - position) * (1000.0 / elapsed)
-                                                 : QPointF());
-    if (! guard || ! m_pressed) return;
-
-    const QPointF delta     = position - m_pressPos;
-    const int     threshold = qGuiApp->styleHints()->startDragDistance();
-    bool          stealX    = false;
-    bool          stealY    = false;
-
-    auto handleAxis = [&](Axis axis, qreal deltaValue, qreal currentPos) -> bool {
-        if (! axisCanFlick(axis)) return false;
-        auto&      data          = axisData(axis);
-        const bool overThreshold = std::abs(deltaValue) >= threshold || isMoving();
-        if (! overThreshold) {
-            data.addVelocitySample(timestamp, currentPos, m_maxVelocity);
-            return false;
-        }
-
-        if (! data.dragging) data.dragStartOffset = m_syncDrag ? 0 : deltaValue;
-        const qreal rawPosition  = data.pressContentPos - (deltaValue - data.dragStartOffset);
-        const qreal nextPosition = boundedPosition(axis, rawPosition);
-        setAxisPosition(axis, nextPosition);
-        data.previousDragDelta = deltaValue;
-        data.addVelocitySample(timestamp, currentPos, m_maxVelocity);
-        return true;
-    };
-
-    stealX = handleAxis(HorizontalAxis, delta.x(), position.x());
-    stealY = handleAxis(VerticalAxis, delta.y(), position.y());
-
-    if (stealX || stealY) {
-        m_stealMouse = true;
-        setKeepMouseGrab(true);
-        draggingStarting(stealX, stealY);
-        movementStarting();
-    }
-
-    m_lastPos     = position;
-    m_lastPosTime = timestamp;
-}
-
-auto Flickable::handleRelease(const QPointF& position, qint64 timestamp) -> void {
-    if (! m_pressed) return;
-    Q_UNUSED(position)
-    m_pressed    = false;
-    m_stealMouse = false;
-    setKeepMouseGrab(false);
-    setKeepTouchGrab(false);
-
-    m_hData.updateVelocity();
-    m_vData.updateVelocity();
-
-    const qint64        elapsed     = m_lastPosTime < 0 ? 1000 : timestamp - m_lastPosTime;
-    const bool          wasDragging = isDragging();
-    QPointer<Flickable> guard(this);
-    draggingEnding(elapsed < 100 ? m_dragVelocity : QPointF());
-    if (! guard) return;
-
-    bool          flickedX       = false;
-    bool          flickedY       = false;
-    const int     flickThreshold = qGuiApp->styleHints()->startDragDistance();
-    const QPointF totalDelta     = m_lastPos - m_pressPos;
-
-    if (elapsed < 100 && wasDragging) {
-        if (xflick() && std::abs(m_hData.velocity) > MinimumFlickVelocity &&
-            std::abs(totalDelta.x()) > flickThreshold) {
-            startAxisFlick(HorizontalAxis, -m_hData.velocity);
-            flickedX = true;
-        } else {
-            fixup(HorizontalAxis);
-        }
-        if (yflick() && std::abs(m_vData.velocity) > MinimumFlickVelocity &&
-            std::abs(totalDelta.y()) > flickThreshold) {
-            startAxisFlick(VerticalAxis, -m_vData.velocity);
-            flickedY = true;
-        } else {
-            fixup(VerticalAxis);
-        }
-    } else {
-        fixup(HorizontalAxis);
-        fixup(VerticalAxis);
-    }
-
-    flickingStarted(flickedX, flickedY);
-    if (isAxisAnimating(HorizontalAxis) || isAxisAnimating(VerticalAxis)) {
-        movementStarting();
-        requestMotionFrame();
-    } else {
-        movementEnding();
-    }
-}
-
-auto Flickable::cancelInteraction() -> void {
-    if (! m_pressed && ! isDragging()) return;
-    m_pressed    = false;
-    m_stealMouse = false;
-    setKeepMouseGrab(false);
-    setKeepTouchGrab(false);
-    draggingEnding();
-    fixup(HorizontalAxis);
-    fixup(VerticalAxis);
-    if (! isAxisAnimating(HorizontalAxis) && ! isAxisAnimating(VerticalAxis)) movementEnding();
-}
-
-auto Flickable::buttonsAccepted(const QSinglePointEvent* event) const -> bool {
-    if (! event) return false;
-    return ((event->button() & m_acceptedButtons) != 0) ||
-           ((event->buttons() & m_acceptedButtons) != 0);
-}
-
-auto Flickable::pointerAccepted(QQuickItem* receiver, QEvent* event) const -> bool {
-    if (! event) return false;
-    if (event->type() == QEvent::UngrabMouse) return true;
-    return acceptsPoint(eventPosition(receiver, event));
-}
-
-auto Flickable::acceptsPoint(const QPointF& point) const -> bool {
-    if (! contains(point)) return false;
-    if (m_inputMaskMode == Viewport) return true;
-
-    auto* item = m_inputMaskMode == CustomItem ? interactionItem() : m_contentItem;
-    if (! item || ! item->isVisible() || ! item->isEnabled()) return false;
-    return item->contains(item->mapFromItem(this, point));
-}
-
-auto Flickable::eventPosition(QQuickItem* receiver, QEvent* event) const -> QPointF {
-    if (auto* mouse = dynamic_cast<QMouseEvent*>(event))
-        return receiver ? receiver->mapToItem(const_cast<Flickable*>(this), mouse->position())
-                        : mouse->position();
-    if (auto* wheel = dynamic_cast<QWheelEvent*>(event))
-        return receiver ? receiver->mapToItem(const_cast<Flickable*>(this), wheel->position())
-                        : wheel->position();
-    if (auto* pointer = dynamic_cast<QPointerEvent*>(event)) {
-        if (pointer->points().isEmpty()) return {};
-        return mapFromScene(pointer->points().first().scenePosition());
-    }
-    return {};
-}
-
-auto Flickable::ignorePointerEvent(QEvent* event) const -> void {
-    if (auto* pointer = dynamic_cast<QPointerEvent*>(event))
-        pointer->setAccepted(false);
-    else
-        event->ignore();
-}
-
-auto Flickable::childMouseEventFilter(QQuickItem* item, QEvent* event) -> bool {
-    if (NestedScroll::coordinates(item, this)) return false;
-    if (! m_interactive || ! item || ! isVisible() || ! isEnabled() ||
-        ! pointerAccepted(item, event)) {
-        cancelInteraction();
-        return QQuickItem::childMouseEventFilter(item, event);
-    }
-
-    if (event->type() == QEvent::UngrabMouse) {
-        const auto* pointer = dynamic_cast<QPointerEvent*>(event);
-        // Losing a child's grab to this view is the start of dragging, not cancellation.
-        if (! pointer || pointer->points().isEmpty() ||
-            pointer->exclusiveGrabber(pointer->points().first()) != this)
-            mouseUngrabEvent();
-        return QQuickItem::childMouseEventFilter(item, event);
-    }
-
-    if (! event->isPointerEvent()) return QQuickItem::childMouseEventFilter(item, event);
-
-    auto* pointer = static_cast<QPointerEvent*>(event);
-    if (pointer->points().isEmpty() || pointer->pointCount() > 1) return false;
-    if (pointer->exclusiveGrabber(pointer->points().first()) == this) return false;
-    if (item->keepMouseGrab() || item->keepTouchGrab()) {
-        cancelInteraction();
-        return false;
-    }
-
-    const QPointF local  = eventPosition(item, event);
-    const auto    state  = pointer->points().first().state();
-    bool          filter = m_stealMouse || isMoving();
-
-    if (state == QEventPoint::State::Pressed) {
-        if (auto* single = dynamic_cast<QSinglePointEvent*>(event);
-            single && ! buttonsAccepted(single))
-            return QQuickItem::childMouseEventFilter(item, event);
-        handlePress(local, eventTimestamp(pointer));
-
-    } else if (state == QEventPoint::State::Updated) {
-        handleMove(local, eventTimestamp(pointer), Qt::LeftButton);
-        filter = m_stealMouse || isMoving();
-        if (filter) pointer->setExclusiveGrabber(pointer->points().first(), this);
-    } else if (state == QEventPoint::State::Released) {
-        const bool wasStealing = m_stealMouse || isMoving();
-        handleRelease(local, eventTimestamp(pointer));
-        filter = wasStealing;
-    }
-
-    if (filter) {
-        event->accept();
-        return true;
-    }
-    return QQuickItem::childMouseEventFilter(item, event);
-}
-
-auto Flickable::mousePressEvent(QMouseEvent* event) -> void {
-    if (m_interactive && buttonsAccepted(event) && acceptsPoint(event->position())) {
-        handlePress(event->position(), eventTimestamp(event));
-        event->accept();
-        return;
-    }
-    QQuickItem::mousePressEvent(event);
-}
-
-auto Flickable::mouseMoveEvent(QMouseEvent* event) -> void {
-    if (m_interactive && buttonsAccepted(event) && (m_pressed || acceptsPoint(event->position()))) {
-        handleMove(event->position(), eventTimestamp(event), event->buttons());
-        event->accept();
-        return;
-    }
-    QQuickItem::mouseMoveEvent(event);
-}
-
-auto Flickable::mouseReleaseEvent(QMouseEvent* event) -> void {
-    if (m_interactive && buttonsAccepted(event)) {
-        handleRelease(event->position(), eventTimestamp(event));
-        event->accept();
-        return;
-    }
-    QQuickItem::mouseReleaseEvent(event);
-}
-
-auto Flickable::touchEvent(QTouchEvent* event) -> void {
-    if (event->type() == QEvent::TouchCancel) {
-        cancelInteraction();
-        event->accept();
-        return;
-    }
-
-    if (! m_interactive || event->pointCount() != 1 ||
-        (! m_pressed && ! acceptsPoint(eventPosition(nullptr, event)))) {
-        QQuickItem::touchEvent(event);
-        return;
-    }
-
-    const auto&   point = event->points().first();
-    const QPointF local = mapFromScene(point.scenePosition());
-    switch (point.state()) {
-    case QEventPoint::State::Pressed:
-        handlePress(local, eventTimestamp(event));
-        event->accept();
-        break;
-    case QEventPoint::State::Updated:
-        handleMove(local, eventTimestamp(event), Qt::LeftButton);
-        event->accept();
-        break;
-    case QEventPoint::State::Released:
-        handleRelease(local, eventTimestamp(event));
-        event->accept();
-        break;
-    default: QQuickItem::touchEvent(event); break;
-    }
-}
-
-auto Flickable::consumeScroll(QPointF delta, ScrollInput input, Qt::ScrollPhase phase)
-    -> ScrollConsumption {
-    ScrollConsumption result { {}, delta };
-    if (! isInteractive() || ! isEnabled() || ! isVisible()) return result;
-    if (! std::isfinite(delta.x()) || ! std::isfinite(delta.y())) return result;
-    QPointer<Flickable> guard(this);
-    if (! delta.isNull() || phase == Qt::ScrollBegin) {
-        scrollInputStarted();
-        if (! guard) return result;
-        cancelInteraction();
-    }
-    if (! guard) return result;
-    if (phase == Qt::ScrollBegin) cancelFlick();
-    if (! guard) return result;
-    const qreal now = m_motionClock.nsecsElapsed() / 1e9;
-    for (Axis axis : { HorizontalAxis, VerticalAxis }) {
-        auto& data = axisData(axis);
-        if (input == ScrollInput::Direct && data.motion.mode() == ScrollMotion::Mode::Wheel)
-            stopAxisMotion(axis);
-        if (! guard) return result;
-        if (phase == Qt::ScrollEnd) data.platformScrolling = false;
-        const qreal requested = axis == HorizontalAxis ? delta.x() : delta.y();
-        if (! axisCanFlick(axis) || qFuzzyIsNull(requested)) continue;
-        const bool  smooth   = input == ScrollInput::Smooth && window();
-        const bool  retarget = smooth && data.motion.mode() == ScrollMotion::Mode::Wheel;
-        const qreal current  = axisPosition(axis);
-        const qreal base     = retarget ? data.motion.target() : current;
-        const qreal target   = boundedPosition(axis, base + requested);
-        qreal       consumed = target - base;
-        if (smooth) {
-            if (qFuzzyIsNull(consumed)) continue;
-            data.platformScrolling = false;
-            data.motion.wheel(current, target, now);
-            const bool wasFlicking = isFlicking();
-            setAxisFlicking(axis, false);
-            if (wasFlicking && ! isFlicking()) emit flickEnded();
-            movementStarting();
-        } else {
-            stopAxisMotion(axis);
-            if (! qFuzzyIsNull(consumed)) {
-                data.platformScrolling = true;
-                movementStarting();
-                setAxisPosition(axis, target);
-                consumed = axisPosition(axis) - current;
-            }
-            if (phase == Qt::NoScrollPhase || phase == Qt::ScrollEnd)
-                data.platformScrolling = false;
-        }
-        if (axis == HorizontalAxis) {
-            result.consumed.setX(consumed);
-            result.remaining.setX(requested - consumed);
-        } else {
-            result.consumed.setY(consumed);
-            result.remaining.setY(requested - consumed);
-        }
-    }
-    movementEnding();
-    requestMotionFrame();
+Qt::Orientations Flickable::scrollAxes() const {
+    Qt::Orientations result;
+    if (xflick()) result |= Qt::Horizontal;
+    if (yflick()) result |= Qt::Vertical;
     return result;
 }
-
-auto Flickable::wheelEvent(QWheelEvent* event) -> void {
-    if (! m_interactive || (event->phase() != Qt::ScrollEnd && ! acceptsPoint(event->position()))) {
-        QQuickItem::wheelEvent(event);
-        return;
+QPointF Flickable::boundedScrollPosition(QPointF p) const {
+    return { boundedPosition(HorizontalAxis, p.x()), boundedPosition(VerticalAxis, p.y()) };
+}
+bool Flickable::acceptsScrollPoint(QPointF point) const {
+    if (! contains(point)) return false;
+    if (m_inputMaskMode == Viewport) return true;
+    auto* item = m_inputMaskMode == CustomItem ? interactionItem() : m_contentItem;
+    return item && item->isVisible() && item->isEnabled() &&
+           item->contains(item->mapFromItem(this, point));
+}
+void Flickable::beginScroll(ScrollSource) {
+    const QPointer<Flickable> guard(this);
+    endScroll(ScrollEnd::Cancelled);
+    if (! guard) return;
+    const auto revision = ++m_activityRevision;
+    scrollInputStarted();
+    if (! guard) return;
+    stopAxisMotion(HorizontalAxis);
+    if (! guard || revision != m_activityRevision) return;
+    stopAxisMotion(VerticalAxis);
+    if (! guard || revision != m_activityRevision) return;
+    movementEnding();
+    if (guard && revision == m_activityRevision) m_scrollActive = true;
+}
+void Flickable::updateScrollActivity(ScrollSource source, Qt::Orientations axes, QPointF velocity) {
+    const QPointer<Flickable> guard(this);
+    const auto                revision = m_activityRevision;
+    const auto                current  = [&] {
+        return guard && revision == m_activityRevision;
+    };
+    const bool x = axes.testFlag(Qt::Horizontal), y = axes.testFlag(Qt::Vertical);
+    if (source == ScrollSource::Drag) draggingStarting(x, y);
+    if (! current()) return;
+    if (source == ScrollSource::Fling) flickingStarted(x, y);
+    if (! current()) return;
+    if (x) m_hData.platformScrolling = true;
+    if (y) m_vData.platformScrolling = true;
+    movementStarting();
+    if (! current()) return;
+    setAxisVelocity(HorizontalAxis, x ? velocity.x() : 0);
+    if (! current()) return;
+    setAxisVelocity(VerticalAxis, y ? velocity.y() : 0);
+}
+void Flickable::releaseScroll(QPointF velocity) { draggingEnding(velocity); }
+void Flickable::endScroll(ScrollEnd) {
+    ++m_activityRevision;
+    if (! m_scrollActive) return;
+    m_scrollActive = false;
+    const QPointer<Flickable> guard(this);
+    m_hData.platformScrolling = false;
+    m_vData.platformScrolling = false;
+    draggingEnding();
+    if (! guard) return;
+    setAxisVelocity(HorizontalAxis, 0);
+    if (! guard) return;
+    setAxisVelocity(VerticalAxis, 0);
+    if (guard) movementEnding();
+}
+Flickable::ScrollConsumption Flickable::applyScrollDelta(QPointF delta, ScrollSource source,
+                                                         QPointF velocity) {
+    ScrollConsumption result { {}, delta };
+    if (! m_scrollActive || ! m_interactive || ! isVisible() || ! isEnabled() ||
+        ! std::isfinite(delta.x()) || ! std::isfinite(delta.y()))
+        return result;
+    const QPointer<Flickable> guard(this);
+    const auto                revision = m_activityRevision;
+    const auto                current  = [&] {
+        return guard && revision == m_activityRevision;
+    };
+    const QPointF before(contentX(), contentY());
+    auto          after = boundedScrollPosition(before + delta);
+    const auto    axes  = scrollAxes();
+    if (! axes.testFlag(Qt::Horizontal)) after.setX(before.x());
+    if (! axes.testFlag(Qt::Vertical)) after.setY(before.y());
+    if (source == ScrollSource::Drag && (after != before || isDragging())) {
+        setDragVelocity(velocity);
+        if (! current()) return result;
     }
-
-    QPointF delta = event->pixelDelta();
-    if (delta.isNull()) {
-        const qreal step = 24.0 * qGuiApp->styleHints()->wheelScrollLines();
-        delta            = QPointF(event->angleDelta()) / 120.0 * step;
-    }
-    // Qt deltas already carry the platform's natural-scrolling direction.
-    const ScrollInput   input = event->pixelDelta().isNull() && event->phase() == Qt::NoScrollPhase
-                                    ? ScrollInput::Smooth
-                                    : ScrollInput::Direct;
-    QPointF             remaining = -delta;
-    bool                consumed  = false;
-    QPointer<Flickable> owner     = this;
-    QPointF             point     = event->position();
-    while (owner) {
-        QPointer<Flickable> next;
-        for (auto* parent = owner->parentItem(); parent; parent = parent->parentItem()) {
-            if (auto* candidate = qobject_cast<Flickable*>(parent)) {
-                next = candidate;
-                break;
-            }
-        }
-        const QPointF mappedPoint = next ? owner->mapToItem(next, point) : QPointF();
-        const QPointF basisX =
-            next ? owner->mapToItem(next, QPointF(1, 0)) - owner->mapToItem(next, QPointF())
-                 : QPointF();
-        const QPointF basisY =
-            next ? owner->mapToItem(next, QPointF(0, 1)) - owner->mapToItem(next, QPointF())
-                 : QPointF();
-        if (event->phase() == Qt::ScrollEnd || owner->acceptsPoint(point)) {
-            const auto result = owner->consumeScroll(remaining, input, event->phase());
-            consumed |= ! result.consumed.isNull();
-            remaining = result.remaining;
-        }
-        remaining = basisX * remaining.x() + basisY * remaining.y();
-        point     = mappedPoint;
-        owner     = next;
-    }
-    event->setAccepted(consumed);
+    if (after == before) return result;
+    setAxisPosition(HorizontalAxis, after.x());
+    if (! current()) return result;
+    result.consumed.setX(contentX() - before.x());
+    result.remaining = delta - result.consumed;
+    setAxisPosition(VerticalAxis, after.y());
+    if (! current()) return result;
+    result.consumed.setY(contentY() - before.y());
+    result.remaining = delta - result.consumed;
+    Qt::Orientations moved;
+    if (result.consumed.x()) moved |= Qt::Horizontal;
+    if (result.consumed.y()) moved |= Qt::Vertical;
+    updateScrollActivity(source, moved, velocity);
+    return result;
+}
+Flickable::ScrollConsumption Flickable::consumeScroll(QPointF delta, ScrollInput input,
+                                                      Qt::ScrollPhase phase) {
+    return ScrollInputAdapter::scroll(this, delta, input, phase);
 }
 
 auto Flickable::timerEvent(QTimerEvent* event) -> void {
@@ -1280,7 +934,7 @@ auto Flickable::geometryChange(const QRectF& newGeometry, const QRectF& oldGeome
         updateContentSize(HorizontalAxis);
     if (! qFuzzyCompare(newGeometry.height(), oldGeometry.height()))
         updateContentSize(VerticalAxis);
-    if (! m_pressed) {
+    if (! isDragging()) {
         fixup(HorizontalAxis);
         fixup(VerticalAxis);
     }
@@ -1295,9 +949,6 @@ auto Flickable::componentComplete() -> void {
     fixup(VerticalAxis);
     updateBeginningEnd();
 }
-
-auto Flickable::mouseUngrabEvent() -> void { cancelInteraction(); }
-auto Flickable::touchUngrabEvent() -> void { cancelInteraction(); }
 
 auto Flickable::minXExtent() const -> qreal { return originX() - m_hData.startMargin; }
 auto Flickable::minYExtent() const -> qreal { return originY() - m_vData.startMargin; }
@@ -1333,7 +984,7 @@ void Flickable::setScrollTarget(Axis axis, qreal position) {
     auto& data   = axisData(axis);
     auto& motion = data.motion;
     if (motion.mode() == ScrollMotion::Mode::Target && motion.target() == position) return;
-    if (! window() || (qAbs(position - data.position) < 0.01 && qAbs(data.velocity) < 0.1)) {
+    if (! window() || (qAbs(position - data.position) < 0.01 && qAbs(data.smoothVelocity) < 0.1)) {
         stopAxisMotion(axis);
         setAxisPosition(axis, position);
         movementEnding();

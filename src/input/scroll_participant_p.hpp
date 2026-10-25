@@ -25,10 +25,12 @@ public:
     bool             accepts(QPointF scenePosition) const;
     qreal            deceleration() const;
     qreal            maximumVelocity() const;
-    void             begin();
+    bool             synchronousDrag() const;
+    void             begin(Flickable::ScrollSource source);
     QPointF          consume(QPointF delta, Activity activity, QPointF velocity,
                              const std::function<bool()>& current);
-    void             end(std::optional<QPointF> releaseVelocity = std::nullopt);
+    void             release(QPointF velocity);
+    void             end(bool cancelled);
 
 private:
     QPointer<Flickable>       m_owned;

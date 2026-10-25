@@ -65,9 +65,10 @@ public:
     void    setReverseLayout(bool);
     QPointF preScroll(QPointF, Source) override;
     QPointF postScroll(QPointF, QPointF, Source) override;
-    bool    canConsume(QPointF, Source) const override;
-    void    begin(Source) override;
-    void    end(bool cancelled) override;
+    Qt::Orientations dragAxes() const override { return Qt::Vertical; }
+    bool             canConsume(QPointF, Source) const override;
+    void             begin(Source) override;
+    void             end(bool cancelled) override;
     Q_INVOKABLE void reset();
     Q_SIGNAL void    modeChanged();
     Q_SIGNAL void    collapseDistanceChanged();

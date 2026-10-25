@@ -688,6 +688,7 @@ MD.Scrollable {
     id: view
     width: 300; height: 300; contentHeight: 900
     flickableDirection: MD.Scrollable.VerticalFlick
+    synchronousDrag: true
     MD.NestedScroll.enabled: true
     property int clicks: 0
     property bool blockDrag: false
@@ -695,6 +696,7 @@ MD.Scrollable {
         objectName: "inner"; width: 300; height: 200
         MD.NestedScroll.enabled: true
         boundsBehavior: Flickable.StopAtBounds
+        synchronousDrag: true
         model: 12
         delegate: Rectangle {
             width: 300; height: 50
@@ -774,6 +776,182 @@ MD.Scrollable {
         QCOMPARE(outer->contentY(), 90.0);
         wheel({}, Qt::ScrollEnd);
         QCOMPARE(connection.endings, QList<bool>({ false }));
+    }
+    void dragInsideVerticalViewport_data() {
+        QTest::addColumn<bool>("verticalDrag");
+        QTest::addColumn<bool>("boundary");
+        QTest::addColumn<bool>("cancel");
+        QTest::addColumn<bool>("fling");
+        QTest::newRow("horizontal") << false << false << false << false;
+        QTest::newRow("horizontal-edge") << false << true << false << false;
+        QTest::newRow("vertical") << true << false << false << false;
+        QTest::newRow("cancel") << false << false << true << false;
+        QTest::newRow("fling") << false << false << false << true;
+    }
+    void dragInsideVerticalViewport() {
+        QFETCH(bool, verticalDrag);
+        QFETCH(bool, boundary);
+        QFETCH(bool, cancel);
+        QFETCH(bool, fling);
+        root.reset();
+        QQmlComponent component(&engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            MD.Scrollable {
+                id: page
+                contentWidth: width
+                contentHeight: contentItem.childrenRect.height
+                flickableDirection: MD.Scrollable.VerticalFlick
+                synchronousDrag: true
+                width: 300; height: 300
+                MD.NestedScroll.enabled: true
+                MD.NestedScroll.axes: Qt.Vertical
+                property int clicks: 0
+                property int plays: 0
+                Column {
+                    width: parent.width
+                    MD.PageHorizontalLazyList {
+                        objectName: "horizontal"
+                        width: 300; height: 180
+                        source: MD.ListSnapshotSource { items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }
+                        delegate: MD.Card {
+                            id: card
+                            required property MD.LazyRow row
+                            width: 80; height: 180
+                            onClicked: page.clicks++
+                            contentItem: Column {
+                                Rectangle { width: 80; height: 120; color: "gray" }
+                                MD.Label { text: "Album" }
+                            }
+                            MD.IconButton {
+                                parent: card
+                                x: 40; y: 136; width: 40; height: 40
+                                onClicked: page.plays++
+                            }
+                        }
+                    }
+                    Item { width: 300; height: 800 }
+                }
+            }
+        )",
+                          QUrl("qrc:/horizontal-drag-native-parent.qml"));
+        QVERIFY2(component.isReady(), qPrintable(component.errorString()));
+        root.reset(qobject_cast<QQuickItem*>(component.create()));
+        QVERIFY(root);
+        auto* vertical   = qobject_cast<Flickable*>(root.get());
+        auto* horizontal = root->findChild<LazyList*>("horizontal");
+        QVERIFY(vertical && horizontal);
+        root->setParentItem(window.contentItem());
+        QTRY_COMPARE(horizontal->contentWidth(), 800.0);
+        const qreal startX = boundary ? 500 : 0;
+        horizontal->setContentX(startX);
+        const auto position = [verticalDrag](QPointF point) {
+            return verticalDrag ? QPointF(200 + point.y() - 100, 100 + point.x() - 200) : point;
+        };
+        mouse(QEvent::MouseButtonPress, { 200, 100 }, 1000);
+        for (int distance = 1; distance <= 30; ++distance) {
+            mouse(QEvent::MouseMove,
+                  position({ 200.0 - distance, 100.0 - distance / 3 }),
+                  1000 + 2 * distance);
+            if (distance % 10 == 0) {
+                QSignalSpy frames(&window, &QQuickWindow::afterAnimating);
+                window.update();
+                QTRY_VERIFY(! frames.isEmpty());
+            }
+        }
+        QCOMPARE(horizontal->contentX(), std::min(500.0, startX + (verticalDrag ? 0 : 30)));
+        QCOMPARE(vertical->contentY(), verticalDrag ? 30.0 : 0.0);
+        QVERIFY(horizontal->keepMouseGrab());
+        QVERIFY(horizontal->keepTouchGrab());
+        if (cancel) {
+            horizontal->setInteractive(false);
+            mouse(QEvent::MouseButtonRelease, position({ 170, 90 }), 1260);
+        } else {
+            mouse(QEvent::MouseMove, position({ 140, 95 }), 1080);
+            QCOMPARE(horizontal->contentX(), std::min(500.0, startX + (verticalDrag ? 0 : 60)));
+            QCOMPARE(vertical->contentY(), verticalDrag ? 60.0 : 0.0);
+            mouse(QEvent::MouseMove, position({ 110, 80 }), 1100);
+            QCOMPARE(horizontal->contentX(), std::min(500.0, startX + (verticalDrag ? 0 : 90)));
+            QCOMPARE(vertical->contentY(), verticalDrag ? 90.0 : 0.0);
+            mouse(QEvent::MouseButtonRelease, position({ 110, 80 }), fling ? 1110 : 1260);
+        }
+        QVERIFY(! horizontal->keepMouseGrab());
+        QVERIFY(! horizontal->keepTouchGrab());
+        if (fling) {
+            QTRY_VERIFY(horizontal->contentX() > 90);
+            QCOMPARE(vertical->contentY(), 0.0);
+            QCOMPARE(vertical->verticalVelocity(), 0.0);
+            horizontal->setInteractive(false);
+        }
+        QVERIFY(! horizontal->isMoving());
+        QVERIFY(! vertical->isMoving());
+        QCOMPARE(root->property("clicks").toInt(), 0);
+        QCOMPARE(root->property("plays").toInt(), 0);
+        if (! boundary) {
+            horizontal->setInteractive(true);
+            const QPointF point(100, verticalDrag ? 30 : 100);
+            mouse(QEvent::MouseButtonPress, point, 2000);
+            mouse(QEvent::MouseButtonRelease, point, 2020);
+            QCOMPARE(root->property("clicks").toInt(), 1);
+            QVERIFY(! horizontal->keepMouseGrab());
+            horizontal->setContentX(0);
+            vertical->setContentY(0);
+            mouse(QEvent::MouseButtonPress, { 60, 156 }, 3000);
+            mouse(QEvent::MouseButtonRelease, { 60, 156 }, 3020);
+            QCOMPARE(root->property("plays").toInt(), 1);
+            QCOMPARE(root->property("clicks").toInt(), 1);
+        }
+    }
+    void sharedDragVelocity_data() {
+        QTest::addColumn<bool>("nested");
+        QTest::newRow("standalone") << false;
+        QTest::newRow("nested") << true;
+    }
+    void sharedDragVelocity() {
+        QFETCH(bool, nested);
+        inner->setVisible(false);
+        outer->setContentWidth(900);
+        outer->setFlickableDirection(Flickable::HorizontalFlick);
+        qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(outer))
+            ->setEnabled(nested);
+        QSignalSpy released(outer, &Flickable::dragReleased);
+        mouse(QEvent::MouseButtonPress, { 200, 100 }, 1000);
+        mouse(QEvent::MouseMove, { 190, 101 }, 1005);
+        mouse(QEvent::MouseMove, { 180, 99 }, 1010);
+        mouse(QEvent::MouseMove, { 170, 105 }, 1015);
+        QCOMPARE(outer->contentX(), 30.0);
+        QCOMPARE(outer->contentY(), 0.0);
+        QCOMPARE(outer->dragVelocity(), QPointF(2000, 0));
+        mouse(QEvent::MouseButtonRelease, { 170, 105 }, 1020);
+        QCOMPARE(released.size(), 1);
+        QCOMPARE(released.first().first().toPointF(), QPointF(2000, 0));
+        outer->setInteractive(false);
+        QVERIFY(! outer->isMoving());
+    }
+    void synchronousDrag_data() {
+        QTest::addColumn<bool>("synchronous");
+        QTest::addColumn<bool>("nested");
+        for (bool nested : { false, true })
+            for (bool synchronous : { false, true })
+                QTest::newRow(qPrintable(QString("%1-%2").arg(nested).arg(synchronous)))
+                    << synchronous << nested;
+    }
+    void synchronousDrag() {
+        QFETCH(bool, synchronous);
+        QFETCH(bool, nested);
+        inner->setVisible(false);
+        outer->setSynchronousDrag(synchronous);
+        qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(outer))
+            ->setEnabled(nested);
+        mouse(QEvent::MouseButtonPress, { 100, 150 }, 1000);
+        mouse(QEvent::MouseMove, { 100, 110 }, 1020);
+        QCOMPARE(outer->contentY(),
+                 synchronous ? 40.0 : 40.0 - QGuiApplication::styleHints()->startDragDistance());
+        mouse(QEvent::MouseMove, { 100, 90 }, 1040);
+        QCOMPARE(outer->contentY(),
+                 synchronous ? 60.0 : 60.0 - QGuiApplication::styleHints()->startDragDistance());
+        mouse(QEvent::MouseButtonRelease, { 100, 90 }, 1240);
     }
     void verticalWheelAcrossHorizontalLists_data() {
         QTest::addColumn<bool>("precision");
@@ -1167,6 +1345,20 @@ MD.Scrollable {
         QCOMPARE(outer->contentY(), 0);
         wheel({}, Qt::ScrollEnd);
     }
+    void twoDimensionalDrag() {
+        inner->setVisible(false);
+        outer->setContentWidth(900);
+        outer->setFlickableDirection(Flickable::HorizontalAndVerticalFlick);
+        mouse(QEvent::MouseButtonPress, { 200, 150 }, 1000);
+        mouse(QEvent::MouseMove, { 160, 120 }, 1020);
+        QCOMPARE(outer->contentX(), 40.0);
+        QCOMPARE(outer->contentY(), 30.0);
+        mouse(QEvent::MouseMove, { 120, 110 }, 1040);
+        QCOMPARE(outer->contentX(), 80.0);
+        QCOMPARE(outer->contentY(), 40.0);
+        mouse(QEvent::MouseButtonRelease, { 120, 110 }, 1240);
+        QVERIFY(! outer->isMoving());
+    }
     void reparentCancels() {
         mouse(QEvent::MouseButtonPress, { 100, 150 }, 1000);
         mouse(QEvent::MouseMove, { 100, 110 }, 1020);
@@ -1212,6 +1404,7 @@ MD.Scrollable {
         QQuickFlickable qtOuter(window.contentItem());
         qtOuter.setSize({ 300, 300 });
         qtOuter.setContentHeight(900);
+        qtOuter.setSynchronousDrag(true);
         qtOuter.setFlickableDirection(QQuickFlickable::VerticalFlick);
         qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(&qtOuter, true))
             ->setEnabled(true);

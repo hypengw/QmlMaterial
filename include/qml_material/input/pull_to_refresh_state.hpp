@@ -17,31 +17,32 @@ class QML_MATERIAL_API PullToRefreshState : public NestedScrollConnection {
     Q_PROPERTY(qreal distanceFraction READ distanceFraction NOTIFY distanceChanged FINAL)
 public:
     explicit PullToRefreshState(QObject* parent = nullptr);
-    qreal         threshold() const { return m_threshold; }
-    bool          enabled() const { return m_enabled; }
-    bool          refreshing() const { return m_refreshing; }
-    bool          settling() const { return m_settling; }
-    bool          dragging() const { return m_dragging; }
-    bool          armed() const { return m_dragging && m_rawDistance * 0.5 > m_threshold; }
-    qreal         offset() const { return m_offset; }
-    qreal         distanceFraction() const { return m_offset / m_threshold; }
-    void          setThreshold(qreal);
-    void          setEnabled(bool);
-    void          setRefreshing(bool);
-    void          setSettling(bool);
-    QPointF       preScroll(QPointF, Source) override;
-    QPointF       postScroll(QPointF, QPointF, Source) override;
-    bool          canConsume(QPointF, Source) const override;
-    void          begin(Source) override;
-    QPointF       release(QPointF velocity) override;
-    void          end(bool cancelled) override;
-    Q_SIGNAL void thresholdChanged();
-    Q_SIGNAL void enabledChanged();
-    Q_SIGNAL void refreshingChanged();
-    Q_SIGNAL void settlingChanged();
-    Q_SIGNAL void draggingChanged();
-    Q_SIGNAL void distanceChanged();
-    Q_SIGNAL void refreshRequested();
+    qreal            threshold() const { return m_threshold; }
+    bool             enabled() const { return m_enabled; }
+    bool             refreshing() const { return m_refreshing; }
+    bool             settling() const { return m_settling; }
+    bool             dragging() const { return m_dragging; }
+    bool             armed() const { return m_dragging && m_rawDistance * 0.5 > m_threshold; }
+    qreal            offset() const { return m_offset; }
+    qreal            distanceFraction() const { return m_offset / m_threshold; }
+    void             setThreshold(qreal);
+    void             setEnabled(bool);
+    void             setRefreshing(bool);
+    void             setSettling(bool);
+    QPointF          preScroll(QPointF, Source) override;
+    QPointF          postScroll(QPointF, QPointF, Source) override;
+    Qt::Orientations dragAxes() const override { return Qt::Vertical; }
+    bool             canConsume(QPointF, Source) const override;
+    void             begin(Source) override;
+    QPointF          release(QPointF velocity) override;
+    void             end(bool cancelled) override;
+    Q_SIGNAL void    thresholdChanged();
+    Q_SIGNAL void    enabledChanged();
+    Q_SIGNAL void    refreshingChanged();
+    Q_SIGNAL void    settlingChanged();
+    Q_SIGNAL void    draggingChanged();
+    Q_SIGNAL void    distanceChanged();
+    Q_SIGNAL void    refreshRequested();
 
 private:
     void    update(qreal rawDistance, bool dragging);

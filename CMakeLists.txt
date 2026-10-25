@@ -393,6 +393,12 @@ set(SOURCES
     include/qml_material/token/time_picker.hpp
     include/qml_material/input/date_validator.hpp
     src/input/nested_scroll.cpp
+    src/input/nested_scroll_dispatcher.cpp
+    src/input/scroll_input.cpp
+    src/input/scroll_input_p.hpp
+    src/input/scroll_coordinates_p.hpp
+    src/input/scroll_gesture_p.hpp
+    src/input/nested_scroll_dispatcher_p.hpp
     src/input/app_bar_scroll.cpp
     src/input/pull_to_refresh_state.cpp
     src/input/swipe_to_dismiss_state.cpp

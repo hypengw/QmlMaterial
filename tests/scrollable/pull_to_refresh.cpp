@@ -88,10 +88,11 @@ MD.PullToRefresh {
             auto* content = activeSpinner->property("contentItem").value<QQuickItem*>();
             QVERIFY(content);
             QCOMPARE(content->size(), QSizeF(13.5, 13.5));
-            auto* arcLoader = content->findChild<QQuickLoader*>();
-            QVERIFY(arcLoader);
-            QTRY_VERIFY(arcLoader->item());
-            QCOMPARE(arcLoader->item()->property("radius").toReal(), 6.75);
+            const auto shapes = content->childItems();
+            QCOMPARE(shapes.size(), 1);
+            QCOMPARE(shapes.first()->size(), content->size());
+            QCOMPARE(shapes.first()->property("source").value<QObject*>(), activeSpinner.data());
+            QVERIFY(activeSpinner->property("running").toBool());
         }
         item->setVisible(false);
         QVERIFY(! spinner->active());
@@ -151,6 +152,7 @@ MD.PullToRefresh {
                               viewport + R"(
     objectName: "view"
     anchors.fill: parent
+    synchronousDrag: true
     MD.NestedScroll.enabled: true
     MD.NestedScroll.connection: root.refreshState
 } })",

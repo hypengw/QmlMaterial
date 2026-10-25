@@ -23,6 +23,7 @@ public:
     };
     Q_ENUM(Source)
     explicit NestedScrollConnection(QObject* parent = nullptr): QObject(parent) {}
+    virtual Qt::Orientations dragAxes() const { return {}; }
     // Called once on pointer release, before remaining velocity starts a fling.
     virtual QPointF release(QPointF velocity) {
         Q_UNUSED(velocity);
