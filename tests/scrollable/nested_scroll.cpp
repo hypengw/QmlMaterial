@@ -1,4 +1,5 @@
 #include "qml_material/scrollable/flickable.hpp"
+#include "qml_material/view/lazy_list.hpp"
 #include "qml_material/input/nested_scroll.hpp"
 #include "qml_material/input/app_bar_scroll.hpp"
 #include "qml_material/input/floating_toolbar_scroll.hpp"
@@ -720,6 +721,45 @@ MD.Scrollable {
     void cleanup() {
         root.reset();
         window.hide();
+    }
+    void horizontalLazyListInsideVerticalViewport() {
+        root.reset();
+        QQmlComponent component(&engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            MD.Scrollable {
+                width: 300; height: 300; contentHeight: 900
+                flickableDirection: MD.Scrollable.VerticalFlick
+                MD.NestedScroll.enabled: true
+                MD.NestedScroll.axes: Qt.Vertical
+                MD.PageHorizontalLazyList {
+                    objectName: "horizontal"
+                    width: 300; height: 180
+                    source: MD.ListSnapshotSource { items: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }
+                    delegate: Rectangle { required property MD.LazyRow row; width: 80 }
+                }
+            }
+        )",
+                          QUrl("qrc:/horizontal-lazy-nested.qml"));
+        QVERIFY2(component.isReady(), qPrintable(component.errorString()));
+        root.reset(qobject_cast<QQuickItem*>(component.create()));
+        QVERIFY(root);
+        outer           = qobject_cast<Flickable*>(root.get());
+        auto horizontal = root->findChild<LazyList*>("horizontal");
+        QVERIFY(horizontal);
+        root->setParentItem(window.contentItem());
+        QTRY_COMPARE(horizontal->contentWidth(), 800.0);
+        wheel({ -60, 0 }, Qt::ScrollBegin);
+        QCOMPARE(horizontal->contentX(), 60.0);
+        QCOMPARE(outer->contentY(), 0.0);
+        wheel({}, Qt::ScrollEnd);
+        wheel({ 0, -70 }, Qt::ScrollBegin);
+        QCOMPARE(horizontal->contentX(), 60.0);
+        QCOMPARE(outer->contentY(), 70.0);
+        wheel({}, Qt::ScrollEnd);
+        QVERIFY(! horizontal->isMoving());
+        QVERIFY(! outer->isMoving());
     }
     void wheelRemainder() {
         inner->setContentY(390);

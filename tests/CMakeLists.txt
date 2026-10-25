@@ -85,6 +85,7 @@ set(QM_TEST_SOURCES
   layout/viewport_controller.cpp
   model/appstream_release_model.cpp
   model/lazy_data.cpp
+  model/item_source.cpp
   motion/animation_runtime.cpp
   motion/seekable_transition.cpp
   motion/control_motion.cpp

@@ -422,6 +422,9 @@ set(SOURCES
     include/qml_material/carousel/carousel_strategy.hpp
     include/qml_material/carousel/carousel_view.hpp
     src/model/palette_model.cpp
+    src/model/item_snapshot.cpp
+    include/qml_material/model/item_snapshot.hpp
+    include/qml_material/model/item_demand.hpp
     src/model/item_source.cpp
     include/qml_material/model/item_source.hpp
     src/model/item_model_source.cpp
@@ -605,6 +608,7 @@ set(QML_FILES
     qml/scrollable/ToggleListItem.qml
     qml/scrollable/ListView.qml
     qml/scrollable/PageHorizontalListView.qml
+    qml/scrollable/PageHorizontalLazyList.qml
     qml/scrollable/PageVerticalFlickable.qml
     qml/scrollable/PageVerticalListView.qml
     qml/scrollable/ScrollBar.qml

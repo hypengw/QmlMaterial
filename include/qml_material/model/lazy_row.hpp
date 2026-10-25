@@ -22,18 +22,20 @@ public:
     quint64       revision() const { return m_revision; }
     quint64       contentRevision() const { return m_record.contentRevision; }
     bool          active() const { return m_active; }
-    void          bind(const ItemSnapshotPtr&, int index);
-    void          pool();
     Q_SIGNAL void changed();
     Q_SIGNAL void activeChanged();
     Q_SIGNAL void pooled();
     Q_SIGNAL void reused();
 
 private:
-    ItemRecord m_record;
-    int        m_index      = -1;
-    quint64    m_revision   = 0;
-    bool       m_active     = false;
-    quint64    m_generation = 0;
+    friend class DelegateRecycler;
+    void            bind(const ItemSnapshotPtr&, int index);
+    void            pool();
+    ItemSnapshotPtr m_snapshot;
+    ItemRecord      m_record;
+    int             m_index      = -1;
+    quint64         m_revision   = 0;
+    bool            m_active     = false;
+    quint64         m_generation = 0;
 };
 } // namespace qml_material

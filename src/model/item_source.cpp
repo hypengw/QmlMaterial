@@ -1,74 +1,118 @@
 #include "qml_material/model/item_source.hpp"
 #include <QPointer>
+#include <QSet>
+#include <QThread>
 #include <limits>
 
 namespace qml_material
 {
 ItemSource::ItemSource(QObject* parent)
-    : QObject(parent), m_snapshot(std::make_shared<ItemSnapshot>()) {}
+    : QObject(parent), m_snapshot(std::make_shared<ItemSnapshot>()), m_tail(m_snapshot) {}
 
-void ItemSource::requestMore() {}
-
-void ItemSource::publish(QVector<ItemRecord> rows, bool stableKeys, QVector<ItemChange> changes,
-                         bool reset, QString error) {
-    auto next        = std::make_shared<ItemSnapshot>();
-    next->revision   = revision() + 1;
-    next->stableKeys = stableKeys;
-    if (rows.size() > std::numeric_limits<int>::max()) error = QStringLiteral("Too many rows");
-    if (! reset && error.isEmpty()) {
-        qint64 expected = count();
+ItemPublishResult ItemSource::publish(ItemDataSnapshotPtr data, QVector<ItemChange> changes,
+                                      bool reset) {
+    if (QThread::currentThread() != thread())
+        return { ItemPublishResult::Rejected, QStringLiteral("Publish on the source thread") };
+    auto fail = [this](const QString& error) {
+        return reject(error);
+    };
+    if (! data || data->count() < 0) return fail(QStringLiteral("Invalid item count"));
+    if (m_tail->revision == std::numeric_limits<quint64>::max())
+        return fail(QStringLiteral("Item revision exhausted"));
+    if (reset && ! changes.isEmpty()) return fail(QStringLiteral("Reset cannot include changes"));
+    const int               count = data->count();
+    QVector<ItemDescriptor> descriptors;
+    descriptors.reserve(count);
+    QSet<QString> keys;
+    for (int i = 0; i < count; ++i) {
+        auto row = data->descriptorAt(i);
+        if (row.key.isEmpty() || keys.contains(row.key) || ! row.contentRevision)
+            return fail(QStringLiteral("Invalid item descriptor at row %1").arg(i));
+        if (data->indexOfKey(row.key) != std::optional<int>(i))
+            return fail(QStringLiteral("Invalid key index at row %1").arg(i));
+        const int old =
+            m_tail->stableKeys() && data->stableKeys() ? m_tail->indexOfKey(row.key) : -1;
+        if (old >= 0 && row.contentRevision < m_tail->descriptorAt(old).contentRevision)
+            return fail(QStringLiteral("Item content revision moved backwards"));
+        keys.insert(row.key);
+        descriptors.append(std::move(row));
+    }
+    if (! reset) {
+        struct Slot {
+            int  origin;
+            bool updated = false;
+        };
+        QVector<Slot> positions;
+        positions.reserve(m_tail->count());
+        for (int i = 0; i < m_tail->count(); ++i) positions.append(Slot { i });
         for (const auto& change : changes) {
             const qint64 end = qint64(change.index) + change.count;
-            if (change.index < 0 || change.count <= 0 || change.index > expected ||
-                (change.kind != ItemChange::Insert && end > expected) ||
+            if (change.index < 0 || change.count <= 0 || change.index > positions.size() ||
+                (change.kind != ItemChange::Insert && end > positions.size()) ||
                 (change.kind == ItemChange::Move &&
-                 (change.destination < 0 || change.destination > expected - change.count))) {
-                error = QStringLiteral("Invalid item change range");
+                 (change.destination < 0 || change.destination > positions.size() - change.count)))
+                return fail(QStringLiteral("Invalid item change range"));
+            switch (change.kind) {
+            case ItemChange::Insert:
+                if (qint64(positions.size()) + change.count > std::numeric_limits<int>::max())
+                    return fail(QStringLiteral("Too many items"));
+                positions.insert(change.index, change.count, Slot { -1 });
+                break;
+            case ItemChange::Remove: positions.remove(change.index, change.count); break;
+            case ItemChange::Move: {
+                auto moved = positions.mid(change.index, change.count);
+                positions.remove(change.index, change.count);
+                for (int i = 0; i < moved.size(); ++i)
+                    positions.insert(change.destination + i, moved[i]);
                 break;
             }
-            if (change.kind == ItemChange::Insert) expected += change.count;
-            if (change.kind == ItemChange::Remove) expected -= change.count;
-        }
-        if (expected != rows.size()) error = QStringLiteral("Item change count mismatch");
-    }
-    if (error.isEmpty()) {
-        for (int i = 0; i < rows.size(); ++i) {
-            if (! stableKeys) rows[i].key = QStringLiteral("%1:%2").arg(next->revision).arg(i);
-            const auto& key = rows[i].key;
-            if (key.isEmpty() || next->indexes.contains(key)) {
-                error = QStringLiteral("Missing or duplicate item key at row %1").arg(i);
+            case ItemChange::Update:
+                for (int i = change.index; i < end; ++i) positions[i].updated = true;
                 break;
-            }
-            next->indexes.insert(key, i);
-            if (! rows[i].contentRevision) {
-                const int oldIndex =
-                    stableKeys && m_snapshot->stableKeys ? m_snapshot->indexOfKey(key) : -1;
-                if (oldIndex >= 0 && m_snapshot->rows[oldIndex].value == rows[i].value &&
-                    m_snapshot->rows[oldIndex].reuseType == rows[i].reuseType)
-                    rows[i].contentRevision = m_snapshot->rows[oldIndex].contentRevision;
-                else
-                    rows[i].contentRevision = next->revision;
+            default: return fail(QStringLiteral("Unknown item change"));
             }
         }
+        if (positions.size() != descriptors.size())
+            return fail(QStringLiteral("Item change count mismatch"));
+        for (int i = 0; i < positions.size(); ++i) {
+            if (positions[i].origin < 0) continue;
+            const auto& old = m_tail->descriptorAt(positions[i].origin);
+            if (old.key != descriptors[i].key || (! positions[i].updated && old != descriptors[i]))
+                return fail(QStringLiteral("Unreported item change"));
+        }
     }
-    next->error = std::move(error);
-    if (next->error.isEmpty())
-        next->rows = std::move(rows);
-    else {
-        next->indexes.clear();
-        reset = true;
-        changes.clear();
-    }
-    m_pending.append({ m_snapshot, next, std::move(changes), reset });
-    m_snapshot = next;
+    ItemSnapshotPtr next(
+        new ItemSnapshot(m_tail->revision + 1, std::move(data), std::move(descriptors)));
+    m_pending.append(Pending { { m_tail, next, std::move(changes), reset }, {} });
+    m_tail = std::move(next);
+    drain();
+    return { ItemPublishResult::Accepted, {} };
+}
+
+ItemPublishResult ItemSource::reject(QString error) {
+    ItemPublishResult result { ItemPublishResult::Rejected, error };
+    if (QThread::currentThread() != thread()) return result;
+    m_pending.append(Pending { {}, std::move(error) });
+    drain();
+    return result;
+}
+
+void ItemSource::drain() {
     if (m_publishing) return;
     m_publishing = true;
     QPointer<ItemSource> guard(this);
     while (! m_pending.isEmpty()) {
-        const auto change = m_pending.takeFirst();
-        Q_EMIT committed(change);
-        if (! guard) return;
-        if (m_pending.isEmpty()) Q_EMIT stateChanged();
+        const auto pending = m_pending.takeFirst();
+        if (pending.change.after) {
+            m_snapshot = pending.change.after;
+            m_error.clear();
+            Q_EMIT committed(pending.change);
+            if (! guard) return;
+        } else {
+            if (m_error == pending.error) continue;
+            m_error = pending.error;
+        }
+        Q_EMIT stateChanged();
         if (! guard) return;
     }
     m_publishing = false;
@@ -109,6 +153,10 @@ void ListSnapshotSource::rebuild() {
             error = QStringLiteral("typeRole must name a string field");
         rows.append({ key.toString(), type.toString(), value });
     }
-    publish(std::move(rows), ! m_keyRole.isEmpty(), {}, true, error);
+    if (! error.isEmpty()) {
+        reject(error);
+        return;
+    }
+    publish(makeItemDataSnapshot(std::move(rows), ! m_keyRole.isEmpty(), publicationBase()));
 }
 } // namespace qml_material

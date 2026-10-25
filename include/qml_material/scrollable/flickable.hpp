@@ -282,6 +282,7 @@ protected:
     virtual void scrollInputStarted();
     virtual void scrollActivityCancelled();
     void         setVerticalScrollTarget(qreal position);
+    void         setHorizontalScrollTarget(qreal position);
     auto         childMouseEventFilter(QQuickItem* item, QEvent* event) -> bool override;
     auto         mousePressEvent(QMouseEvent* event) -> void override;
     auto         mouseMoveEvent(QMouseEvent* event) -> void override;
@@ -355,6 +356,7 @@ private:
     auto axisData(Axis axis) const -> const AxisData&;
     auto axisPosition(Axis axis) const -> qreal;
     auto setAxisPosition(Axis axis, qreal position) -> void;
+    void setScrollTarget(Axis axis, qreal position);
     void setContentPosition(Axis axis, qreal position);
     auto minExtent(Axis axis) const -> qreal;
     auto maxExtent(Axis axis) const -> qreal;

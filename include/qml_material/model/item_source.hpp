@@ -1,34 +1,13 @@
 #pragma once
 
 #include <QObject>
-#include <QHash>
 #include <QVariant>
 #include <QVector>
 #include <QtQml/qqmlregistration.h>
-#include <memory>
-#include "qml_material/export.hpp"
+#include "qml_material/model/item_snapshot.hpp"
 
 namespace qml_material
 {
-struct ItemRecord {
-    QString  key;
-    QString  reuseType;
-    QVariant value;
-    // Zero asks the publisher to infer a version from stable identity and value equality.
-    quint64 contentRevision = 0;
-};
-
-struct ItemSnapshot {
-    quint64             revision = 0;
-    QVector<ItemRecord> rows;
-    QHash<QString, int> indexes;
-    QString             error;
-    bool                stableKeys = false;
-
-    int indexOfKey(const QString& key) const { return indexes.value(key, -1); }
-};
-using ItemSnapshotPtr = std::shared_ptr<const ItemSnapshot>;
-
 struct ItemChange {
     enum Kind
     {
@@ -51,6 +30,17 @@ struct ItemChangeSet {
     bool                reset = false;
 };
 
+struct ItemPublishResult {
+    enum Status
+    {
+        Accepted,
+        Rejected
+    };
+    Status   status = Rejected;
+    QString  error;
+    explicit operator bool() const { return status == Accepted; }
+};
+
 class QML_MATERIAL_API ItemSource : public QObject {
     Q_OBJECT
     QML_NAMED_ELEMENT(ItemSource)
@@ -62,24 +52,31 @@ class QML_MATERIAL_API ItemSource : public QObject {
 public:
     explicit ItemSource(QObject* parent = nullptr);
     ItemSnapshotPtr snapshot() const { return m_snapshot; }
-    int             count() const { return int(m_snapshot->rows.size()); }
+    int             count() const { return m_snapshot->count(); }
     quint64         revision() const { return m_snapshot->revision; }
-    bool            stableKeys() const { return m_snapshot->stableKeys; }
-    QString         errorString() const { return m_snapshot->error; }
+    bool            stableKeys() const { return m_snapshot->stableKeys(); }
+    QString         errorString() const { return m_error; }
     Q_INVOKABLE int indexOfKey(const QString& key) const { return m_snapshot->indexOfKey(key); }
-    Q_INVOKABLE virtual void requestMore();
-    Q_SIGNAL void            stateChanged();
-    Q_SIGNAL void            fetchStateChanged();
-    Q_SIGNAL void            committed(const qml_material::ItemChangeSet& change);
+    Q_SIGNAL void   stateChanged();
+    Q_SIGNAL void   committed(const qml_material::ItemChangeSet& change);
 
 protected:
-    void publish(QVector<ItemRecord>, bool stableKeys, QVector<ItemChange> changes = {},
-                 bool reset = true, QString error = {});
+    ItemPublishResult publish(ItemDataSnapshotPtr, QVector<ItemChange> changes = {},
+                              bool reset = true);
+    ItemPublishResult reject(QString error);
+    ItemSnapshotPtr   publicationBase() const { return m_tail; }
 
 private:
-    ItemSnapshotPtr      m_snapshot;
-    QList<ItemChangeSet> m_pending;
-    bool                 m_publishing = false;
+    struct Pending {
+        ItemChangeSet change;
+        QString       error;
+    };
+    void            drain();
+    ItemSnapshotPtr m_snapshot;
+    ItemSnapshotPtr m_tail;
+    QList<Pending>  m_pending;
+    QString         m_error;
+    bool            m_publishing = false;
 };
 
 class QML_MATERIAL_API ListSnapshotSource : public ItemSource {

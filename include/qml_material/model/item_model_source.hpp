@@ -3,6 +3,7 @@
 #include <QAbstractItemModel>
 #include <QPointer>
 #include "qml_material/model/item_source.hpp"
+#include "qml_material/model/item_demand.hpp"
 
 namespace qml_material
 {
@@ -23,9 +24,10 @@ public:
     void                setKeyRole(const QString&);
     void                setTypeRole(const QString&);
     void                setRoles(const QStringList&);
-    Q_INVOKABLE void    requestMore() override;
+    Q_INVOKABLE void    requestMore(const qml_material::ItemDemand& demand);
     // QAbstractItemModel has no notification for canFetchMore changes without row changes.
     Q_INVOKABLE void notifyFetchStateChanged();
+    Q_SIGNAL void    fetchStateChanged();
     Q_SIGNAL void    modelChanged();
     Q_SIGNAL void    keyRoleChanged();
     Q_SIGNAL void    typeRoleChanged();
@@ -40,5 +42,9 @@ private:
     quint64                        m_generation      = 0;
     quint64                        m_modelGeneration = 0;
     bool                           m_fetchQueued     = false;
+    bool                           m_resetRequired   = true;
+    QVector<ItemRecord>            m_rows;
+    ItemDemand                     m_demand;
+    std::optional<int>             m_requestedCount;
 };
 } // namespace qml_material

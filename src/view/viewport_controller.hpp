@@ -24,19 +24,19 @@ public:
         m_layout.reset(0, 0, 0);
     }
 
-    Result apply(ItemSnapshotPtr next, double width, double estimate, double spacing,
+    Result apply(ItemSnapshotPtr next, double constraint, double estimate, double spacing,
                  double offset) {
-        if (! next || ! std::isfinite(width) || width < 0 || ! std::isfinite(offset))
+        if (! next || ! std::isfinite(constraint) || constraint < 0 || ! std::isfinite(offset))
             return { false, offset };
         LinearLayout layout;
-        if (! layout.reset(int(next->rows.size()), estimate, spacing)) return { false, offset };
+        if (! layout.reset(next->count(), estimate, spacing)) return { false, offset };
 
         QString anchor;
         double  screenOffset = 0;
-        if (m_snapshot && m_snapshot->stableKeys && next->stableKeys) {
+        if (m_snapshot && m_snapshot->stableKeys() && next->stableKeys()) {
             const int oldIndex = m_layout.indexAt(offset);
             auto      select   = [&](int index) {
-                const auto& key = m_snapshot->rows[index].key;
+                const auto& key = m_snapshot->descriptorAt(index).key;
                 if (next->indexOfKey(key) < 0) return false;
                 anchor       = key;
                 screenOffset = m_layout.offset(index) - offset;
@@ -49,40 +49,40 @@ public:
         }
 
         QHash<QString, Measurement> cache;
-        const bool reuse = m_snapshot && width == m_width &&
-                           ((m_snapshot->stableKeys && next->stableKeys) || next == m_snapshot);
+        const bool reuse = m_snapshot && constraint == m_constraint &&
+                           ((m_snapshot->stableKeys() && next->stableKeys()) || next == m_snapshot);
         if (reuse) {
-            for (int i = 0; i < next->rows.size(); ++i) {
-                const auto& row   = next->rows[i];
+            for (int i = 0; i < next->count(); ++i) {
+                const auto& row   = next->descriptorAt(i);
                 const auto  found = m_cache.constFind(row.key);
-                if (found == m_cache.cend() || found->value != row.value ||
-                    found->type != row.reuseType || found->revision != row.contentRevision)
+                if (found == m_cache.cend() || found->type != row.reuseType ||
+                    found->revision != row.contentRevision)
                     continue;
-                if (! layout.setExtent(i, found->height)) return { false, offset };
+                if (! layout.setExtent(i, found->extent)) return { false, offset };
                 cache.insert(row.key, *found);
             }
         }
         double corrected = offset;
-        if (next->rows.isEmpty())
+        if (next->count() == 0)
             corrected = 0;
         else if (! anchor.isEmpty())
             corrected = layout.offset(next->indexOfKey(anchor)) - screenOffset;
-        m_snapshot = std::move(next);
-        m_width    = width;
-        m_estimate = estimate;
-        m_layout   = std::move(layout);
-        m_cache    = std::move(cache);
+        m_snapshot   = std::move(next);
+        m_constraint = constraint;
+        m_estimate   = estimate;
+        m_layout     = std::move(layout);
+        m_cache      = std::move(cache);
         return { true, corrected };
     }
 
-    Result measure(int index, double height, double offset) {
+    Result measure(int index, double extent, double offset) {
         if (! m_snapshot || index < 0 || index >= m_layout.count() || ! std::isfinite(offset))
             return { false, offset };
         const int    anchor   = m_layout.indexAt(offset);
         const double oldStart = m_layout.offset(anchor);
-        if (! m_layout.setExtent(index, height)) return { false, offset };
-        const auto& row = m_snapshot->rows[index];
-        m_cache.insert(row.key, { height, row.value, row.reuseType, row.contentRevision });
+        if (! m_layout.setExtent(index, extent)) return { false, offset };
+        const auto& row = m_snapshot->descriptorAt(index);
+        m_cache.insert(row.key, { extent, row.reuseType, row.contentRevision });
         return { true, offset + m_layout.offset(anchor) - oldStart };
     }
 
@@ -111,15 +111,14 @@ public:
 
 private:
     struct Measurement {
-        double   height;
-        QVariant value;
-        QString  type;
-        quint64  revision;
+        double  extent;
+        QString type;
+        quint64 revision;
     };
     ItemSnapshotPtr             m_snapshot;
     LinearLayout                m_layout;
     QHash<QString, Measurement> m_cache;
-    double                      m_width { 0 };
+    double                      m_constraint { 0 };
     double                      m_estimate { 0 };
 };
 

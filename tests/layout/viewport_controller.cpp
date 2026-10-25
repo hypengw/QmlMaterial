@@ -4,11 +4,14 @@
 using namespace qml_material;
 
 static ItemSnapshotPtr snapshot(QVector<ItemRecord> rows, bool stable = true) {
-    auto result        = std::make_shared<ItemSnapshot>();
-    result->rows       = std::move(rows);
-    result->stableKeys = stable;
-    for (int i = 0; i < result->rows.size(); ++i) result->indexes.insert(result->rows[i].key, i);
-    return result;
+    class Source : public ItemSource {
+    public:
+        using ItemSource::publish;
+    } source;
+    // These test values encode the content version directly.
+    for (auto& row : rows) row.contentRevision = row.value.toULongLong() + 1;
+    source.publish(makeItemDataSnapshot(std::move(rows), stable));
+    return source.snapshot();
 }
 
 class ViewportControllerTest : public QObject {
@@ -79,7 +82,7 @@ private slots:
         QVERIFY(result.accepted);
         QCOMPARE(result.offset, offset + 4100);
         const int index = view.layout().indexAt(result.offset);
-        QCOMPARE(view.snapshot()->rows[index].key, QStringLiteral("50000"));
+        QCOMPARE(view.snapshot()->descriptorAt(index).key, QStringLiteral("50000"));
         QCOMPARE(result.offset - view.layout().offset(index), 7.0);
     }
     void predecessorAndUnstableIdentity() {

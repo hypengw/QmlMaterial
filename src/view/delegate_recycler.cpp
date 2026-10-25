@@ -32,14 +32,18 @@ int DelegateRecycler::poolSize() const {
         return e->idle;
     }));
 }
-void DelegateRecycler::layout(QQuickItem* item, const QRectF& geometry) {
+void DelegateRecycler::layout(QQuickItem* item, const QRectF& geometry,
+                              Qt::Orientation orientation) {
     auto value = entry(item);
     if (! value || ! value->host || ! value->item) return;
     value->host->setPosition(geometry.topLeft());
     if (! value->host || ! value->item) return;
     value->host->setSize(geometry.size());
     if (! value->item) return;
-    value->item->setWidth(geometry.width());
+    if (orientation == Qt::Vertical)
+        value->item->setWidth(geometry.width());
+    else
+        value->item->setHeight(geometry.height());
 }
 void DelegateRecycler::clear() {
     if (m_clearing) return;
@@ -71,7 +75,7 @@ QQuickItem* DelegateRecycler::acquire(QQmlComponent* component, const ItemSnapsh
                                       int index) {
     m_error.clear();
     if (m_clearing || ! m_engine || ! component || ! component->isReady() || ! snapshot ||
-        index < 0 || index >= snapshot->rows.size()) {
+        index < 0 || index >= snapshot->count()) {
         m_error = QStringLiteral("Invalid delegate or row");
         return nullptr;
     }
@@ -83,7 +87,7 @@ QQuickItem* DelegateRecycler::acquire(QQmlComponent* component, const ItemSnapsh
     };
     trim();
     if (! current() || ! componentGuard || ! m_engine) return nullptr;
-    const auto             type = snapshot->rows[index].reuseType;
+    const auto             type = snapshot->descriptorAt(index).reuseType;
     std::shared_ptr<Entry> value;
     for (const auto& e : std::as_const(m_entries))
         if (e->idle && ! e->updating && e->item && e->host && e->row && e->component == component &&
@@ -132,8 +136,8 @@ QQuickItem* DelegateRecycler::acquire(QQmlComponent* component, const ItemSnapsh
 bool DelegateRecycler::rebind(QQuickItem* item, const ItemSnapshotPtr& snapshot, int index) {
     auto value = entry(item);
     if (! value || value->idle || value->updating || ! value->row || ! value->component ||
-        ! snapshot || index < 0 || index >= snapshot->rows.size() ||
-        value->type != snapshot->rows[index].reuseType)
+        ! snapshot || index < 0 || index >= snapshot->count() ||
+        value->type != snapshot->descriptorAt(index).reuseType)
         return false;
     QPointer<DelegateRecycler> guard(this);
     const auto                 generation = m_generation;

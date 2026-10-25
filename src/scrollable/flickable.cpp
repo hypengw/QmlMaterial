@@ -1322,20 +1322,25 @@ auto Flickable::vHeight() const -> qreal {
 auto Flickable::viewportMoved(Qt::Orientations orientation) -> void { Q_UNUSED(orientation) }
 void Flickable::scrollInputStarted() {}
 void Flickable::scrollActivityCancelled() {}
-void Flickable::setVerticalScrollTarget(qreal position) {
+void Flickable::setVerticalScrollTarget(qreal position) { setScrollTarget(VerticalAxis, position); }
+void Flickable::setHorizontalScrollTarget(qreal position) {
+    setScrollTarget(HorizontalAxis, position);
+}
+void Flickable::setScrollTarget(Axis axis, qreal position) {
     if (! std::isfinite(position)) return;
-    position     = boundedPosition(VerticalAxis, position);
-    auto& motion = m_vData.motion;
+    position     = boundedPosition(axis, position);
+    auto& data   = axisData(axis);
+    auto& motion = data.motion;
     if (motion.mode() == ScrollMotion::Mode::Target && motion.target() == position) return;
-    if (! window() || (qAbs(position - contentY()) < 0.01 && qAbs(verticalVelocity()) < 0.1)) {
-        stopAxisMotion(VerticalAxis);
-        setAxisPosition(VerticalAxis, position);
+    if (! window() || (qAbs(position - data.position) < 0.01 && qAbs(data.velocity) < 0.1)) {
+        stopAxisMotion(axis);
+        setAxisPosition(axis, position);
         movementEnding();
         return;
     }
     const qreal now      = m_motionClock.nsecsElapsed() / 1e9;
     const qreal velocity = motion.active() ? motion.sample(now).velocity : 0;
-    motion.smooth(contentY(), velocity, position, now);
+    motion.smooth(data.position, velocity, position, now);
     movementStarting();
     requestMotionFrame();
 }

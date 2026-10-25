@@ -4,10 +4,11 @@
 namespace qml_material
 {
 void LazyRow::bind(const ItemSnapshotPtr& snapshot, int index) {
-    if (! snapshot || index < 0 || index >= snapshot->rows.size()) return;
+    if (! snapshot || index < 0 || index >= snapshot->count()) return;
     const auto generation = ++m_generation;
     const bool activating = ! m_active;
-    m_record              = snapshot->rows[index];
+    m_snapshot            = snapshot;
+    m_record              = snapshot->recordAt(index);
     m_index               = index;
     m_revision            = snapshot->revision;
     m_active              = true;

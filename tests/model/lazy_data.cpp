@@ -67,29 +67,29 @@ private Q_SLOTS:
     void rowActivityNotifications() {
         ListSnapshotSource source;
         source.setItems({ 1, 2 });
-        LazyRow    row;
-        QSignalSpy data(&row, &LazyRow::changed);
-        QSignalSpy active(&row, &LazyRow::activeChanged);
-        QSignalSpy pooled(&row, &LazyRow::pooled);
-        row.bind(source.snapshot(), 0);
+        QQmlEngine    engine;
+        QQmlComponent component(&engine);
+        component.setData("import QtQuick\nItem { required property QtObject row }", QUrl());
+        QVERIFY(component.isReady());
+        DelegateRecycler recycler(&engine);
+        auto             item = recycler.acquire(&component, source.snapshot(), 0);
+        QVERIFY(item);
+        auto       row = recycler.row(item);
+        QSignalSpy data(row, &LazyRow::changed);
+        QSignalSpy active(row, &LazyRow::activeChanged);
+        QSignalSpy pooled(row, &LazyRow::pooled);
+        QVERIFY(recycler.rebind(item, source.snapshot(), 1));
+        QCOMPARE(active.size(), 0);
+        QCOMPARE(data.size(), 1);
+        recycler.release(item);
         QCOMPARE(active.size(), 1);
-        row.bind(source.snapshot(), 1);
-        QCOMPARE(active.size(), 1);
-        QCOMPARE(data.size(), 2);
-        row.pool();
+        QCOMPARE(pooled.size(), 1);
+        QCOMPARE(recycler.acquire(&component, source.snapshot(), 0), item);
         QCOMPARE(active.size(), 2);
         QCOMPARE(data.size(), 2);
-        QCOMPARE(pooled.size(), 1);
-        row.bind(source.snapshot(), 0);
-        QCOMPARE(active.size(), 3);
-        QCOMPARE(data.size(), 3);
-        connect(&row, &LazyRow::activeChanged, &row, [&] {
-            if (! row.active()) row.bind(source.snapshot(), 1);
-        });
-        row.pool();
-        QVERIFY(row.active());
-        QCOMPARE(row.index(), 1);
-        QCOMPARE(pooled.size(), 1);
+        recycler.release(item);
+        QVERIFY(! row->active());
+        QCOMPARE(pooled.size(), 2);
     }
     void pooledChildInputState() {
         QQmlEngine   engine;
@@ -154,15 +154,15 @@ private Q_SLOTS:
         const auto before = source.snapshot();
         QCOMPARE(before->indexOfKey("b"), 1);
         source.setItems({ QVariantMap { { "id", "a" } }, QVariantMap { { "id", "a" } } });
-        QCOMPARE(source.count(), 0);
+        QCOMPARE(source.count(), 2);
         QVERIFY(! source.errorString().isEmpty());
-        QCOMPARE(before->rows.size(), 2);
+        QCOMPARE(before->count(), 2);
         QCOMPARE(before->indexOfKey("b"), 1);
         source.setKeyRole({});
         QVERIFY(! source.stableKeys());
         const auto transient = source.snapshot();
         source.setItems({ 1, 2, 3 });
-        QCOMPARE(source.indexOfKey(transient->rows[0].key), -1);
+        QCOMPARE(source.indexOfKey(transient->descriptorAt(0).key), -1);
     }
     void incrementalModel() {
         Rows            model;
@@ -193,7 +193,7 @@ private Q_SLOTS:
         QCOMPARE(model.reads, 4);
         model.change(1, "changed");
         QCOMPARE(model.reads, 5);
-        QCOMPARE(source.snapshot()->rows[1].value.toMap().value("id").toString(), "changed");
+        QCOMPARE(source.snapshot()->valueAt(1).toMap().value("id").toString(), "changed");
         model.change(1, "a");
         QVERIFY(! source.errorString().isEmpty());
         model.change(1, "valid");
@@ -211,22 +211,22 @@ private Q_SLOTS:
         view.apply(source.snapshot(), 300, 40, 0, 0);
         view.measure(0, 100, 0);
         view.measure(1, 80, 0);
-        const auto a = source.snapshot()->rows[0].contentRevision;
-        const auto b = source.snapshot()->rows[1].contentRevision;
+        const auto a = source.snapshot()->descriptorAt(0).contentRevision;
+        const auto b = source.snapshot()->descriptorAt(1).contentRevision;
         model.change(0, "a");
-        QVERIFY(source.snapshot()->rows[0].contentRevision > a);
-        QCOMPARE(source.snapshot()->rows[1].contentRevision, b);
+        QVERIFY(source.snapshot()->descriptorAt(0).contentRevision > a);
+        QCOMPARE(source.snapshot()->descriptorAt(1).contentRevision, b);
         view.apply(source.snapshot(), 300, 40, 0, 0);
         QCOMPARE(view.layout().extent(0), 40.0);
         QCOMPARE(view.layout().extent(1), 80.0);
         model.move(1, 0);
-        QCOMPARE(source.snapshot()->rows[0].contentRevision, b);
+        QCOMPARE(source.snapshot()->descriptorAt(0).contentRevision, b);
         view.apply(source.snapshot(), 300, 40, 0, 0);
         QCOMPARE(view.layout().extent(0), 80.0);
         model.insert(0, "new");
-        QCOMPARE(source.snapshot()->rows[1].contentRevision, b);
+        QCOMPARE(source.snapshot()->descriptorAt(1).contentRevision, b);
         model.reset(model.values);
-        QVERIFY(source.snapshot()->rows[1].contentRevision > b);
+        QVERIFY(source.snapshot()->descriptorAt(1).contentRevision > b);
     }
     void snapshotVersionsPreserveUnchangedRows() {
         ListSnapshotSource source;
@@ -236,8 +236,10 @@ private Q_SLOTS:
         source.setItems({ QVariantMap { { "id", "new" } },
                           QVariantMap { { "id", "a" } },
                           QVariantMap { { "id", "b" }, { "text", "changed" } } });
-        QCOMPARE(source.snapshot()->rows[1].contentRevision, old->rows[0].contentRevision);
-        QVERIFY(source.snapshot()->rows[2].contentRevision > old->rows[1].contentRevision);
+        QCOMPARE(source.snapshot()->descriptorAt(1).contentRevision,
+                 old->descriptorAt(0).contentRevision);
+        QVERIFY(source.snapshot()->descriptorAt(2).contentRevision >
+                old->descriptorAt(1).contentRevision);
     }
     void sourceLifetimeAndReentry() {
         ItemModelSource source;
@@ -273,14 +275,14 @@ private Q_SLOTS:
         ItemModelSource source;
         source.setKeyRole("id");
         source.setModel(&model);
-        source.requestMore();
-        source.requestMore();
+        source.requestMore(ItemDemand(source.snapshot(), 0, source.count(), true));
+        source.requestMore(ItemDemand(source.snapshot(), 0, source.count(), true));
         QCOMPARE(model.fetches, 0);
         QCoreApplication::processEvents();
         QCOMPARE(model.fetches, 1);
         QCoreApplication::processEvents();
         QCOMPARE(model.fetches, 1);
-        source.requestMore();
+        source.requestMore(ItemDemand(source.snapshot(), 0, source.count(), true));
         source.setModel(nullptr);
         QCoreApplication::processEvents();
         QCOMPARE(model.fetches, 1);
@@ -416,9 +418,9 @@ private Q_SLOTS:
         public:
             using ItemSource::publish;
         } source;
-        source.publish({ { "a", {}, 1 } }, true);
-        source.publish({}, true, { { ItemChange::Remove, 9, 1 } }, false);
-        QCOMPARE(source.count(), 0);
+        source.publish(makeItemDataSnapshot({ { "a", {}, 1 } }));
+        source.publish(makeItemDataSnapshot({}), { { ItemChange::Remove, 9, 1 } }, false);
+        QCOMPARE(source.count(), 1);
         QVERIFY(! source.errorString().isEmpty());
     }
     void cancellationDuringCreation() {

@@ -139,6 +139,116 @@ class LazyListTest : public QObject {
         }
     }
 private slots:
+    void horizontalGeometryAndAnchors() {
+        QQmlEngine          engine;
+        QQuickRenderControl render;
+        QQuickWindow        window(&render);
+        QQmlComponent       delegate(&engine);
+        delegate.setData(
+            "import QtQuick\nItem { required property QtObject row; implicitWidth: height * 2 }",
+            QUrl());
+        QVERIFY(delegate.isReady());
+        ListSnapshotSource source;
+        source.setKeyRole("id");
+        source.setItems(rows(10));
+        LazyList view(window.contentItem());
+        QQmlEngine::setContextForObject(&view, engine.rootContext());
+        view.setOrientation(Qt::Horizontal);
+        view.setSize({ 350, 80 });
+        view.setLeftMargin(20);
+        view.setRightMargin(30);
+        view.setTopMargin(5);
+        view.setBottomMargin(5);
+        view.setCacheExtent(0);
+        view.setSpacing(10);
+        view.setEstimatedItemExtent(140);
+        view.setSource(&source);
+        view.setDelegate(&delegate);
+        frames(render);
+        QCOMPARE(view.contentHeight(), 70.0);
+        QCOMPARE(view.contentWidth(), 1490.0);
+        QCOMPARE(view.contentX(), -20.0);
+        QCOMPARE(view.contentY(), -5.0);
+        QVERIFY(view.positionAtKey("4"));
+        frames(render);
+        QCOMPARE(view.contentX(), 580.0);
+        auto items = source.items();
+        items.prepend(QVariantMap { { "id", "new" }, { "height", 40 } });
+        source.setItems(items);
+        frames(render);
+        QCOMPARE(view.contentX(), 730.0);
+        QCOMPARE(view.firstVisibleIndex(), 4);
+        QVERIFY(view.positionAtKey("9", 1));
+        frames(render);
+        QCOMPARE(view.contentX(), view.contentWidth() + 30 - 350);
+        QVERIFY(view.isAtXEnd());
+        QVERIFY(view.currentDemand().reachesEnd());
+        view.setHeight(100);
+        frames(render);
+        QVERIFY(view.positionAtKey("9", 1));
+        frames(render);
+        QCOMPARE(view.contentHeight(), 90.0);
+        for (auto host : view.contentItem()->childItems())
+            for (auto item : host->childItems()) {
+                auto row = item->property("row").value<LazyRow*>();
+                if (! row || ! row->active()) continue;
+                QCOMPARE(item->height(), 90.0);
+                QCOMPARE(item->width(), 180.0);
+            }
+        QVERIFY(view.positionAtIndex(0));
+        frames(render);
+        QCOMPARE(view.contentX(), -20.0);
+        QVERIFY(view.isAtXBeginning());
+    }
+    void horizontalPositioningLifecycle() {
+        QQmlEngine          engine;
+        QQuickRenderControl render;
+        QQuickWindow        window(&render);
+        QQmlComponent       delegate(&engine);
+        delegate.setData("import QtQuick\nItem { required property QtObject row; implicitWidth: "
+                         "60; implicitHeight: 40 }",
+                         QUrl());
+        ListSnapshotSource source;
+        source.setKeyRole("id");
+        source.setItems(rows(100));
+        LazyList view(window.contentItem());
+        QQmlEngine::setContextForObject(&view, engine.rootContext());
+        view.setOrientation(Qt::Horizontal);
+        view.setSize({ 300, 80 });
+        view.setSource(&source);
+        view.setDelegate(&delegate);
+        frames(render);
+        QSignalSpy finished(&view, &LazyList::positioningFinished);
+        QVERIFY(view.positionAtKey("80", 0.5));
+        frames(render);
+        QVERIFY(! view.positioning());
+        QVERIFY(finished.last()[1].toBool());
+        QVERIFY(view.positionAtKey("70", 0.5, 0, LazyList::Smooth));
+        QTRY_VERIFY_WITH_TIMEOUT(([&] {
+                                     frames(render, 2);
+                                     return ! view.positioning();
+                                 })(),
+                                 3000);
+        QCOMPARE(finished.size(), 2);
+        QVERIFY(finished.last()[1].toBool());
+        QVERIFY(view.positionAtKey("2", 0, 0, LazyList::Smooth));
+        frames(render, 2);
+        QVERIFY(view.positioning());
+        QVERIFY(view.isMovingHorizontally());
+        view.setOrientation(Qt::Vertical);
+        QCOMPARE(finished.size(), 3);
+        QVERIFY(! finished.last()[1].toBool());
+        QVERIFY(! view.positioning());
+        QVERIFY(! view.isMoving());
+        frames(render);
+        QCOMPARE(view.flickableDirection(), Flickable::VerticalFlick);
+        QCOMPARE(view.contentWidth(), 300.0);
+        QVERIFY(view.positionAtKey("80"));
+        frames(render);
+        QVERIFY(finished.last()[1].toBool());
+        QVERIFY(view.contentY() > 0);
+        QCOMPARE(view.contentX(), 0.0);
+    }
     void modelStructuralAnchors() {
         QQmlEngine          engine;
         QQuickRenderControl render;
@@ -734,8 +844,10 @@ private slots:
         QQmlEngine::setContextForObject(&view, engine.rootContext());
         view.setSize({ 300, 200 });
         view.setCacheExtent(0);
+        connect(&view, &LazyList::itemsNeeded, &source, &ItemModelSource::requestMore);
         view.setSource(&source);
         view.setDelegate(&delegate);
+        source.requestMore(ItemDemand(source.snapshot(), 0, 0, true));
         frames(render, 40);
         QCOMPARE(model.requests, 3);
         QCOMPARE(model.count, 6);
@@ -753,6 +865,7 @@ private slots:
         PagedRows replacement;
         replacement.count = model.count;
         source.setModel(&replacement);
+        source.requestMore(ItemDemand(source.snapshot(), 0, source.count(), true));
         frames(render, 60);
         QCOMPARE(replacement.count, 20);
         QCOMPARE(replacement.requests, 4);
@@ -775,8 +888,10 @@ private slots:
         QQmlEngine::setContextForObject(&view, engine.rootContext());
         view.setSize({ 300, 200 });
         view.setCacheExtent(0);
+        connect(&view, &LazyList::itemsNeeded, &source, &ItemModelSource::requestMore);
         view.setSource(&source);
         view.setDelegate(&delegate);
+        source.requestMore(ItemDemand(source.snapshot(), 0, 0, true));
         frames(render, 40);
         QCOMPARE(model.count, 6);
         engine.rootContext()->setContextProperty("rowHeight", 20);
@@ -806,8 +921,10 @@ private slots:
         QQmlEngine::setContextForObject(&view, engine.rootContext());
         view.setSize({ 300, 200 });
         view.setCacheExtent(0);
+        connect(&view, &LazyList::itemsNeeded, &source, &ItemModelSource::requestMore);
         view.setSource(&source);
         view.setDelegate(&delegate);
+        source.requestMore(ItemDemand(source.snapshot(), 0, 0, true));
         frames(render, 20);
         QCOMPARE(model.requests, 1);
         for (int i = 0; i < 3; ++i) {
@@ -824,6 +941,7 @@ private slots:
         disconnect(readiness);
         AsyncRows replacement;
         source.setModel(&replacement);
+        source.requestMore(ItemDemand(source.snapshot(), 0, source.count(), true));
         connect(&replacement,
                 &AsyncRows::readyChanged,
                 &source,
@@ -843,6 +961,175 @@ private slots:
         frames(render, 20);
         QCOMPARE(view.count(), 2);
         QCOMPARE(replacement.requests, 3);
+    }
+    void externalDemandController() {
+        struct Controller : QObject {
+            ListSnapshotSource& source;
+            ItemDemand          demand;
+            int                 requests = 0;
+            bool                queued = false, loading = false, ready = true;
+            explicit Controller(ListSnapshotSource& source): source(source) {}
+            void request(const ItemDemand& next) {
+                demand = next;
+                if (queued || loading || ! ready) return;
+                queued = true;
+                QMetaObject::invokeMethod(
+                    this,
+                    [this] {
+                        queued = false;
+                        if (! demand.valid() || demand.snapshot() != source.snapshot() ||
+                            ! demand.reachesEnd() || loading || ! ready)
+                            return;
+                        ++requests;
+                        loading = true;
+                    },
+                    Qt::QueuedConnection);
+            }
+            void complete(bool success) {
+                loading = false;
+                ready   = success;
+                if (success) {
+                    auto items = source.items();
+                    items.append(items.size());
+                    source.setItems(items);
+                }
+            }
+            void retry() {
+                ready = true;
+                request(demand);
+            }
+        };
+        QQmlEngine          engine;
+        QQuickRenderControl render;
+        QQuickWindow        window(&render);
+        QQmlComponent       delegate(&engine);
+        delegate.setData(
+            "import QtQuick\nItem { required property QtObject row; implicitHeight: 40 }", QUrl());
+        QVERIFY(delegate.isReady());
+        ListSnapshotSource source;
+        source.setItems({ 1, 2 });
+        Controller controller(source);
+        LazyList   view(window.contentItem());
+        QQmlEngine::setContextForObject(&view, engine.rootContext());
+        view.setSize({ 300, 200 });
+        view.setCacheExtent(0);
+        view.setSource(&source);
+        view.setDelegate(&delegate);
+        frames(render);
+        QCOMPARE(controller.requests, 0);
+        QVERIFY(view.currentDemand().valid());
+        const auto subscription =
+            connect(&view, &LazyList::itemsNeeded, &controller, [&](const ItemDemand& demand) {
+                controller.request(demand);
+            });
+        controller.request(view.currentDemand());
+        frames(render);
+        QCOMPARE(controller.requests, 1);
+        controller.request(view.currentDemand());
+        frames(render);
+        QCOMPARE(controller.requests, 1);
+        controller.complete(false);
+        frames(render);
+        QCOMPARE(controller.requests, 1);
+        controller.retry();
+        frames(render);
+        QCOMPARE(controller.requests, 2);
+        controller.complete(true);
+        frames(render);
+        QCOMPARE(source.count(), 3);
+        QCOMPARE(controller.requests, 3);
+        disconnect(subscription);
+        controller.complete(true);
+        frames(render);
+        QCOMPARE(controller.requests, 3);
+        QCOMPARE(view.currentDemand().snapshot(), source.snapshot());
+    }
+    void demandDeliverySurvivesSourceChange() {
+        QQmlEngine          engine;
+        QQuickRenderControl render;
+        QQuickWindow        window(&render);
+        QQmlComponent       delegate(&engine);
+        delegate.setData(
+            "import QtQuick\nItem { required property QtObject row; implicitHeight: 40 }", QUrl());
+        QVERIFY(delegate.isReady());
+        ListSnapshotSource source, replacement;
+        source.setItems({ 1, 2 });
+        replacement.setItems({ 3 });
+        LazyList view(window.contentItem());
+        QQmlEngine::setContextForObject(&view, engine.rootContext());
+        view.setSize({ 300, 200 });
+        view.setSource(&source);
+        view.setDelegate(&delegate);
+        ItemSnapshotPtr captured;
+        bool            observed = false;
+        connect(&view, &LazyList::itemsNeeded, &view, [&](const ItemDemand& demand) {
+            if (captured) return;
+            captured = demand.snapshot();
+            view.setSource(&replacement);
+        });
+        connect(&view, &LazyList::itemsNeeded, &view, [&](const ItemDemand& demand) {
+            if (observed) return;
+            observed = true;
+            QCOMPARE(demand.snapshot(), captured);
+            QVERIFY(! demand.valid());
+            QCOMPARE(view.source(), &replacement);
+        });
+        frames(render);
+        QVERIFY(observed);
+        QCOMPARE(view.currentDemand().snapshot(), replacement.snapshot());
+    }
+    void queuedDemandIsCancelled() {
+        QQmlEngine          engine;
+        QQuickRenderControl render;
+        QQuickWindow        window(&render);
+        QQmlComponent       delegate(&engine);
+        delegate.setData(
+            "import QtQuick\nItem { required property QtObject row; implicitHeight: 40 }", QUrl());
+        QVERIFY(delegate.isReady());
+        PagedRows model;
+        model.count = 2;
+        ItemModelSource source;
+        source.setKeyRole("id");
+        source.setModel(&model);
+        ListSnapshotSource replacement;
+        replacement.setItems({ 1 });
+        auto view = std::make_unique<LazyList>(window.contentItem());
+        QQmlEngine::setContextForObject(view.get(), engine.rootContext());
+        view->setSize({ 300, 200 });
+        view->setCacheExtent(0);
+        view->setSource(&source);
+        view->setDelegate(&delegate);
+        connect(view.get(), &LazyList::itemsNeeded, &source, &ItemModelSource::requestMore);
+        const auto layoutOnly = [&] {
+            QCoreApplication::sendPostedEvents(view.get(), QEvent::MetaCall);
+            render.polishItems();
+        };
+        layoutOnly();
+        auto demand = view->currentDemand();
+        QVERIFY(demand.valid());
+        QCOMPARE(demand.snapshot(), source.snapshot());
+        QCOMPARE(model.requests, 0);
+        view->setSource(&replacement);
+        QVERIFY(! demand.valid());
+        frames(render);
+        QCOMPARE(model.requests, 0);
+        view->setSource(&source);
+        layoutOnly();
+        demand = view->currentDemand();
+        QVERIFY(demand.valid());
+        view->setHeight(0);
+        QVERIFY(! demand.valid());
+        frames(render);
+        QCOMPARE(model.requests, 0);
+        QVERIFY(! view->currentDemand().valid());
+        view->setHeight(200);
+        layoutOnly();
+        demand = view->currentDemand();
+        QVERIFY(demand.valid());
+        view.reset();
+        QVERIFY(! demand.valid());
+        QCoreApplication::processEvents();
+        QCOMPARE(model.requests, 0);
     }
     void measuredPositioning() {
         QQmlEngine          engine;

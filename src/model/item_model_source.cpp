@@ -10,6 +10,8 @@ void ItemModelSource::setModel(QAbstractItemModel* model) {
     m_model = model;
     ++m_modelGeneration;
     m_fetchQueued = false;
+    m_requestedCount.reset();
+    m_demand = {};
     if (model) {
         m_connections.append(
             connect(model,
@@ -76,6 +78,8 @@ void ItemModelSource::setModel(QAbstractItemModel* model) {
             ++m_modelGeneration;
             m_fetchQueued = false;
             m_model       = nullptr;
+            m_requestedCount.reset();
+            m_demand = {};
             QPointer<ItemModelSource> guard(this);
             update();
             if (guard) Q_EMIT modelChanged();
@@ -110,17 +114,20 @@ void ItemModelSource::setRoles(const QStringList& roles) {
 }
 
 void ItemModelSource::update(QVector<ItemChange> changes, bool reset) {
+    if (reset) m_requestedCount.reset();
     const auto                   generation = ++m_generation;
     QPointer<ItemModelSource>    guard(this);
     QPointer<QAbstractItemModel> model = m_model;
     if (! model) {
-        publish({}, false);
+        m_rows.clear();
+        m_resetRequired = false;
+        publish(makeItemDataSnapshot({}, false, publicationBase()));
         return;
     }
     const auto keyRole    = m_keyRole;
     const auto typeRole   = m_typeRole;
     const auto projection = m_roles;
-    const auto before     = snapshot();
+    const auto before     = publicationBase();
     const auto current    = [&] {
         return guard && model && guard->m_generation == generation;
     };
@@ -145,11 +152,12 @@ void ItemModelSource::update(QVector<ItemChange> changes, bool reset) {
     if (! current()) return;
     if (count < 0) error = QStringLiteral("Invalid model row count");
     if (! error.isEmpty()) {
-        publish({}, true, {}, true, error);
+        m_resetRequired = true;
+        reject(error);
         return;
     }
-    reset                         = reset || ! before->error.isEmpty();
-    QVector<ItemRecord>      rows = reset ? QVector<ItemRecord>(count) : before->rows;
+    reset                         = reset || m_resetRequired;
+    QVector<ItemRecord>      rows = reset ? QVector<ItemRecord>(count) : m_rows;
     QVector<QPair<int, int>> reads;
     if (reset)
         reads.append({ 0, count });
@@ -160,7 +168,8 @@ void ItemModelSource::update(QVector<ItemChange> changes, bool reset) {
                 (change.kind != ItemChange::Insert && end > rows.size()) ||
                 (change.kind == ItemChange::Move &&
                  (change.destination < 0 || change.destination > rows.size() - change.count))) {
-                publish({}, true, {}, true, QStringLiteral("Invalid model change range"));
+                m_resetRequired = true;
+                reject(QStringLiteral("Invalid model change range"));
                 return;
             }
             switch (change.kind) {
@@ -180,7 +189,8 @@ void ItemModelSource::update(QVector<ItemChange> changes, bool reset) {
             }
         }
         if (rows.size() != count) {
-            publish({}, true, {}, true, QStringLiteral("Model change count mismatch"));
+            m_resetRequired = true;
+            reject(QStringLiteral("Model change count mismatch"));
             return;
         }
     }
@@ -203,28 +213,51 @@ void ItemModelSource::update(QVector<ItemChange> changes, bool reset) {
             }
             if (key.metaType().id() != QMetaType::QString ||
                 (typeId >= 0 && type.metaType().id() != QMetaType::QString)) {
-                publish({}, true, {}, true, QStringLiteral("Key and reuse type must be strings"));
+                m_resetRequired = true;
+                reject(QStringLiteral("Key and reuse type must be strings"));
                 return;
             }
+            if (rows[row].key != key.toString() && ! rows[row].key.isEmpty()) reset = true;
             rows[row] = { key.toString(), type.toString(), value, before->revision + 1 };
         }
     }
-    publish(std::move(rows), true, reset ? QVector<ItemChange>() : changes, reset);
+    m_rows            = rows;
+    m_resetRequired   = false;
+    const auto result = publish(makeItemDataSnapshot(std::move(rows), true, before),
+                                reset ? QVector<ItemChange>() : changes,
+                                reset);
+    if (current() && ! result) m_resetRequired = true;
 }
 
-void ItemModelSource::requestMore() {
-    if (m_fetchQueued || ! m_model) return;
+void ItemModelSource::requestMore(const ItemDemand& demand) {
+    if (! demand.valid() || demand.snapshot() != snapshot() || ! demand.reachesEnd()) return;
+    m_demand = demand;
+    if (m_fetchQueued || ! m_model || m_requestedCount == count()) return;
     m_fetchQueued         = true;
     const auto generation = m_modelGeneration;
     QTimer::singleShot(0, this, [this, generation] {
         if (generation != m_modelGeneration) return;
+        m_fetchQueued     = false;
+        const auto demand = m_demand;
+        if (! demand.valid() || demand.snapshot() != snapshot() || ! demand.reachesEnd() ||
+            m_requestedCount == count())
+            return;
         QPointer<ItemModelSource>    guard(this);
         QPointer<QAbstractItemModel> model    = m_model;
         const bool                   canFetch = model && model->canFetchMore({});
-        if (! guard || generation != m_modelGeneration) return;
-        if (canFetch && model) model->fetchMore({});
-        if (guard && generation == m_modelGeneration) m_fetchQueued = false;
+        if (! guard || generation != m_modelGeneration || ! demand.valid() ||
+            demand.snapshot() != snapshot())
+            return;
+        if (canFetch && model) {
+            m_requestedCount = count();
+            model->fetchMore({});
+        }
     });
 }
-void ItemModelSource::notifyFetchStateChanged() { Q_EMIT fetchStateChanged(); }
+void ItemModelSource::notifyFetchStateChanged() {
+    m_requestedCount.reset();
+    QPointer<ItemModelSource> guard(this);
+    Q_EMIT fetchStateChanged();
+    if (guard) requestMore(m_demand);
+}
 } // namespace qml_material
