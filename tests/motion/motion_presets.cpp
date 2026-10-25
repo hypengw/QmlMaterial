@@ -10,7 +10,11 @@ using namespace qml_material;
 
 namespace
 {
-QAbstractAnimation* clock(QObject* motion) { return motion->findChild<QAbstractAnimation*>(); }
+MotionRunner* clock(QObject* motion) {
+    auto* spring = qobject_cast<SpringMotionBase*>(motion);
+    spring->runner().setManualClock(true);
+    return &spring->runner();
+}
 } // namespace
 
 class MotionPresetsTest : public QObject {
@@ -64,7 +68,7 @@ private slots:
         QVERIFY(motion->isRunning());
         auto* animation = clock(motion);
         QVERIFY(animation);
-        animation->setCurrentTime(50);
+        animation->setPlayTime(50);
         const auto sample = anim::sampleSpring(expected, 20, 80, 0, .05);
         QVERIFY(qAbs(motion->value() - sample.value) < 1e-9);
         QVERIFY(qAbs(motion->velocity() - sample.velocity) < 1e-9);
@@ -106,7 +110,7 @@ private slots:
         QCOMPARE(motion->spec(), (token::SpringSpec { 1800, .7 }));
         QCOMPARE(object->property("value").toReal(), .6);
         QVERIFY(object->setProperty("targetValue", 1.0));
-        clock(motion)->setCurrentTime(40);
+        clock(motion)->setPlayTime(40);
         const auto value = motion->value(), velocity = motion->velocity();
         QVERIFY(value > .6 && value < 1);
         QVERIFY(QMetaObject::invokeMethod(object.get(), "useEffects"));
@@ -124,7 +128,7 @@ private slots:
         QVERIFY(! motion->isRunning());
         QVERIFY(object->setProperty("animate", true));
         QVERIFY(object->setProperty("targetValue", .4));
-        clock(motion)->setCurrentTime(30);
+        clock(motion)->setPlayTime(30);
         QVERIFY(object->setProperty("animate", false));
         QCOMPARE(object->property("value").toReal(), .4);
         QVERIFY(! motion->isRunning());

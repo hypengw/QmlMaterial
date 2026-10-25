@@ -77,6 +77,7 @@ set(QM_TEST_SOURCES
   layout/lite_layout.cpp
   layout/menu_layout.cpp
   layout/page_layout.cpp
+  layout/page_stack_interactive.cpp
   layout/page_stack_transition.cpp
   layout/split_view.cpp
   layout/text_field_form.cpp
@@ -84,6 +85,8 @@ set(QM_TEST_SOURCES
   layout/viewport_controller.cpp
   model/appstream_release_model.cpp
   model/lazy_data.cpp
+  motion/animation_runtime.cpp
+  motion/seekable_transition.cpp
   motion/control_motion.cpp
   motion/motion_presets.cpp
   motion/ripple_motion.cpp

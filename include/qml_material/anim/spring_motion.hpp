@@ -1,27 +1,14 @@
 #pragma once
 
-#include <QAbstractAnimation>
+#include "qml_material/style/motion_settings.hpp"
 #include <QColor>
 #include <QQmlParserStatus>
 #include <memory>
-#include "qml_material/token/motion.hpp"
+#include "qml_material/anim/motion_runner.hpp"
 #include "qml_material/util/corner.hpp"
 
 namespace qml_material
 {
-namespace anim
-{
-struct SpringSample {
-    qreal value    = 0;
-    qreal velocity = 0;
-};
-QML_MATERIAL_API SpringSample sampleSpring(token::SpringSpec, qreal from, qreal to, qreal velocity,
-                                           qreal seconds);
-QML_MATERIAL_API int springDuration(token::SpringSpec, qreal from, qreal to, qreal velocity,
-                                    qreal threshold);
-} // namespace anim
-
-class SpringClock;
 /** @ingroup impl */
 class QML_MATERIAL_API SpringMotionBase : public QObject, public QQmlParserStatus {
     Q_OBJECT
@@ -37,13 +24,14 @@ public:
     ~SpringMotionBase() override;
     void              classBegin() override;
     void              componentComplete() override;
-    token::SpringSpec spec() const { return m_spec; }
+    token::SpringSpec spec() const;
     void              setSpec(token::SpringSpec);
     qreal             visibilityThreshold() const { return m_threshold; }
     void              setVisibilityThreshold(qreal);
     bool              isEnabled() const { return m_enabled; }
     void              setEnabled(bool);
-    bool              isRunning() const { return m_running; }
+    bool              isRunning() const { return m_runner.active(); }
+    MotionRunner&     runner() { return m_runner; }
     Q_INVOKABLE void  complete();
     Q_INVOKABLE void  stop();
     Q_SIGNAL void     specChanged();
@@ -62,23 +50,25 @@ protected:
     qreal         velocity(int index) const;
     int           elapsed() const;
     virtual qreal displacementThreshold(int index) const;
+    void          useEffects() {
+        m_effects = true;
+        m_spec    = token::SpringScheme {}.defaultEffects();
+    }
 
 private:
-    friend class SpringClock;
-    void restart();
-    void tick(int);
-    void settle(bool notifyFinished);
-    struct Track {
-        qreal              from = 0, target = 0, initialVelocity = 0;
-        anim::SpringSample current;
-        int                duration = 0;
-    };
-    QList<Track>                 m_tracks;
-    std::unique_ptr<SpringClock> m_clock;
-    token::SpringSpec            m_spec;
-    qreal                        m_threshold = .01;
-    bool                         m_enabled = true, m_complete = true, m_running = false;
-    quint64                      m_revision = 0;
+    AnimationSpec            effectiveSpec() const;
+    void                     refreshPolicy();
+    void                     restart();
+    void                     synchronize();
+    MotionRunner             m_runner;
+    anim::Vector             m_targets;
+    anim::Sample             m_notified;
+    token::SpringSpec        m_spec;
+    QPointer<MotionSettings> m_settings;
+    bool                     m_explicitSpec = false, m_effects = false;
+    qreal                    m_threshold = .01;
+    bool    m_enabled = true, m_complete = true, m_notifiedRunning = false, m_notifyFinish = true;
+    quint64 m_revision = 0;
 };
 
 /** Scalar target tracking; velocity is measured in units per second. @ingroup impl */

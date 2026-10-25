@@ -199,8 +199,8 @@ private Q_SLOTS:
             import QtQuick
             import Qcm.Material as MD
             Item {
-                property alias pageOpacity: page.opacity
-                property alias pageScale: page.scale
+                property real pageOpacity: page.parent.opacity
+                property real pageScale: page.parent.scale
                 property alias busy: stack.busy
                 function enter() {
                     stack.pushItem(page, MD.PageStack.Immediate);

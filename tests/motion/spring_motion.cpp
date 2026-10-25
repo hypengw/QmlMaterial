@@ -11,11 +11,15 @@ using namespace qml_material;
 
 namespace
 {
-QAbstractAnimation* clock(QObject* motion) { return motion->findChild<QAbstractAnimation*>(); }
+MotionRunner* clock(QObject* motion) {
+    auto* m = qobject_cast<SpringMotionBase*>(motion);
+    m->runner().setManualClock(true);
+    return &m->runner();
+}
 
 void finish(QObject* motion) {
     auto* animation = clock(motion);
-    animation->setCurrentTime(animation->duration());
+    animation->setPlayTime(animation->duration());
 }
 } // namespace
 
@@ -73,8 +77,8 @@ private slots:
         SpringMotion fast, slow;
         fast.setTargetValue(10);
         slow.setTargetValue(10);
-        for (int time = 8; time <= 96; time += 8) clock(&fast)->setCurrentTime(time);
-        for (int time = 16; time <= 96; time += 16) clock(&slow)->setCurrentTime(time);
+        for (int time = 8; time <= 96; time += 8) clock(&fast)->setPlayTime(time);
+        for (int time = 16; time <= 96; time += 16) clock(&slow)->setPlayTime(time);
         QCOMPARE(fast.value(), slow.value());
         QCOMPARE(fast.velocity(), slow.velocity());
     }
@@ -86,22 +90,22 @@ private slots:
         motion.setTargetValue(10);
         auto* animation = clock(&motion);
         QVERIFY(motion.isRunning());
-        animation->setCurrentTime(30);
+        animation->setPlayTime(30);
         const auto value = motion.value(), velocity = motion.velocity();
         QVERIFY(value > 0 && value < 10);
         motion.setTargetValue(0);
         QCOMPARE(motion.value(), value);
         QCOMPARE(motion.velocity(), velocity);
-        QCOMPARE(animation->currentTime(), 0);
+        QCOMPARE(animation->elapsed(), 0);
         motion.setTargetValue(20);
         QCOMPARE(motion.value(), value);
         QCOMPARE(motion.velocity(), velocity);
-        animation->setCurrentTime(20);
-        const auto time = animation->currentTime();
+        animation->setPlayTime(20);
+        const auto time = animation->elapsed();
         motion.setTargetValue(20);
-        QCOMPARE(animation->currentTime(), time);
+        QCOMPARE(animation->elapsed(), time);
         motion.setSpec(token::SpringScheme { true }.fastSpatial());
-        QCOMPARE(animation->currentTime(), 0);
+        QCOMPARE(animation->elapsed(), 0);
         finish(&motion);
         QCOMPARE(motion.value(), 20);
         QCOMPARE(motion.velocity(), 0);
@@ -128,7 +132,7 @@ private slots:
     void invalidInput() {
         SpringMotion motion;
         motion.setTargetValue(10);
-        clock(&motion)->setCurrentTime(20);
+        clock(&motion)->setPlayTime(20);
         const auto value = motion.value(), velocity = motion.velocity(),
                    spec = motion.spec().stiffness;
         motion.setTargetValue(std::numeric_limits<qreal>::quiet_NaN());
@@ -152,10 +156,10 @@ private slots:
             }
         });
         motion.setTargetValue(10);
-        clock(&motion)->setCurrentTime(30);
+        clock(&motion)->setPlayTime(30);
         QVERIFY(reversed);
         QVERIFY(motion.isRunning());
-        QCOMPARE(clock(&motion)->state(), QAbstractAnimation::Running);
+        QCOMPARE(clock(&motion)->state(), MotionRunner::Running);
         finish(&motion);
         QCOMPARE(motion.value(), -10);
         QPointer<SpringMotion> destroyed = new SpringMotion;
@@ -163,7 +167,7 @@ private slots:
             delete destroyed.data();
         });
         destroyed->setTargetValue(10);
-        clock(destroyed)->setCurrentTime(20);
+        clock(destroyed)->setPlayTime(20);
         QVERIFY(! destroyed);
     }
 
@@ -174,7 +178,7 @@ private slots:
             if (stopping.value() > 1) stopping.stop();
         });
         stopping.setTargetValue(10);
-        clock(&stopping)->setCurrentTime(30);
+        clock(&stopping)->setPlayTime(30);
         QVERIFY(! stopping.isRunning());
         QCOMPARE(stopping.velocity(), 0);
         QCOMPARE(state.size(), 2);
@@ -204,7 +208,7 @@ private slots:
         finish(&motion);
         QCOMPARE(completed, 1);
         QVERIFY(motion.isRunning());
-        QCOMPARE(clock(&motion)->state(), QAbstractAnimation::Running);
+        QCOMPARE(clock(&motion)->state(), MotionRunner::Running);
         finish(&motion);
         QCOMPARE(motion.value(), -5);
         QCOMPARE(completed, 2);
@@ -257,15 +261,15 @@ private slots:
         motion.setSpec(token::SpringScheme {}.fastSpatial());
         motion.setPressed(true);
         auto* animation = clock(&motion);
-        animation->setCurrentTime(20);
+        animation->setPlayTime(20);
         QVERIFY(motion.value() < .75);
         motion.setPressed(false);
         QCOMPARE(motion.targetValue(), 1);
-        animation->setCurrentTime(100);
+        animation->setPlayTime(100);
         QCOMPARE(motion.targetValue(), 0);
         QVERIFY(motion.value() > .75 && motion.value() < 1);
         QVERIFY(motion.isRunning());
-        QCOMPARE(animation->state(), QAbstractAnimation::Running);
+        QCOMPARE(animation->state(), MotionRunner::Running);
         finish(&motion);
         QCOMPARE(motion.value(), 0);
         motion.setActive(true);
@@ -273,7 +277,7 @@ private slots:
         motion.setSpec({ 1, .1 });
         motion.setPressed(true);
         motion.setPressed(false);
-        clock(&motion)->setCurrentTime(1000);
+        clock(&motion)->setPlayTime(1000);
         QCOMPARE(motion.targetValue(), 0);
         motion.setActive(false);
         QVERIFY(! motion.isRunning());
@@ -315,7 +319,7 @@ private slots:
         QVERIFY(! motion.isRunning());
         QCOMPARE(motion.spec(), (token::SpringSpec { 1600, 1 }));
         motion.setTargetColor(Qt::blue);
-        clock(&motion)->setCurrentTime(40);
+        clock(&motion)->setPlayTime(40);
         const auto fraction = anim::sampleSpring(motion.spec(), 0, 1, 0, .04).value;
         QCOMPARE(motion.color(), Util::mixColorOklab(Qt::red, Qt::blue, fraction));
         const auto middle = motion.color();
@@ -326,7 +330,7 @@ private slots:
         finish(&motion);
         QCOMPARE(motion.color(), QColor(Qt::red));
         motion.setTargetColor(QColor::fromRgbF(.2, .4, .6, .3));
-        clock(&motion)->setCurrentTime(40);
+        clock(&motion)->setPlayTime(40);
         QVERIFY(motion.color().alphaF() > .3 && motion.color().alphaF() < 1);
         motion.setEnabled(false);
         QCOMPARE(motion.color(), motion.targetColor());

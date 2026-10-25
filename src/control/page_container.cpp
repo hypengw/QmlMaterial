@@ -25,6 +25,15 @@ PageContainer::PageContainer(QQuickItem* parent)
         if (guard) m_changing = changing;
     });
     connect(this, &PageStack::currentItemChanged, this, [this] {
+        QPointer<PageContainer> guard(this);
+        PoolRequest*            request = nullptr;
+        for (const auto& lease : std::as_const(m_leases))
+            if (lease && lease->object() == currentItem()) {
+                request = lease;
+                break;
+            }
+        setCurrentRequest(request);
+        if (! guard) return;
         disconnect(m_backConnection);
         if (auto* item = currentItem()) {
             QQmlProperty property(item, QStringLiteral("canBack"));

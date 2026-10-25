@@ -17,11 +17,15 @@ using namespace qml_material;
 
 namespace
 {
-QAbstractAnimation* clock(QObject* motion) { return motion->findChild<QAbstractAnimation*>(); }
+MotionRunner* clock(QObject* motion) {
+    auto* spring = qobject_cast<SpringMotionBase*>(motion);
+    spring->runner().setManualClock(true);
+    return &spring->runner();
+}
 
 void finish(QObject* motion) {
     auto* animation = clock(motion);
-    animation->setCurrentTime(animation->duration());
+    animation->setPlayTime(animation->duration());
 }
 
 bool capture(QQuickWindow& window, const QString& name) {
@@ -175,7 +179,7 @@ private slots:
         if (label) QCOMPARE(label->property("font").value<QFont>(), labelFont);
         QVERIFY(firstMotion->isRunning() && secondMotion->isRunning());
         for (auto* track : { firstMotion, secondMotion }) {
-            clock(track)->setCurrentTime(40);
+            clock(track)->setPlayTime(40);
             clock(track)->pause();
         }
         const auto progress = anim::sampleSpring(secondMotion->spec(), 0, 1, 0, .04).value;
@@ -198,7 +202,7 @@ private slots:
             for (auto* label : item->findChildren<ColorSpringMotion*>()) {
                 QCOMPARE(label->spec(), (token::SpringSpec { 1600, 1 }));
                 if (label->isRunning()) {
-                    clock(label)->setCurrentTime(40);
+                    clock(label)->setPlayTime(40);
                     clock(label)->pause();
                 }
             }
@@ -310,7 +314,7 @@ private slots:
         motion.componentComplete();
         QCOMPARE(motion.corners(), CornersGroup(20));
         motion.setTargetCorners(CornersGroup(4));
-        clock(&motion)->setCurrentTime(40);
+        clock(&motion)->setPlayTime(40);
         const auto middle = motion.corners();
         QVERIFY(middle.topLeft() > 4 && middle.topLeft() < 20);
         motion.setTargetCorners(CornersGroup(20));
@@ -368,7 +372,7 @@ private slots:
         const auto pressed = source->corners();
         QVERIFY(pressed != initial);
         QCOMPARE(shape->corners(), initial);
-        clock(shape)->setCurrentTime(40);
+        clock(shape)->setPlayTime(40);
         const auto middle = shape->corners();
         QVERIFY(middle != initial && middle != pressed);
         if (! qEnvironmentVariableIsEmpty("QM_MOTION_CAPTURE_DIR")) clock(shape)->pause();
@@ -433,8 +437,8 @@ private slots:
         control->setChecked(true);
         QCOMPARE(control->position(), 1);
         QVERIFY(position->isRunning());
-        clock(size)->setCurrentTime(40);
-        clock(position)->setCurrentTime(40);
+        clock(size)->setPlayTime(40);
+        clock(position)->setPlayTime(40);
         QVERIFY(size->value() > 16 && size->value() < 24);
         if (! qEnvironmentVariableIsEmpty("QM_MOTION_CAPTURE_DIR")) {
             clock(size)->pause();
@@ -531,8 +535,8 @@ private slots:
         QCOMPARE(position->isRunning(), accept);
         QCOMPARE(position->targetValue(), accept ? 36 : 16);
         if (accept) {
-            clock(position)->setCurrentTime(40);
-            clock(size)->setCurrentTime(40);
+            clock(position)->setPlayTime(40);
+            clock(size)->setPlayTime(40);
             QVERIFY(position->value() > 16 && position->value() < 36);
             QVERIFY(capture(window, rtl ? "switch-click-rtl" : "switch-click-ltr"));
             const auto current = position->value();

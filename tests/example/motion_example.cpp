@@ -10,7 +10,11 @@ using namespace qml_material;
 
 namespace
 {
-QAbstractAnimation* clock(QObject* motion) { return motion->findChild<QAbstractAnimation*>(); }
+MotionRunner* clock(QObject* motion) {
+    auto* spring = qobject_cast<SpringMotionBase*>(motion);
+    spring->runner().setManualClock(true);
+    return &spring->runner();
+}
 
 void polish(QQuickItem* item) {
     item->ensurePolished();
@@ -80,7 +84,7 @@ private slots:
         QVERIFY(motion->isRunning());
         auto* animation = clock(motion);
         QVERIFY(animation);
-        animation->setCurrentTime(100);
+        animation->setPlayTime(100);
         const auto middle   = root->property("progress").toReal();
         const auto velocity = motion->velocity();
         QVERIFY(middle > 0);
@@ -108,7 +112,7 @@ private slots:
         QVERIFY(QMetaObject::invokeMethod(root, "finish"));
         QCOMPARE(finished.size(), 1);
         QVERIFY(QMetaObject::invokeMethod(root, "toggleTarget"));
-        animation->setCurrentTime(100);
+        animation->setPlayTime(100);
         QVERIFY(QMetaObject::invokeMethod(root, "stop"));
         QVERIFY(! motion->isRunning());
         QCOMPARE(motion->velocity(), 0.0);
@@ -116,7 +120,7 @@ private slots:
         QVERIFY(QMetaObject::invokeMethod(root, "finish"));
         QCOMPARE(root->property("progress").toReal(), 1.0);
         QVERIFY(QMetaObject::invokeMethod(root, "toggleTarget"));
-        animation->setCurrentTime(40);
+        animation->setPlayTime(40);
         QVERIFY(motion->isRunning());
         QVERIFY(root->setProperty("animationsEnabled", false));
         QCOMPARE(root->property("progress").toReal(), 0.0);

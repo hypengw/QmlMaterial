@@ -1,6 +1,7 @@
 #include "qml_material/core/attached_property.hpp"
 
 #include <QHash>
+#include <QChildEvent>
 #include <QMetaProperty>
 #include <QQmlEngine>
 #include <QQmlInfo>
@@ -158,8 +159,45 @@ public:
         }
     }
 
+protected:
+    bool eventFilter(QObject*, QEvent* event) override {
+        if (event->type() == QEvent::ChildAdded || event->type() == QEvent::ChildRemoved)
+            scheduleObjectRefresh();
+        return false;
+    }
+
 private:
-    using TypeNodes = QHash<const QMetaObject*, QPointer<AttachedPropertyNode>>;
+    void scheduleObjectRefresh() {
+        if (m_refreshQueued) return;
+        m_refreshQueued = true;
+        QMetaObject::invokeMethod(
+            this,
+            [this] {
+                m_refreshQueued  = false;
+                const auto nodes = allNodes();
+                for (const auto& node : nodes) {
+                    if (! node || qobject_cast<QQuickItem*>(node->target()) ||
+                        qobject_cast<QQuickWindow*>(node->target()))
+                        continue;
+                    for (auto connection : node->m_target_connections) disconnect(connection);
+                    node->m_target_connections.clear();
+                    connectTarget(node);
+                    refreshNode(node);
+                }
+            },
+            Qt::QueuedConnection);
+    }
+    void watchObject(QObject* object) {
+        if (m_watched.contains(object)) return;
+        m_watched.insert(object);
+        object->installEventFilter(this);
+        connect(object, &QObject::destroyed, this, [this, object] {
+            m_watched.remove(object);
+        });
+    }
+    QSet<QObject*> m_watched;
+    bool           m_refreshQueued = false;
+    using TypeNodes                = QHash<const QMetaObject*, QPointer<AttachedPropertyNode>>;
 
     QList<QPointer<AttachedPropertyNode>> allNodes() const {
         QList<QPointer<AttachedPropertyNode>> nodes;
@@ -256,6 +294,13 @@ private:
             return findFromWindow(window, node->m_attached_type, false);
         if (auto* parentItem = itemProperty(node->target(), "parent"))
             return findFromItem(parentItem, node->m_attached_type, true);
+        for (auto* object = node->target()->parent(); object; object = object->parent()) {
+            if (auto* direct = nodeForTarget(object, node->m_attached_type)) return direct;
+            if (auto* item = qobject_cast<QQuickItem*>(object))
+                return findFromItem(item, node->m_attached_type, true);
+            if (auto* window = qobject_cast<QQuickWindow*>(object))
+                return findFromWindow(window, node->m_attached_type, true);
+        }
         return nullptr;
     }
 
@@ -316,7 +361,13 @@ private:
     }
 
     void adoptAttachedChildren(AttachedPropertyNode* node) {
-        const auto children = findAttachedChildren(node);
+        auto children = findAttachedChildren(node);
+        for (const auto& candidate : allNodes()) {
+            if (candidate && candidate != node &&
+                candidate->m_attached_type == node->m_attached_type &&
+                ! qobject_cast<QQuickItem*>(candidate->target()) && ! children.contains(candidate))
+                children.append(candidate);
+        }
         for (const auto& guardedChild : children) {
             auto* child = guardedChild.data();
             if (! child || child->m_registry != this) continue;
@@ -386,6 +437,22 @@ private:
             return;
         }
 
+        for (auto* ancestor = target->parent(); ancestor; ancestor = ancestor->parent()) {
+            watchObject(ancestor);
+            if (auto* item = qobject_cast<QQuickItem*>(ancestor)) {
+                node->m_target_connections.append(
+                    connect(item,
+                            &QQuickItem::parentChanged,
+                            node,
+                            &AttachedPropertyNode::refreshPropagation));
+                node->m_target_connections.append(
+                    connect(item,
+                            &QQuickItem::windowChanged,
+                            node,
+                            &AttachedPropertyNode::refreshPropagation));
+                break;
+            }
+        }
         const auto parentConnection = connectPropertyNotify(target, "parent", node);
         if (parentConnection) node->m_target_connections.append(parentConnection);
         const auto contentConnection = connectPropertyNotify(target, "contentItem", node);

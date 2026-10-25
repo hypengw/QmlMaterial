@@ -9,7 +9,8 @@ using namespace qml_material;
 namespace
 {
 void advance(SizeTransition& transition, int time) {
-    transition.findChild<QVariantAnimation*>()->setCurrentTime(time);
+    transition.runner().setManualClock(true);
+    transition.runner().setPlayTime(time);
 }
 } // namespace
 
@@ -23,8 +24,9 @@ private Q_SLOTS:
 
     void sizeRetargetAndBounds() {
         SizeTransition transition;
-        transition.setDuration(1000);
-        transition.setEasing(QEasingCurve::Linear);
+        transition.setSpec(Motion::tween(1000));
+        transition.setSpec(
+            Motion::tween(transition.spec().duration, QEasingCurve(QEasingCurve::Linear)));
         transition.setTargetSize({ 400, 200 });
         QCOMPARE(transition.size(), QSizeF(400, 200));
         QVERIFY(! transition.running());
@@ -51,7 +53,7 @@ private Q_SLOTS:
         QCOMPARE(transition.size(), QSizeF(400, 800));
         QVERIFY(! transition.running());
         transition.setEnabled(true);
-        transition.setDuration(0);
+        transition.setSpec(Motion::tween(0));
         transition.setTargetSize({ 400, 50 });
         QCOMPARE(transition.size(), QSizeF(400, 50));
         QVERIFY(! transition.running());
@@ -69,15 +71,17 @@ private Q_SLOTS:
 
     void timingChangesAndCompletionReentry() {
         SizeTransition transition;
-        transition.setDuration(1000);
-        transition.setEasing(QEasingCurve::Linear);
+        transition.setSpec(Motion::tween(1000));
+        transition.setSpec(
+            Motion::tween(transition.spec().duration, QEasingCurve(QEasingCurve::Linear)));
         transition.setTargetSize({ 400, 200 });
         transition.setTargetSize({ 400, 600 });
         advance(transition, 500);
         QCOMPARE(transition.size(), QSizeF(400, 400));
-        transition.setDuration(500);
+        transition.setSpec(Motion::tween(500));
         QCOMPARE(transition.size(), QSizeF(400, 400));
-        transition.setEasing(QEasingCurve::InQuad);
+        transition.setSpec(
+            Motion::tween(transition.spec().duration, QEasingCurve(QEasingCurve::InQuad)));
         QCOMPARE(transition.size(), QSizeF(400, 400));
         connect(&transition, &SizeTransition::sizeChanged, &transition, [&] {
             if (transition.size().height() == 600) transition.setTargetSize({ 400, 100 });
@@ -100,8 +104,9 @@ private Q_SLOTS:
         PageStack stack;
         stack.setWidth(400);
         SizeTransition transition;
-        transition.setDuration(1000);
-        transition.setEasing(QEasingCurve::Linear);
+        transition.setSpec(Motion::tween(1000));
+        transition.setSpec(
+            Motion::tween(transition.spec().duration, QEasingCurve(QEasingCurve::Linear)));
         stack.setSizeTransition(&transition);
         connect(&stack, &Control::implicitContentHeightChanged, &transition, [&] {
             transition.setTargetSize({ stack.width(), stack.implicitContentHeight() });
@@ -171,11 +176,10 @@ private Q_SLOTS:
                 width: 400
                 height: sizeTransition.size.height
                 property int pageDuration: 0
-                pushEnter: Transition { PauseAnimation { duration: pageDuration } }
-                pushExit: Transition { PauseAnimation { duration: pageDuration } }
+                pushMotion: Component { MD.PageMotion { spec: MD.Motion.tween(pageDuration) } }
                 sizeTransition: MD.SizeTransition {
                     targetSize: Qt.size(400, implicitContentHeight)
-                    duration: 1000000
+                    spec: MD.Motion.tween(1000000)
                 }
             }
         )",
@@ -214,7 +218,7 @@ private Q_SLOTS:
         auto* second = new QQuickItem;
         second->setImplicitHeight(600);
         auto* transition = new SizeTransition;
-        transition->setDuration(1000000);
+        transition->setSpec(Motion::tween(1000000));
         stack.setSizeTransition(transition);
         connect(&stack, &Control::implicitContentHeightChanged, transition, [&] {
             transition->setTargetSize({ 400, stack.implicitContentHeight() });

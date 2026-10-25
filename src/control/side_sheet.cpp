@@ -1,4 +1,5 @@
 #include "qml_material/control/side_sheet.hpp"
+#include "qml_material/style/theme.hpp"
 #include <algorithm>
 #include <cmath>
 #include <utility>
@@ -8,6 +9,15 @@ namespace qml_material
 SideSheet::SideSheet(QQuickItem* parent)
     : Control(parent), m_sheet(new Panel(this)), m_input(m_sheet) {
     setClip(true);
+    m_runner.setBounds({ 0 }, { 1 });
+    connect(&m_runner, &MotionRunner::changed, this, [this] {
+        setPosition(m_runner.sample().value[0]);
+    });
+    connect(&m_runner, &MotionRunner::ended, this, [this](QString id, int reason) {
+        if (reason == MotionRunner::Finished || reason == MotionRunner::Completed ||
+            reason == MotionRunner::BoundReached)
+            finishMotion(id);
+    });
     m_sheet->setVisible(false);
     m_sheet->setZ(1);
     m_input.acceptsInput = [this] {
@@ -56,6 +66,10 @@ void SideSheet::classBegin() {
 void SideSheet::componentComplete() {
     QPointer<SideSheet> guard(this);
     Control::componentComplete();
+    if (! guard) return;
+    m_settings = qobject_cast<Theme*>(qmlAttachedPropertiesObject<Theme>(this, true))->motion();
+    connect(m_settings, &MotionSettings::changed, this, &SideSheet::refreshPolicy);
+    refreshPolicy();
     if (! guard) return;
     m_initializing = false;
     request(m_expanded, false);
@@ -175,32 +189,62 @@ void SideSheet::setExpanded(bool value) {
     if (value == m_expanded && m_state != Dragging) return;
     request(value, ! m_initializing);
 }
-void SideSheet::request(bool value, bool animate) {
+AnimationSpec SideSheet::spec() const {
+    return m_spec.value_or(m_settings ? m_settings->spatial() : Motion::spring());
+}
+void SideSheet::setSpec(AnimationSpec s) {
+    if (! s.valid() || m_spec == s) return;
+    m_spec = s;
+    emit specChanged();
+}
+void SideSheet::resetSpec() {
+    m_spec.reset();
+    emit specChanged();
+}
+void SideSheet::setAnimationsEnabled(bool v) {
+    if (m_animations == v) return;
+    m_animations = v;
+    const QPointer<SideSheet> guard(this);
+    refreshPolicy();
+    if (guard) emit animationsEnabledChanged();
+}
+void SideSheet::refreshPolicy() {
+    m_runner.setDurationScale(! m_animations || (m_settings && m_settings->reducedMotion()) ? 0
+                              : m_settings ? m_settings->durationScale()
+                                           : 1);
+}
+void SideSheet::request(bool value, bool animate, qreal velocity) {
     const auto revision = ++m_revision;
     const bool changed  = m_expanded != value;
     m_expanded          = value;
     m_state             = animate ? Settling : value ? Expanded : Hidden;
-    if (! animate) {
-        m_lastStable = m_state;
-        m_position   = value ? 1 : 0;
-    }
-    QPointer<SideSheet> guard(this);
+    if (! animate) m_lastStable = m_state;
+    const QPointer<SideSheet> guard(this);
+    const auto                interaction = std::exchange(m_interaction, {});
+    const auto                target      = value ? 1.0 : 0.0;
+    QString                   run;
+    if (! interaction.isEmpty()) {
+        run = m_runner.settleInteraction(
+            interaction, { target }, { velocity }, animate ? spec() : Motion::snap());
+    } else
+        run = m_runner.animateTo({ target }, animate ? spec() : Motion::snap());
+    if (! guard || revision != m_revision) return;
+    m_run = run;
     updateLayout();
     if (! guard || revision != m_revision) return;
     if (changed) emit expandedChanged();
     if (! guard || revision != m_revision) return;
     emit stateChanged();
-    if (! guard || revision != m_revision) return;
-    if (! animate) emit positionChanged();
-    if (! guard || revision != m_revision) return;
-    emit transitionRequested(revision, value ? 1 : 0, animate);
+    if (guard && revision == m_revision && ! m_runner.active()) finishMotion(m_run);
 }
 
 bool SideSheet::beginDrag() {
     if (! m_draggable || ! isEnabled() || m_state == Hidden || effectiveSheetWidth() <= 0)
         return false;
     ++m_revision;
-    m_state = Dragging;
+    m_run.clear();
+    m_interaction = m_runner.beginInteraction();
+    m_state       = Dragging;
     QPointer<SideSheet> guard(this);
     emit                stateChanged();
     return guard && m_state == Dragging;
@@ -208,7 +252,8 @@ bool SideSheet::beginDrag() {
 void SideSheet::dragBy(QPointF delta) {
     if (! dragging() || ! std::isfinite(delta.x())) return;
     const auto distance = expandedX() - hiddenX();
-    if (distance != 0) setPosition(m_position + delta.x() / distance);
+    if (distance != 0)
+        m_runner.updateInteraction(m_interaction, { m_position + delta.x() / distance });
 }
 bool SideSheet::releaseOpens(QPointF velocity) const {
     const bool left = effectiveEdge() == Qt::LeftEdge;
@@ -224,17 +269,27 @@ bool SideSheet::releaseOpens(QPointF velocity) const {
     return false;
 }
 void SideSheet::releaseDrag(QPointF velocity) {
-    if (dragging()) request(releaseOpens(velocity), true);
+    if (dragging()) {
+        const auto distance = expandedX() - hiddenX();
+        request(releaseOpens(velocity),
+                true,
+                distance && std::isfinite(velocity.x()) ? velocity.x() / distance : 0);
+    }
 }
 void SideSheet::cancelDrag() {
     if (dragging()) request(m_lastStable == Expanded, true);
 }
-void SideSheet::completeTransition(quint32 revision) {
-    if (revision != m_revision || m_state != Settling) return;
-    const auto          next = m_expanded ? Expanded : Hidden;
+void SideSheet::completeTransition() {
+    const QPointer<SideSheet> guard(this);
+    m_runner.complete();
+    if (guard && ! m_runner.active()) finishMotion(m_run);
+}
+void SideSheet::finishMotion(QString id) {
+    if (id.isEmpty() || id != m_run || m_state != Settling) return;
+    m_run.clear();
+    const auto          revision = m_revision;
+    const auto          next     = m_expanded ? Expanded : Hidden;
     QPointer<SideSheet> guard(this);
-    setPosition(m_expanded ? 1 : 0);
-    if (! guard || revision != m_revision) return;
     m_state = m_lastStable = next;
     updateLayout();
     if (! guard || revision != m_revision) return;

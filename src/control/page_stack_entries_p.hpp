@@ -38,6 +38,7 @@ public:
         quint64   from      = 0;
         quint64   to        = 0;
         Operation operation = Operation::Push;
+        bool      preview   = false;
     };
     explicit PageStackEntries(QObject* parent = nullptr): QObject(parent) {}
     ~PageStackEntries() override;
@@ -53,7 +54,8 @@ public:
     quint64       replace(QQuickItem* item) { return navigate(Operation::Replace, item); }
     quint64       pop() { return navigate(Operation::Pop, nullptr); }
     quint64       clear() { return navigate(Operation::Clear, nullptr); }
-    bool          finish(quint64 transitionId);
+    quint64       beginPopPreview();
+    bool          finish(quint64 transitionId, bool commit = true);
     void          shutdown();
     Q_SIGNAL void changed();
     Q_SIGNAL void transitionRequested(quint64 id);

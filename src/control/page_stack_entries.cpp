@@ -63,8 +63,19 @@ QList<PageStackEntries::Entry> PageStackEntries::settle() {
     }
     return removed;
 }
-bool PageStackEntries::finish(quint64 id) {
+quint64 PageStackEntries::beginPopPreview() {
+    if (m_closed || m_notification_depth || m_transition || depth() < 2) return 0;
+    const auto from = currentId(), to = m_stack[m_stack.size() - 2], id = ++m_next_transition;
+    m_entries[to].status = Status::Entering;
+    m_transition         = Transition { id, from, to, Operation::Pop, true };
+    const QPointer<PageStackEntries> guard(this);
+    notify();
+    if (guard && m_transition && m_transition->id == id) emit transitionRequested(id);
+    return id;
+}
+bool PageStackEntries::finish(quint64 id, bool commit) {
     if (m_notification_depth || ! m_transition || m_transition->id != id) return false;
+    if (m_transition->preview && commit) retire(m_transition->from);
     const auto removed = settle();
     notify(removed);
     return true;

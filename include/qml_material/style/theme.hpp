@@ -10,6 +10,7 @@
 #include <QtGui/QColor>
 
 #include "qml_material/core/attached_property.hpp"
+#include "qml_material/style/motion_settings.hpp"
 #include "qml_material/token/color.hpp"
 #include "qml_material/control/page_context.hpp"
 
@@ -83,6 +84,8 @@ class QML_MATERIAL_API Theme final : public AttachedPropertyNode {
     QML_ATTACHED(Theme)
 
 public:
+    Q_PROPERTY(qml_material::MotionSettings* motion READ motion CONSTANT FINAL)
+    MotionSettings* motion() { return &m_motion; }
     using Self = Theme;
 
     template<typename V>
@@ -145,6 +148,7 @@ protected:
     void updateInheritedValues() override;
 
 private:
+    MotionSettings m_motion { this };
     template<typename V>
     void setProp(AttachProp<V>& property, const V& value);
 

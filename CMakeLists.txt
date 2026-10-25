@@ -73,6 +73,18 @@ endif()
 set(LIBNAME qml_material)
 
 set(SOURCES
+    include/qml_material/control/page_motion.hpp
+    src/control/page_motion.cpp
+    include/qml_material/anim/seekable_transition.hpp
+    src/anim/seekable_transition.cpp
+    include/qml_material/anim/animatable.hpp
+    src/anim/animatable.cpp
+    include/qml_material/style/motion_settings.hpp
+    src/style/motion_settings.cpp
+    include/qml_material/anim/motion_spec.hpp
+    src/anim/motion_spec.cpp
+    include/qml_material/anim/motion_runner.hpp
+    src/anim/motion_runner.cpp
     include/qml_material/input/input_host.hpp
     src/input/input_host.cpp
     include/qml_material/input/clickable.hpp

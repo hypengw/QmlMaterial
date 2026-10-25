@@ -4,11 +4,9 @@
 #include <memory>
 #include "qml_material/anim/size_transition.hpp"
 
-QT_BEGIN_NAMESPACE
-class QQuickTransition;
-QT_END_NAMESPACE
-
-Q_MOC_INCLUDE("QtQuick/private/qquicktransition_p.h")
+#include "qml_material/control/page_motion.hpp"
+#include "qml_material/input/input_host.hpp"
+#include <QQmlComponent>
 
 namespace qml_material
 {
@@ -22,18 +20,18 @@ class QML_MATERIAL_API PageStack : public Control {
     Q_PROPERTY(bool busy READ busy NOTIFY busyChanged FINAL)
     Q_PROPERTY(SizeTransition* sizeTransition READ sizeTransition WRITE setSizeTransition NOTIFY
                    sizeTransitionChanged FINAL)
-    Q_PROPERTY(QQuickTransition* pushEnter READ pushEnter WRITE setPushEnter NOTIFY
-                   transitionsChanged FINAL)
     Q_PROPERTY(
-        QQuickTransition* pushExit READ pushExit WRITE setPushExit NOTIFY transitionsChanged FINAL)
+        QQmlComponent* pushMotion READ pushMotion WRITE setPushMotion NOTIFY motionsChanged FINAL)
     Q_PROPERTY(
-        QQuickTransition* popEnter READ popEnter WRITE setPopEnter NOTIFY transitionsChanged FINAL)
-    Q_PROPERTY(
-        QQuickTransition* popExit READ popExit WRITE setPopExit NOTIFY transitionsChanged FINAL)
-    Q_PROPERTY(QQuickTransition* replaceEnter READ replaceEnter WRITE setReplaceEnter NOTIFY
-                   transitionsChanged FINAL)
-    Q_PROPERTY(QQuickTransition* replaceExit READ replaceExit WRITE setReplaceExit NOTIFY
-                   transitionsChanged FINAL)
+        QQmlComponent* popMotion READ popMotion WRITE setPopMotion NOTIFY motionsChanged FINAL)
+    Q_PROPERTY(QQmlComponent* replaceMotion READ replaceMotion WRITE setReplaceMotion NOTIFY
+                   motionsChanged FINAL)
+    Q_PROPERTY(PageMotion* currentMotion READ currentMotion NOTIFY currentMotionChanged FINAL)
+    Q_PROPERTY(bool preview READ preview NOTIFY previewChanged FINAL)
+    Q_PROPERTY(bool settling READ settling NOTIFY previewChanged FINAL)
+    Q_PROPERTY(bool backGestureEnabled READ backGestureEnabled WRITE setBackGestureEnabled NOTIFY
+                   backGestureEnabledChanged FINAL)
+    Q_PROPERTY(QSizeF destinationSize READ destinationSize NOTIFY destinationSizeChanged FINAL)
     Q_PROPERTY(QQuickItem* currentItem READ currentItem NOTIFY currentItemChanged FINAL)
     Q_PROPERTY(QQuickItem* initialItem READ initialItem WRITE setInitialItem NOTIFY
                    initialItemChanged FINAL)
@@ -61,21 +59,30 @@ public:
     SizeTransition*           sizeTransition() const;
     void                      setSizeTransition(SizeTransition*);
     Q_SIGNAL void             sizeTransitionChanged();
-    QQuickTransition*         pushEnter() const;
-    QQuickTransition*         pushExit() const;
-    QQuickTransition*         popEnter() const;
-    QQuickTransition*         popExit() const;
-    QQuickTransition*         replaceEnter() const;
-    QQuickTransition*         replaceExit() const;
-    void                      setPushEnter(QQuickTransition*);
-    void                      setPushExit(QQuickTransition*);
-    void                      setPopEnter(QQuickTransition*);
-    void                      setPopExit(QQuickTransition*);
-    void                      setReplaceEnter(QQuickTransition*);
-    void                      setReplaceExit(QQuickTransition*);
+    QQmlComponent*            pushMotion() const;
+    QQmlComponent*            popMotion() const;
+    QQmlComponent*            replaceMotion() const;
+    void                      setPushMotion(QQmlComponent*);
+    void                      setPopMotion(QQmlComponent*);
+    void                      setReplaceMotion(QQmlComponent*);
+    PageMotion*               currentMotion() const;
+    bool                      preview() const;
+    bool                      settling() const;
+    bool                      backGestureEnabled() const;
+    void                      setBackGestureEnabled(bool);
+    QSizeF                    destinationSize() const;
+    Q_INVOKABLE QString       beginPopPreview();
+    Q_INVOKABLE bool          updatePopPreview(QString id, qreal progress);
+    Q_INVOKABLE bool          commitPopPreview(QString id, qreal velocity = 0);
+    Q_INVOKABLE bool          cancelPopPreview(QString id, qreal velocity = 0);
+    Q_INVOKABLE void          abortPreview();
     Q_INVOKABLE void          completeTransition();
     Q_SIGNAL void             busyChanged();
-    Q_SIGNAL void             transitionsChanged();
+    Q_SIGNAL void             motionsChanged();
+    Q_SIGNAL void             currentMotionChanged();
+    Q_SIGNAL void             previewChanged();
+    Q_SIGNAL void             backGestureEnabledChanged();
+    Q_SIGNAL void             destinationSizeChanged();
     QQuickItem*               currentItem() const;
     QQuickItem*               initialItem() const;
     void                      setInitialItem(QQuickItem*);
@@ -91,6 +98,7 @@ public:
     Q_SIGNAL void             entryAdded(quint64 id, QQuickItem* item);
 
 protected:
+    void   enableDefaultMotion();
     void   componentComplete() override;
     void   geometryChange(const QRectF&, const QRectF&) override;
     bool   childMouseEventFilter(QQuickItem*, QEvent*) override;
@@ -104,9 +112,14 @@ private:
     void                   layoutPages();
     void                   removePage(quint64);
     void                   startTransition(quint64);
-    void                   motionFinished(quint64);
+    void                   applyMotion();
+    bool                   settlePreview(QString, bool, qreal);
     void                   tryFinishTransition();
     void                   stopMotions();
+    InputHost              m_input;
+    QString                m_gesture;
+    QPointF                m_gesturePoint;
+    qreal                  m_gestureFraction = 0;
 };
 
 class QML_MATERIAL_API MaterialPageStack : public PageStack {

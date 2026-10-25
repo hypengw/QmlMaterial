@@ -133,7 +133,10 @@ bool Theme::inheritProp(AttachProp<V>& property, const V& value) {
 
 void Theme::updateInheritedValues() {
     const QScopedPropertyUpdateGroup group;
-    auto*                            attached = qobject_cast<Theme*>(attachedParent());
+    const QPointer<Theme>            attached = qobject_cast<Theme*>(attachedParent());
+    const QPointer<Theme>            guard(this);
+    m_motion.inherit(attached ? attached->motion() : nullptr);
+    if (! guard) return;
     if (m_colorParent != attached) {
         disconnect(m_colorParentDestroyed);
         if (attached) {

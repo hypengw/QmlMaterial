@@ -2,6 +2,8 @@
 
 #include "qml_material/control/panel.hpp"
 #include "qml_material/input/input_host.hpp"
+#include "qml_material/anim/motion_runner.hpp"
+#include "qml_material/style/motion_settings.hpp"
 
 namespace qml_material
 {
@@ -17,7 +19,7 @@ class QML_MATERIAL_API SideSheet : public Control {
     Q_PROPERTY(State state READ state NOTIFY stateChanged FINAL)
     Q_PROPERTY(State lastStableState READ lastStableState NOTIFY stateChanged FINAL)
     Q_PROPERTY(bool dragging READ dragging NOTIFY stateChanged FINAL)
-    Q_PROPERTY(qreal position READ position WRITE setPosition NOTIFY positionChanged FINAL)
+    Q_PROPERTY(qreal position READ position NOTIFY positionChanged FINAL)
     Q_PROPERTY(Edge edge READ edge WRITE setEdge NOTIFY configurationChanged FINAL)
     Q_PROPERTY(Qt::Edge effectiveEdge READ effectiveEdge NOTIFY configurationChanged FINAL)
     Q_PROPERTY(
@@ -29,6 +31,9 @@ class QML_MATERIAL_API SideSheet : public Control {
     Q_PROPERTY(bool draggable READ draggable WRITE setDraggable NOTIFY configurationChanged FINAL)
     Q_PROPERTY(qreal hideFriction READ hideFriction WRITE setHideFriction NOTIFY
                    configurationChanged FINAL)
+    Q_PROPERTY(bool animationsEnabled READ animationsEnabled WRITE setAnimationsEnabled NOTIFY
+                   animationsEnabledChanged FINAL)
+    Q_PROPERTY(AnimationSpec spec READ spec WRITE setSpec RESET resetSpec NOTIFY specChanged FINAL)
 public:
     enum Edge
     {
@@ -64,7 +69,14 @@ public:
     bool                      draggable() const { return m_draggable; }
     qreal                     hideFriction() const { return m_hideFriction; }
     void                      setExpanded(bool);
-    void                      setPosition(qreal);
+    bool                      animationsEnabled() const { return m_animations; }
+    void                      setAnimationsEnabled(bool);
+    AnimationSpec             spec() const;
+    void                      setSpec(AnimationSpec);
+    void                      resetSpec();
+    MotionRunner&             runner() { return m_runner; }
+    Q_SIGNAL void             animationsEnabledChanged();
+    Q_SIGNAL void             specChanged();
     void                      setEdge(Edge);
     void                      setSheetWidth(qreal);
     void                      setDetached(bool);
@@ -77,13 +89,12 @@ public:
     Q_INVOKABLE void          dragBy(QPointF delta);
     Q_INVOKABLE void          releaseDrag(QPointF velocity);
     Q_INVOKABLE void          cancelDrag();
-    Q_INVOKABLE void          completeTransition(quint32 revision);
+    Q_INVOKABLE void          completeTransition();
     Q_SIGNAL void             expandedChanged();
     Q_SIGNAL void             stateChanged();
     Q_SIGNAL void             positionChanged();
     Q_SIGNAL void             configurationChanged();
     Q_SIGNAL void             sheetGeometryChanged();
-    Q_SIGNAL void             transitionRequested(quint32 revision, qreal position, bool animate);
     Q_SIGNAL void             opened();
     Q_SIGNAL void             closed();
 
@@ -94,30 +105,38 @@ protected:
     void   geometryChange(const QRectF&, const QRectF&) override;
 
 private:
-    qreal     margin() const { return m_detached ? 16 : 0; }
-    qreal     hiddenX() const;
-    qreal     expandedX() const;
-    qreal     sheetX() const;
-    bool      releaseOpens(QPointF velocity) const;
-    void      request(bool expanded, bool animate);
-    void      updateLayout();
-    void      configurationUpdated();
-    Panel*    m_sheet;
-    Edge      m_edge         = End;
-    State     m_state        = Hidden;
-    State     m_lastStable   = Hidden;
-    qreal     m_position     = 0;
-    qreal     m_sheetWidth   = 256;
-    qreal     m_hideFriction = 0.1;
-    bool      m_expanded     = false;
-    bool      m_detached     = false;
-    bool      m_coplanar     = false;
-    bool      m_draggable    = true;
-    bool      m_initializing = false;
-    bool      m_layoutBusy   = false;
-    bool      m_layoutDirty  = false;
-    quint32   m_revision     = 0;
-    QPointF   m_lastPoint;
-    InputHost m_input;
+    qreal                        margin() const { return m_detached ? 16 : 0; }
+    qreal                        hiddenX() const;
+    qreal                        expandedX() const;
+    qreal                        sheetX() const;
+    bool                         releaseOpens(QPointF velocity) const;
+    void                         request(bool expanded, bool animate, qreal velocity = 0);
+    void                         setPosition(qreal);
+    void                         finishMotion(QString);
+    void                         refreshPolicy();
+    void                         updateLayout();
+    void                         configurationUpdated();
+    Panel*                       m_sheet;
+    Edge                         m_edge         = End;
+    State                        m_state        = Hidden;
+    State                        m_lastStable   = Hidden;
+    qreal                        m_position     = 0;
+    qreal                        m_sheetWidth   = 256;
+    qreal                        m_hideFriction = 0.1;
+    bool                         m_expanded     = false;
+    bool                         m_detached     = false;
+    bool                         m_coplanar     = false;
+    bool                         m_draggable    = true;
+    bool                         m_initializing = false;
+    bool                         m_layoutBusy   = false;
+    bool                         m_layoutDirty  = false;
+    quint32                      m_revision     = 0;
+    QPointF                      m_lastPoint;
+    MotionRunner                 m_runner { 1, this };
+    QPointer<MotionSettings>     m_settings;
+    std::optional<AnimationSpec> m_spec;
+    QString                      m_run, m_interaction;
+    bool                         m_animations = true;
+    InputHost                    m_input;
 };
 } // namespace qml_material

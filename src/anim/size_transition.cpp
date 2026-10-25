@@ -1,116 +1,176 @@
 #include "qml_material/anim/size_transition.hpp"
+#include "qml_material/style/theme.hpp"
 #include "qml_material/token/token.hpp"
-#include <QPointer>
 #include <cmath>
-
+#include <limits>
 namespace qml_material
 {
-SizeTransition::SizeTransition(QObject* parent)
-    : QObject(parent),
-      m_animation(this),
-      m_duration(qRound(token::Duration {}.long1)),
-      m_easing(token::Easing {}.emphasized()) {
-    connect(&m_animation, &QVariantAnimation::valueChanged, this, [this](const QVariant& value) {
-        if (! m_configuring) setSize(bounded(value.toSizeF()));
-    });
-    connect(&m_animation, &QVariantAnimation::finished, this, [this] {
-        if (m_animation.state() == QAbstractAnimation::Stopped && m_size == bounded(m_target))
-            setRunning(false);
-    });
+SizeTransition::SizeTransition(QObject* p): QObject(p) {
+    connect(&m_runner, &MotionRunner::changed, this, &SizeTransition::synchronize);
 }
-QSizeF SizeTransition::bounded(const QSizeF& size) const {
-    return {
-        std::max<qreal>(
-            0, m_maximum.width() < 0 ? size.width() : std::min(size.width(), m_maximum.width())),
-        std::max<qreal>(
-            0, m_maximum.height() < 0 ? size.height() : std::min(size.height(), m_maximum.height()))
-    };
+AnimationSpec SizeTransition::spec() const {
+    return m_spec.value_or(m_settings ? m_settings->container()
+                                      : Motion::tween(450, token::Easing {}.emphasized()));
 }
-void SizeTransition::setSize(const QSizeF& size) {
-    if (m_size == size) return;
-    m_size = size;
-    Q_EMIT sizeChanged();
+QSizeF SizeTransition::bounded(QSizeF v) const {
+    return { std::max(qreal(0),
+                      m_maximum.width() < 0 ? v.width() : std::min(v.width(), m_maximum.width())),
+             std::max(qreal(0),
+                      m_maximum.height() < 0 ? v.height()
+                                             : std::min(v.height(), m_maximum.height())) };
 }
-void SizeTransition::setRunning(bool running) {
-    if (m_running == running) return;
-    m_running = running;
-    Q_EMIT runningChanged();
+void SizeTransition::synchronize() {
+    if (m_configuring) return;
+    const auto   revision = m_revision;
+    const auto&  v        = m_runner.sample().value;
+    const QSizeF size(v[0], v[1]);
+    const bool   resized = size != m_size, activity = m_active != m_runner.active();
+    const bool   running = m_running != (m_runner.state() == MotionRunner::Running);
+    m_size               = size;
+    m_active             = m_runner.active();
+    m_running            = m_runner.state() == MotionRunner::Running;
+    const QPointer<SizeTransition> guard(this);
+    if (resized) emit sizeChanged();
+    if (! guard || revision != m_revision) return;
+    if (running) emit runningChanged();
+    if (guard && revision == m_revision && activity) emit activeChanged();
 }
-void SizeTransition::setTargetSize(const QSizeF& size) {
-    if (! std::isfinite(size.width()) || ! std::isfinite(size.height()) || size.width() < 0 ||
-        size.height() < 0 || (m_hasTarget && m_target == size))
+void SizeTransition::setTargetSize(QSizeF v) {
+    if (! std::isfinite(v.width()) || ! std::isfinite(v.height()) || v.width() < 0 ||
+        v.height() < 0 || (m_hasTarget && v == m_target))
         return;
     m_hasTarget = true;
-    m_target    = size;
-    QPointer<SizeTransition> guard(this);
-    Q_EMIT targetSizeChanged();
+    m_target    = v;
+    const QPointer<SizeTransition> guard(this);
+    emit                           targetSizeChanged();
     if (guard) retarget();
 }
-void SizeTransition::setMaximumSize(const QSizeF& size) {
-    if (! std::isfinite(size.width()) || ! std::isfinite(size.height()) || size.width() < -1 ||
-        size.height() < -1 || m_maximum == size)
+void SizeTransition::setMaximumSize(QSizeF v) {
+    if (! std::isfinite(v.width()) || ! std::isfinite(v.height()) || v.width() < -1 ||
+        v.height() < -1 || v == m_maximum)
         return;
-    m_maximum = size;
-    QPointer<SizeTransition> guard(this);
-    Q_EMIT maximumSizeChanged();
+    m_maximum           = v;
+    const auto infinity = std::numeric_limits<qreal>::infinity();
+    m_configuring       = true;
+    m_runner.setBounds(
+        { 0, 0 }, { v.width() < 0 ? infinity : v.width(), v.height() < 0 ? infinity : v.height() });
+    m_configuring = false;
+    const QPointer<SizeTransition> guard(this);
+    emit                           maximumSizeChanged();
     if (guard) retarget();
 }
-void SizeTransition::setEnabled(bool enabled) {
-    if (m_enabled == enabled) return;
-    m_enabled = enabled;
-    QPointer<SizeTransition> guard(this);
-    Q_EMIT enabledChanged();
+void SizeTransition::setEnabled(bool v) {
+    if (v == m_enabled) return;
+    m_enabled = v;
+    const QPointer<SizeTransition> guard(this);
+    emit                           enabledChanged();
     if (guard) retarget();
 }
-void SizeTransition::setDuration(int duration) {
-    if (duration < 0 || m_duration == duration) return;
-    m_duration = duration;
-    QPointer<SizeTransition> guard(this);
-    Q_EMIT durationChanged();
+void SizeTransition::setSpec(AnimationSpec v) {
+    if (! v.valid() || m_spec == v) return;
+    m_spec = v;
+    const QPointer<SizeTransition> guard(this);
+    emit                           specChanged();
     if (guard) retarget(true);
 }
-void SizeTransition::setEasing(const QEasingCurve& easing) {
-    if (m_easing == easing) return;
-    m_easing = easing;
-    QPointer<SizeTransition> guard(this);
-    Q_EMIT easingChanged();
+void SizeTransition::resetSpec() {
+    m_spec.reset();
+    const QPointer<SizeTransition> guard(this);
+    emit                           specChanged();
     if (guard) retarget(true);
 }
-void SizeTransition::retarget(bool restart) {
-    const auto               revision = ++m_revision;
-    QPointer<SizeTransition> guard(this);
-    setSize(bounded(m_size));
-    if (! guard || m_revision != revision) return;
-    const auto target = bounded(m_target);
-    if (! m_complete || ! m_initialized || ! m_enabled || duration() == 0 || m_size == target) {
-        complete();
-        if (guard) m_initialized = m_complete && m_hasTarget;
+void SizeTransition::retarget(bool force) {
+    ++m_revision;
+    if (! m_seek.isEmpty()) {
+        synchronize();
         return;
     }
-    if (! restart && m_running && m_animation.endValue().toSizeF() == target) return;
+    const auto         target = bounded(m_target);
+    const anim::Vector v { target.width(), target.height() };
     m_configuring = true;
-    m_animation.stop();
-    m_animation.setDuration(m_duration);
-    m_animation.setEasingCurve(m_easing);
-    m_animation.setStartValue(m_size);
-    m_animation.setEndValue(target);
-    m_animation.setCurrentTime(0);
+    if (! m_complete || ! m_initialized || ! m_enabled || m_runner.sample().value == v) {
+        m_runner.snapTo(v);
+        m_initialized = m_complete && m_hasTarget;
+    } else if (force || ! m_runner.active() || m_runner.target() != v)
+        m_runner.animateTo(v, spec());
     m_configuring = false;
-    m_animation.start();
-    if (guard && m_revision == revision) setRunning(true);
+    synchronize();
 }
 void SizeTransition::complete() {
-    const auto revision = ++m_revision;
-    m_animation.stop();
-    QPointer<SizeTransition> guard(this);
-    setSize(bounded(m_target));
-    if (guard && m_revision == revision) setRunning(false);
+    ++m_revision;
+    if (! m_seek.isEmpty()) return;
+    const auto v  = bounded(m_target);
+    m_configuring = true;
+    m_runner.snapTo({ v.width(), v.height() });
+    m_configuring = false;
+    synchronize();
 }
-void SizeTransition::classBegin() { m_complete = false; }
 void SizeTransition::componentComplete() {
     m_complete = true;
-    QPointer<SizeTransition> guard(this);
+    const QPointer<SizeTransition> guard(this);
+    if (! m_settings && qmlEngine(this))
+        setSettings(qobject_cast<Theme*>(qmlAttachedPropertiesObject<Theme>(this, true))->motion());
+    if (! guard) return;
+    m_initialized = true;
     complete();
-    if (guard) m_initialized = true;
+}
+QString SizeTransition::beginSeek(QSizeF destination) {
+    if (! m_seek.isEmpty()) return m_seek;
+    const auto to     = bounded(destination);
+    auto       motion = anim::PreparedMotion::prepare(
+        m_runner.sample().value, { to.width(), to.height() }, { 0, 0 }, spec());
+    if (! motion) return {};
+    m_seekMotion  = *motion;
+    m_seekOrigin  = m_size;
+    m_configuring = true;
+    m_seek        = m_runner.beginInteraction();
+    const auto id = m_seek;
+    m_configuring = false;
+    synchronize();
+    return id;
+}
+bool SizeTransition::seek(QString id, qreal progress) {
+    if (id.isEmpty() || id != m_seek || ! std::isfinite(progress)) return false;
+    return m_runner.updateInteraction(
+        id,
+        m_seekMotion.sample(std::clamp(progress, qreal(0), qreal(1)) * m_seekMotion.duration())
+            .value);
+}
+void SizeTransition::endSeek(QString id, bool commit) {
+    if (id.isEmpty() || id != m_seek) return;
+    ++m_revision;
+    m_configuring = true;
+    m_runner.cancelInteraction(id);
+    m_seek.clear();
+    const auto target = bounded(commit ? m_target : m_seekOrigin);
+    if (m_enabled)
+        m_runner.animateTo({ target.width(), target.height() }, spec());
+    else
+        m_runner.snapTo({ target.width(), target.height() });
+    m_configuring = false;
+    synchronize();
+}
+void SizeTransition::setSettings(MotionSettings* settings) {
+    if (settings == m_settings) return;
+    disconnect(m_policy);
+    disconnect(m_policyDestroyed);
+    m_settings = settings;
+    if (settings) {
+        m_policy =
+            connect(settings, &MotionSettings::changed, this, &SizeTransition::refreshPolicy);
+        m_policyDestroyed = connect(settings, &QObject::destroyed, this, [this] {
+            m_settings = nullptr;
+            refreshPolicy();
+        });
+    }
+    const QPointer<SizeTransition> guard(this);
+    refreshPolicy();
+    if (guard) emit settingsChanged();
+}
+void SizeTransition::refreshPolicy() {
+    const QPointer<SizeTransition> guard(this);
+    m_runner.setDurationScale(
+        m_settings ? (m_settings->reducedMotion() ? 0 : m_settings->durationScale()) : 1);
+    if (guard) emit specChanged();
 }
 } // namespace qml_material

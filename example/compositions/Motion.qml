@@ -54,6 +54,10 @@ Item {
         width: parent.width
         spacing: 20
 
+        MotionRuntime {
+            width: parent.width
+        }
+
         MD.ComboBox {
             objectName: 'presetSelector'
             width: Math.min(280, content.width)

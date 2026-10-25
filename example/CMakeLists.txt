@@ -21,6 +21,7 @@ qt_add_resources(
   carousel/CarouselDemoData.qml
   Color.qml
   compositions/Motion.qml
+  compositions/MotionRuntime.qml
   compositions/Clocks.qml
   compositions/ClockWidget.qml
   compositions/ClockWidgetHand.qml
