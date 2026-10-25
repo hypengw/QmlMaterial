@@ -352,8 +352,6 @@ set(SOURCES
     src/control/dialog.cpp
     src/control/menu.cpp
     include/qml_material/control/menu.hpp
-    src/control/menu_button.cpp
-    include/qml_material/control/menu_button.hpp
     src/control/split_button.cpp
     include/qml_material/control/split_button.hpp
     src/control/snake_bar.cpp

@@ -12,7 +12,7 @@ Item {
     opacity: motion.contentOpacity
     MD.IconView {
         anchors.centerIn: parent
-        anchors.horizontalCenterOffset: root.button.MD.ButtonGroupContainer.connected ? root.mdState.groupOpticalOffset(root.motion.corners) : 0
+        anchors.horizontalCenterOffset: root.mdState.groupOpticalOffset(root.motion.corners)
         icon: root.button.icon
     }
 }

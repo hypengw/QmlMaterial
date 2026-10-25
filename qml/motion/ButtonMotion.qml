@@ -29,7 +29,7 @@ QtObject {
     property MD.CornerSpringMotion _shapeMotion: MD.CornerSpringMotion {
         enabled: root._animate
         spec: root.shapeSpringSpec
-        targetCorners: root.source.corners
+        source: root.source
     }
 
     property color textColor: source.textColor

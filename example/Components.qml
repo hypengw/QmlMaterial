@@ -6,6 +6,10 @@ import "carousel" as CarouselDemo
 
 MD.Page {
     id: root
+    property int buttonShapeMode: MD.Enum.FixedShape
+    component ExampleButton: MD.Button {
+        mdState.shapeMode: root.buttonShapeMode
+    }
     component ExampleIconToggle: MD.IconToggleButton {
         property bool value: false
         checked: value
@@ -62,18 +66,53 @@ MD.Page {
                         ComponentCard {
                             title: 'Common buttons'
 
+                            MD.SegmentedButtonGroup {
+                                Layout.alignment: Qt.AlignHCenter
+                                MD.SegmentedButton {
+                                    text: 'Fixed'
+                                    checked: root.buttonShapeMode === MD.Enum.FixedShape
+                                    onCheckedChangeRequested: next => {
+                                        if (next)
+                                            root.buttonShapeMode = MD.Enum.FixedShape;
+                                    }
+                                }
+                                MD.SegmentedButton {
+                                    text: 'Interactive'
+                                    checked: root.buttonShapeMode === MD.Enum.InteractiveShape
+                                    onCheckedChangeRequested: next => {
+                                        if (next)
+                                            root.buttonShapeMode = MD.Enum.InteractiveShape;
+                                    }
+                                }
+                            }
+
                             RowLayout {
                                 Layout.alignment: Qt.AlignHCenter
-                                MD.Button {
+                                MD.ToggleButton {
+                                    property bool value: false
+                                    text: 'Toggle'
+                                    checked: value
+                                    onCheckedChangeRequested: next => value = next
+                                }
+                                ExampleIconToggle {
+                                    icon.name: MD.Token.icon.star
+                                    mdState.type: MD.Enum.IBtFilledTonal
+                                    mdState.shapeMode: root.buttonShapeMode
+                                }
+                            }
+
+                            RowLayout {
+                                Layout.alignment: Qt.AlignHCenter
+                                ExampleButton {
                                     mdState.type: MD.Enum.BtElevated
                                     text: 'Elevated'
                                 }
-                                MD.Button {
+                                ExampleButton {
                                     mdState.type: MD.Enum.BtElevated
                                     text: 'Icon'
                                     icon.name: MD.Token.icon.add
                                 }
-                                MD.Button {
+                                ExampleButton {
                                     mdState.type: MD.Enum.BtElevated
                                     enabled: false
                                     text: 'Elevated'
@@ -81,16 +120,16 @@ MD.Page {
                             }
                             RowLayout {
                                 Layout.alignment: Qt.AlignHCenter
-                                MD.Button {
+                                ExampleButton {
                                     mdState.type: MD.Enum.BtFilled
                                     text: 'Filled'
                                 }
-                                MD.Button {
+                                ExampleButton {
                                     mdState.type: MD.Enum.BtFilled
                                     text: 'Icon'
                                     icon.name: MD.Token.icon.add
                                 }
-                                MD.Button {
+                                ExampleButton {
                                     mdState.type: MD.Enum.BtFilled
                                     enabled: false
                                     text: 'Filled'
@@ -98,16 +137,16 @@ MD.Page {
                             }
                             RowLayout {
                                 Layout.alignment: Qt.AlignHCenter
-                                MD.Button {
+                                ExampleButton {
                                     mdState.type: MD.Enum.BtFilledTonal
                                     text: 'FilledTonal'
                                 }
-                                MD.Button {
+                                ExampleButton {
                                     mdState.type: MD.Enum.BtFilledTonal
                                     text: 'Icon'
                                     icon.name: MD.Token.icon.add
                                 }
-                                MD.Button {
+                                ExampleButton {
                                     mdState.type: MD.Enum.BtFilledTonal
                                     enabled: false
                                     text: 'FilledTonal'
@@ -115,16 +154,16 @@ MD.Page {
                             }
                             RowLayout {
                                 Layout.alignment: Qt.AlignHCenter
-                                MD.Button {
+                                ExampleButton {
                                     mdState.type: MD.Enum.BtOutlined
                                     text: 'Outlined'
                                 }
-                                MD.Button {
+                                ExampleButton {
                                     mdState.type: MD.Enum.BtOutlined
                                     text: 'Icon'
                                     icon.name: MD.Token.icon.add
                                 }
-                                MD.Button {
+                                ExampleButton {
                                     mdState.type: MD.Enum.BtOutlined
                                     enabled: false
                                     text: 'Outlined'
@@ -132,16 +171,16 @@ MD.Page {
                             }
                             RowLayout {
                                 Layout.alignment: Qt.AlignHCenter
-                                MD.Button {
+                                ExampleButton {
                                     mdState.type: MD.Enum.BtText
                                     text: 'Text'
                                 }
-                                MD.Button {
+                                ExampleButton {
                                     mdState.type: MD.Enum.BtText
                                     text: 'Icon'
                                     icon.name: MD.Token.icon.add
                                 }
-                                MD.Button {
+                                ExampleButton {
                                     mdState.type: MD.Enum.BtText
                                     enabled: false
                                     text: 'Text'
@@ -157,17 +196,17 @@ MD.Page {
                             RowLayout {
                                 Layout.alignment: Qt.AlignHCenter
                                 spacing: 12
-                                MD.Button {
+                                ExampleButton {
                                     mdState.type: MD.Enum.BtFilled
                                     mdState.size: MD.Enum.XS
                                     text: 'XS'
                                 }
-                                MD.Button {
+                                ExampleButton {
                                     mdState.type: MD.Enum.BtFilled
                                     mdState.size: MD.Enum.S
                                     text: 'S'
                                 }
-                                MD.Button {
+                                ExampleButton {
                                     mdState.type: MD.Enum.BtFilled
                                     mdState.size: MD.Enum.M
                                     text: 'M'
@@ -310,9 +349,13 @@ MD.Page {
                                 spacing: 16
 
                                 MD.SplitButton {
+                                    id: filledSplit
                                     text: 'Filled'
                                     mdState.type: MD.Enum.BtFilled
-                                    menu: MD.Menu {
+                                    expanded: filledSplitMenu.visible
+                                    onTrailingClicked: filledSplitMenu.visible ? filledSplitMenu.close() : filledSplitMenu.openFor(filledSplit)
+                                    MD.Menu {
+                                        id: filledSplitMenu
                                         MD.MenuItem {
                                             text: 'Action 1'
                                         }
@@ -323,9 +366,13 @@ MD.Page {
                                 }
 
                                 MD.SplitButton {
+                                    id: tonalSplit
                                     text: 'Tonal'
                                     mdState.type: MD.Enum.BtFilledTonal
-                                    menu: MD.Menu {
+                                    expanded: tonalSplitMenu.visible
+                                    onTrailingClicked: tonalSplitMenu.visible ? tonalSplitMenu.close() : tonalSplitMenu.openFor(tonalSplit)
+                                    MD.Menu {
+                                        id: tonalSplitMenu
                                         MD.MenuItem {
                                             text: 'Action A'
                                         }
@@ -335,10 +382,14 @@ MD.Page {
                                     }
                                 }
                                 MD.SplitButton {
+                                    id: disabledSplit
                                     text: 'Disabled'
                                     mdState.type: MD.Enum.BtFilled
                                     enabled: false
-                                    menu: MD.Menu {
+                                    expanded: disabledSplitMenu.visible
+                                    onTrailingClicked: disabledSplitMenu.visible ? disabledSplitMenu.close() : disabledSplitMenu.openFor(disabledSplit)
+                                    MD.Menu {
+                                        id: disabledSplitMenu
                                         MD.MenuItem {
                                             text: 'Action 1'
                                         }
@@ -980,13 +1031,13 @@ MD.Page {
                             title: 'Menus'
                             spacing: 12
                             MD.Button {
+                                id: m_menu_button
                                 Layout.alignment: Qt.AlignHCenter
                                 mdState.type: MD.Enum.BtText
                                 text: 'Open menu'
-                                onClicked: m_menu.open()
+                                onClicked: m_menu.visible ? m_menu.close() : m_menu.openFor(m_menu_button)
                                 MD.Menu {
                                     id: m_menu
-                                    y: parent.height
                                     width: 240
                                     MD.MenuItem {
                                         text: 'First'
@@ -1009,10 +1060,11 @@ MD.Page {
                                 }
                             }
                             MD.Button {
+                                id: m_action_menu_button
                                 Layout.alignment: Qt.AlignHCenter
                                 mdState.type: MD.Enum.BtText
                                 text: 'Open action menu'
-                                onClicked: m_action_menu.open()
+                                onClicked: m_action_menu.visible ? m_action_menu.close() : m_action_menu.openFor(m_action_menu_button)
 
                                 MD.Action {
                                     id: m_action_menu_first
@@ -1033,7 +1085,6 @@ MD.Page {
 
                                 MD.ActionMenu {
                                     id: m_action_menu
-                                    y: parent.height
                                     actions: [m_action_menu_first, m_action_menu_second, m_action_menu_long]
                                 }
                             }
@@ -1655,8 +1706,12 @@ MD.Page {
                             ComponentCard {
                                 title: 'Pull to refresh'
                                 MD.SplitButton {
+                                    id: refreshSplit
                                     text: m_pull_refresh.refreshing ? 'Finish refresh' : 'Refresh'
-                                    menu: MD.Menu {
+                                    expanded: refreshMenu.visible
+                                    onTrailingClicked: refreshMenu.visible ? refreshMenu.close() : refreshMenu.openFor(refreshSplit)
+                                    MD.Menu {
+                                        id: refreshMenu
                                         MD.MenuItem {
                                             text: 'Circular loading'
                                             selected: !m_pull_refresh.shapeLoading

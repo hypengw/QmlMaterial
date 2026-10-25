@@ -36,9 +36,7 @@ public:
     Q_INVOKABLE qreal          calcRadius(int size, bool round, bool pressed) const;
 
 private:
-    void                           observeGeometry();
-    void                           notifyGeometry();
-    QList<QMetaObject::Connection> m_geometryConnections;
+    void notifyGeometry();
     Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(SplitButtonIndicatorState, int, m_type,
                                          int(Enum::ButtonType::BtFilled),
                                          &SplitButtonIndicatorState::typeChanged)

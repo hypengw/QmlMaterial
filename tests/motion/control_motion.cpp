@@ -10,6 +10,9 @@
 #include "qml_material/control/command_button.hpp"
 #include "qml_material/control/selection_button.hpp"
 #include "qml_material/style/common_state.hpp"
+#include "qml_material/style/button_state.hpp"
+#include "qml_material/style/icon_button_state.hpp"
+#include "qml_material/control/toggle_button.hpp"
 #include "qml_material/style/rail_item_state.hpp"
 #include "qml_material/util/qml_util.hpp"
 
@@ -335,20 +338,308 @@ private slots:
         QCOMPARE(clock(&small)->duration(), clock(&large)->duration());
     }
 
+    void normalizedCornerResponse_data() {
+        QTest::addColumn<int>("pressedTime");
+        for (int time : { 0, 16, 40, 80 }) QTest::newRow(qPrintable(QString::number(time))) << time;
+    }
+
+    void normalizedCornerResponse() {
+        QFETCH(int, pressedTime);
+        const CornersGroup from(20, 18, 30, 10), to(8, 12, 9, 2);
+        CornerSpringMotion motion;
+        motion.setEnabled(false);
+        motion.setTargetCorners(from);
+        motion.setEnabled(true);
+        auto* animation = clock(&motion);
+        motion.setTargetCorners(to);
+        QSignalSpy running(&motion, &SpringMotionBase::runningChanged);
+        QSignalSpy finished(&motion, &SpringMotionBase::finished);
+        animation->setPlayTime(pressedTime);
+        const auto sample   = anim::sampleSpring(motion.spec(), 0, 1, 0, pressedTime / 1000.0);
+        const auto expected = from + (to - from) * sample.value;
+        for (int i = 0; i < 4; ++i) QVERIFY(std::abs(motion.corners()[i] - expected[i]) < 1e-8);
+        motion.setTargetCorners(from);
+        for (int i = 0; i < 4; ++i) QVERIFY(std::abs(motion.corners()[i] - expected[i]) < 1e-8);
+        QCOMPARE(animation->sample().velocity[0], -sample.velocity);
+        QCOMPARE(running.size(), pressedTime == 0 ? 1 : 0);
+        QCOMPARE(finished.size(), pressedTime == 0 ? 1 : 0);
+        animation->setPlayTime(16);
+        const auto beforeThird = motion.corners();
+        motion.setTargetCorners(CornersGroup(12));
+        QCOMPARE(motion.corners(), beforeThird);
+        QCOMPARE(animation->sample().velocity[0], 0.0);
+        finish(&motion);
+        QCOMPARE(motion.corners(), CornersGroup(12));
+        QVERIFY(! motion.isRunning());
+    }
+
+    void cornerCompletion_data() {
+        QTest::addColumn<qreal>("stiffness");
+        QTest::addColumn<qreal>("damping");
+        QTest::addColumn<int>("duration");
+        QTest::newRow("default-effects") << 1600.0 << 1.0 << 166;
+        QTest::newRow("standard-fast-spatial") << 1400.0 << .9 << 162;
+        QTest::newRow("expressive-fast-spatial") << 800.0 << .6 << 285;
+    }
+
+    void cornerCompletion() {
+        QFETCH(qreal, stiffness);
+        QFETCH(qreal, damping);
+        QFETCH(int, duration);
+        CornerSpringMotion motion;
+        motion.setSpec({ stiffness, damping });
+        motion.setTargetCorners(CornersGroup(20));
+        auto* animation = clock(&motion);
+        QCOMPARE(animation->duration(), duration);
+        QSignalSpy finished(&motion, &SpringMotionBase::finished);
+        animation->setPlayTime(duration - 1);
+        QVERIFY(motion.isRunning());
+        animation->advance(1);
+        QCOMPARE(motion.corners(), CornersGroup(20));
+        QCOMPARE(animation->sample().velocity[0], 0.0);
+        QVERIFY(! motion.isRunning());
+        QCOMPARE(finished.size(), 1);
+        animation->advance(100);
+        QCOMPARE(finished.size(), 1);
+        motion.setTargetCorners(CornersGroup(8));
+        QCOMPARE(animation->duration(), duration);
+        motion.setSpec({ 1600, 1 });
+        QCOMPARE(animation->duration(), 166);
+    }
+
+    void cornerSourceLifecycle() {
+        CommandButton first, second;
+        first.setSize({ 100, 40 });
+        second.setSize({ 24, 40 });
+        first.setBackground(new QQuickItem);
+        second.setBackground(new QQuickItem);
+        ButtonState state;
+        state.setShapeMode(int(Enum::ButtonShapeMode::InteractiveShape));
+        state.setItem(&first);
+        CornerSpringMotion motion;
+        motion.setSource(&state);
+        TestInteractionEmitter input(first.interactionSource(), &first);
+        auto*                  animation = clock(&motion);
+        input.set(Interaction::Press, true);
+        animation->setPlayTime(40);
+        QVERIFY(motion.isRunning());
+        state.setItem(&second);
+        QCOMPARE(motion.corners(), CornersGroup(12));
+        QVERIFY(! motion.isRunning());
+        input.clear();
+        QCOMPARE(motion.corners(), CornersGroup(12));
+        auto other = std::make_unique<ButtonState>();
+        other->setCorners(CornersGroup(7));
+        motion.setSource(other.get());
+        QCOMPARE(motion.corners(), CornersGroup(7));
+        state.setCorner(3);
+        QCOMPARE(motion.corners(), CornersGroup(7));
+        other->setCorners(CornersGroup(10));
+        animation->setPlayTime(16);
+        QVERIFY(motion.isRunning());
+        other.reset();
+        QVERIFY(! motion.source());
+        QVERIFY(! motion.isRunning());
+        QCOMPARE(motion.corners(), CornersGroup(0));
+        QPointer<CornerSpringMotion> temporary = new CornerSpringMotion;
+        temporary->setSource(&state);
+        connect(temporary, &CornerSpringMotion::cornersChanged, &state, [&] {
+            delete temporary.data();
+        });
+        temporary->setEnabled(false);
+        state.setCorner(9);
+        QVERIFY(! temporary);
+    }
+
+    void cornerResizeKeepsProgress() {
+        CommandButton button;
+        button.setSize({ 32, 40 });
+        button.setBackground(new QQuickItem);
+        IconButtonState state;
+        state.setItem(&button);
+        state.setShapeMode(int(Enum::ButtonShapeMode::InteractiveShape));
+        CornerSpringMotion motion;
+        motion.setSource(&state);
+        auto*                  animation = clock(&motion);
+        TestInteractionEmitter input(button.interactionSource(), &button);
+        QCOMPARE(motion.corners(), CornersGroup(16));
+        input.set(Interaction::Press, true);
+        animation->setPlayTime(40);
+        const auto progress = animation->sample().value[0];
+        const auto speed    = animation->sample().velocity[0];
+        const auto elapsed  = animation->elapsed();
+        button.setWidth(48);
+        QCOMPARE(animation->sample().value[0], progress);
+        QCOMPARE(animation->sample().velocity[0], speed);
+        QCOMPARE(animation->elapsed(), elapsed);
+        QVERIFY(std::abs(motion.corners().topLeft() - (20 + (8 - 20) * progress)) < 1e-8);
+        input.clear();
+        finish(&motion);
+        QCOMPARE(motion.corners(), CornersGroup(20));
+        state.setCorners(CornersGroup(20));
+        button.setSize({ 60, 60 });
+        QCOMPARE(state.corners(), CornersGroup(20));
+        QCOMPARE(motion.corners(), CornersGroup(20));
+        QVERIFY(! motion.isRunning());
+    }
+
+    void coincidentCornerEndpoints() {
+        CommandButton button;
+        button.setSize({ 16, 40 });
+        button.setBackground(new QQuickItem);
+        IconButtonState state;
+        state.setItem(&button);
+        state.setShapeMode(int(Enum::ButtonShapeMode::InteractiveShape));
+        CornerSpringMotion motion;
+        motion.setSource(&state);
+        auto*                  animation = clock(&motion);
+        TestInteractionEmitter input(button.interactionSource(), &button);
+        input.set(Interaction::Press, true);
+        animation->setPlayTime(40);
+        QCOMPARE(motion.corners(), CornersGroup(8));
+        const auto progress = animation->sample().value[0];
+        button.setWidth(32);
+        QCOMPARE(animation->sample().value[0], progress);
+        QVERIFY(std::abs(motion.corners().topLeft() - (16 + (8 - 16) * progress)) < 1e-8);
+        input.clear();
+        finish(&motion);
+        QCOMPARE(motion.corners(), CornersGroup(16));
+    }
+
+    void controlledButtonShape_data() {
+        QTest::addColumn<bool>("icon");
+        QTest::addColumn<bool>("accept");
+        for (bool icon : { false, true })
+            for (bool accept : { false, true })
+                QTest::newRow(qPrintable(QString("%1-%2").arg(icon).arg(accept))) << icon << accept;
+    }
+
+    void controlledButtonShape() {
+        QFETCH(bool, icon);
+        QFETCH(bool, accept);
+        QQmlEngine engine;
+        engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));
+        QQmlComponent component(&engine);
+        component.setData(QString(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            Item {
+                id: root
+                width: 160; height: 80
+                property bool selection: false
+                property bool accept: false
+                MD.%1 {
+                    objectName: "button"
+                    width: 100; height: 48
+                    checked: root.selection
+                    mdState.shapeMode: MD.Enum.InteractiveShape
+                    onCheckedChangeRequested: next => { if (root.accept) root.selection = next }
+                }
+            }
+        )")
+                              .arg(icon ? "IconToggleButton" : "ToggleButton")
+                              .toUtf8(),
+                          QUrl());
+        std::unique_ptr<QObject> object(
+            component.createWithInitialProperties({ { "accept", accept } }));
+        QVERIFY2(object, qPrintable(component.errorString()));
+        QQuickWindow window;
+        window.resize(160, 80);
+        qobject_cast<QQuickItem*>(object.get())->setParentItem(window.contentItem());
+        window.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        auto* button = object->findChild<ToggleButton*>("button");
+        QVERIFY(button);
+        auto* motion = button->property("_motion").value<QObject*>();
+        QTRY_VERIFY(motion->property("_animate").toBool());
+        auto* shape = motion->findChild<CornerSpringMotion*>();
+        QVERIFY(shape);
+        auto*      animation = clock(shape);
+        const auto initial   = shape->corners();
+        qmtest::mouse(*button, QEvent::MouseButtonPress, { 20, 20 });
+        animation->setPlayTime(40);
+        const auto pressed = shape->corners();
+        QVERIFY(pressed != initial);
+        qmtest::mouse(*button, QEvent::MouseButtonRelease, { 20, 20 });
+        QCOMPARE(button->isChecked(), accept);
+        QCOMPARE(shape->corners(), pressed);
+        finish(shape);
+        QCOMPARE(shape->corners(), accept ? CornersGroup(12) : initial);
+        QVERIFY(! shape->isRunning());
+        button->setProperty("animationsEnabled", false);
+        object->setProperty("selection", false);
+        QCOMPARE(shape->corners(), initial);
+    }
+
+    void buttonDefaults_data() {
+        QTest::addColumn<QString>("type");
+        QTest::addColumn<bool>("checkable");
+        QTest::addColumn<bool>("fixedOverride");
+        for (const auto* type : { "Button",
+                                  "BusyButton",
+                                  "IconButton",
+                                  "BusyIconButton",
+                                  "ToggleButton",
+                                  "IconToggleButton",
+                                  "ActionButton",
+                                  "ActionIconButton" }) {
+            QTest::newRow(type) << QString(type) << false << false;
+        }
+        QTest::newRow("checkable-action") << QString("ActionButton") << true << false;
+        QTest::newRow("fixed-checkable-action") << QString("ActionButton") << true << true;
+        QTest::newRow("checkable-icon-action") << QString("ActionIconButton") << true << false;
+    }
+
+    void buttonDefaults() {
+        QFETCH(QString, type);
+        QFETCH(bool, checkable);
+        QFETCH(bool, fixedOverride);
+        QQmlEngine engine;
+        engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));
+        QQmlComponent component(&engine);
+        const auto    action =
+            type.startsWith("Action")
+                ? QString("action: MD.Action { checkable: %1 }").arg(checkable ? "true" : "false")
+                : QString();
+        component.setData(
+            QString("import Qcm.Material as MD\nMD.%1 {\n%2\n%3\n}")
+                .arg(type, action, fixedOverride ? "mdState.shapeMode: MD.Enum.FixedShape" : "")
+                .toUtf8(),
+            QUrl());
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        const bool toggle = type == "ToggleButton" || (type == "ActionButton" && checkable);
+        auto*      state  = object->property("mdState").value<CommonState*>();
+        QVERIFY(state);
+        QCOMPARE(state->property("shapeMode").toInt(),
+                 int(toggle && ! fixedOverride ? Enum::ButtonShapeMode::InteractiveShape
+                                               : Enum::ButtonShapeMode::FixedShape));
+        QCOMPARE(object->property("shapeSpringSpec").value<token::SpringSpec>(),
+                 toggle ? (token::SpringSpec { 1400, .9 }) : (token::SpringSpec { 1600, 1 }));
+    }
+
     void buttonPresentation_data() {
         QTest::addColumn<QString>("type");
-        QTest::newRow("button") << QString("Button");
-        QTest::newRow("icon") << QString("IconButton");
+        QTest::addColumn<bool>("interactive");
+        for (const auto& type : { QString("Button"),
+                                  QString("IconButton"),
+                                  QString("ToggleButton"),
+                                  QString("IconToggleButton") })
+            for (bool interactive : { false, true })
+                QTest::newRow(qPrintable(type + (interactive ? "-interactive" : "-fixed")))
+                    << type << interactive;
     }
 
     void buttonPresentation() {
         QFETCH(QString, type);
+        QFETCH(bool, interactive);
         QQmlEngine engine;
         engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));
         QQmlComponent component(&engine);
         component.setData(QString("import Qcm.Material as MD\nMD.%1 {width: 120; height: 56; text: "
-                                  "'Label'; icon.name: MD.Token.icon.star}")
+                                  "'Label'; icon.name: MD.Token.icon.star; mdState.shapeMode: %2 }")
                               .arg(type)
+                              .arg(interactive ? "MD.Enum.InteractiveShape" : "MD.Enum.FixedShape")
                               .toUtf8(),
                           QUrl());
         std::unique_ptr<QObject> object(component.create());
@@ -366,10 +657,21 @@ private slots:
         auto* source = motion->property("source").value<CommonState*>();
         auto* shape  = motion->findChild<CornerSpringMotion*>();
         QVERIFY(source && shape);
+        QCOMPARE(shape->spec(),
+                 type == "ToggleButton" ? (token::SpringSpec { 1400, .9 })
+                                        : (token::SpringSpec { 1600, 1 }));
         const auto initial = source->corners();
         QCOMPARE(shape->corners(), initial);
+        QVERIFY(capture(window, "initial-" + type + (interactive ? "-interactive" : "-fixed")));
         setButtonPressed(button, true);
         const auto pressed = source->corners();
+        if (! interactive) {
+            QCOMPARE(pressed, initial);
+            QCOMPARE(shape->corners(), initial);
+            QVERIFY(! shape->isRunning());
+            setButtonPressed(button, false);
+            return;
+        }
         QVERIFY(pressed != initial);
         QCOMPARE(shape->corners(), initial);
         clock(shape)->setPlayTime(40);
@@ -379,6 +681,8 @@ private slots:
         QVERIFY(capture(window, "shape-" + type));
         setButtonPressed(button, false);
         QCOMPARE(shape->corners(), middle);
+        clock(shape)->setPlayTime(16);
+        QVERIFY(capture(window, "released-" + type));
         finish(shape);
         QCOMPARE(shape->corners(), initial);
         QVERIFY(button->setProperty("shapeSpringSpec",

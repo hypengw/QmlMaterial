@@ -13,6 +13,9 @@ CommonState::CommonState(QObject* parent)
     : QObject(parent), m_indication(this, [this] {
           if (isStateActive()) Q_EMIT indicationChanged();
       }) {
+    connect(this, &CommonState::cornersChanged, this, [this] {
+        Q_EMIT cornerShapeChanged();
+    });
     m_interactionsNotifier = m_indication.interactions().bindableValues().addNotifier([this] {
         if (isStateActive()) Q_EMIT interactionsChanged();
     });
@@ -200,6 +203,8 @@ APPEARANCE(qreal, contentOpacity, ContentOpacity)
 APPEARANCE(qreal, backgroundOpacity, BackgroundOpacity)
 APPEARANCE(qreal, stateLayerOpacity, StateLayerOpacity)
 #undef APPEARANCE
+
+CornerShape CommonState::cornerShape() const { return { corners() }; }
 
 #define RESET(Name, Upper) \
     void CommonState::reset##Upper() { m_appearance.Name.reset(); }

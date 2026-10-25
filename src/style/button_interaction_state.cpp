@@ -6,6 +6,13 @@
 namespace qml_material
 {
 ButtonInteractionState::ButtonInteractionState(QObject* parent): CommonState(parent) {
+    connect(this,
+            &ButtonInteractionState::itemChanged,
+            this,
+            &ButtonInteractionState::observeBackground);
+    connect(this, &CommonState::interactionsChanged, this, [this] {
+        Q_EMIT cornerShapeChanged();
+    });
     initializeAppearance(m_bindings);
     m_hovered.setBinding([this] {
         return interactions().hovered;
@@ -28,6 +35,77 @@ ButtonInteractionState::~ButtonInteractionState() {
     stopBindings();
     utils::disconnectAll(m_groupConnections);
     utils::disconnectAll(m_connections);
+    utils::disconnectAll(m_backgroundConnections);
+}
+
+void ButtonInteractionState::bindCornerShape(std::function<CornerShape()> shape, bool uniform) {
+    m_cornerShape  = std::move(shape);
+    m_uniformShape = uniform;
+    if (uniform)
+        baseBindings().bind(m_appearance.corner, [this] {
+            return m_cornerShape().resolved().radius();
+        });
+    else
+        baseBindings().bind(m_appearance.corners, [this] {
+            return m_cornerShape().resolved();
+        });
+}
+CornerShape ButtonInteractionState::cornerShape() const {
+    const auto actual = corners();
+    if (auto group = groupCornerShape(); group && group->resolved() == actual) return *group;
+    if (m_cornerShape) {
+        auto shape = m_cornerShape();
+        if (shape.resolved() == actual && (! m_uniformShape || CornersGroup(corner()) == actual))
+            return shape;
+    }
+    return { actual, {}, fullCorner() };
+}
+void ButtonInteractionState::observeBackground() {
+    utils::disconnectAll(m_backgroundConnections);
+    auto* item = inputItem();
+    if (item) {
+        const auto update = [this] {
+            updateBackgroundSize();
+        };
+        m_backgroundConnections.append(connect(
+            item, &Control::backgroundChanged, this, &ButtonInteractionState::observeBackground));
+        m_backgroundConnections.append(connect(item, &QQuickItem::widthChanged, this, update));
+        m_backgroundConnections.append(connect(item, &QQuickItem::heightChanged, this, update));
+        m_backgroundConnections.append(connect(item, &Control::leftInsetChanged, this, update));
+        m_backgroundConnections.append(connect(item, &Control::rightInsetChanged, this, update));
+        m_backgroundConnections.append(connect(item, &Control::topInsetChanged, this, update));
+        m_backgroundConnections.append(connect(item, &Control::bottomInsetChanged, this, update));
+        m_backgroundConnections.append(connect(item, &Control::mirroredChanged, this, [this] {
+            if (! isStateActive()) return;
+            const QPointer<ButtonInteractionState> guard(this);
+            m_geometryRevision = m_geometryRevision.value() + 1;
+            if (guard && isStateActive()) Q_EMIT cornerShapeChanged();
+        }));
+        if (auto* background = item->background()) {
+            m_backgroundConnections.append(
+                connect(background, &QQuickItem::widthChanged, this, update));
+            m_backgroundConnections.append(
+                connect(background, &QQuickItem::heightChanged, this, update));
+            m_backgroundConnections.append(connect(background, &QObject::destroyed, this, update));
+        }
+    }
+    updateBackgroundSize();
+}
+void ButtonInteractionState::updateBackgroundSize() {
+    if (! isStateActive()) return;
+    const auto* item       = inputItem();
+    const auto* background = item ? item->background() : nullptr;
+    const auto  next       = background ? background->size() : QSizeF();
+    if (next == m_backgroundSize.value()) return;
+    const QPointer<ButtonInteractionState> guard(this);
+    m_backgroundSize = next;
+    if (guard && isStateActive()) Q_EMIT backgroundSizeChanged();
+    if (guard && isStateActive()) Q_EMIT cornerShapeChanged();
+}
+qreal ButtonInteractionState::fullCorner(qreal fallback) const {
+    (void)m_geometryRevision.value();
+    const auto size = m_backgroundSize.value();
+    return size.isEmpty() ? fallback / 2 : std::min(size.width(), size.height()) / 2;
 }
 void ButtonInteractionState::enableGroupShape() {
     connect(this,
@@ -65,22 +143,27 @@ int ButtonInteractionState::groupSize() const {
     return info ? info->buttonSize() : int(Enum::ButtonSize::S);
 }
 CornersGroup ButtonInteractionState::groupCorners() const {
+    if (auto shape = groupCornerShape()) return shape->resolved();
+    return CornersGroup(corner());
+}
+std::optional<CornerShape> ButtonInteractionState::groupCornerShape() const {
     (void)m_groupRevision.value();
     auto* item = inputItem();
     auto* info = item ? qobject_cast<ButtonGroupContainerAttached*>(
                             qmlAttachedPropertiesObject<ButtonGroupContainer>(item, false))
                       : nullptr;
-    if (! info || ! info->connected()) return CornersGroup(corner());
+    if (! info || ! info->connected()) return std::nullopt;
     const qreal full =
-        std::max(qreal(0), item->height() - item->topInset() - item->bottomInset()) / 2;
+        fullCorner(std::max(qreal(0), item->height() - item->topInset() - item->bottomInset()));
     const auto pos = Enum::ItemPosition(info->position());
     if (pos == Enum::ItemPosition::PosSingle || (! pressed() && checked()))
-        return CornersGroup(full);
+        return CornerShape { {}, CornersGroup(1), full };
     const qreal inner = std::min(
         full, pressed() ? token::ButtonGroup::pressedInnerCorner : token::ButtonGroup::innerCorner);
-    if (pos == Enum::ItemPosition::PosMiddle) return CornersGroup(inner);
+    if (pos == Enum::ItemPosition::PosMiddle) return CornerShape { CornersGroup(inner), {}, full };
     const bool left = (pos == Enum::ItemPosition::PosFirst) != item->mirrored();
-    return left ? CornersGroup(inner, inner, full, full) : CornersGroup(full, full, inner, inner);
+    return left ? CornerShape { CornersGroup(inner, inner, 0, 0), CornersGroup(0, 0, 1, 1), full }
+                : CornerShape { CornersGroup(0, 0, inner, inner), CornersGroup(1, 1, 0, 0), full };
 }
 qreal ButtonInteractionState::groupOpticalOffset(const CornersGroup& corners) const {
     return .055 *
@@ -96,9 +179,8 @@ bool                 ButtonInteractionState::hovered() const { return m_hovered.
 bool                 ButtonInteractionState::visualFocus() const { return m_focusVisible.value(); }
 bool                 ButtonInteractionState::disabled() const { return m_disabled.value(); }
 std::optional<qreal> ButtonInteractionState::backgroundHeight() const {
-    const auto item       = inputItem();
-    const auto background = item ? item->background() : nullptr;
-    return background ? std::optional<qreal>(background->height()) : std::nullopt;
+    const auto size = m_backgroundSize.value();
+    return size.isValid() ? std::optional<qreal>(size.height()) : std::nullopt;
 }
 void ButtonInteractionState::setInputItem(SelectionButton* item) {
     setInputItem(
@@ -171,6 +253,8 @@ void ButtonInteractionState::setInputItem(ButtonControl* item, std::function<boo
                 if (! guard || revision != m_inputRevision) return;
                 setInteractionSource(nullptr);
                 if (guard && revision == m_inputRevision && isStateActive()) Q_EMIT itemChanged();
+                if (guard && revision == m_inputRevision && isStateActive())
+                    Q_EMIT cornerShapeChanged(true);
             }));
         }
         setTarget(item);
@@ -184,6 +268,7 @@ void ButtonInteractionState::setInputItem(ButtonControl* item, std::function<boo
         if (isStateActive()) m_disabled.notify();
     }
     if (guard && revision == m_inputRevision && isStateActive()) Q_EMIT itemChanged();
+    if (guard && revision == m_inputRevision && isStateActive()) Q_EMIT cornerShapeChanged(true);
 }
 void ButtonInteractionState::bindStateLayerOpacity(bool focus) {
     appearanceWhen([this, focus] {

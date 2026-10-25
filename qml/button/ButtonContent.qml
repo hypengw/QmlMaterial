@@ -14,7 +14,7 @@ Lite.Box {
     opacity: motion.contentOpacity
     Lite.Row {
         transform: Translate {
-            x: root.button.MD.ButtonGroupContainer.connected ? root.mdState.groupOpticalOffset(root.motion.corners) : 0
+            x: root.mdState.groupOpticalOffset(root.motion.corners)
         }
         width: root.button.MD.ButtonGroupContainer.grouped ? implicitWidth : Math.min(implicitWidth, parent.width)
         height: Math.min(implicitHeight, parent.height)

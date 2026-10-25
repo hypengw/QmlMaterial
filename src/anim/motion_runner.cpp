@@ -83,11 +83,12 @@ QString MotionRunner::start(anim::PreparedMotion motion) {
 }
 QString MotionRunner::animateTo(const anim::Vector& target, AnimationSpec spec,
                                 std::optional<anim::Vector> velocity,
-                                const anim::Vector&         thresholds) {
+                                const anim::Vector& thresholds, anim::SpringCompletion completion) {
     if (m_state == Interacting || ! validVector(target)) return {};
     const auto v = velocity.value_or(m_sample.velocity);
     if (! validVector(v)) return {};
-    auto motion = anim::PreparedMotion::prepare(m_sample.value, target, v, spec, thresholds);
+    auto motion =
+        anim::PreparedMotion::prepare(m_sample.value, target, v, spec, thresholds, completion);
     return motion ? start(std::move(*motion)) : QString();
 }
 QString MotionRunner::animateDecay(const anim::Vector& velocity, DecaySpec spec) {

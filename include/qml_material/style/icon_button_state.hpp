@@ -8,6 +8,8 @@ namespace qml_material
 class QML_MATERIAL_API IconButtonState : public ButtonValueState {
     Q_OBJECT
     QML_NAMED_ELEMENT(StateIconButton)
+    Q_PROPERTY(int shapeMode READ shapeMode WRITE setShapeMode NOTIFY shapeModeChanged BINDABLE
+                   bindableShapeMode FINAL)
     Q_PROPERTY(int type READ type WRITE setType NOTIFY typeChanged BINDABLE bindableType FINAL)
     Q_PROPERTY(int size READ size WRITE setSize NOTIFY sizeChanged BINDABLE bindableSize FINAL)
     Q_PROPERTY(int widthMode READ widthMode WRITE setWidthMode NOTIFY widthModeChanged BINDABLE
@@ -24,6 +26,10 @@ class QML_MATERIAL_API IconButtonState : public ButtonValueState {
 
 public:
     explicit IconButtonState(QObject* parent = nullptr);
+    int                              shapeMode() const { return m_shapeMode; }
+    void                             setShapeMode(int value) { m_shapeMode = value; }
+    QBindable<int>                   bindableShapeMode() { return &m_shapeMode; }
+    Q_SIGNAL void                    shapeModeChanged();
     int                              type() const;
     void                             setType(int);
     QBindable<int>                   bindableType();
@@ -54,6 +60,9 @@ public:
     Q_SIGNAL void  sizeTokenChanged();
 
 private:
+    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(IconButtonState, int, m_shapeMode,
+                                         int(Enum::ButtonShapeMode::FixedShape),
+                                         &IconButtonState::shapeModeChanged)
     void   bindTargets();
     QColor defaultTextColor() const;
     QColor defaultBackgroundColor() const;

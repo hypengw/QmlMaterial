@@ -2,16 +2,15 @@
 #include "qml_material/control/button_control.hpp"
 #include "qml_material/token/color.hpp"
 #include "qml_material/util/qml_util.hpp"
-#include "qml_material/util/qt.hpp"
 namespace qml_material
 {
 using Type = Enum::ButtonType;
 using Size = Enum::ButtonSize;
 SplitButtonIndicatorState::SplitButtonIndicatorState(QObject* parent): ButtonValueState(parent) {
     connect(this,
-            &ButtonInteractionState::itemChanged,
+            &SplitButtonIndicatorState::backgroundSizeChanged,
             this,
-            &SplitButtonIndicatorState::observeGeometry);
+            &SplitButtonIndicatorState::notifyGeometry);
     connect(
         this, &ButtonValueState::selectedChanged, this, &SplitButtonIndicatorState::notifyGeometry);
     connect(this,
@@ -29,9 +28,27 @@ SplitButtonIndicatorState::SplitButtonIndicatorState(QObject* parent): ButtonVal
         return Type(type()) == Type::BtElevated ? elevationTokens().level1
                                                 : elevationTokens().level0;
     });
-    base.bind(m_appearance.corners, [this] {
-        return Util::corners(innerCorner(), baseCorner(), innerCorner(), baseCorner());
-    });
+    bindCornerShape(
+        [this]() -> CornerShape {
+            const auto full = fullCorner(sizeToken().container_height);
+            auto absolute = Util::corners(innerCorner(), baseCorner(), innerCorner(), baseCorner());
+            CornersGroup relative;
+            if (! pressed() && isSelected()) {
+                absolute = CornersGroup(0);
+                relative = CornersGroup(1);
+            } else if (isRound()) {
+                absolute = Util::corners(innerCorner(), 0, innerCorner(), 0);
+                relative = Util::corners(0, 1, 0, 1);
+            }
+            if (item() && item()->mirrored()) {
+                std::swap(absolute[0], absolute[1]);
+                std::swap(absolute[2], absolute[3]);
+                std::swap(relative[0], relative[1]);
+                std::swap(relative[2], relative[3]);
+            }
+            return { absolute, relative, full };
+        },
+        false);
     base.bind(m_appearance.textColor, [this] {
         switch (Type(type())) {
         case Type::BtFilled: return color(&MdColorMgr::on_primary);
@@ -73,25 +90,7 @@ SplitButtonIndicatorState::SplitButtonIndicatorState(QObject* parent): ButtonVal
         return stateTokens().disabled_container;
     });
 }
-SplitButtonIndicatorState::~SplitButtonIndicatorState() {
-    utils::disconnectAll(m_geometryConnections);
-    stopBindings();
-}
-void SplitButtonIndicatorState::observeGeometry() {
-    utils::disconnectAll(m_geometryConnections);
-    if (auto* control = item()) {
-        m_geometryConnections.append(connect(control,
-                                             &Control::backgroundChanged,
-                                             this,
-                                             &SplitButtonIndicatorState::observeGeometry));
-        if (auto* background = control->background())
-            m_geometryConnections.append(connect(background,
-                                                 &QQuickItem::heightChanged,
-                                                 this,
-                                                 &SplitButtonIndicatorState::notifyGeometry));
-    }
-    notifyGeometry();
-}
+SplitButtonIndicatorState::~SplitButtonIndicatorState() { stopBindings(); }
 void SplitButtonIndicatorState::notifyGeometry() {
     if (! isStateActive()) return;
     const QPointer<SplitButtonIndicatorState> guard(this);
@@ -109,8 +108,7 @@ qreal SplitButtonIndicatorState::calcRadius(int size, bool round, bool pressed) 
         }
     }
     if (round) {
-        const auto height = backgroundHeight();
-        return height ? *height / 2 : 20;
+        return fullCorner(sizeToken().container_height);
     }
     switch (Size(size)) {
     case Size::M: return 16;
@@ -121,8 +119,7 @@ qreal SplitButtonIndicatorState::calcRadius(int size, bool round, bool pressed) 
 }
 qreal SplitButtonIndicatorState::baseCorner() const {
     // Geometry notifications may retarget the state; do not cache the old target's result.
-    if (! pressed() && isSelected())
-        return backgroundHeight().value_or(sizeToken().container_height) / 2;
+    if (! pressed() && isSelected()) return fullCorner(sizeToken().container_height);
     return calcRadius(size(), isRound(), false);
 }
 qreal SplitButtonIndicatorState::innerCorner() const {

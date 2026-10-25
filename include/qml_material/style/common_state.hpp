@@ -190,6 +190,8 @@ public:
     QBindable<qreal>        bindableCorner();
     Q_SIGNAL void           cornerChanged();
     CornersGroup            corners() const;
+    virtual CornerShape     cornerShape() const;
+    Q_SIGNAL void           cornerShapeChanged(bool synchronize = false);
     void                    setCorners(const CornersGroup&);
     Q_INVOKABLE void        resetCorners();
     QBindable<CornersGroup> bindableCorners();

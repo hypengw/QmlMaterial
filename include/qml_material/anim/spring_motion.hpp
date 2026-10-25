@@ -6,9 +6,11 @@
 #include <memory>
 #include "qml_material/anim/motion_runner.hpp"
 #include "qml_material/util/corner.hpp"
+Q_MOC_INCLUDE("qml_material/style/common_state.hpp")
 
 namespace qml_material
 {
+class CommonState;
 /** @ingroup impl */
 class QML_MATERIAL_API SpringMotionBase : public QObject, public QQmlParserStatus {
     Q_OBJECT
@@ -44,13 +46,18 @@ public:
 
 protected:
     explicit SpringMotionBase(int dimensions, QObject* parent);
-    void          setTargets(const QList<qreal>&, bool snap = false, bool preserveVelocity = true);
+    void          setTargets(const QList<qreal>&, bool snap = false, bool preserveVelocity = true,
+                             std::optional<anim::Vector> from            = {},
+                             std::optional<anim::Vector> initialVelocity = {});
     qreal         target(int index) const;
     qreal         value(int index) const;
     qreal         velocity(int index) const;
     int           elapsed() const;
     virtual qreal displacementThreshold(int index) const;
-    void          useEffects() {
+    virtual anim::SpringCompletion springCompletion() const {
+        return anim::SpringCompletion::DisplacementAndVelocity;
+    }
+    void useEffects() {
         m_effects = true;
         m_spec    = token::SpringScheme {}.defaultEffects();
     }
@@ -104,18 +111,32 @@ public:
 class QML_MATERIAL_API CornerSpringMotion : public SpringMotionBase {
     Q_OBJECT
     QML_ELEMENT
+    Q_PROPERTY(CommonState* source READ source WRITE setSource NOTIFY sourceChanged FINAL)
     Q_PROPERTY(qml_material::CornersGroup targetCorners READ targetCorners WRITE setTargetCorners
                    NOTIFY targetChanged FINAL)
-    Q_PROPERTY(qml_material::CornersGroup corners READ corners NOTIFY valueChanged FINAL)
+    Q_PROPERTY(qml_material::CornersGroup corners READ corners NOTIFY cornersChanged FINAL)
 public:
     explicit CornerSpringMotion(QObject* parent = nullptr);
-    CornersGroup targetCorners() const;
-    void         setTargetCorners(const CornersGroup&);
-    CornersGroup corners() const;
+    CommonState*  source() const;
+    void          setSource(CommonState*);
+    Q_SIGNAL void sourceChanged();
+    CornersGroup  targetCorners() const;
+    void          setTargetCorners(const CornersGroup&);
+    CornersGroup  corners() const;
+    Q_SIGNAL void cornersChanged();
 
 private:
-    qreal        displacementThreshold(int index) const override;
-    CornersGroup m_start;
+    anim::SpringCompletion springCompletion() const override {
+        return anim::SpringCompletion::Displacement;
+    }
+    void                           notifyCorners();
+    void                           updateShape(bool snap = false);
+    void                           setShape(CornerShape, bool snap = false);
+    QPointer<CommonState>          m_source;
+    QList<QMetaObject::Connection> m_connections;
+    CornerShape                    m_from, m_to;
+    qreal                          m_extent = 0;
+    CornersGroup                   m_notifiedCorners;
 };
 
 /** Press feedback with a minimum visible expansion before release. @ingroup impl */

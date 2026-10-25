@@ -116,7 +116,8 @@ bool finite(const Vector& v) {
 }
 std::optional<PreparedMotion> PreparedMotion::prepare(const Vector& from, const Vector& to,
                                                       const Vector& velocity, AnimationSpec spec,
-                                                      const Vector& thresholds) {
+                                                      const Vector&    thresholds,
+                                                      SpringCompletion completion) {
     if (! finite(from) || ! finite(to) || ! finite(velocity) || from.size() != to.size() ||
         from.size() != velocity.size() || ! spec.valid() ||
         (! thresholds.isEmpty() && (thresholds.size() != from.size() || ! finite(thresholds))))
@@ -136,18 +137,21 @@ std::optional<PreparedMotion> PreparedMotion::prepare(const Vector& from, const 
                 -spec.stiffness * (from[i] - to[i]) -
                 2 * spec.dampingRatio * std::sqrt(spec.stiffness) * velocity[i];
             if (! std::isfinite(acceleration)) return {};
-            duration = std::max(
-                springDuration(spring,
-                               from[i],
-                               to[i],
-                               velocity[i],
-                               thresholds.isEmpty() ? spec.threshold : thresholds[i]),
-                springDuration(spring,
-                               velocity[i],
-                               0,
-                               acceleration,
-                               spec.velocityThreshold *
-                                   (thresholds.isEmpty() ? 1 : thresholds[i] / spec.threshold)));
+            duration = springDuration(spring,
+                                      from[i],
+                                      to[i],
+                                      velocity[i],
+                                      thresholds.isEmpty() ? spec.threshold : thresholds[i]);
+            if (completion == SpringCompletion::DisplacementAndVelocity)
+                duration =
+                    std::max(duration,
+                             springDuration(
+                                 spring,
+                                 velocity[i],
+                                 0,
+                                 acceleration,
+                                 spec.velocityThreshold *
+                                     (thresholds.isEmpty() ? 1 : thresholds[i] / spec.threshold)));
         }
         duration = std::min(duration, 1000000000);
         m.m_durations.append(duration);

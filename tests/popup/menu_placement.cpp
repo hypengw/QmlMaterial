@@ -517,6 +517,68 @@ private slots:
         QCOMPARE(shown.count(), 2);
         QCOMPARE(root->property("clicks").toInt(), 2);
     }
+    void clickedMenu_data() {
+        QTest::addColumn<QString>("type");
+        QTest::addColumn<bool>("touchInput");
+        for (const auto& type : { QString("Button"), QString("IconButton") })
+            for (bool touchInput : { false, true })
+                QTest::newRow(qPrintable(type + (touchInput ? "-touch" : "-mouse")))
+                    << type << touchInput;
+    }
+    void clickedMenu() {
+        QFETCH(QString, type);
+        QFETCH(bool, touchInput);
+        QTest::failOnWarning(QRegularExpression(".*"));
+        QVERIFY(create(QString(R"(
+            property int clicks: 0
+            MD.%1 {
+                id: button; objectName: "anchor"; x: 40; y: 40; width: 48; height: 48
+                icon.name: MD.Token.icon.more_vert
+                onClicked: {
+                    root.clicks++;
+                    if (menu.visible) menu.close();
+                    else menu.openFor(button);
+                }
+            }
+            MD.Menu {
+                id: menu; objectName: "menu"; width: 180; enter: null; exit: null
+                MD.MenuItem { text: "First" }
+            }
+        )")
+                           .arg(type)
+                           .toUtf8()));
+        for (const auto name : { "popupMenu", "menuAnchor", "menuExpanded" })
+            QVERIFY(! anchor()->property(name).isValid());
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        const auto   point  = anchor()->mapToScene({ 24, 24 }).toPoint();
+        static auto* device = QTest::createTouchDevice();
+        const auto   click  = [&] {
+            if (touchInput) {
+                QTest::touchEvent(&window, device).press(0, point, &window).commit();
+                QQuickWindowPrivate::get(&window)
+                    ->deliveryAgentPrivate()
+                    ->flushFrameSynchronousEvents(&window);
+                QTest::touchEvent(&window, device).release(0, point, &window).commit();
+                QQuickWindowPrivate::get(&window)
+                    ->deliveryAgentPrivate()
+                    ->flushFrameSynchronousEvents(&window);
+            } else
+                QTest::mouseClick(&window, Qt::LeftButton, Qt::NoModifier, point);
+            flushInteractions();
+        };
+        QSignalSpy shown(menu(), &Popup::aboutToShow);
+        click();
+        QVERIFY(menu()->isOpened());
+        QCOMPARE(menu()->anchorItem(), anchor());
+        click();
+        QVERIFY(! menu()->isVisible());
+        QCOMPARE(shown.size(), 1);
+        QCOMPARE(root->property("clicks").toInt(), 1);
+        click();
+        QVERIFY(menu()->isOpened());
+        QCOMPARE(shown.size(), 2);
+        QCOMPARE(root->property("clicks").toInt(), 2);
+    }
     void outsideClick_data() {
         QTest::addColumn<bool>("nonModal");
         QTest::newRow("default-modal") << false;
@@ -584,9 +646,13 @@ private slots:
         QVERIFY(create(R"(
             property int clicks: 0
             MD.SplitButton {
+                id: split
                 objectName: "split"; x: 40; y: 40; text: "Action"
                 onClicked: root.clicks++
-                menu: MD.Menu {
+                expanded: menu.visible
+                onTrailingClicked: menu.visible ? menu.close() : menu.openFor(split)
+                MD.Menu {
+                    id: menu
                     objectName: "menu"; width: 180; enter: null; exit: null
                     MD.MenuItem { text: "First" }
                 }

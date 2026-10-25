@@ -45,6 +45,92 @@ private slots:
             ".*(Binding loop|Unable to assign|TypeError|ReferenceError|Cannot assign).*"));
     }
 
+    void fixedButtonShapes() {
+        InputButton     button;
+        ButtonState     text;
+        IconButtonState icon;
+        text.setItem(&button);
+        icon.setItem(&button);
+        const auto textCorners = text.corners();
+        const auto iconCorners = icon.corners();
+        button.feedback.set(Interaction::Press, true);
+        QCOMPARE(text.corners(), textCorners);
+        QCOMPARE(icon.corners(), iconCorners);
+        button.feedback.clear();
+    }
+
+    void narrowButtonShape() {
+        InputButton button;
+        button.setSize({ 32, 40 });
+        auto* background = new QQuickItem;
+        button.setBackground(background);
+        IconButtonState state;
+        state.setItem(&button);
+        QCOMPARE(state.corner(), 16.0);
+        button.setWidth(24);
+        QCOMPARE(state.corner(), 12.0);
+        button.setLeftInset(2);
+        button.setRightInset(2);
+        QCOMPARE(state.corner(), 10.0);
+        state.setCorners(CornersGroup(3));
+        button.setWidth(40);
+        QCOMPARE(state.corners(), CornersGroup(3));
+        state.resetCorners();
+        QCOMPARE(state.corners(), CornersGroup(18));
+    }
+
+    void interactiveButtonShapes_data() {
+        QTest::addColumn<bool>("icon");
+        QTest::addColumn<bool>("round");
+        for (bool icon : { false, true })
+            for (bool round : { false, true })
+                QTest::newRow(qPrintable(QString("%1-%2").arg(icon).arg(round))) << icon << round;
+    }
+
+    void interactiveButtonShapes() {
+        QFETCH(bool, icon);
+        QFETCH(bool, round);
+        InputButton button;
+        button.setSize({ 80, 40 });
+        button.setBackground(new QQuickItem);
+        std::unique_ptr<ButtonValueState> state;
+        if (icon) {
+            auto value = std::make_unique<IconButtonState>();
+            value->setIsRound(round);
+            value->setShapeMode(int(Enum::ButtonShapeMode::InteractiveShape));
+            state = std::move(value);
+        } else {
+            auto value = std::make_unique<ButtonState>();
+            value->setIsRound(round);
+            value->setShapeMode(int(Enum::ButtonShapeMode::InteractiveShape));
+            state = std::move(value);
+        }
+        state->setItem(&button);
+        state->setToggleable(true);
+        QCOMPARE(state->corner(), round ? 20.0 : 12.0);
+        state->setSelected(true);
+        QCOMPARE(state->corner(), round ? 12.0 : 20.0);
+        const auto first  = button.feedback.begin(Interaction::Press);
+        const auto second = button.feedback.begin(Interaction::Press);
+        QCOMPARE(state->corner(), 8.0);
+        state->setSelected(false);
+        QCOMPARE(state->corner(), 8.0);
+        button.feedback.end(first);
+        QCOMPARE(state->corner(), 8.0);
+        button.feedback.end(second, Interaction::Cancel);
+        QCOMPARE(state->corner(), round ? 20.0 : 12.0);
+        button.feedback.set(Interaction::Hover, true);
+        button.feedback.set(Interaction::Focus, true);
+        QCOMPARE(state->corner(), round ? 20.0 : 12.0);
+        state->setCorners(CornersGroup(3));
+        state->setSelected(true);
+        button.feedback.set(Interaction::Press, true);
+        QCOMPARE(state->corners(), CornersGroup(3));
+        state->resetCorners();
+        QCOMPARE(state->corners(), CornersGroup(8));
+        button.feedback.clear();
+    }
+
     void stateDetachesFromSharedSource() {
         InteractionSource shared;
         auto*             button = new CombinedCommandButton;
@@ -104,7 +190,9 @@ private slots:
             state = std::move(value);
         };
         if (kind == 0) {
-            attach(std::make_unique<ButtonState>());
+            auto buttonState = std::make_unique<ButtonState>();
+            buttonState->setShapeMode(int(Enum::ButtonShapeMode::InteractiveShape));
+            attach(std::move(buttonState));
         } else if (kind == 1) {
             attach(std::make_unique<FABState>());
         } else if (kind < 5) {
@@ -178,6 +266,7 @@ private slots:
         InputButton button(window.contentItem());
         button.setSize({ 200, 50 });
         IconButtonState icon;
+        icon.setShapeMode(int(Enum::ButtonShapeMode::InteractiveShape));
         AssistChipState chip;
         MdColorMgr      palette;
         icon.setItem(&button);

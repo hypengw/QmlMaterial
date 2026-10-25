@@ -12,12 +12,16 @@ class QML_MATERIAL_API ButtonInteractionState : public CommonState {
     QML_ANONYMOUS
 public:
     ~ButtonInteractionState() override;
+    CornerShape       cornerShape() const override;
     Q_INVOKABLE qreal groupOpticalOffset(const qml_material::CornersGroup&) const;
     Q_SIGNAL void     itemChanged();
 
 protected:
-    void enableGroupShape();
-    int  groupSize() const;
+    void          bindCornerShape(std::function<CornerShape()> shape, bool uniform = true);
+    qreal         fullCorner(qreal fallback = 40) const;
+    Q_SIGNAL void backgroundSizeChanged();
+    void          enableGroupShape();
+    int           groupSize() const;
     enum class Availability
     {
         Base,
@@ -57,6 +61,14 @@ protected:
     Interaction::Kind    elevationInteraction(bool includeDrag = false) const;
 
 private:
+    void                           observeBackground();
+    void                           updateBackgroundSize();
+    std::optional<CornerShape>     groupCornerShape() const;
+    std::function<CornerShape()>   m_cornerShape;
+    bool                           m_uniformShape = true;
+    QList<QMetaObject::Connection> m_backgroundConnections;
+    QProperty<QSizeF>              m_backgroundSize;
+    QProperty<quint64>             m_geometryRevision { 0 };
     void                           updateGroupContext();
     CornersGroup                   groupCorners() const;
     QList<QMetaObject::Connection> m_groupConnections;

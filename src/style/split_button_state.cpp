@@ -1,4 +1,5 @@
 #include "qml_material/style/split_button_state.hpp"
+#include "qml_material/control/button_control.hpp"
 #include "qml_material/util/qml_util.hpp"
 namespace qml_material
 {
@@ -17,15 +18,31 @@ SplitButtonState::SplitButtonState(QObject* parent): ButtonAppearanceState(paren
     });
     m_innerCorner.setBinding([this] {
         const auto token = sizeToken();
-        return pressed()   ? token.inner_corner_pressed_size
-               : hovered() ? token.inner_corner_hovered_size
-                           : token.inner_corner_size;
+        return pressed() ? token.inner_corner_pressed_size : token.inner_corner_size;
     });
     m_trailingCornersKey = bindingSet().property<&SplitButtonState::bindableTrailingCorners>(this);
     auto base            = baseBindings();
-    base.bind(m_appearance.corners, [this] {
-        return Util::corners(outerCorner(), innerCorner(), outerCorner(), innerCorner());
-    });
+    bindCornerShape(
+        [this]() -> CornerShape {
+            const auto full     = fullCorner(containerHeight());
+            auto       absolute = Util::corners(0, innerCorner(), 0, innerCorner());
+            auto       relative = Util::corners(1, 0, 1, 0);
+            if (! isRound()) {
+                absolute = Util::corners(buttonSize().corner_size,
+                                         innerCorner(),
+                                         buttonSize().corner_size,
+                                         innerCorner());
+                relative = CornersGroup(0);
+            }
+            if (inputItem() && inputItem()->mirrored()) {
+                std::swap(absolute[0], absolute[1]);
+                std::swap(absolute[2], absolute[3]);
+                std::swap(relative[0], relative[1]);
+                std::swap(relative[2], relative[3]);
+            }
+            return { absolute, relative, full };
+        },
+        false);
     base.bind(m_trailingCornersKey, [this] {
         return Util::corners(innerCorner(), outerCorner(), innerCorner(), outerCorner());
     });
@@ -33,7 +50,7 @@ SplitButtonState::SplitButtonState(QObject* parent): ButtonAppearanceState(paren
         const auto token = buttonSize();
         if (pressed()) return token.pressed_corner_size;
         if (! isRound()) return token.corner_size;
-        return backgroundHeight().value_or(token.container_height) / 2;
+        return fullCorner(token.container_height);
     });
 }
 token::SplitButtonSize SplitButtonState::sizeTokens() const { return m_sizeTokens.value(); }

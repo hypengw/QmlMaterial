@@ -49,6 +49,13 @@ public:
     };
     Q_ENUM(ButtonSize)
 
+    enum class ButtonShapeMode
+    {
+        FixedShape = 0,
+        InteractiveShape
+    };
+    Q_ENUM(ButtonShapeMode)
+
     enum class ButtonWidthMode
     {
         DefaultWidth = 0,

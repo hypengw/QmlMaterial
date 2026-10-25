@@ -1,11 +1,19 @@
 import QtQuick
 import Qcm.Material as MD
 
-MD.MenuButtonBase {
+MD.CommandButtonBase {
     id: control
+    property bool animationsEnabled: true
+    property bool expanded: false
+    property MD.springSpec shapeSpringSpec: MD.Token.motion.spring.standard.defaultEffects
 
     property MD.StateSplitButtonIndicator mdState: MD.StateSplitButtonIndicator {
         item: control
+    }
+    readonly property MD.ButtonMotion _motion: MD.ButtonMotion {
+        source: control.mdState
+        shapeSpringSpec: control.shapeSpringSpec
+        enabled: control.animationsEnabled && control.visible && (!control.Window.window || (control.Window.window.visible && control.Window.window.visibility !== Window.Minimized))
     }
 
     Binding {
@@ -22,16 +30,9 @@ MD.MenuButtonBase {
     icon.name: MD.Token.icon.expand_more
 
     contentItem: MD.IconView {
-        property real opticalOffset: control.expanded && !control.mdState.interactions.pressed ? 0 : control.mdState.sizeToken.trailing_button_optical_offset
         icon: control.icon
         anchors.centerIn: parent
-        anchors.horizontalCenterOffset: -opticalOffset
-        Behavior on opticalOffset {
-            NumberAnimation {
-                duration: MD.Token.duration.short2
-                easing: MD.Token.easing.standard
-            }
-        }
+        anchors.horizontalCenterOffset: control.mdState.groupOpticalOffset(control._motion.corners)
         opacity: control.mdState.contentOpacity
         rotation: control.expanded ? 180 : 0
         Behavior on rotation {
@@ -43,13 +44,7 @@ MD.MenuButtonBase {
     }
 
     background: MD.ElevationRectangle {
-        corners: control.mdState.corners
-        Behavior on corners {
-            PropertyAnimation {
-                duration: MD.Token.duration.short2
-                easing: MD.Token.easing.standard
-            }
-        }
+        corners: control._motion.corners
         color: control.mdState.backgroundColor
         elevation: control.mdState.elevation
         opacity: control.mdState.backgroundOpacity
@@ -59,6 +54,7 @@ MD.MenuButtonBase {
             interactionSource: control.interactionSource
             indication: control.mdState.indication
             color: control.mdState.stateLayerColor
+            animationsEnabled: control.animationsEnabled
         }
     }
 }

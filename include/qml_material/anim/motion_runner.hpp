@@ -43,7 +43,8 @@ public:
     qreal               durationScale() const { return m_scale; }
     bool                setBounds(anim::Vector lower, anim::Vector upper);
     QString animateTo(const anim::Vector&, AnimationSpec, std::optional<anim::Vector> velocity = {},
-                      const anim::Vector& thresholds = {});
+                      const anim::Vector& thresholds = {},
+                      anim::SpringCompletion = anim::SpringCompletion::DisplacementAndVelocity);
     QString animateDecay(const anim::Vector&, DecaySpec);
     bool    snapTo(const anim::Vector&);
     void    pause();

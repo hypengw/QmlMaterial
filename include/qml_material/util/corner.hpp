@@ -73,4 +73,20 @@ private:
     qreal m_topLeft;
 };
 
+struct QML_MATERIAL_API CornerShape {
+    CornersGroup absolute;
+    CornersGroup relative;
+    qreal        extent = 0;
+
+    CornersGroup resolved() const { return absolute + relative * extent; }
+    bool         sameShape(const CornerShape& other) const {
+        return absolute == other.absolute && relative == other.relative;
+    }
+    CornerShape interpolated(const CornerShape& other, qreal progress) const {
+        return { absolute + (other.absolute - absolute) * progress,
+                 relative + (other.relative - relative) * progress,
+                 extent };
+    }
+};
+
 } // namespace qml_material

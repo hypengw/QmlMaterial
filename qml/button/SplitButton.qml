@@ -3,6 +3,9 @@ import Qcm.Material as MD
 
 MD.SplitButtonBase {
     id: control
+    property bool animationsEnabled: true
+    property bool expanded: false
+    property MD.springSpec shapeSpringSpec: MD.Token.motion.spring.standard.defaultEffects
     property MD.StateSplitButton mdState: MD.StateSplitButton {
         item: m_button
     }
@@ -21,8 +24,8 @@ MD.SplitButtonBase {
     property alias action: m_button.action
     property alias text: m_button.text
     property alias icon: m_button.icon
-    property alias menu: m_indicator.menu
     leadingControl: m_button
+    trailingControl: m_indicator
 
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding)
@@ -36,18 +39,22 @@ MD.SplitButtonBase {
 
         MD.ActionButton {
             id: m_button
-            anchors.left: parent.left
+            x: control.mirrored ? m_indicator.width + control.spacing : 0
             anchors.verticalCenter: parent.verticalCenter
             mdState: control.mdState
+            animationsEnabled: control.animationsEnabled
+            shapeSpringSpec: control.shapeSpringSpec
             width: parent.width - m_indicator.width - control.spacing
         }
 
         MD.SplitButtonIndicator {
             id: m_indicator
-            menuAnchor: control
+            expanded: control.expanded
             mdState: control.indicatorMdState
             anchors.verticalCenter: parent.verticalCenter
-            anchors.right: parent.right
+            x: control.mirrored ? 0 : parent.width - width
+            animationsEnabled: control.animationsEnabled
+            shapeSpringSpec: control.shapeSpringSpec
             enabled: control.enabled
         }
     }

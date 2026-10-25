@@ -5,9 +5,10 @@
 #include <QtQuick/private/qquickwindow_p.h>
 #include <QtQuick/private/qquickdeliveryagent_p_p.h>
 #include "qml_material/control/action_command.hpp"
-#include "qml_material/control/menu_button.hpp"
+#include "qml_material/control/menu.hpp"
 #include "qml_material/control/split_button.hpp"
 #include "qml_material/style/split_button_indicator_state.hpp"
+#include "qml_material/anim/spring_motion.hpp"
 #include "../input_test.hpp"
 
 using namespace qml_material;
@@ -19,8 +20,8 @@ private:
     std::unique_ptr<QQuickWindow> m_window;
     QPointer<QQuickItem>          m_root;
     QPointer<SplitButton>         m_split;
-    QPointer<MenuButton>          m_tail;
-    QPointer<Menu>                m_menu, m_second;
+    QPointer<CommandButton>       m_tail;
+    QPointer<Menu>                m_menu;
     QPointer<Action>              m_action;
 
     void create() {
@@ -34,17 +35,12 @@ private:
                 MD.SplitButton {
                     objectName: "split"; x: 40; y: 40
                     action: command
-                    menu: firstMenu
+                    expanded: firstMenu.visible
                 }
                 MD.Menu {
                     id: firstMenu; objectName: "first"
                     width: 180; enter: null; exit: null
                     MD.MenuItem { text: "First" }
-                }
-                MD.Menu {
-                    objectName: "second"
-                    width: 180; enter: null; exit: null
-                    MD.MenuItem { text: "Second" }
                 }
             }
         )",
@@ -53,11 +49,10 @@ private:
         QVERIFY2(m_root, qPrintable(component.errorString()));
         m_root->setParentItem(m_window->contentItem());
         m_split  = m_root->findChild<SplitButton*>();
-        m_tail   = m_root->findChild<MenuButton*>();
+        m_tail   = m_split->trailingControl();
         m_menu   = m_root->findChild<Menu*>("first");
-        m_second = m_root->findChild<Menu*>("second");
         m_action = m_root->findChild<Action*>();
-        QVERIFY(m_split && m_tail && m_menu && m_second && m_action);
+        QVERIFY(m_split && m_tail && m_menu && m_action);
         m_window->show();
         m_window->requestActivate();
         QVERIFY(QTest::qWaitForWindowActive(m_window.get()));
@@ -90,6 +85,11 @@ private:
         }
         flushInteractions();
     }
+    static void addRoles() {
+        QTest::addColumn<bool>("trailing");
+        QTest::newRow("leading") << false;
+        QTest::newRow("trailing") << true;
+    }
 private slots:
     void init() {
         QTest::failOnWarning(QRegularExpression(".*"));
@@ -104,6 +104,46 @@ private slots:
         m_window.reset();
         m_engine.reset();
     }
+    void shapeFeedback_data() {
+        QTest::addColumn<bool>("rtl");
+        QTest::newRow("ltr") << false;
+        QTest::newRow("rtl") << true;
+    }
+    void shapeFeedback() {
+        QFETCH(bool, rtl);
+        create();
+        m_split->setProperty("animationsEnabled", false);
+        m_split->setLayoutDirection(rtl ? Qt::RightToLeft : Qt::LeftToRight);
+        auto* leading = m_split->leadingControl();
+        QCOMPARE(leading->x() > m_tail->x(), rtl);
+        m_split->setProperty("animationsEnabled", true);
+        for (auto* control : { leading, static_cast<CommandButton*>(m_tail.data()) }) {
+            auto* values       = control->property("mdState").value<CommonState*>();
+            auto* presentation = control->property("_motion").value<QObject*>();
+            QVERIFY(values && presentation);
+            QTRY_VERIFY(presentation->property("_animate").toBool());
+            auto* shape = presentation->findChild<CornerSpringMotion*>();
+            QVERIFY(shape);
+            shape->runner().setManualClock(true);
+            QCOMPARE(shape->spec(), (token::SpringSpec { 1600, 1 }));
+            const auto normal = values->corners();
+            QCOMPARE(normal.topLeft() > normal.topRight(), control == leading ? ! rtl : rtl);
+            TestInteractionEmitter input(control->interactionSource(), control);
+            input.set(Interaction::Hover, true);
+            QCOMPARE(values->corners(), normal);
+            input.set(Interaction::Press, true);
+            QVERIFY(values->corners() != normal);
+            QCOMPARE(shape->corners(), normal);
+            shape->runner().setPlayTime(40);
+            const auto middle = shape->corners();
+            QVERIFY(middle != normal && middle != values->corners());
+            input.clear();
+            QCOMPARE(shape->corners(), middle);
+            shape->complete();
+            QCOMPARE(shape->corners(), normal);
+            QVERIFY(! shape->isRunning());
+        }
+    }
     void commands_data() {
         QTest::addColumn<bool>("trailing");
         QTest::addColumn<int>("input");
@@ -116,122 +156,49 @@ private slots:
         QFETCH(bool, trailing);
         QFETCH(int, input);
         create();
-        QVERIFY(m_tail);
         auto* leading = m_split->leadingControl();
         QVERIFY(leading && state());
-        QCOMPARE((m_tail)->metaObject()->indexOfProperty("checkable"), -1);
         QVERIFY(! qmlAttachedPropertiesObject<ActionCommand>(m_tail, false));
-        for (const auto name : { "checked", "checkable", "pressed", "pressX", "pressY", "action" })
+        for (const auto name : { "checked",
+                                 "checkable",
+                                 "pressed",
+                                 "pressX",
+                                 "pressY",
+                                 "action",
+                                 "popupMenu",
+                                 "menuAnchor",
+                                 "menuExpanded" })
             QVERIFY(! m_tail->property(name).isValid());
+        QVERIFY(! m_split->property("menu").isValid());
         QSignalSpy clicks(m_split, &SplitButton::clicked), actions(m_action, &Action::triggered),
-            tailClicks(m_tail, &CommandButton::clicked);
+            trailingClicks(m_split, &SplitButton::trailingClicked);
         activate(trailing ? m_tail.data() : leading, input);
         QCOMPARE(clicks.size(), trailing ? 0 : 1);
         QCOMPARE(actions.size(), trailing ? 0 : 1);
-        QCOMPARE(tailClicks.size(), trailing ? 1 : 0);
+        QCOMPARE(trailingClicks.size(), trailing ? 1 : 0);
         QCOMPARE(m_action->isChecked(), ! trailing);
-        QCOMPARE(m_tail->isExpanded(), trailing);
-        QCOMPARE(state()->isSelected(), trailing);
-        if (trailing) {
-            QVERIFY(m_menu->isOpened());
-            QCOMPARE(m_menu->anchorItem(), m_split);
-            QCOMPARE(m_menu->parentItem(), m_root);
-        }
+        QVERIFY(! m_menu->isVisible());
+        QVERIFY(! state()->isSelected());
     }
     void externalVisibility() {
         create();
-        QVERIFY(m_tail && state());
         m_menu->openFor(m_split);
-        QVERIFY(m_tail->isExpanded() && state()->isSelected());
+        QVERIFY(m_split->property("expanded").toBool() && state()->isSelected());
         QCOMPARE(state()->innerCorner(), state()->baseCorner());
         m_menu->setDeferredCompletion(true);
         m_menu->close();
         QVERIFY(m_menu->closing());
-        QVERIFY(m_tail->isExpanded() && state()->isSelected());
+        QVERIFY(m_split->property("expanded").toBool() && state()->isSelected());
         m_menu->completeExit();
-        QVERIFY(! m_tail->isExpanded() && ! state()->isSelected());
+        QVERIFY(! m_split->property("expanded").toBool() && ! state()->isSelected());
         m_tail->click();
-        m_menu->completeEnter();
-        QVERIFY(m_tail->isExpanded());
-        m_tail->click();
-        QVERIFY(m_menu->closing());
-        m_menu->completeExit();
-        QVERIFY(! m_tail->isExpanded());
-    }
-    void standaloneAnchor() {
-        create();
-        QVERIFY(m_tail);
-        m_tail->setMenuAnchor(nullptr);
-        QCOMPARE(m_tail->menuAnchor(), m_tail);
-        m_tail->click();
-        QCOMPARE(m_menu->anchorItem(), m_tail);
-        QVERIFY(m_menu->isOpened());
-    }
-    void placement_data() {
-        QTest::addColumn<bool>("rtl");
-        QTest::addColumn<bool>("edge");
-        for (bool rtl : { false, true })
-            for (bool edge : { false, true })
-                QTest::newRow(qPrintable(QString("%1-%2").arg(rtl).arg(edge))) << rtl << edge;
-    }
-    void placement() {
-        QFETCH(bool, rtl);
-        QFETCH(bool, edge);
-        create();
-        QVERIFY(m_split);
-        qobject_cast<Control*>(m_root)->setLayoutDirection(rtl ? Qt::RightToLeft : Qt::LeftToRight);
-        if (edge)
-            m_split->setPosition({ 640 - m_split->width() - 12, 480 - m_split->height() - 12 });
-        else
-            m_split->setX(240);
-        m_tail->click();
-        QVERIFY(m_menu->isOpened());
-        QCOMPARE(m_menu->anchorItem(), m_split);
-        QCOMPARE(m_menu->mirrored(), rtl);
-        const auto rect   = m_menu->presentationRect();
-        const auto anchor = m_split->mapRectToScene(m_split->boundingRect());
-        QVERIFY(QRectF(8, 8, 624, 464).contains(rect));
-        if (edge)
-            QVERIFY(rect.bottom() <= anchor.top());
-        else if (rtl)
-            QCOMPARE(rect.right(), anchor.right());
-        else
-            QCOMPARE(rect.left(), anchor.left());
-    }
-    void pointerClose_data() {
-        QTest::addColumn<bool>("touch");
-        QTest::addColumn<bool>("deferred");
-        for (bool touch : { false, true })
-            for (bool deferred : { false, true })
-                QTest::newRow(qPrintable(QString("%1-%2").arg(touch).arg(deferred)))
-                    << touch << deferred;
-    }
-    void pointerClose() {
-        QFETCH(bool, touch);
-        QFETCH(bool, deferred);
-        create();
-        QVERIFY(m_tail);
-        m_menu->setDeferredCompletion(deferred);
-        QSignalSpy shown(m_menu, &Popup::aboutToShow), clicks(m_tail, &CommandButton::clicked);
-        activate(m_tail, touch ? 3 : 1);
-        if (deferred) m_menu->completeEnter();
-        QVERIFY(m_menu->isOpened());
-        activate(m_tail, touch ? 3 : 1);
-        QCOMPARE(shown.size(), 1);
-        QCOMPARE(clicks.size(), 1);
-        if (deferred) {
-            QVERIFY(m_menu->closing());
-            activate(m_tail, touch ? 3 : 1);
-            QCOMPARE(shown.size(), 1);
-            m_menu->completeExit();
-        }
-        QVERIFY(! m_menu->isVisible() && ! m_tail->isExpanded());
+        QVERIFY(! m_menu->isVisible() && ! state()->isSelected());
     }
     void cancellation_data() {
         QTest::addColumn<bool>("keyboard");
         QTest::addColumn<int>("change");
         for (bool keyboard : { false, true })
-            for (int change = 0; change < 7; ++change)
+            for (int change = 0; change < 3; ++change)
                 QTest::newRow(qPrintable(QString("%1-%2").arg(keyboard).arg(change)))
                     << keyboard << change;
     }
@@ -239,13 +206,9 @@ private slots:
         QFETCH(bool, keyboard);
         QFETCH(int, change);
         create();
-        QVERIFY(m_tail);
-        auto* anchor = new QQuickItem(m_root);
-        anchor->setSize({ 100, 40 });
-        m_tail->setMenuAnchor(anchor);
         const auto point =
             m_tail->mapToScene({ m_tail->width() / 2, m_tail->height() / 2 }).toPoint();
-        QSignalSpy clicks(m_tail, &CommandButton::clicked);
+        QSignalSpy clicks(m_split, &SplitButton::trailingClicked);
         if (keyboard) {
             m_tail->forceActiveFocus(Qt::TabFocusReason);
             QTest::keyPress(m_window.get(), Qt::Key_Space);
@@ -253,78 +216,21 @@ private slots:
             QTest::mousePress(m_window.get(), Qt::LeftButton, Qt::NoModifier, point);
         InteractionSource replacement;
         if (change == 0)
-            m_tail->setEnabled(false);
+            m_split->setEnabled(false);
         else if (change == 1)
-            m_tail->setVisible(false);
-        else if (change == 2)
-            m_tail->setInteractionSource(&replacement);
-        else if (change == 3)
-            m_tail->setMenu(m_second);
-        else if (change == 4)
-            delete m_menu.data();
-        else if (change == 5)
-            m_tail->setMenuAnchor(m_root);
+            m_split->setVisible(false);
         else
-            delete anchor;
+            m_tail->setInteractionSource(&replacement);
         if (keyboard)
             QTest::keyRelease(m_window.get(), Qt::Key_Space);
         else
             QTest::mouseRelease(m_window.get(), Qt::LeftButton, Qt::NoModifier, point);
         flushInteractions();
         QVERIFY(clicks.isEmpty());
-        QVERIFY(! m_second->isVisible());
-        if (m_menu) QVERIFY(! m_menu->isVisible());
-    }
-    void redirectInClick_data() {
-        QTest::addColumn<int>("change");
-        for (int change = 0; change < 5; ++change)
-            QTest::newRow(qPrintable(QString::number(change))) << change;
-    }
-    void redirectInClick() {
-        QFETCH(int, change);
-        create();
-        QVERIFY(m_tail);
-        connect(m_tail, &CommandButton::clicked, this, [&] {
-            if (change == 0)
-                m_tail->setMenu(m_second);
-            else if (change == 1)
-                m_tail->setMenuAnchor(m_root);
-            else if (change == 2)
-                delete m_menu.data();
-            else if (change == 3)
-                m_tail->setEnabled(false);
-            else
-                delete m_root.data();
-        });
-        m_tail->click();
-        if (! m_root) return;
-        if (m_menu) QVERIFY(! m_menu->isVisible());
-        QVERIFY(! m_second->isVisible());
-    }
-    void menuRetargeting() {
-        create();
-        QVERIFY(m_tail);
-        m_tail->setMenu(nullptr);
-        bool redirected = false;
-        connect(m_tail, &MenuButton::menuChanged, this, [&] {
-            if (redirected) return;
-            redirected = true;
-            m_tail->setMenu(m_second);
-        });
-        m_tail->setMenu(m_menu);
-        QCOMPARE(m_tail->menu(), m_second);
-        QSignalSpy expanded(m_tail, &MenuButton::expandedChanged);
-        m_menu->openFor(m_root);
-        QVERIFY(expanded.isEmpty() && ! m_tail->isExpanded());
-        m_menu->dismissImmediately();
-        m_tail->click();
-        QVERIFY(m_second->isOpened() && m_tail->isExpanded());
-        delete m_second.data();
-        QVERIFY(! m_tail->menu() && ! m_tail->isExpanded());
     }
     void stateLifecycle() {
         InteractionSource shared, replacement;
-        auto*             button = new MenuButton;
+        auto*             button = new CommandButton;
         button->setSize({ 100, 40 });
         button->setBackground(new QQuickItem(button));
         button->setInteractionSource(&shared);
@@ -334,6 +240,11 @@ private slots:
         QCOMPARE(state.baseCorner(), 20);
         button->setHeight(64);
         QCOMPARE(state.baseCorner(), 32);
+        QSignalSpy corners(&state, &SplitButtonIndicatorState::baseCornerChanged);
+        button->setWidth(24);
+        QCOMPARE(state.baseCorner(), 12);
+        QVERIFY(! corners.isEmpty());
+        button->setWidth(100);
         auto       emitter = shared.emitter(button);
         const auto press   = emitter->begin(Interaction::Press, Interaction::Mouse, -1, { 20, 20 });
         flushInteractions();
@@ -348,17 +259,24 @@ private slots:
         flushInteractions();
         QVERIFY(! state.interactions().pressed);
     }
-    void leadingRoleDestruction() {
+    void roleDestruction_data() { addRoles(); }
+    void roleDestruction() {
+        QFETCH(bool, trailing);
         SplitButton owner;
-        auto*       leading = new CommandButton;
-        owner.setLeadingControl(leading);
-        QSignalSpy roles(&owner, &SplitButton::leadingControlChanged);
-        delete leading;
-        QVERIFY(! owner.leadingControl());
+        auto*       button = new CommandButton;
+        if (trailing)
+            owner.setTrailingControl(button);
+        else
+            owner.setLeadingControl(button);
+        QSignalSpy roles(&owner,
+                         trailing ? &SplitButton::trailingControlChanged
+                                  : &SplitButton::leadingControlChanged);
+        delete button;
+        QVERIFY(! (trailing ? owner.trailingControl() : owner.leadingControl()));
         QCOMPARE(roles.size(), 1);
     }
     void stateRetargetDuringNotification() {
-        MenuButton first, replacement;
+        CommandButton first, replacement;
         first.setSize({ 100, 40 });
         replacement.setSize({ 100, 64 });
         first.setBackground(new QQuickItem(&first));
@@ -376,14 +294,22 @@ private slots:
         first.setHeight(90);
         QCOMPARE(state.baseCorner(), 32);
     }
-    void leadingRetargeting() {
+    void roleRetargeting_data() { addRoles(); }
+    void roleRetargeting() {
+        QFETCH(bool, trailing);
         SplitButton   owner;
         CommandButton first, second;
+        const auto    assign = [&](CommandButton* button) {
+            if (trailing)
+                owner.setTrailingControl(button);
+            else
+                owner.setLeadingControl(button);
+        };
         connect(&first, &CommandButton::clicked, this, [&] {
-            owner.setLeadingControl(&second);
+            assign(&second);
         });
-        owner.setLeadingControl(&first);
-        QSignalSpy clicks(&owner, &SplitButton::clicked);
+        assign(&first);
+        QSignalSpy clicks(&owner, trailing ? &SplitButton::trailingClicked : &SplitButton::clicked);
         first.click();
         QVERIFY(clicks.isEmpty());
         second.click();
@@ -404,49 +330,34 @@ private slots:
         QCOMPARE(calls, 1);
         QVERIFY(! m_root && ! m_split && ! m_tail);
     }
-    void deletedInNotification_data() {
-        QTest::addColumn<int>("notification");
-        for (int notification = 0; notification < 5; ++notification)
-            QTest::newRow(qPrintable(QString::number(notification))) << notification;
-    }
-    void deletedInNotification() {
-        QFETCH(int, notification);
+    void deleteInTrailingCommand() {
         create();
-        QVERIFY(m_tail);
-        int        calls   = 0;
-        const auto destroy = [&] {
+        int calls = 0;
+        connect(m_split, &SplitButton::trailingClicked, this, [&] {
             ++calls;
             delete m_root.data();
-        };
-        if (notification == 0) {
-            connect(m_menu, &Popup::aboutToShow, this, destroy, Qt::SingleShotConnection);
-            m_tail->click();
-        } else if (notification == 1) {
-            connect(m_tail, &MenuButton::expandedChanged, this, destroy, Qt::SingleShotConnection);
-            m_tail->click();
-        } else if (notification == 2) {
-            connect(m_tail, &MenuButton::menuChanged, this, destroy, Qt::SingleShotConnection);
-            m_tail->setMenu(m_second);
-        } else if (notification == 3) {
-            connect(
-                m_tail, &MenuButton::menuAnchorChanged, this, destroy, Qt::SingleShotConnection);
-            m_tail->setMenuAnchor(m_root);
-        } else {
-            connect(m_split, &SplitButton::clicked, this, destroy, Qt::SingleShotConnection);
-            m_split->leadingControl()->click();
-        }
+        });
+        m_tail->click();
         QCOMPARE(calls, 1);
         QVERIFY(! m_root && ! m_split && ! m_tail);
     }
-    void nullMenu() {
-        create();
-        QVERIFY(m_tail);
-        m_tail->setMenu(nullptr);
-        QSignalSpy clicks(m_tail, &CommandButton::clicked);
-        m_tail->click();
-        QCOMPARE(clicks.size(), 1);
-        QVERIFY(! m_tail->isExpanded() && ! state()->isSelected());
-        QVERIFY(! qmlAttachedPropertiesObject<ActionCommand>(m_tail, false));
+    void deletedInRoleNotification_data() { addRoles(); }
+    void deletedInRoleNotification() {
+        QFETCH(bool, trailing);
+        QPointer<SplitButton> owner = new SplitButton;
+        CommandButton         button;
+        connect(owner,
+                trailing ? &SplitButton::trailingControlChanged
+                         : &SplitButton::leadingControlChanged,
+                this,
+                [&] {
+                    delete owner.data();
+                });
+        if (trailing)
+            owner->setTrailingControl(&button);
+        else
+            owner->setLeadingControl(&button);
+        QVERIFY(! owner);
     }
 };
 

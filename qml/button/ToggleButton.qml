@@ -7,8 +7,9 @@ MD.ToggleButtonBase {
     readonly property bool hasIcon: !icon.empty
     property bool flat: mdState.type == MD.Enum.BtText || mdState.type == MD.Enum.BtOutlined
     property bool animationsEnabled: true
-    property MD.springSpec shapeSpringSpec: MD.Token.motion.spring.standard.defaultEffects
+    property MD.springSpec shapeSpringSpec: MD.Token.motion.spring.standard.fastSpatial
     property MD.StateButtonBase mdState: MD.StateButton {
+        shapeMode: MD.Enum.InteractiveShape
         focusIndicationEnabled: false
         item: control
     }

@@ -39,7 +39,10 @@ Rectangle {
         x: 24
         y: 224
         text: "Options"
-        menu: MD.Menu {
+        expanded: optionsMenu.visible
+        onTrailingClicked: optionsMenu.visible ? optionsMenu.close() : optionsMenu.openFor(expanded)
+        MD.Menu {
+            id: optionsMenu
             enter: null
             exit: null
             MD.MenuItem {
@@ -54,8 +57,8 @@ Rectangle {
         }
     }
     function showMenu() {
-        if (Window.window && !expanded.menu.visible)
-            expanded.menu.openFor(expanded);
+        if (Window.window && !optionsMenu.visible)
+            optionsMenu.openFor(expanded);
     }
     Connections {
         target: root.Window.window

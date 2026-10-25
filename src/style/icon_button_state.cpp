@@ -60,11 +60,14 @@ void IconButtonState::bindTargets() {
     base.bind(m_appearance.elevation, [this]() -> qreal {
         return elevationTokens().level0;
     });
-    base.bind(m_appearance.corner, [this]() -> qreal {
-        const auto size = sizeToken();
-        if (pressed()) return size.pressed_corner_size;
-        if (checked() || ! isRound()) return size.corner_size;
-        return backgroundHeight().value_or(40) / 2;
+    bindCornerShape([this]() -> CornerShape {
+        const auto size        = sizeToken();
+        const auto full        = fullCorner(size.container_height > 0 ? size.container_height : 40);
+        const bool interactive = shapeMode() == int(Enum::ButtonShapeMode::InteractiveShape);
+        if (interactive && pressed()) return { CornersGroup(size.pressed_corner_size), {}, full };
+        const bool round = isRound() != (interactive && checkable() && checked());
+        if (! round) return { CornersGroup(size.corner_size), {}, full };
+        return { {}, CornersGroup(1), full };
     });
     auto disabled = disabledBindings();
     disabled.bind(m_appearance.textColor, colorBinding(&MdColorMgr::on_surface));

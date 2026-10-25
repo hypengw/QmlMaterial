@@ -9,6 +9,8 @@ class QML_MATERIAL_API ButtonAppearanceState : public ButtonValueState {
     Q_OBJECT
     QML_NAMED_ELEMENT(StateButtonBase)
     QML_UNCREATABLE("Use StateButton or StateSplitButton")
+    Q_PROPERTY(int shapeMode READ shapeMode WRITE setShapeMode NOTIFY shapeModeChanged BINDABLE
+                   bindableShapeMode FINAL)
     Q_PROPERTY(int size READ size WRITE setSize NOTIFY sizeChanged BINDABLE bindableSize FINAL)
     Q_PROPERTY(bool isRound READ isRound WRITE setIsRound NOTIFY isRoundChanged BINDABLE
                    bindableIsRound FINAL)
@@ -20,6 +22,10 @@ class QML_MATERIAL_API ButtonAppearanceState : public ButtonValueState {
     Q_PROPERTY(int type READ type WRITE setType NOTIFY typeChanged BINDABLE bindableType FINAL)
 
 public:
+    int             shapeMode() const { return m_shapeMode; }
+    void            setShapeMode(int value) { m_shapeMode = value; }
+    QBindable<int>  bindableShapeMode() { return &m_shapeMode; }
+    Q_SIGNAL void   shapeModeChanged();
     int             size() const;
     void            setSize(int);
     QBindable<int>  bindableSize();
@@ -43,6 +49,9 @@ protected:
     explicit ButtonAppearanceState(QObject* parent = nullptr);
 
 private:
+    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(ButtonAppearanceState, int, m_shapeMode,
+                                         int(Enum::ButtonShapeMode::FixedShape),
+                                         &ButtonAppearanceState::shapeModeChanged)
     void   bindAppearance();
     QColor defaultTextColor() const;
     QColor defaultBackgroundColor() const;

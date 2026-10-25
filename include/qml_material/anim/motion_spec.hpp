@@ -60,6 +60,11 @@ public:
 namespace anim
 {
 using Vector = QList<qreal>;
+enum class SpringCompletion
+{
+    Displacement,
+    DisplacementAndVelocity
+};
 struct Sample {
     Vector value, velocity;
 };
@@ -71,9 +76,10 @@ QML_MATERIAL_API int          springDuration(token::SpringSpec, qreal, qreal, qr
 QML_MATERIAL_API bool         finite(const Vector&);
 class QML_MATERIAL_API PreparedMotion {
 public:
-    static std::optional<PreparedMotion> prepare(const Vector& from, const Vector& to,
-                                                 const Vector& velocity, AnimationSpec,
-                                                 const Vector& thresholds = {});
+    static std::optional<PreparedMotion>
+    prepare(const Vector& from, const Vector& to, const Vector& velocity, AnimationSpec,
+            const Vector& thresholds = {},
+            SpringCompletion         = SpringCompletion::DisplacementAndVelocity);
     static std::optional<PreparedMotion> decay(const Vector& from, const Vector& velocity,
                                                DecaySpec);
     Sample                               sample(qreal milliseconds) const;
