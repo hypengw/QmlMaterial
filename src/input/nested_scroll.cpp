@@ -544,7 +544,34 @@ private:
         if (delta.isNull())
             delta = -QPointF(event->angleDelta()) / 120 *
                     (24.0 * qGuiApp->styleHints()->wheelScrollLines());
-        if (smooth && delta.isNull()) return;
+        if (delta.isNull()) return;
+        delta = vectorToScene(m_config->item(), delta);
+        QPointer<NestedScrollHandler> receiver(this);
+        // Orthogonal child lists must not own their parent's wheel animation.
+        for (auto config : chainFor(m_config->item())) {
+            if (! config || ! config->item()) return;
+            if (! config->m_wheelEnabled) break;
+            auto local = vectorFromScene(config->item(), delta);
+            if (! config->axes().testFlag(Qt::Horizontal)) local.setX(0);
+            if (! config->axes().testFlag(Qt::Vertical)) local.setY(0);
+            auto       content = local;
+            const auto axes    = ScrollParticipant(config->item()).axes();
+            if (! axes.testFlag(Qt::Horizontal)) content.setX(0);
+            if (! axes.testFlag(Qt::Vertical)) content.setY(0);
+            const bool accepts =
+                ! content.isNull() ||
+                (! local.isNull() && config->connection() &&
+                 config->connection()->canConsume(local, NestedScrollConnection::Wheel));
+            if (! guard || ! config) return;
+            if (accepts) {
+                receiver = config->m_handler;
+                break;
+            }
+        }
+        if (receiver) receiver->scrollWheel(delta, smooth, event->phase());
+    }
+    void scrollWheel(QPointF delta, bool smooth, Qt::ScrollPhase phase) {
+        QPointer<NestedScrollHandler> guard(this);
         if (m_wheel && m_smoothWheel != smooth) stop(false);
         if (! guard) return;
         if (! m_wheel) {
@@ -556,7 +583,6 @@ private:
             if (! begin()) return;
             m_motionPosition = {};
         }
-        delta = vectorToScene(m_config->item(), delta);
         if (smooth) {
             const qreal time = now();
             if (delta.x())
@@ -574,10 +600,8 @@ private:
             QPointer<NestedScrollHandler> guard(this);
             consume(delta, ScrollParticipant::Activity::Scroll);
             if (! guard) return;
-            if (event->phase() == Qt::ScrollEnd || event->phase() == Qt::NoScrollPhase) stop(false);
+            if (phase == Qt::ScrollEnd || phase == Qt::NoScrollPhase) stop(false);
         }
-        event->point(0).setAccepted();
-        event->accept();
     }
     void requestFrame() {
         if (m_frame && m_config && m_config->item() && m_config->item()->window()) {

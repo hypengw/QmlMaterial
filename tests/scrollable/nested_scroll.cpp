@@ -760,6 +760,117 @@ MD.Scrollable {
         wheel({}, Qt::ScrollEnd);
         QVERIFY(! horizontal->isMoving());
         QVERIFY(! outer->isMoving());
+        auto* config =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(horizontal));
+        TestScrollConnection connection;
+        connection.pre = [](QPointF delta) {
+            return QPointF(0, delta.y() / 2);
+        };
+        config->setAxes(Qt::Horizontal | Qt::Vertical);
+        config->setConnection(&connection);
+        wheel({ 0, -40 }, Qt::ScrollBegin);
+        QCOMPARE(connection.starts, 1);
+        QCOMPARE(horizontal->contentX(), 60.0);
+        QCOMPARE(outer->contentY(), 90.0);
+        wheel({}, Qt::ScrollEnd);
+        QCOMPARE(connection.endings, QList<bool>({ false }));
+    }
+    void verticalWheelAcrossHorizontalLists_data() {
+        QTest::addColumn<bool>("precision");
+        QTest::addColumn<bool>("removeList");
+        QTest::newRow("smooth") << false << false;
+        QTest::newRow("smooth-list-removed") << false << true;
+        QTest::newRow("precision") << true << false;
+        QTest::newRow("precision-list-removed") << true << true;
+    }
+    void verticalWheelAcrossHorizontalLists() {
+        QFETCH(bool, precision);
+        QFETCH(bool, removeList);
+        root.reset();
+        QQmlComponent component(&engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            MD.Scrollable {
+                id: viewport
+                width: 300; height: 300; contentHeight: 2000
+                property int listCount: 2
+                flickableDirection: MD.Scrollable.VerticalFlick
+                MD.NestedScroll.enabled: true
+                MD.NestedScroll.axes: Qt.Vertical
+                Repeater {
+                    model: viewport.listCount
+                    delegate: MD.PageHorizontalLazyList {
+                        required property int index
+                        y: index * 200
+                        width: 300; height: 100
+                        source: MD.ListSnapshotSource { items: [1, 2, 3, 4, 5] }
+                        delegate: Rectangle { required property MD.LazyRow row; width: 80 }
+                    }
+                }
+            }
+        )",
+                          QUrl("qrc:/vertical-wheel-horizontal-lists.qml"));
+        QVERIFY2(component.isReady(), qPrintable(component.errorString()));
+        root.reset(qobject_cast<QQuickItem*>(component.create()));
+        QVERIFY(root);
+        outer = qobject_cast<Flickable*>(root.get());
+        QVERIFY(outer);
+        root->setParentItem(window.contentItem());
+        auto* config =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(outer));
+        QSignalSpy       started(config, &NestedScroll::scrollStarted);
+        QSignalSpy       finished(config, &NestedScroll::scrollFinished);
+        QList<LazyList*> lists;
+        for (auto* child : outer->contentItem()->childItems())
+            if (auto* list = qobject_cast<LazyList*>(child)) lists.append(list);
+        QCOMPARE(lists.size(), 2);
+        auto* childConfig =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(lists.first()));
+        TestScrollConnection childConnection;
+        childConfig->setConnection(&childConnection);
+        QSignalSpy  childStarted(childConfig, &NestedScroll::scrollStarted);
+        const qreal step = 24 * qGuiApp->styleHints()->wheelScrollLines();
+        if (precision) {
+            QWheelEvent begin({ 100, 50 },
+                              window.mapToGlobal(QPoint(100, 50)),
+                              {},
+                              {},
+                              Qt::NoButton,
+                              Qt::NoModifier,
+                              Qt::ScrollBegin,
+                              false);
+            QCoreApplication::sendEvent(&window, &begin);
+            QCOMPARE(started.size(), 0);
+        }
+        for (const auto position : { QPointF(100, 50), QPointF(100, 150), QPointF(100, 250) }) {
+            QWheelEvent event(position,
+                              window.mapToGlobal(position),
+                              precision ? QPoint(0, -qRound(step)) : QPoint(),
+                              { 0, -120 },
+                              Qt::NoButton,
+                              Qt::NoModifier,
+                              precision ? Qt::ScrollUpdate : Qt::NoScrollPhase,
+                              false);
+            QCoreApplication::sendEvent(&window, &event);
+            QVERIFY(event.isAccepted());
+            QCOMPARE(started.size(), 1);
+            QCOMPARE(finished.size(), 0);
+            QCOMPARE(childStarted.size(), 0);
+            if (removeList && position.y() == 50) {
+                QPointer<LazyList> child(lists.first());
+                QVERIFY(root->setProperty("listCount", 0));
+                QCoreApplication::sendPostedEvents(child, QEvent::DeferredDelete);
+                QVERIFY(! child);
+            }
+        }
+        if (precision) wheel({}, Qt::ScrollEnd);
+        const qreal expected = 3 * step;
+        QTRY_VERIFY(std::abs(outer->contentY() - expected) < 0.001);
+        QTRY_VERIFY(! outer->isMoving());
+        QCOMPARE(finished.size(), 1);
+        QCOMPARE(finished.first().first().toBool(), false);
+        QCOMPARE(childConnection.starts, 0);
     }
     void wheelRemainder() {
         inner->setContentY(390);
