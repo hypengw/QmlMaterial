@@ -65,15 +65,22 @@ protected:
     bool eventFilter(QObject*, QEvent*) override;
 
 private:
+    friend class MenuEntryController;
     void                                        observeContent();
     void                                        moveCurrent(int);
     void                                        removeAt(int);
+    void                                        itemHovered(ButtonControl*, const Interaction&);
+    void                                        cancelHover(ButtonControl* = nullptr);
+    void                                        openHoveredSubMenu();
     QQmlObjectModel*                            m_model;
     QList<QQuickItem*>                          m_items;
     QHash<QQuickItem*, QMetaObject::Connection> m_destroyConnections;
     QPointer<QQmlComponent>                     m_delegate;
     QPointer<Menu>                              m_parentMenu;
     QPointer<Menu>                              m_childMenu;
+    QPointer<ButtonControl>                     m_hoverItem;
+    QTimer                                      m_hoverTimer;
+    quint64                                     m_hoverToken = 0;
     QPointer<QQuickItem>                        m_keyItem;
     QMetaObject::Connection                     m_parentClosing;
     QMetaObject::Connection                     m_parentDestroyed;

@@ -325,6 +325,229 @@ private slots:
         flushInteractions();
         QCOMPARE(second.currentIndex(), -1);
     }
+    void hoverSubmenu_data() {
+        QTest::addColumn<QByteArray>("entryType");
+        QTest::addColumn<bool>("rtl");
+        for (const auto type : { "MenuItem", "ToggleMenuItem", "SelectionMenuItem" })
+            for (bool rtl : { false, true })
+                QTest::newRow(qPrintable(QString("%1-%2").arg(type).arg(rtl)))
+                    << QByteArray(type) << rtl;
+    }
+    void hoverSubmenu() {
+        QFETCH(QByteArray, entryType);
+        QFETCH(bool, rtl);
+        QTest::failOnWarning(QRegularExpression(".*"));
+        QByteArray source = R"(
+            property bool rtl: false
+            MD.Control { anchors.fill: parent; hoverEnabled: true
+                layoutDirection: root.rtl ? Qt.RightToLeft : Qt.LeftToRight
+                MD.Menu { id: firstChild; objectName: "firstChild"; enter: null; exit: null
+                    MD.MenuItem { text: "First child" }
+                }
+                MD.Menu { id: secondChild; objectName: "secondChild"; enter: null; exit: null
+                    MD.MenuItem { text: "Second child" }
+                }
+                MD.Menu { objectName: "menu"; x: 220; y: 40; enter: null; exit: null
+                    MD.ENTRY { text: "First"; subMenu: firstChild }
+                    MD.ENTRY { text: "Second"; subMenu: secondChild }
+                    MD.MenuItem { text: "Command" }
+                }
+            }
+        )";
+        source.replace("ENTRY", entryType);
+        QVERIFY(create(source));
+        root->setProperty("rtl", rtl);
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        window.requestActivate();
+        QTRY_VERIFY(window.isActive());
+        QTest::mouseMove(&window, { 620, 460 });
+        menu()->open();
+        auto* first       = menu()->itemAt(0);
+        auto* second      = menu()->itemAt(1);
+        auto* command     = menu()->itemAt(2);
+        auto* firstChild  = root->findChild<Menu*>("firstChild");
+        auto* secondChild = root->findChild<Menu*>("secondChild");
+        QVERIFY(first && second && command && firstChild && secondChild);
+        QSignalSpy triggered(first, SIGNAL(triggered()));
+        const auto hover = [&](QQuickItem* item) {
+            QTest::mouseMove(&window, item->mapToScene(item->boundingRect().center()).toPoint());
+            QQuickWindowPrivate::get(&window)->deliveryAgentPrivate()->flushFrameSynchronousEvents(
+                &window);
+            flushInteractions();
+        };
+        hover(first);
+        QTRY_COMPARE(menu()->currentIndex(), 0);
+        QTRY_VERIFY(firstChild->isOpened());
+        QCOMPARE(firstChild->parentMenu(), menu());
+        QCOMPARE(firstChild->anchorItem(), first);
+        QCOMPARE(firstChild->resolvedPlacement(), Popup::Trailing);
+        QCOMPARE(firstChild->mirrored(), rtl);
+        const auto anchorRect = first->mapRectToScene(first->boundingRect());
+        const auto childRect  = firstChild->presentationRect();
+        QVERIFY(rtl ? childRect.right() < anchorRect.left()
+                    : childRect.left() > anchorRect.right());
+        QVERIFY(triggered.isEmpty());
+        hover(firstChild->itemAt(0));
+        QTRY_COMPARE(firstChild->currentIndex(), 0);
+        QVERIFY(firstChild->isOpened() && menu()->isOpened());
+        hover(second);
+        QTRY_COMPARE(menu()->currentIndex(), 1);
+        QTRY_VERIFY(! firstChild->isVisible());
+        QTRY_VERIFY(secondChild->isOpened());
+        hover(command);
+        QTRY_COMPARE(menu()->currentIndex(), 2);
+        QTRY_VERIFY(! secondChild->isVisible());
+        QVERIFY(menu()->isOpened());
+    }
+    void hoverCancellation_data() {
+        QTest::addColumn<int>("change");
+        int index = 0;
+        for (const auto name : { "leave",
+                                 "cancel",
+                                 "disabled",
+                                 "hidden",
+                                 "source",
+                                 "submenu",
+                                 "remove",
+                                 "close",
+                                 "selection",
+                                 "click",
+                                 "destroy" })
+            QTest::newRow(name) << index++;
+    }
+    void hoverCancellation() {
+        QFETCH(int, change);
+        QTest::failOnWarning(QRegularExpression(".*"));
+        QVERIFY(create(R"(
+            MD.Menu { id: child; objectName: "child"; enter: null; exit: null
+                MD.MenuItem { text: "Child" }
+            }
+            MD.Menu { id: other; objectName: "other"; enter: null; exit: null
+                MD.MenuItem { text: "Other child" }
+            }
+            MD.Menu { objectName: "menu"; x: 40; y: 40; enter: null; exit: null
+                MD.MenuItem { text: "Submenu"; subMenu: child }
+                MD.MenuItem { text: "Command" }
+            }
+            MD.Menu { objectName: "probe"; x: 400; y: 40; enter: null; exit: null
+                MD.MenuItem { text: "Probe"; subMenu: other }
+            }
+        )"));
+        menu()->open();
+        auto* item  = qobject_cast<MenuItem*>(menu()->itemAt(0));
+        auto* child = root->findChild<Menu*>("child");
+        auto* other = root->findChild<Menu*>("other");
+        auto* probe = root->findChild<Menu*>("probe");
+        QVERIFY(item && child && other && probe);
+        item->setHoverEnabled(true);
+        InteractionSource      replacement;
+        TestInteractionEmitter producer(item->interactionSource(), item);
+        QSignalSpy shown(child, &Popup::aboutToShow), otherShown(other, &Popup::aboutToShow);
+        quint64    token = 0;
+        if (change == 1) {
+            token = producer.begin(Interaction::Hover, Interaction::Mouse);
+        } else {
+            QHoverEvent enter(QEvent::HoverEnter, { 20, 20 }, { 20, 20 }, QPointF());
+            QCoreApplication::sendEvent(item, &enter);
+            flushInteractions();
+        }
+        QCOMPARE(menu()->currentIndex(), 0);
+        QVERIFY(! child->isVisible());
+        switch (change) {
+        case 0: {
+            QHoverEvent leave(QEvent::HoverLeave, { 20, 20 }, { 20, 20 }, QPointF());
+            QCoreApplication::sendEvent(item, &leave);
+            flushInteractions();
+            break;
+        }
+        case 1: producer.end(token, Interaction::Cancel); break;
+        case 2:
+            item->setEnabled(false);
+            item->setEnabled(true);
+            break;
+        case 3:
+            item->setVisible(false);
+            item->setVisible(true);
+            break;
+        case 4:
+            item->setInteractionSource(&replacement);
+            producer.begin(Interaction::Hover, Interaction::Mouse);
+            break;
+        case 5:
+            item->setSubMenu(other);
+            item->setSubMenu(child);
+            break;
+        case 6:
+            QCOMPARE(menu()->takeItem(0), item);
+            menu()->insertItem(0, item);
+            break;
+        case 7:
+            menu()->close();
+            menu()->open();
+            break;
+        case 8:
+            menu()->setCurrentIndex(1);
+            menu()->setCurrentIndex(0);
+            break;
+        case 9:
+            item->click();
+            QVERIFY(child->isOpened());
+            QCOMPARE(shown.size(), 1);
+            child->close();
+            shown.clear();
+            break;
+        case 10: delete item; break;
+        }
+        probe->open();
+        auto* probeItem = qobject_cast<MenuItem*>(probe->itemAt(0));
+        QVERIFY(probeItem);
+        TestInteractionEmitter clock(probeItem->interactionSource(), probeItem);
+        clock.begin(Interaction::Hover, Interaction::Mouse);
+        QTRY_VERIFY(other->isOpened());
+        QCOMPARE(otherShown.size(), 1);
+        QVERIFY(shown.isEmpty());
+        QVERIFY(! child->isVisible());
+    }
+    void hoverDeletion_data() {
+        QTest::addColumn<bool>("switching");
+        QTest::newRow("open") << false;
+        QTest::newRow("switch") << true;
+    }
+    void hoverDeletion() {
+        QFETCH(bool, switching);
+        QTest::failOnWarning(QRegularExpression(".*"));
+        QVERIFY(create(R"(
+            MD.Menu { id: firstChild; objectName: "firstChild"; enter: null; exit: null
+                MD.MenuItem { text: "First child" }
+            }
+            MD.Menu { id: secondChild; objectName: "secondChild"; enter: null; exit: null
+                MD.MenuItem { text: "Second child" }
+            }
+            MD.Menu { objectName: "menu"; x: 40; y: 40; enter: null; exit: null
+                MD.MenuItem { text: "First"; subMenu: firstChild }
+                MD.MenuItem { text: "Second"; subMenu: secondChild }
+            }
+        )"));
+        menu()->open();
+        auto* first       = qobject_cast<MenuItem*>(menu()->itemAt(0));
+        auto* second      = qobject_cast<MenuItem*>(menu()->itemAt(1));
+        auto* firstChild  = root->findChild<Menu*>("firstChild");
+        auto* secondChild = root->findChild<Menu*>("secondChild");
+        QVERIFY(first && second && firstChild && secondChild);
+        const auto destroy = [&] {
+            root.reset();
+        };
+        if (switching) {
+            first->click();
+            QVERIFY(firstChild->isOpened());
+            connect(firstChild, &Popup::aboutToHide, this, destroy);
+        } else {
+            connect(secondChild, &Popup::aboutToShow, this, destroy);
+        }
+        TestInteractionEmitter producer(second->interactionSource(), second);
+        producer.begin(Interaction::Hover, Interaction::Mouse);
+        QTRY_VERIFY(! root);
+    }
     void navigationKeys_data() {
         QTest::addColumn<bool>("rtl");
         QTest::newRow("ltr") << false;

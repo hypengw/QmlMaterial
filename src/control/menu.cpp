@@ -17,9 +17,19 @@ Menu::Menu(QObject* parent): Popup(parent), m_model(new QQmlObjectModel(this)) {
         if (focus() && contentItem()) contentItem()->forceActiveFocus(Qt::PopupFocusReason);
     });
     connect(this, &Popup::contentItemChanged, this, &Menu::observeContent);
+    m_hoverTimer.setSingleShot(true);
+    m_hoverTimer.setInterval(225);
+    connect(&m_hoverTimer, &QTimer::timeout, this, &Menu::openHoveredSubMenu);
+    connect(this, &Popup::aboutToHide, this, [this] {
+        cancelHover();
+    });
+    connect(this, &Popup::enabledChanged, this, [this] {
+        if (! enabled()) cancelHover();
+    });
     observeContent();
 }
 Menu::~Menu() {
+    cancelHover();
     disconnect(m_parentClosing);
     disconnect(m_parentDestroyed);
     for (const auto& connection : std::as_const(m_destroyConnections)) disconnect(connection);
@@ -31,8 +41,52 @@ QQuickItem*    Menu::itemAt(int index) const { return m_items.value(index); }
 int            Menu::indexOf(QQuickItem* item) const { return m_items.indexOf(item); }
 void           Menu::setCurrentIndex(int value) {
     if (m_index == value) return;
+    if (itemAt(value) != m_hoverItem) cancelHover();
     m_index = value;
     Q_EMIT currentIndexChanged();
+}
+void Menu::cancelHover(ButtonControl* item) {
+    if (item && m_hoverItem != item) return;
+    m_hoverTimer.stop();
+    m_hoverItem  = nullptr;
+    m_hoverToken = 0;
+}
+void Menu::itemHovered(ButtonControl* item, const Interaction& event) {
+    if (event.phase != Interaction::Begin) {
+        if (m_hoverToken == event.id) cancelHover(item);
+        return;
+    }
+    if (! item->isEnabled() || ! item->isVisible() || event.device == Interaction::Touch) return;
+    const int index = indexOf(item);
+    if (index < 0) return;
+    cancelHover();
+    m_hoverItem  = item;
+    m_hoverToken = event.id;
+    const QPointer<Menu> guard(this);
+    setCurrentIndex(index);
+    if (! guard || m_hoverItem != item || m_hoverToken != event.id) return;
+    auto*                entry = dynamic_cast<MenuEntry*>(item);
+    const QPointer<Menu> child(entry ? entry->entry().subMenu() : nullptr);
+    if (m_childMenu && m_childMenu != child) m_childMenu->close();
+    if (! guard || m_hoverItem != item || m_hoverToken != event.id) return;
+    if (! isVisible() || closing() || ! enabled() || ! item->isEnabled() || ! item->isVisible() ||
+        ! child || ! child->enabled() || (child->isVisible() && ! child->closing())) {
+        cancelHover();
+        return;
+    }
+    m_hoverTimer.start();
+}
+void Menu::openHoveredSubMenu() {
+    const auto item = m_hoverItem;
+    cancelHover();
+    if (! item || ! isVisible() || closing() || ! enabled() || ! item->isEnabled() ||
+        ! item->isVisible() || itemAt(currentIndex()) != item)
+        return;
+    auto* entry = dynamic_cast<MenuEntry*>(item.data());
+    if (entry && entry->entry().menu() == this) {
+        if (auto* child = entry->entry().subMenu(); child && child->enabled())
+            openSubMenu(child, item);
+    }
 }
 void Menu::setTitle(const QString& value) {
     if (m_title == value) return;
@@ -226,6 +280,7 @@ void Menu::openSubMenu(Menu* child, QQuickItem* anchor) {
     if (! child || ! anchor || child == this) return;
     for (auto ancestor = parentMenu(); ancestor; ancestor = ancestor->parentMenu())
         if (ancestor == child) return;
+    cancelHover();
     QPointer<Menu>       guard(this), target(child);
     QPointer<QQuickItem> item(anchor);
     if (m_childMenu && m_childMenu != child) m_childMenu->close();
@@ -262,23 +317,23 @@ void MenuEntryController::observeHover() {
     const auto owner = m_menu;
     const auto item  = m_item;
     if (! owner || ! item) return;
+    owner->cancelHover(item);
     auto* source = item->interactionSource();
     if (! item || m_menu != owner) return;
-    m_hoverConnection = QObject::connect(
-        source,
-        &InteractionSource::interaction,
-        item,
-        [this, owner, item](const Interaction& event) {
-            if (! owner || ! item || m_menu != owner || ! item->isEnabled() ||
-                ! item->isVisible() || event.originItem() != item ||
-                event.kind != Interaction::Hover || event.phase != Interaction::Begin)
-                return;
-            const int index = owner->indexOf(item);
-            if (index >= 0) owner->setCurrentIndex(index);
-        });
+    m_hoverConnection =
+        QObject::connect(source,
+                         &InteractionSource::interaction,
+                         item,
+                         [this, owner, item](const Interaction& event) {
+                             if (! owner || ! item || m_menu != owner ||
+                                 event.originItem() != item || event.kind != Interaction::Hover)
+                                 return;
+                             owner->itemHovered(item, event);
+                         });
 }
 void MenuEntryController::setMenu(Menu* value) {
     if (m_menu == value && (value || ! m_menuDestroyed)) return;
+    if (m_menu) m_menu->cancelHover(m_item);
     QObject::disconnect(m_menuDestroyed);
     m_menu = value;
     if (value)
@@ -297,6 +352,7 @@ void MenuEntryController::setMenu(Menu* value) {
 }
 void MenuEntryController::setSubMenu(Menu* value) {
     if (m_subMenu == value && (value || ! m_subMenuDestroyed)) return;
+    if (m_menu) m_menu->cancelHover(m_item);
     QObject::disconnect(m_subMenuDestroyed);
     m_subMenu = value;
     if (value)
