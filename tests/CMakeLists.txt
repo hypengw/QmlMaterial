@@ -105,6 +105,7 @@ set(QM_TEST_SOURCES
   shape/material_shapes.cpp
   style/control_feedback.cpp
   style/state_lifetime.cpp
+  view/lazy_grid.cpp
   view/lazy_list.cpp
   view/lazy_list_scroll_bar.cpp
   visual/visual_blur_mask.cpp)

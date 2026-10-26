@@ -1,6 +1,7 @@
 #pragma once
 
 #include "linear_layout.hpp"
+#include "item_anchor_p.hpp"
 #include "qml_material/model/item_source.hpp"
 #include <optional>
 
@@ -31,22 +32,10 @@ public:
         LinearLayout layout;
         if (! layout.reset(next->count(), estimate, spacing)) return { false, offset };
 
-        QString anchor;
-        double  screenOffset = 0;
-        if (m_snapshot && m_snapshot->stableKeys() && next->stableKeys()) {
-            const int oldIndex = m_layout.indexAt(offset);
-            auto      select   = [&](int index) {
-                const auto& key = m_snapshot->descriptorAt(index).key;
-                if (next->indexOfKey(key) < 0) return false;
-                anchor       = key;
-                screenOffset = m_layout.offset(index) - offset;
-                return true;
-            };
-            if (oldIndex >= 0 && ! select(oldIndex)) {
-                for (int i = oldIndex + 1; i < m_layout.count() && anchor.isEmpty(); ++i) select(i);
-                for (int i = oldIndex - 1; i >= 0 && anchor.isEmpty(); --i) select(i);
-            }
-        }
+        const auto anchor = ItemAnchor::capture(
+            m_snapshot, next, m_layout.indexAt(offset), offset, [this](int index) {
+                return m_layout.offset(index);
+            });
 
         QHash<QString, Measurement> cache;
         const bool reuse = m_snapshot && constraint == m_constraint &&
@@ -65,8 +54,8 @@ public:
         double corrected = offset;
         if (next->count() == 0)
             corrected = 0;
-        else if (! anchor.isEmpty())
-            corrected = layout.offset(next->indexOfKey(anchor)) - screenOffset;
+        else if (! anchor.key.isEmpty())
+            corrected = layout.offset(next->indexOfKey(anchor.key)) - anchor.screenOffset;
         m_snapshot   = std::move(next);
         m_constraint = constraint;
         m_estimate   = estimate;

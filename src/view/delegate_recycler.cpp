@@ -32,15 +32,17 @@ int DelegateRecycler::poolSize() const {
         return e->idle;
     }));
 }
-void DelegateRecycler::layout(QQuickItem* item, const QRectF& geometry,
-                              Qt::Orientation orientation) {
+void DelegateRecycler::layout(QQuickItem* item, const QRectF& geometry, Qt::Orientation orientation,
+                              bool fixedExtent) {
     auto value = entry(item);
     if (! value || ! value->host || ! value->item) return;
     value->host->setPosition(geometry.topLeft());
     if (! value->host || ! value->item) return;
     value->host->setSize(geometry.size());
     if (! value->item) return;
-    if (orientation == Qt::Vertical)
+    if (fixedExtent)
+        value->item->setSize(geometry.size());
+    else if (orientation == Qt::Vertical)
         value->item->setWidth(geometry.width());
     else
         value->item->setHeight(geometry.height());

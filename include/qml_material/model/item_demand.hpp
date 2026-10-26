@@ -29,7 +29,7 @@ public:
     }
 
 private:
-    friend class LazyList;
+    friend class LazyView;
     ItemSnapshotPtr           m_snapshot;
     int                       m_first   = 0;
     int                       m_count   = 0;

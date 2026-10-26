@@ -15,7 +15,8 @@ public:
     QQuickItem* acquire(QQmlComponent*, const ItemSnapshotPtr&, int index);
     bool        rebind(QQuickItem*, const ItemSnapshotPtr&, int index);
     void        attach(QQuickItem*, QQuickItem* parent);
-    void        layout(QQuickItem*, const QRectF&, Qt::Orientation = Qt::Vertical);
+    void        layout(QQuickItem*, const QRectF&, Qt::Orientation = Qt::Vertical,
+                       bool fixedExtent = false);
     void        release(QQuickItem*);
     void        clear();
     void        setPoolLimit(int);

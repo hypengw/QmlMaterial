@@ -438,6 +438,10 @@ set(SOURCES
     src/model/lazy_row.cpp
     include/qml_material/model/lazy_row.hpp
     src/view/delegate_recycler.cpp
+    src/view/lazy_view.cpp
+    include/qml_material/view/lazy_view.hpp
+    src/view/lazy_grid.cpp
+    include/qml_material/view/lazy_grid.hpp
     src/view/lazy_list.cpp
     include/qml_material/view/lazy_list.hpp
     src/model/combo_box_model.cpp
