@@ -168,6 +168,8 @@ void DelegateRecycler::release(QQuickItem* item) {
         if (focused && item->isAncestorOf(focused)) focused->setFocus(false);
         if (! current()) return;
     }
+    value->row->pool();
+    if (! current()) return;
     value->host->setEnabled(false);
     if (! current()) return;
     item->setFocus(false);
@@ -176,7 +178,7 @@ void DelegateRecycler::release(QQuickItem* item) {
     if (! current()) return;
     value->host->setParentItem(nullptr);
     if (! current()) return;
-    value->row->pool();
+    Q_EMIT value->row->pooled();
     if (! current()) return;
     value->updating = false;
     value->idle     = true;

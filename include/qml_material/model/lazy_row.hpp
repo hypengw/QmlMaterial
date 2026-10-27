@@ -1,6 +1,8 @@
 #pragma once
 
 #include "qml_material/model/item_source.hpp"
+#include <QQuickItem>
+#include <QPointer>
 
 namespace qml_material
 {
@@ -14,8 +16,21 @@ class QML_MATERIAL_API LazyRow : public QObject {
     Q_PROPERTY(quint64 revision READ revision NOTIFY changed FINAL)
     Q_PROPERTY(quint64 contentRevision READ contentRevision NOTIFY changed FINAL)
     Q_PROPERTY(bool active READ active NOTIFY activeChanged FINAL)
+    Q_PROPERTY(Usage usage READ usage NOTIFY usageChanged FINAL)
+    Q_PROPERTY(QQuickItem* view READ view NOTIFY viewChanged FINAL)
 public:
+    enum Usage
+    {
+        Visible,
+        Cached,
+        Pooled
+    };
+    Q_ENUM(Usage)
     using QObject::QObject;
+    Usage         usage() const { return m_usage; }
+    QQuickItem*   view() const { return m_view; }
+    Q_SIGNAL void usageChanged();
+    Q_SIGNAL void viewChanged();
     int           index() const { return m_index; }
     QString       key() const { return m_record.key; }
     QVariant      value() const { return m_record.value; }
@@ -29,13 +44,17 @@ public:
 
 private:
     friend class DelegateRecycler;
-    void            bind(const ItemSnapshotPtr&, int index);
-    void            pool();
-    ItemSnapshotPtr m_snapshot;
-    ItemRecord      m_record;
-    int             m_index      = -1;
-    quint64         m_revision   = 0;
-    bool            m_active     = false;
-    quint64         m_generation = 0;
+    friend class LazyView;
+    void                 setUsage(Usage, QQuickItem*);
+    Usage                m_usage = Pooled;
+    QPointer<QQuickItem> m_view;
+    void                 bind(const ItemSnapshotPtr&, int index);
+    void                 pool();
+    ItemSnapshotPtr      m_snapshot;
+    ItemRecord           m_record;
+    int                  m_index      = -1;
+    quint64              m_revision   = 0;
+    bool                 m_active     = false;
+    quint64              m_generation = 0;
 };
 } // namespace qml_material

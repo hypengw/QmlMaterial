@@ -220,6 +220,48 @@ private slots:
         frames(s.render);
         QCOMPARE(s.view.lastVisibleIndex(), 299);
     }
+    void rowUsageAndPooling() {
+        Scene s(100);
+        s.view.setSize({ 300, 80 });
+        s.view.setCacheExtent(40);
+        frames(s.render);
+        auto* visible = s.item("0")->property("row").value<LazyRow*>();
+        auto* cached  = s.item("6")->property("row").value<LazyRow*>();
+        QCOMPARE(visible->usage(), LazyRow::Visible);
+        QCOMPARE(cached->usage(), LazyRow::Cached);
+        QCOMPARE(visible->view(), &s.view);
+        QVERIFY(visible->active() && cached->active());
+        QPointer<LazyRow> old = visible;
+        s.view.setPoolLimit(100);
+        s.view.setHeight(0);
+        frames(s.render);
+        QVERIFY(old);
+        QCOMPARE(old->usage(), LazyRow::Pooled);
+        QVERIFY(! old->active() && ! old->view());
+        s.view.setHeight(80);
+        frames(s.render);
+        auto* reused = s.item("0")->property("row").value<LazyRow*>();
+        QCOMPARE(reused->usage(), LazyRow::Visible);
+        QCOMPARE(reused->view(), &s.view);
+    }
+    void usageCallbackReentry() {
+        Scene s(100);
+        s.view.setSize({ 300, 80 });
+        s.view.setCacheExtent(40);
+        frames(s.render);
+        auto* row = s.item("6")->property("row").value<LazyRow*>();
+        QCOMPARE(row->usage(), LazyRow::Cached);
+        QObject::connect(row, &LazyRow::usageChanged, &s.view, [&] {
+            if (row->usage() == LazyRow::Visible) s.view.setDelegate(nullptr);
+        });
+        s.view.setContentY(40);
+        frames(s.render);
+        QCOMPARE(s.view.liveCount(), 0);
+        s.view.setDelegate(&s.delegate);
+        frames(s.render);
+        QVERIFY(s.item("6"));
+        QCOMPARE(s.item("6")->property("row").value<LazyRow*>()->usage(), LazyRow::Visible);
+    }
     void keyboardAndMirroring() {
         Scene s(10);
         s.view.setHeight(70);

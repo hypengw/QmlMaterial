@@ -131,6 +131,50 @@ class LazyListTest : public QObject {
         }
     }
 private slots:
+    void rowUsage() {
+        QQmlEngine          engine;
+        QQuickRenderControl render;
+        QQuickWindow        window(&render);
+        QQmlComponent       delegate(&engine);
+        delegate.setData(
+            "import QtQuick\nItem { required property QtObject row; implicitHeight: 40 }", {});
+        ListSnapshotSource source;
+        source.setKeyRole("id");
+        source.setItems(rows(30));
+        LazyList view(window.contentItem());
+        QQmlEngine::setContextForObject(&view, engine.rootContext());
+        view.setSize({ 200, 80 });
+        view.setEstimatedItemExtent(40);
+        view.setCacheExtent(40);
+        view.setSource(&source);
+        view.setDelegate(&delegate);
+        frames(render);
+        auto row = [&](int index) -> LazyRow* {
+            for (auto* host : view.contentItem()->childItems())
+                for (auto* item : host->childItems()) {
+                    auto* r = item->property("row").value<LazyRow*>();
+                    if (r && r->active() && r->index() == index) return r;
+                }
+            return nullptr;
+        };
+        QVERIFY(row(0) && row(2));
+        QCOMPARE(row(0)->usage(), LazyRow::Visible);
+        QCOMPARE(row(2)->usage(), LazyRow::Cached);
+        QCOMPARE(row(2)->view(), &view);
+        QSignalSpy changed(row(2), &LazyRow::usageChanged);
+        view.setContentY(40);
+        frames(render);
+        QCOMPARE(row(0)->usage(), LazyRow::Cached);
+        QCOMPARE(row(2)->usage(), LazyRow::Visible);
+        QCOMPARE(changed.count(), 1);
+        QPointer<LazyRow> pooled = row(0);
+        view.setPoolLimit(100);
+        view.setHeight(0);
+        frames(render);
+        QVERIFY(pooled);
+        QCOMPARE(pooled->usage(), LazyRow::Pooled);
+        QVERIFY(! pooled->view() && ! pooled->active());
+    }
     void horizontalGeometryAndAnchors() {
         QQmlEngine          engine;
         QQuickRenderControl render;

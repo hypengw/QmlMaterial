@@ -605,6 +605,16 @@ void LazyView::updatePolish() {
                              : ItemRange {};
     state->first       = visible.first;
     state->last        = visible.last;
+    for (const auto& key : state->live.keys()) {
+        auto item = state->live.value(key);
+        auto row  = state->recycler->row(item);
+        if (! item || ! row) continue;
+        const auto area = item->mapRectToItem(this, item->boundingRect());
+        row->setUsage(! area.isEmpty() && area.intersects(boundingRect()) ? LazyRow::Visible
+                                                                          : LazyRow::Cached,
+                      this);
+        if (! current()) return;
+    }
     if (! layout.fixedItemExtent() &&
         (state->zeroWork >= 256 || (processed == 256 && start + processed < layout.count() &&
                                     layout.offset(start + processed) < end))) {
