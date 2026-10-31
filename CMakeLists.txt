@@ -624,6 +624,12 @@ set(QML_FILES
     qml/scrollable/ToggleListItem.qml
     qml/scrollable/ListView.qml
     qml/scrollable/PageHorizontalListView.qml
+    qml/scrollable/HorizontalLazyList.qml
+    qml/scrollable/LazyViewContent.qml
+    qml/scrollable/VerticalLazyGrid.qml
+    qml/scrollable/PageVerticalLazyGrid.qml
+    qml/scrollable/VerticalLazyList.qml
+    qml/scrollable/PageVerticalLazyList.qml
     qml/scrollable/PageHorizontalLazyList.qml
     qml/scrollable/PageVerticalFlickable.qml
     qml/scrollable/PageVerticalListView.qml

@@ -4,7 +4,7 @@ import Qcm.Material as MD
 
 MD.Rectangle {
     id: root
-    required property Flickable view
+    required property Item view
     property bool includeHorizontalMargins: true
     property int excludeBegin: 0
     property int excludeEnd: 0

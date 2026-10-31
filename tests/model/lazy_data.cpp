@@ -2,6 +2,8 @@
 #include <QQmlEngine>
 #include <QQmlComponent>
 #include <QQmlContext>
+#include <QQmlExpression>
+#include <QSortFilterProxyModel>
 #include <QQuickWindow>
 #include "qml_material/model/item_model_source.hpp"
 #include "delegate_recycler.hpp"
@@ -29,6 +31,11 @@ public:
     QVariant data(const QModelIndex& index, int role) const override {
         ++reads;
         return index.isValid() && role == Qt::UserRole ? QVariant(values[index.row()]) : QVariant();
+    }
+    bool setData(const QModelIndex& index, const QVariant& value, int role) override {
+        if (! index.isValid() || role != Qt::UserRole) return false;
+        change(index.row(), value.toString());
+        return true;
     }
     void insert(int at, QString value) {
         beginInsertRows({}, at, at);
@@ -201,6 +208,45 @@ private Q_SLOTS:
         QCOMPARE(source.count(), model.rowCount());
         model.reset({ "reset" });
         QCOMPARE(source.indexOfKey("reset"), 0);
+    }
+    void persistentIdentityAndRoleWrites() {
+        Rows                  model;
+        QSortFilterProxyModel proxy;
+        proxy.setSourceModel(&model);
+        proxy.setSortRole(Qt::UserRole);
+        ItemModelSource source;
+        source.setKeyMode(ItemModelSource::PersistentIndexKey);
+        source.setModel(&proxy);
+        QCOMPARE(source.count(), 3);
+        const auto key    = source.snapshot()->descriptorAt(1).key;
+        auto       object = source.objectForKey(key);
+        QVERIFY(object);
+        QCOMPARE(model.reads, 3);
+        model.insert(0, "x");
+        QCOMPARE(source.indexOfKey(key), 2);
+        model.move(2, 0);
+        QCOMPARE(source.indexOfKey(key), 0);
+        proxy.sort(0, Qt::DescendingOrder);
+        QCOMPARE(source.valueAt(source.indexOfKey(key)).toMap().value("id").toString(), "b");
+        QQmlEngine engine;
+        engine.rootContext()->setContextProperty("entry", object);
+        QQmlExpression expression(engine.rootContext(), nullptr, "entry.id = 'edited'");
+        expression.evaluate();
+        QVERIFY2(! expression.hasError(), qPrintable(expression.error().toString()));
+        QCOMPARE(model.values.front(), "edited");
+        QCOMPARE(object->value("id").toString(), "edited");
+        QCOMPARE(source.valueAt(source.indexOfKey(key)).toMap().value("id").toString(), "edited");
+        model.change(0, "external");
+        QCOMPARE(object->value("id").toString(), "external");
+        model.remove(0);
+        QVERIFY(! source.setRole(key, "id", "stale"));
+        expression.evaluate();
+        QVERIFY(! model.values.contains("edited"));
+        const auto oldKey = source.snapshot()->descriptorAt(0).key;
+        model.reset({ "replacement" });
+        QCOMPARE(source.indexOfKey(oldKey), -1);
+        QVERIFY(! source.setRole(oldKey, "id", "stale"));
+        QCOMPARE(model.values.front(), "replacement");
     }
     void contentVersionsInvalidateMeasurements() {
         Rows            model;

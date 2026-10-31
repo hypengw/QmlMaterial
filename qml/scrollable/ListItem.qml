@@ -23,18 +23,18 @@ MD.ItemDelegate {
     icon.height: 24
     icon.color: control.MD.MProp.color.on_background
 
-    // Delegates opt into model injection with `required index` / `required model`.
-    property int index: -1
-    property var model: null
+    property MD.LazyRow itemRow: null
+    property int index: itemRow?.index ?? -1
+    property var model: itemRow?.value ?? null
 
     property int leftMargin: 0
     property int rightMargin: 0
 
-    property int count: (ListView.view?.count ?? GridView.view?.count) ?? 0
+    property int count: itemRow?.view?.count ?? ((ListView.view?.count ?? GridView.view?.count) ?? 0)
 
-    readonly property bool prevSameSection: ListView.view !== null && ListView.section == ListView.previousSection
-    readonly property bool nextSameSection: ListView.view !== null && ListView.section == ListView.nextSection
-    property bool showDivider: index >= 0 && index + 1 < count && (!ListView.view || nextSameSection)
+    property bool prevSameSection: itemRow ? index > 0 : ListView.view !== null && ListView.section == ListView.previousSection
+    property bool nextSameSection: itemRow ? index + 1 < count : ListView.view !== null && ListView.section == ListView.nextSection
+    property bool showDivider: index >= 0 && index + 1 < count && (itemRow ? nextSameSection : (!ListView.view || nextSameSection))
 
     property MD.ListItemStyle mdState: MD.ListItemStyle {
         item: control

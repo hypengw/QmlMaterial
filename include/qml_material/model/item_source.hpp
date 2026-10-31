@@ -57,8 +57,11 @@ public:
     bool            stableKeys() const { return m_snapshot->stableKeys(); }
     QString         errorString() const { return m_error; }
     Q_INVOKABLE int indexOfKey(const QString& key) const { return m_snapshot->indexOfKey(key); }
-    Q_SIGNAL void   stateChanged();
-    Q_SIGNAL void   committed(const qml_material::ItemChangeSet& change);
+    Q_INVOKABLE QVariant valueAt(int index) const {
+        return index >= 0 && index < count() ? m_snapshot->valueAt(index) : QVariant {};
+    }
+    Q_SIGNAL void stateChanged();
+    Q_SIGNAL void committed(const qml_material::ItemChangeSet& change);
 
 protected:
     ItemPublishResult publish(ItemDataSnapshotPtr, QVector<ItemChange> changes = {},

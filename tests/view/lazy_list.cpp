@@ -131,6 +131,89 @@ class LazyListTest : public QObject {
         }
     }
 private slots:
+    void pagedComposition() {
+        QQmlEngine engine;
+        PagedRows  model;
+        model.count = 2;
+        engine.rootContext()->setContextProperty("pagedRows", &model);
+        QQmlComponent component(&engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            MD.VerticalLazyList {
+                width: 320; height: 240
+                source: MD.ItemModelSource {
+                    keyMode: MD.ItemModelSource.PersistentIndexKey
+                    model: pagedRows
+                }
+                delegate: Item {
+                    required property MD.LazyRow row
+                    implicitHeight: 40
+                }
+            }
+        )",
+                          QUrl());
+        QVERIFY2(component.isReady(), qPrintable(component.errorString()));
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY(object);
+        auto                view = qobject_cast<LazyList*>(object.get());
+        QQuickRenderControl render;
+        QQuickWindow        window(&render);
+        view->setParentItem(window.contentItem());
+        for (int step = 0; step < 20 && model.count < 6; ++step) {
+            frames(render);
+            QCoreApplication::processEvents();
+        }
+        QVERIFY(model.requests > 0);
+        QVERIFY(model.count >= 6);
+        QVERIFY(view->errorString().isEmpty());
+    }
+    void headerFooterComposition() {
+        QQmlEngine    engine;
+        QQmlComponent component(&engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            Item {
+                id: testRoot
+                width: 320; height: 240
+                property real headerHeight: 80
+                MD.PageVerticalLazyList {
+                    objectName: "list"
+                    anchors.fill: parent
+                    pageMarginEdges: 0
+                    extraTopMargin: 12
+                    extraBottomMargin: 16
+                    source: MD.ListSnapshotSource { items: [1, 2, 3] }
+                    header: Item { implicitHeight: testRoot.headerHeight }
+                    footer: Item { implicitHeight: 24 }
+                    delegate: Item {
+                        required property MD.LazyRow row
+                        implicitHeight: 48
+                    }
+                }
+            }
+        )",
+                          QUrl());
+        QVERIFY2(component.isReady(), qPrintable(component.errorString()));
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY(object);
+        auto view = object->findChild<LazyList*>("list");
+        QVERIFY(view);
+        QQuickRenderControl render;
+        QQuickWindow        window(&render);
+        qobject_cast<QQuickItem*>(object.get())->setParentItem(window.contentItem());
+        frames(render);
+        QCOMPARE(view->count(), 3);
+        QCOMPARE(view->topMargin(), 92.0);
+        QCOMPARE(view->bottomMargin(), 40.0);
+        QCOMPARE(view->contentY(), -92.0);
+        object->setProperty("headerHeight", 120);
+        frames(render);
+        QCOMPARE(view->topMargin(), 132.0);
+        QCOMPARE(view->contentY(), -132.0);
+    }
+
     void rowUsage() {
         QQmlEngine          engine;
         QQuickRenderControl render;

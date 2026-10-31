@@ -2,6 +2,8 @@
 
 #include <QAbstractItemModel>
 #include <QPointer>
+#include <QPersistentModelIndex>
+#include <QQmlPropertyMap>
 #include "qml_material/model/item_source.hpp"
 #include "qml_material/model/item_demand.hpp"
 
@@ -11,20 +13,32 @@ class QML_MATERIAL_API ItemModelSource : public ItemSource {
     Q_OBJECT
     QML_ELEMENT
     Q_PROPERTY(QAbstractItemModel* model READ model WRITE setModel NOTIFY modelChanged FINAL)
+    Q_PROPERTY(KeyMode keyMode READ keyMode WRITE setKeyMode NOTIFY keyModeChanged FINAL)
     Q_PROPERTY(QString keyRole READ keyRole WRITE setKeyRole NOTIFY keyRoleChanged FINAL)
     Q_PROPERTY(QString typeRole READ typeRole WRITE setTypeRole NOTIFY typeRoleChanged FINAL)
     Q_PROPERTY(QStringList roles READ roles WRITE setRoles NOTIFY rolesChanged FINAL)
 public:
+    enum KeyMode
+    {
+        RoleKey,
+        PersistentIndexKey
+    };
+    Q_ENUM(KeyMode)
     using ItemSource::ItemSource;
-    QAbstractItemModel* model() const { return m_model; }
-    QString             keyRole() const { return m_keyRole; }
-    QString             typeRole() const { return m_typeRole; }
-    QStringList         roles() const { return m_roles; }
-    void                setModel(QAbstractItemModel*);
-    void                setKeyRole(const QString&);
-    void                setTypeRole(const QString&);
-    void                setRoles(const QStringList&);
-    Q_INVOKABLE void    requestMore(const qml_material::ItemDemand& demand);
+    KeyMode          keyMode() const { return m_keyMode; }
+    void             setKeyMode(KeyMode);
+    Q_INVOKABLE bool setRole(const QString& key, const QString& role, const QVariant& value);
+    Q_INVOKABLE QQmlPropertyMap* objectForKey(const QString& key);
+    Q_SIGNAL void                keyModeChanged();
+    QAbstractItemModel*          model() const { return m_model; }
+    QString                      keyRole() const { return m_keyRole; }
+    QString                      typeRole() const { return m_typeRole; }
+    QStringList                  roles() const { return m_roles; }
+    void                         setModel(QAbstractItemModel*);
+    void                         setKeyRole(const QString&);
+    void                         setTypeRole(const QString&);
+    void                         setRoles(const QStringList&);
+    Q_INVOKABLE void             requestMore(const qml_material::ItemDemand& demand);
     // QAbstractItemModel has no notification for canFetchMore changes without row changes.
     Q_INVOKABLE void notifyFetchStateChanged();
     Q_SIGNAL void    fetchStateChanged();
@@ -44,7 +58,11 @@ private:
     bool                           m_fetchQueued     = false;
     bool                           m_resetRequired   = true;
     QVector<ItemRecord>            m_rows;
-    ItemDemand                     m_demand;
-    std::optional<int>             m_requestedCount;
+    KeyMode                        m_keyMode      = RoleKey;
+    quint64                        m_nextIdentity = 0;
+    QVector<QPair<QPersistentModelIndex, QString>> m_identities;
+    QHash<QString, QPointer<QQmlPropertyMap>>      m_objects;
+    ItemDemand                                     m_demand;
+    std::optional<int>                             m_requestedCount;
 };
 } // namespace qml_material

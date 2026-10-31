@@ -3,11 +3,77 @@
 
 namespace qml_material
 {
+namespace
+{
+class ModelRoleObject : public QQmlPropertyMap {
+public:
+    ModelRoleObject(ItemModelSource* source, QString key)
+        : QQmlPropertyMap(source), m_source(source), m_key(std::move(key)) {}
+    void refresh(const QVariantMap& values) {
+        QPointer<ModelRoleObject> guard(this);
+        for (auto it = values.cbegin(); it != values.cend(); ++it) {
+            insert(it.key(), it.value());
+            if (! guard) return;
+        }
+    }
+
+protected:
+    QVariant updateValue(const QString& role, const QVariant& value) override {
+        if (m_source && m_source->setRole(m_key, role, value)) return value;
+        return this->value(role);
+    }
+
+private:
+    QPointer<ItemModelSource> m_source;
+    QString                   m_key;
+};
+} // namespace
+void ItemModelSource::setKeyMode(KeyMode mode) {
+    if (m_keyMode == mode) return;
+    m_keyMode = mode;
+    m_identities.clear();
+    QPointer<ItemModelSource> guard(this);
+    update();
+    if (guard) emit keyModeChanged();
+}
+bool ItemModelSource::setRole(const QString& key, const QString& role, const QVariant& value) {
+    const int                    row = indexOfKey(key);
+    QPointer<ItemModelSource>    guard(this);
+    QPointer<QAbstractItemModel> model = m_model;
+    if (! model || row < 0) return false;
+    const auto generation = m_generation;
+    const auto names      = model->roleNames();
+    if (! guard || ! model || generation != m_generation) return false;
+    for (auto it = names.cbegin(); it != names.cend(); ++it)
+        if (it.value() == role.toUtf8()) {
+            const auto index = model->index(row, 0);
+            if (! guard || ! model || generation != m_generation) return false;
+            return model->setData(index, value, it.key());
+        }
+    return false;
+}
+QQmlPropertyMap* ItemModelSource::objectForKey(const QString& key) {
+    const int row = indexOfKey(key);
+    if (row < 0) return nullptr;
+    if (m_objects.value(key)) return m_objects.value(key);
+    QPointer<ItemModelSource> guard(this);
+    QPointer<ModelRoleObject> object = new ModelRoleObject(this, key);
+    m_objects.insert(key, object);
+    object->refresh(valueAt(row).toMap());
+    if (! guard || ! object) return nullptr;
+    connect(this, &ItemSource::stateChanged, object, [this, object, key] {
+        const int index = indexOfKey(key);
+        if (index >= 0) object->refresh(valueAt(index).toMap());
+    });
+    return object;
+}
+
 void ItemModelSource::setModel(QAbstractItemModel* model) {
     if (m_model == model) return;
     for (const auto& connection : m_connections) disconnect(connection);
     m_connections.clear();
     m_model = model;
+    m_identities.clear();
     ++m_modelGeneration;
     m_fetchQueued = false;
     m_requestedCount.reset();
@@ -124,6 +190,7 @@ void ItemModelSource::update(QVector<ItemChange> changes, bool reset) {
         publish(makeItemDataSnapshot({}, false, publicationBase()));
         return;
     }
+    const bool persistent = m_keyMode == PersistentIndexKey;
     const auto keyRole    = m_keyRole;
     const auto typeRole   = m_typeRole;
     const auto projection = m_roles;
@@ -142,7 +209,7 @@ void ItemModelSource::update(QVector<ItemChange> changes, bool reset) {
         if (projection.isEmpty() || projection.contains(name)) fields.insert(it.key(), name);
     }
     QString error;
-    if (keyRole.isEmpty() || keyId < 0)
+    if (! persistent && (keyRole.isEmpty() || keyId < 0))
         error = QStringLiteral("A valid string keyRole is required");
     if (! typeRole.isEmpty() && typeId < 0) error = QStringLiteral("Unknown typeRole");
     for (const auto& field : projection)
@@ -194,6 +261,14 @@ void ItemModelSource::update(QVector<ItemChange> changes, bool reset) {
             return;
         }
     }
+    QHash<int, QString> rowKeys;
+    auto                identities = m_identities;
+    if (persistent) {
+        identities.removeIf([](const auto& entry) {
+            return ! entry.first.isValid();
+        });
+        for (const auto& entry : identities) rowKeys.insert(entry.first.row(), entry.second);
+    }
     for (const auto& [first, length] : reads) {
         for (int row = first; row < first + length; ++row) {
             const auto index = model->index(row, 0);
@@ -202,7 +277,7 @@ void ItemModelSource::update(QVector<ItemChange> changes, bool reset) {
             QVariant    key, type;
             // Query each requested role once, including identity roles outside the projection.
             auto requested = fields;
-            requested.insert(keyId, QString::fromUtf8(names.value(keyId)));
+            if (! persistent) requested.insert(keyId, QString::fromUtf8(names.value(keyId)));
             if (typeId >= 0) requested.insert(typeId, QString::fromUtf8(names.value(typeId)));
             for (auto it = requested.cbegin(); it != requested.cend(); ++it) {
                 const auto data = model->data(index, it.key());
@@ -210,6 +285,13 @@ void ItemModelSource::update(QVector<ItemChange> changes, bool reset) {
                 if (it.key() == keyId) key = data;
                 if (it.key() == typeId) type = data;
                 if (fields.contains(it.key())) value.insert(it.value(), data);
+            }
+            if (persistent) {
+                key = rowKeys.value(row);
+                if (key.toString().isEmpty()) {
+                    key = QStringLiteral("model:%1").arg(++m_nextIdentity);
+                    identities.append({ QPersistentModelIndex(index), key.toString() });
+                }
             }
             if (key.metaType().id() != QMetaType::QString ||
                 (typeId >= 0 && type.metaType().id() != QMetaType::QString)) {
@@ -221,6 +303,7 @@ void ItemModelSource::update(QVector<ItemChange> changes, bool reset) {
             rows[row] = { key.toString(), type.toString(), value, before->revision + 1 };
         }
     }
+    if (persistent) m_identities = std::move(identities);
     m_rows            = rows;
     m_resetRequired   = false;
     const auto result = publish(makeItemDataSnapshot(std::move(rows), true, before),
