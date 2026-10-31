@@ -23,6 +23,18 @@ public:
     }
 };
 
+class ValueUpdateSource : public ItemSource {
+public:
+    using ItemSource::publishValues;
+    bool resetItems(int count) {
+        QVector<ItemRecord> rows;
+        rows.reserve(count);
+        for (int i = 0; i < count; ++i)
+            rows.append({ QString::number(i), {}, QVariantMap { { "extent", 40 } } });
+        return bool(publish(makeItemDataSnapshot(std::move(rows), true, publicationBase())));
+    }
+};
+
 class MutableRows : public QAbstractListModel {
 public:
     QStringList keys;
@@ -131,6 +143,67 @@ class LazyListTest : public QObject {
         }
     }
 private slots:
+    void valueUpdatesKeepDelegatesAndAnchor() {
+        ValueUpdateSource source;
+        QVERIFY(source.resetItems(100000));
+        QQmlEngine engine;
+        engine.rootContext()->setContextProperty("valueSource", &source);
+        QQmlComponent component(&engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            Item {
+                id: root
+                width: 300; height: 200
+                property int created: 0
+                MD.LazyList {
+                    objectName: "view"
+                    anchors.fill: parent
+                    source: valueSource
+                    cacheExtent: 64
+                    estimatedItemExtent: 40
+                    delegate: Item {
+                        required property MD.LazyRow row
+                        implicitHeight: row.value.extent
+                        Component.onCompleted: root.created++
+                    }
+                }
+            }
+        )",
+                          QUrl());
+        QVERIFY2(component.isReady(), qPrintable(component.errorString()));
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY(object);
+        auto* view = object->findChild<LazyList*>("view");
+        QVERIFY(view);
+        QQuickRenderControl render;
+        QQuickWindow        window(&render);
+        qobject_cast<QQuickItem*>(object.get())->setParentItem(window.contentItem());
+        frames(render);
+        QVERIFY(view->positionAtKey("50000"));
+        frames(render);
+        QCOMPARE(view->firstVisibleIndex(), 50000);
+        const auto               screenY = view->itemRect(50000).y();
+        const int                created = object->property("created").toInt();
+        QVector<ItemValueUpdate> changes;
+        changes.append({ 0, QVariantMap { { "extent", 80 } } });
+        changes.append({ 50000, QVariantMap { { "extent", 60 } } });
+        for (int i = 1; i <= 4096; ++i)
+            changes.append({ (i * 97) % 100000, QVariantMap { { "extent", 40 } } });
+        QVERIFY(source.publishValues(std::move(changes)));
+        frames(render);
+        QCOMPARE(view->firstVisibleIndex(), 50000);
+        QCOMPARE(view->itemRect(50000).y(), screenY);
+        QCOMPARE(view->itemRect(50000).height(), 60.0);
+        QCOMPARE(object->property("created").toInt(), created);
+        QVERIFY(source.publishValues({ { 50001, QVariantMap { { "extent", 80 } } } }));
+        QVERIFY(source.publishValues({ { 50002, QVariantMap { { "extent", 60 } } } }));
+        frames(render);
+        QCOMPARE(view->itemRect(50000).y(), screenY);
+        QCOMPARE(view->itemRect(50001).height(), 80.0);
+        QVERIFY(view->liveCount() < 30);
+        QVERIFY(view->errorString().isEmpty());
+    }
     void pagedComposition() {
         QQmlEngine engine;
         PagedRows  model;

@@ -6,6 +6,7 @@
 #include <QQuickWindow>
 #include <QSet>
 #include <utility>
+#include <algorithm>
 
 namespace qml_material
 {
@@ -21,6 +22,7 @@ struct LazyView::Private {
     QPointer<ItemSource>                           source;
     QPointer<QQmlComponent>                        delegate;
     ItemSnapshotPtr                                pending = std::make_shared<ItemSnapshot>();
+    std::optional<ItemChangeSet>                   pendingValues;
     std::unique_ptr<LazyViewLayout>                layout;
     QString                                        currentKey;
     std::unique_ptr<DelegateRecycler>              recycler;
@@ -118,6 +120,7 @@ void LazyView::setSource(ItemSource* value) {
     QPointer<LazyView> guard(this);
     if (d->source) disconnect(d->source, nullptr, this, nullptr);
     d->source = value;
+    d->pendingValues.reset();
     invalidateDemand();
     d->pending = value ? value->snapshot() : std::make_shared<ItemSnapshot>();
     if (currentIndex() < 0) d->currentKey.clear();
@@ -127,9 +130,22 @@ void LazyView::setSource(ItemSource* value) {
         connect(value, &ItemSource::stateChanged, this, &LazyView::scheduleLayout);
         connect(value, &ItemSource::committed, this, [this](const ItemChangeSet& change) {
             invalidateDemand();
-            const int oldCurrent = currentIndex();
-            d->pending           = change.after;
-            d->apply             = true;
+            const int  oldCurrent = currentIndex();
+            const bool valuesOnly =
+                ! change.reset && change.before->count() == change.after->count() &&
+                std::all_of(change.changes.cbegin(), change.changes.cend(), [](const auto& item) {
+                    return item.kind == qml_material::ItemChange::Update;
+                });
+            if (valuesOnly && d->pendingValues && d->pendingValues->after == change.before) {
+                d->pendingValues->after = change.after;
+                d->pendingValues->changes.append(change.changes);
+            } else if (valuesOnly && d->layout->snapshot() == change.before) {
+                d->pendingValues = change;
+            } else {
+                d->pendingValues.reset();
+            }
+            d->pending = change.after;
+            d->apply   = true;
             ++d->generation;
             scheduleLayout();
             if (currentIndex() < 0) d->currentKey.clear();
@@ -137,7 +153,8 @@ void LazyView::setSource(ItemSource* value) {
         });
         connect(value, &QObject::destroyed, this, [this] {
             invalidateDemand();
-            d->source  = nullptr;
+            d->source = nullptr;
+            d->pendingValues.reset();
             d->pending = std::make_shared<ItemSnapshot>();
             d->currentKey.clear();
             d->reset = d->apply = true;
@@ -429,8 +446,13 @@ void LazyView::updatePolish() {
     qreal offset = primaryOffset();
     if (state->apply) {
         state->apply      = false;
-        const auto result = state->layout->apply(
-            state->pending, crossSize(), offset, primarySize() - startMargin() - endMargin());
+        const auto values = std::exchange(state->pendingValues, {});
+        const auto viewport = primarySize() - startMargin() - endMargin();
+        const auto result =
+            values && values->before == state->layout->snapshot()
+                ? state->layout->applyValues(
+                      state->pending, values->changes, crossSize(), offset, viewport)
+                : state->layout->apply(state->pending, crossSize(), offset, viewport);
         if (! result.accepted) {
             state->error = QStringLiteral("Invalid layout extent");
             finishPositioning(false);

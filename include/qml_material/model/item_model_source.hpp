@@ -71,7 +71,6 @@ private:
     bool                           m_preparing        = false;
     quint64                        m_dataChangeTicket = 0;
     QMap<int, int>                 m_dirtyRanges;
-    QVector<ItemRecord>            m_rows;
     KeyMode                        m_keyMode      = RoleKey;
     quint64                        m_nextIdentity = 0;
     QVector<QPair<QPersistentModelIndex, QString>> m_identities;

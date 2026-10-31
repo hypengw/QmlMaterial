@@ -249,6 +249,47 @@ private Q_SLOTS:
         QVERIFY(! source.setRole(oldKey, "id", "stale"));
         QCOMPARE(model.values.front(), "replacement");
     }
+    void valueChangesPreserveMeasurements() {
+        Rows model;
+        model.values.clear();
+        for (int i = 0; i < 100; ++i) model.values.append(QString::number(i));
+        ItemModelSource source;
+        source.setKeyMode(ItemModelSource::PersistentIndexKey);
+        source.setDeferDataChanges(true);
+        source.setModel(&model);
+        ViewportController view;
+        QVERIFY(view.apply(source.snapshot(), 300, 40, 2, 0).accepted);
+        view.measure(0, 80, 0);
+        view.measure(10, 100, 0);
+        view.measure(20, 60, 0);
+        const double offset = view.layout().offset(20) + 7;
+        QSignalSpy   commits(&source, &ItemSource::committed);
+        model.change(0, "zero");
+        model.change(5, "uncached");
+        model.change(20, "anchor");
+        source.flushDataChanges();
+        const auto change = qvariant_cast<ItemChangeSet>(commits.front().front());
+        const auto result = view.applyValues(change.after, change.changes, 300, 40, 2, offset);
+        QVERIFY(result.accepted);
+        QCOMPARE(result.offset, offset - 40);
+        QCOMPARE(view.layout().extent(0), 40.0);
+        QCOMPARE(view.layout().extent(10), 100.0);
+        QCOMPARE(view.layout().extent(20), 40.0);
+        QCOMPARE(view.layout().offset(20) - result.offset, -7.0);
+        const auto before = view.snapshot();
+        QVERIFY(! view.applyValues(source.snapshot(),
+                                   { { ItemChange::Update, 99, 2 } },
+                                   300,
+                                   40,
+                                   2,
+                                   result.offset)
+                      .accepted);
+        QCOMPARE(view.snapshot(), before);
+        QCOMPARE(view.layout().extent(10), 100.0);
+        const auto resized = view.applyValues(source.snapshot(), {}, 200, 40, 2, result.offset);
+        QVERIFY(resized.accepted);
+        QCOMPARE(view.layout().extent(10), 40.0);
+    }
     void deferredDataChanges() {
         Rows model;
         model.values.clear();

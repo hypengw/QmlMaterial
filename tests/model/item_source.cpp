@@ -1,4 +1,5 @@
 #include <QtTest>
+#include <limits>
 #include <QQmlEngine>
 #include <QQmlComponent>
 #include "qml_material/model/item_source.hpp"
@@ -10,6 +11,7 @@ using namespace qml_material;
 class TestSource : public ItemSource {
 public:
     using ItemSource::publish;
+    using ItemSource::publishValues;
     ItemPublishResult replace(QVector<ItemRecord> rows, QVector<ItemChange> changes = {},
                               bool reset = true) {
         return publish(makeItemDataSnapshot(std::move(rows), true, publicationBase()),
@@ -28,18 +30,21 @@ Q_DECLARE_METATYPE(TypedRow)
 
 class CountingData : public TypedItemDataSnapshot<TypedRow> {
 public:
-    mutable int    reads           = 0;
+    mutable int    reads       = 0;
+    mutable int    descriptors = 0, indexes = 0;
     int            total           = 1000;
     bool           badIndex        = false;
     bool           badKey          = false;
     quint64        contentRevision = 1;
     int            count() const override { return total; }
     ItemDescriptor descriptorAt(int index) const override {
+        ++descriptors;
         return { badKey ? QString() : QString::number(quint64(9007199254740993ULL) + index),
                  QStringLiteral("track"),
                  contentRevision };
     }
     std::optional<int> indexOfKey(const QString& key) const override {
+        ++indexes;
         bool       ok    = false;
         const auto value = key.toULongLong(&ok);
         if (! ok || value < 9007199254740993ULL || value - 9007199254740993ULL >= quint64(total))
@@ -55,6 +60,88 @@ public:
 class ItemSourceTest : public QObject {
     Q_OBJECT
 private Q_SLOTS:
+    void valuePublicationSharesUnchangedRows() {
+        TestSource source;
+        auto       data = std::make_shared<CountingData>();
+        data->total     = 100000;
+        QVERIFY(source.publish(data));
+        auto        before    = source.snapshot();
+        const auto* unchanged = &before->descriptorAt(500);
+        data->reads = data->descriptors = data->indexes = 0;
+        QSignalSpy commits(&source, &ItemSource::committed);
+        QVERIFY(source.publishValues(
+            { { 99999, QVariant::fromValue(TypedRow { "last" }) },
+              { 127, QVariant::fromValue(TypedRow { "a" }), QStringLiteral("alternate") },
+              { 128, QVariant::fromValue(TypedRow { "b" }) },
+              { 3, QVariant::fromValue(TypedRow { "first" }) } }));
+        QCOMPARE(data->reads, 0);
+        QCOMPARE(data->descriptors, 0);
+        QCOMPARE(data->indexes, 0);
+        QCOMPARE(source.count(), 100000);
+        QCOMPARE(&source.snapshot()->descriptorAt(500), unchanged);
+        QCOMPARE(source.valueAt(3).value<TypedRow>().title, "first");
+        QCOMPARE(source.snapshot()->descriptorAt(127).reuseType, "alternate");
+        QCOMPARE(source.snapshot()->descriptorAt(3).reuseType, "track");
+        QCOMPARE(before->descriptorAt(127).reuseType, "track");
+        QCOMPARE(before->valueAt(3).value<TypedRow>().title, "3");
+        const auto change = qvariant_cast<ItemChangeSet>(commits.front().front());
+        QVERIFY(! change.reset);
+        QCOMPARE(change.changes.size(), 3);
+        QCOMPARE(change.changes[1].index, 127);
+        QCOMPARE(change.changes[1].count, 2);
+        const auto* first = &source.snapshot()->descriptorAt(3);
+        QVERIFY(source.publishValues({ { 128, QVariant::fromValue(TypedRow { "new" }) } }));
+        QCOMPARE(&source.snapshot()->descriptorAt(3), first);
+        QCOMPARE(change.after->valueAt(128).value<TypedRow>().title, "b");
+        QCOMPARE(source.valueAt(128).value<TypedRow>().title, "new");
+    }
+    void invalidValuePublicationKeepsSnapshot() {
+        TestSource source;
+        QVERIFY(source.replace({ { "a", "type", 1 }, { "b", "type", 2 } }));
+        auto before = source.snapshot();
+        QVERIFY(! source.publishValues({ { -1, 3 } }));
+        QVERIFY(! source.publishValues({ { 2, 3 } }));
+        QVERIFY(! source.publishValues({ { 0, 3 }, { 0, 4 } }));
+        QVERIFY(! source.publishValues({ { 0, 3, {}, before->descriptorAt(0).contentRevision } }));
+        QCOMPARE(source.snapshot(), before);
+        QVERIFY(source.publishValues({}));
+        QCOMPARE(source.snapshot(), before);
+        QVERIFY(source.publishValues({ { 0, QVariant(), QStringLiteral("other") } }));
+        QVERIFY(! source.valueAt(0).isValid());
+        QCOMPARE(source.snapshot()->descriptorAt(0).key, "a");
+        QCOMPARE(source.snapshot()->descriptorAt(0).reuseType, "other");
+        QVERIFY(source.snapshot()->descriptorAt(0).contentRevision >
+                before->descriptorAt(0).contentRevision);
+        QVERIFY(source.replace({ { "a", {}, 1, std::numeric_limits<quint64>::max() } }));
+        QVERIFY(! source.publishValues({ { 0, 4 } }));
+    }
+    void valuePublicationHasNoSnapshotChain() {
+        TestSource source;
+        QVERIFY(source.replace({ { "a", {}, 1 }, { "b", {}, 2 } }));
+        for (int i = 0; i < 1000; ++i) {
+            std::weak_ptr<const ItemSnapshot> obsolete = source.snapshot();
+            QVERIFY(source.publishValues({ { 0, i } }));
+            QVERIFY(obsolete.expired());
+        }
+        QCOMPARE(source.valueAt(0).toInt(), 999);
+        QCOMPARE(source.valueAt(1).toInt(), 2);
+    }
+    void reentrantValuePublication() {
+        TestSource source;
+        QVERIFY(source.replace({ { "a", {}, 0 } }));
+        int commits = 0;
+        connect(&source, &ItemSource::committed, &source, [&](const ItemChangeSet& change) {
+            ++commits;
+            QCOMPARE(source.snapshot(), change.after);
+            if (commits == 1) {
+                QVERIFY(source.publishValues({ { 0, 2 } }));
+                QCOMPARE(source.valueAt(0).toInt(), 1);
+            }
+        });
+        QVERIFY(source.publishValues({ { 0, 1 } }));
+        QCOMPARE(commits, 2);
+        QCOMPARE(source.valueAt(0).toInt(), 2);
+    }
     void reentrantObservers() {
         TestSource      source;
         QObject         observer;

@@ -41,13 +41,22 @@ struct ItemRecord {
     quint64  contentRevision = 0;
 };
 
+struct ItemValueUpdate {
+    int                    index = -1;
+    QVariant               value;
+    std::optional<QString> reuseType;
+    quint64                contentRevision = 0;
+};
+
+class ItemSnapshotRows;
+
 class QML_MATERIAL_API ItemSnapshot {
 public:
     ItemSnapshot();
     const quint64         revision;
-    int                   count() const { return int(m_descriptors.size()); }
+    int                   count() const { return m_count; }
     bool                  stableKeys() const { return m_data && m_data->stableKeys(); }
-    const ItemDescriptor& descriptorAt(int index) const { return m_descriptors.at(index); }
+    const ItemDescriptor& descriptorAt(int index) const;
     int                   indexOfKey(const QString& key) const;
     QVariant              valueAt(int index) const;
     ItemRecord            recordAt(int index) const;
@@ -55,8 +64,10 @@ public:
 private:
     friend class ItemSource;
     ItemSnapshot(quint64, ItemDataSnapshotPtr, QVector<ItemDescriptor>);
-    ItemDataSnapshotPtr     m_data;
-    QVector<ItemDescriptor> m_descriptors;
+    ItemSnapshot(quint64, const ItemSnapshot&, const QVector<ItemValueUpdate>&);
+    ItemDataSnapshotPtr                     m_data;
+    std::shared_ptr<const ItemSnapshotRows> m_rows;
+    int                                     m_count = 0;
 };
 using ItemSnapshotPtr = std::shared_ptr<const ItemSnapshot>;
 

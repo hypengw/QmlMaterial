@@ -3,6 +3,7 @@
 #include <QSet>
 #include <QThread>
 #include <limits>
+#include <algorithm>
 
 namespace qml_material
 {
@@ -83,6 +84,44 @@ ItemPublishResult ItemSource::publish(ItemDataSnapshotPtr data, QVector<ItemChan
     }
     ItemSnapshotPtr next(
         new ItemSnapshot(m_tail->revision + 1, std::move(data), std::move(descriptors)));
+    return commit(std::move(next), std::move(changes), reset);
+}
+
+ItemPublishResult ItemSource::publishValues(QVector<ItemValueUpdate> updates) {
+    if (QThread::currentThread() != thread())
+        return { ItemPublishResult::Rejected, QStringLiteral("Publish on the source thread") };
+    if (updates.isEmpty()) return { ItemPublishResult::Accepted, {} };
+    if (m_tail->revision == std::numeric_limits<quint64>::max())
+        return reject(QStringLiteral("Item revision exhausted"));
+    const auto order = [](const auto& a, const auto& b) {
+        return a.index < b.index;
+    };
+    if (! std::is_sorted(updates.cbegin(), updates.cend(), order))
+        std::sort(updates.begin(), updates.end(), order);
+    QVector<ItemChange> changes;
+    int                 previous = -1;
+    for (auto& update : updates) {
+        if (update.index < 0 || update.index >= m_tail->count() || update.index == previous)
+            return reject(QStringLiteral("Invalid or duplicate item value index"));
+        previous       = update.index;
+        const auto old = m_tail->descriptorAt(update.index).contentRevision;
+        if (old == std::numeric_limits<quint64>::max())
+            return reject(QStringLiteral("Item content revision exhausted"));
+        if (! update.contentRevision)
+            update.contentRevision = std::max(m_tail->revision + 1, old + 1);
+        if (update.contentRevision <= old)
+            return reject(QStringLiteral("Item value revision must advance"));
+        if (! changes.isEmpty() && changes.back().index + changes.back().count == update.index)
+            ++changes.back().count;
+        else
+            changes.append({ ItemChange::Update, update.index, 1 });
+    }
+    ItemSnapshotPtr next(new ItemSnapshot(m_tail->revision + 1, *m_tail, updates));
+    return commit(std::move(next), std::move(changes), false);
+}
+
+ItemPublishResult ItemSource::commit(ItemSnapshotPtr next, QVector<ItemChange> changes,
+                                     bool reset) {
     m_pending.append(Pending { { m_tail, next, std::move(changes), reset }, {} });
     m_tail = std::move(next);
     drain();

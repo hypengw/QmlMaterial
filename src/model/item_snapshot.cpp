@@ -1,15 +1,74 @@
 #include "qml_material/model/item_snapshot.hpp"
 #include <QHash>
 #include <algorithm>
+#include <array>
 #include <limits>
 
 namespace qml_material
 {
 ItemDataSnapshot::~ItemDataSnapshot() = default;
+class ItemSnapshotRows {
+public:
+    struct Row {
+        ItemDescriptor descriptor;
+        QVariant       value;
+    };
+    static constexpr int pageSize = 32;
+    using Page                    = std::array<std::shared_ptr<const Row>, pageSize>;
+    explicit ItemSnapshotRows(QVector<ItemDescriptor> descriptors)
+        : base(std::make_shared<const QVector<ItemDescriptor>>(std::move(descriptors))),
+          pages((base->size() + pageSize - 1) / pageSize) {}
+    int        count() const { return int(base->size()); }
+    const Row* rowAt(int index) const {
+        const auto& page = pages.at(index / pageSize);
+        return page ? (*page)[index % pageSize].get() : nullptr;
+    }
+    const ItemDescriptor& descriptorAt(int index) const {
+        if (auto row = rowAt(index)) return row->descriptor;
+        return base->at(index);
+    }
+    std::shared_ptr<const ItemSnapshotRows> updated(const QVector<ItemValueUpdate>& updates) const {
+        auto                  result    = std::make_shared<ItemSnapshotRows>(*this);
+        int                   pageIndex = -1;
+        std::shared_ptr<Page> page;
+        for (const auto& update : updates) {
+            const int nextPage = update.index / pageSize;
+            if (nextPage != pageIndex) {
+                pageIndex            = nextPage;
+                const auto& previous = pages.at(pageIndex);
+                page = previous ? std::make_shared<Page>(*previous) : std::make_shared<Page>();
+                result->pages[pageIndex] = page;
+            }
+            const auto& old                  = descriptorAt(update.index);
+            (*page)[update.index % pageSize] = std::make_shared<const Row>(
+                Row { { old.key, update.reuseType.value_or(old.reuseType), update.contentRevision },
+                      update.value });
+        }
+        return result;
+    }
+
+private:
+    std::shared_ptr<const QVector<ItemDescriptor>> base;
+    QVector<std::shared_ptr<const Page>>           pages;
+};
+
 ItemSnapshot::ItemSnapshot(): revision(0) {}
 ItemSnapshot::ItemSnapshot(quint64 version, ItemDataSnapshotPtr data,
                            QVector<ItemDescriptor> descriptors)
-    : revision(version), m_data(std::move(data)), m_descriptors(std::move(descriptors)) {}
+    : revision(version),
+      m_data(std::move(data)),
+      m_rows(std::make_shared<ItemSnapshotRows>(std::move(descriptors))),
+      m_count(m_rows->count()) {}
+ItemSnapshot::ItemSnapshot(quint64 version, const ItemSnapshot& before,
+                           const QVector<ItemValueUpdate>& updates)
+    : revision(version),
+      m_data(before.m_data),
+      m_rows(before.m_rows->updated(updates)),
+      m_count(before.m_count) {}
+
+const ItemDescriptor& ItemSnapshot::descriptorAt(int index) const {
+    return m_rows->descriptorAt(index);
+}
 
 int ItemSnapshot::indexOfKey(const QString& key) const {
     if (! m_data) return -1;
@@ -18,7 +77,9 @@ int ItemSnapshot::indexOfKey(const QString& key) const {
                                                                                        : -1;
 }
 QVariant ItemSnapshot::valueAt(int index) const {
-    return index >= 0 && index < count() ? m_data->valueAt(index) : QVariant();
+    if (index < 0 || index >= count()) return {};
+    if (auto row = m_rows->rowAt(index)) return row->value;
+    return m_data->valueAt(index);
 }
 ItemRecord ItemSnapshot::recordAt(int index) const {
     const auto& descriptor = descriptorAt(index);

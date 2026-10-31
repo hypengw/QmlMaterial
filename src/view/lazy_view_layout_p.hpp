@@ -13,21 +13,25 @@ public:
     virtual void            clear()          = 0;
     virtual ItemSnapshotPtr snapshot() const = 0;
     virtual Result          apply(ItemSnapshotPtr, qreal cross, qreal offset, qreal viewport) = 0;
-    virtual void            setOrientation(Qt::Orientation) {}
-    virtual bool            supportsOrientation(Qt::Orientation) const { return true; }
-    virtual Result          measure(int index, qreal extent, qreal offset) = 0;
-    virtual bool            estimated() const                              = 0;
-    virtual bool            fixedItemExtent() const { return false; }
-    virtual int             count() const                              = 0;
-    virtual int             indexAt(qreal) const                       = 0;
-    virtual qreal           offset(int) const                          = 0;
-    virtual qreal           extent(int) const                          = 0;
-    virtual qreal           totalExtent() const                        = 0;
-    virtual QRectF          rect(int) const                            = 0;
-    virtual ItemRange       visibleRange(qreal begin, qreal end) const = 0;
-    virtual bool            discreteItems() const { return false; }
-    virtual QVector<int>    requestedIndices(qreal, qreal, qreal) const { return {}; }
-    virtual bool            reachesEnd(qreal offset, qreal viewport, qreal cache) const {
+    virtual Result applyValues(ItemSnapshotPtr next, const QVector<ItemChange>&, qreal cross,
+                               qreal offset, qreal viewport) {
+        return apply(std::move(next), cross, offset, viewport);
+    }
+    virtual void         setOrientation(Qt::Orientation) {}
+    virtual bool         supportsOrientation(Qt::Orientation) const { return true; }
+    virtual Result       measure(int index, qreal extent, qreal offset) = 0;
+    virtual bool         estimated() const                              = 0;
+    virtual bool         fixedItemExtent() const { return false; }
+    virtual int          count() const                              = 0;
+    virtual int          indexAt(qreal) const                       = 0;
+    virtual qreal        offset(int) const                          = 0;
+    virtual qreal        extent(int) const                          = 0;
+    virtual qreal        totalExtent() const                        = 0;
+    virtual QRectF       rect(int) const                            = 0;
+    virtual ItemRange    visibleRange(qreal begin, qreal end) const = 0;
+    virtual bool         discreteItems() const { return false; }
+    virtual QVector<int> requestedIndices(qreal, qreal, qreal) const { return {}; }
+    virtual bool         reachesEnd(qreal offset, qreal viewport, qreal cache) const {
         if (fixedItemExtent()) {
             const auto range = demandRange(offset, viewport, cache);
             return range.last >= 0 && range.last == count() - 1;
@@ -63,6 +67,13 @@ public:
     ItemSnapshotPtr snapshot() const override { return m_controller.snapshot(); }
     Result apply(ItemSnapshotPtr next, qreal cross, qreal offset, qreal viewport) override {
         auto result = m_controller.apply(std::move(next), cross, estimate, spacing, offset);
+        if (result.accepted) m_cross = cross;
+        return result;
+    }
+    Result applyValues(ItemSnapshotPtr next, const QVector<ItemChange>& changes, qreal cross,
+                       qreal offset, qreal) override {
+        auto result =
+            m_controller.applyValues(std::move(next), changes, cross, estimate, spacing, offset);
         if (result.accepted) m_cross = cross;
         return result;
     }

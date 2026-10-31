@@ -237,9 +237,9 @@ void ItemModelSource::dataChanged(int first, int last) {
         return;
     }
     if (first < 0 || last < first) return;
+    ++m_generation;
     if (m_preparing) {
         // A notification during model reads invalidates the partially prepared projection.
-        ++m_generation;
         m_resetRequired = true;
     }
     auto it = m_dirtyRanges.lowerBound(first);
@@ -283,7 +283,6 @@ void ItemModelSource::update(QVector<ItemChange> changes, bool reset) {
     });
     QPointer<QAbstractItemModel> model       = m_model;
     if (! model) {
-        m_rows.clear();
         m_resetRequired = false;
         publish(makeItemDataSnapshot({}, false, publicationBase()));
         return;
@@ -321,12 +320,86 @@ void ItemModelSource::update(QVector<ItemChange> changes, bool reset) {
         reject(error);
         return;
     }
-    reset                         = reset || m_resetRequired;
-    QVector<ItemRecord>      rows = reset ? QVector<ItemRecord>(count) : m_rows;
+    reset          = reset || m_resetRequired;
+    auto requested = fields;
+    if (! persistent) requested.insert(keyId, QString::fromUtf8(names.value(keyId)));
+    if (typeId >= 0) requested.insert(typeId, QString::fromUtf8(names.value(typeId)));
+    QVector<QPair<QPersistentModelIndex, QString>> identities;
+    const auto readRow = [&](int row, QString identity, ItemRecord& result) {
+        const auto index = model->index(row, 0);
+        if (! current()) return false;
+        QVariantMap value;
+        QVariant    key, type;
+        for (auto it = requested.cbegin(); it != requested.cend(); ++it) {
+            const auto data = model->data(index, it.key());
+            if (! current()) return false;
+            if (it.key() == keyId) key = data;
+            if (it.key() == typeId) type = data;
+            if (fields.contains(it.key())) value.insert(it.value(), data);
+        }
+        if ((! persistent && key.metaType().id() != QMetaType::QString) ||
+            (typeId >= 0 && type.metaType().id() != QMetaType::QString)) {
+            m_resetRequired = true;
+            reject(QStringLiteral("Key and reuse type must be strings"));
+            return false;
+        }
+        if (! persistent)
+            identity = key.toString();
+        else if (identity.isEmpty()) {
+            identity = QStringLiteral("model:%1").arg(++m_nextIdentity);
+            identities.append({ QPersistentModelIndex(index), identity });
+        }
+        result = { std::move(identity), type.toString(), std::move(value), before->revision + 1 };
+        return true;
+    };
+    const bool valuesOnly = ! reset && count == before->count() &&
+                            std::all_of(changes.cbegin(), changes.cend(), [](const auto& change) {
+                                return change.kind == ItemChange::Update;
+                            });
+    if (valuesOnly) {
+        QVector<QPair<int, ItemRecord>> prepared;
+        bool                            identityChanged = false;
+        for (const auto& change : changes) {
+            if (change.index < 0 || change.count <= 0 ||
+                qint64(change.index) + change.count > count) {
+                m_resetRequired = true;
+                reject(QStringLiteral("Invalid model change range"));
+                return;
+            }
+            for (int row = change.index; row < change.index + change.count; ++row) {
+                ItemRecord  record;
+                const auto& key = before->descriptorAt(row).key;
+                if (! readRow(row, persistent ? key : QString(), record)) return;
+                identityChanged |= record.key != key;
+                prepared.append({ row, std::move(record) });
+            }
+        }
+        m_resetRequired = false;
+        ItemPublishResult result;
+        if (! identityChanged) {
+            QVector<ItemValueUpdate> updates;
+            updates.reserve(prepared.size());
+            for (auto& [index, row] : prepared)
+                updates.append({ index, std::move(row.value), std::move(row.reuseType) });
+            result = publishValues(std::move(updates));
+        } else {
+            QVector<ItemRecord> rows;
+            rows.reserve(count);
+            for (int row = 0; row < count; ++row) rows.append(before->recordAt(row));
+            for (auto& [index, row] : prepared) rows[index] = std::move(row);
+            result = publish(makeItemDataSnapshot(std::move(rows), true, before));
+        }
+        if (current() && ! result) m_resetRequired = true;
+        return;
+    }
+    QVector<ItemRecord>      rows;
     QVector<QPair<int, int>> reads;
-    if (reset)
+    if (reset) {
+        rows.resize(count);
         reads.append({ 0, count });
-    else {
+    } else {
+        rows.reserve(before->count());
+        for (int row = 0; row < before->count(); ++row) rows.append(before->recordAt(row));
         for (const auto& change : changes) {
             const auto end = qint64(change.index) + change.count;
             if (change.index < 0 || change.count <= 0 || change.index > rows.size() ||
@@ -360,8 +433,8 @@ void ItemModelSource::update(QVector<ItemChange> changes, bool reset) {
         }
     }
     QHash<int, QString> rowKeys;
-    auto                identities = m_identities;
     if (persistent) {
+        identities = m_identities;
         identities.removeIf([](const auto& entry) {
             return ! entry.first.isValid();
         });
@@ -369,40 +442,13 @@ void ItemModelSource::update(QVector<ItemChange> changes, bool reset) {
     }
     for (const auto& [first, length] : reads) {
         for (int row = first; row < first + length; ++row) {
-            const auto index = model->index(row, 0);
-            if (! current()) return;
-            QVariantMap value;
-            QVariant    key, type;
-            // Query each requested role once, including identity roles outside the projection.
-            auto requested = fields;
-            if (! persistent) requested.insert(keyId, QString::fromUtf8(names.value(keyId)));
-            if (typeId >= 0) requested.insert(typeId, QString::fromUtf8(names.value(typeId)));
-            for (auto it = requested.cbegin(); it != requested.cend(); ++it) {
-                const auto data = model->data(index, it.key());
-                if (! current()) return;
-                if (it.key() == keyId) key = data;
-                if (it.key() == typeId) type = data;
-                if (fields.contains(it.key())) value.insert(it.value(), data);
-            }
-            if (persistent) {
-                key = rowKeys.value(row);
-                if (key.toString().isEmpty()) {
-                    key = QStringLiteral("model:%1").arg(++m_nextIdentity);
-                    identities.append({ QPersistentModelIndex(index), key.toString() });
-                }
-            }
-            if (key.metaType().id() != QMetaType::QString ||
-                (typeId >= 0 && type.metaType().id() != QMetaType::QString)) {
-                m_resetRequired = true;
-                reject(QStringLiteral("Key and reuse type must be strings"));
-                return;
-            }
-            if (rows[row].key != key.toString() && ! rows[row].key.isEmpty()) reset = true;
-            rows[row] = { key.toString(), type.toString(), value, before->revision + 1 };
+            ItemRecord record;
+            if (! readRow(row, rowKeys.value(row), record)) return;
+            if (! rows[row].key.isEmpty() && rows[row].key != record.key) reset = true;
+            rows[row] = std::move(record);
         }
     }
     if (persistent) m_identities = std::move(identities);
-    m_rows            = rows;
     m_resetRequired   = false;
     const auto result = publish(makeItemDataSnapshot(std::move(rows), true, before),
                                 reset ? QVector<ItemChange>() : changes,

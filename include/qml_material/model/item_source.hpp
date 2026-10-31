@@ -66,6 +66,8 @@ public:
 protected:
     ItemPublishResult publish(ItemDataSnapshotPtr, QVector<ItemChange> changes = {},
                               bool reset = true);
+    // Keeps row identity and structure; zero content revisions advance automatically.
+    ItemPublishResult publishValues(QVector<ItemValueUpdate>);
     ItemPublishResult reject(QString error);
     ItemSnapshotPtr   publicationBase() const { return m_tail; }
 
@@ -74,12 +76,13 @@ private:
         ItemChangeSet change;
         QString       error;
     };
-    void            drain();
-    ItemSnapshotPtr m_snapshot;
-    ItemSnapshotPtr m_tail;
-    QList<Pending>  m_pending;
-    QString         m_error;
-    bool            m_publishing = false;
+    void              drain();
+    ItemPublishResult commit(ItemSnapshotPtr, QVector<ItemChange>, bool reset);
+    ItemSnapshotPtr   m_snapshot;
+    ItemSnapshotPtr   m_tail;
+    QList<Pending>    m_pending;
+    QString           m_error;
+    bool              m_publishing = false;
 };
 
 class QML_MATERIAL_API ListSnapshotSource : public ItemSource {

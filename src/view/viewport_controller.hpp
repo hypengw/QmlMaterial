@@ -4,6 +4,7 @@
 #include "item_anchor_p.hpp"
 #include "qml_material/model/item_source.hpp"
 #include <optional>
+#include <QSet>
 
 namespace qml_material
 {
@@ -62,6 +63,53 @@ public:
         m_layout     = std::move(layout);
         m_cache      = std::move(cache);
         return { true, corrected };
+    }
+
+    Result applyValues(ItemSnapshotPtr next, const QVector<ItemChange>& changes, double constraint,
+                       double estimate, double spacing, double offset) {
+        if (! m_snapshot || ! next || next->count() != m_layout.count() ||
+            constraint != m_constraint || estimate != m_estimate || spacing != m_layout.spacing())
+            return apply(std::move(next), constraint, estimate, spacing, offset);
+        if (! std::isfinite(offset)) return { false, offset };
+        QVector<int>  dirty;
+        QSet<QString> keys;
+        for (const auto& change : changes) {
+            if (change.kind != ItemChange::Update)
+                return apply(std::move(next), constraint, estimate, spacing, offset);
+            if (change.index < 0 || change.count <= 0 ||
+                qint64(change.index) + change.count > next->count())
+                return { false, offset };
+            for (int index = change.index; index < change.index + change.count; ++index) {
+                const auto& row = next->descriptorAt(index);
+                if (m_snapshot->descriptorAt(index).key != row.key)
+                    return apply(std::move(next), constraint, estimate, spacing, offset);
+                const auto found = m_cache.constFind(row.key);
+                if (found == m_cache.cend() ||
+                    (found->type == row.reuseType && found->revision == row.contentRevision) ||
+                    keys.contains(row.key))
+                    continue;
+                keys.insert(row.key);
+                dirty.append(index);
+            }
+        }
+        // Keep the incremental mutation below the numeric limits checked by setExtent.
+        if (! std::isfinite(m_layout.offset(m_layout.count()) + dirty.size() * estimate))
+            return apply(std::move(next), constraint, estimate, spacing, offset);
+        const int       anchor   = m_layout.indexAt(offset);
+        const double    oldStart = m_layout.offset(anchor);
+        QVector<double> oldExtents;
+        oldExtents.reserve(dirty.size());
+        for (int index : dirty) {
+            oldExtents.append(m_layout.extent(index));
+            if (! m_layout.setExtent(index, estimate)) {
+                for (int i = oldExtents.size() - 2; i >= 0; --i)
+                    m_layout.setExtent(dirty[i], oldExtents[i]);
+                return { false, offset };
+            }
+        }
+        for (const auto& key : keys) m_cache.remove(key);
+        m_snapshot = std::move(next);
+        return { true, m_layout.count() ? offset + m_layout.offset(anchor) - oldStart : 0 };
     }
 
     Result measure(int index, double extent, double offset) {
