@@ -9,64 +9,65 @@
 
 namespace qml_material
 {
+#define QM_SCHEME_ROLES(X)        \
+    X(primary)                    \
+    X(on_primary)                 \
+    X(primary_container)          \
+    X(on_primary_container)       \
+    X(primary_fixed)              \
+    X(primary_fixed_dim)          \
+    X(on_primary_fixed)           \
+    X(on_primary_fixed_variant)   \
+    X(secondary)                  \
+    X(on_secondary)               \
+    X(secondary_container)        \
+    X(on_secondary_container)     \
+    X(secondary_fixed)            \
+    X(secondary_fixed_dim)        \
+    X(on_secondary_fixed)         \
+    X(on_secondary_fixed_variant) \
+    X(tertiary)                   \
+    X(on_tertiary)                \
+    X(tertiary_container)         \
+    X(on_tertiary_container)      \
+    X(tertiary_fixed)             \
+    X(tertiary_fixed_dim)         \
+    X(on_tertiary_fixed)          \
+    X(on_tertiary_fixed_variant)  \
+    X(error)                      \
+    X(on_error)                   \
+    X(error_container)            \
+    X(on_error_container)         \
+    X(background)                 \
+    X(on_background)              \
+    X(surface)                    \
+    X(on_surface)                 \
+    X(surface_variant)            \
+    X(on_surface_variant)         \
+    X(outline)                    \
+    X(outline_variant)            \
+    X(shadow)                     \
+    X(scrim)                      \
+    X(inverse_surface)            \
+    X(inverse_on_surface)         \
+    X(inverse_primary)            \
+    X(surface_1)                  \
+    X(surface_2)                  \
+    X(surface_3)                  \
+    X(surface_4)                  \
+    X(surface_5)                  \
+    X(surface_dim)                \
+    X(surface_bright)             \
+    X(surface_container)          \
+    X(surface_container_low)      \
+    X(surface_container_lowest)   \
+    X(surface_container_high)     \
+    X(surface_container_highest)
+
 struct MdScheme {
-    QRgb primary;
-    QRgb on_primary;
-    QRgb primary_container;
-    QRgb on_primary_container;
-    QRgb primary_fixed;
-    QRgb primary_fixed_dim;
-    QRgb on_primary_fixed;
-    QRgb on_primary_fixed_variant;
-    QRgb secondary;
-    QRgb on_secondary;
-    QRgb secondary_container;
-    QRgb on_secondary_container;
-    QRgb secondary_fixed;
-    QRgb secondary_fixed_dim;
-    QRgb on_secondary_fixed;
-    QRgb on_secondary_fixed_variant;
-    QRgb tertiary;
-    QRgb on_tertiary;
-    QRgb tertiary_container;
-    QRgb on_tertiary_container;
-    QRgb tertiary_fixed;
-    QRgb tertiary_fixed_dim;
-    QRgb on_tertiary_fixed;
-    QRgb on_tertiary_fixed_variant;
-    QRgb error;
-    QRgb on_error;
-    QRgb error_container;
-    QRgb on_error_container;
-    QRgb background;
-    QRgb on_background;
-    QRgb surface;
-    QRgb on_surface;
-    QRgb surface_variant;
-    QRgb on_surface_variant;
-    QRgb outline;
-    QRgb outline_variant;
-    QRgb shadow;
-    QRgb scrim;
-    QRgb inverse_surface;
-    QRgb inverse_on_surface;
-    QRgb inverse_primary;
-
-    // surface
-    QRgb surface_1;
-    QRgb surface_2;
-    QRgb surface_3;
-    QRgb surface_4;
-    QRgb surface_5;
-
-    // surface v2
-    QRgb surface_dim;
-    QRgb surface_bright;
-    QRgb surface_container;
-    QRgb surface_container_low;
-    QRgb surface_container_lowest;
-    QRgb surface_container_high;
-    QRgb surface_container_highest;
+#define X(_n_) QRgb _n_;
+    QM_SCHEME_ROLES(X)
+#undef X
 
     material_color_utilities::TonalPalette neutral_palette { 0 };
 };
