@@ -5,6 +5,7 @@
 #include <QQmlExpression>
 #include <QSortFilterProxyModel>
 #include <QQuickWindow>
+#include <utility>
 #include "qml_material/model/item_model_source.hpp"
 #include "delegate_recycler.hpp"
 #include "viewport_controller.hpp"
@@ -247,6 +248,136 @@ private Q_SLOTS:
         QCOMPARE(source.indexOfKey(oldKey), -1);
         QVERIFY(! source.setRole(oldKey, "id", "stale"));
         QCOMPARE(model.values.front(), "replacement");
+    }
+    void deferredDataChanges() {
+        Rows model;
+        model.values.clear();
+        for (int i = 0; i < 5000; ++i) model.values.append(QString::number(i));
+        ItemModelSource source;
+        source.setKeyMode(ItemModelSource::PersistentIndexKey);
+        source.setDeferDataChanges(true);
+        source.setModel(&model);
+        const auto before = source.snapshot();
+        const int  reads  = model.reads;
+        QSignalSpy commits(&source, &ItemSource::committed);
+        for (int i = 99; i >= 0; --i) model.change(i * 37, QStringLiteral("changed%1").arg(i));
+        model.change(0, "final");
+        QCOMPARE(commits.size(), 0);
+        QCOMPARE(model.reads, reads);
+        QCOMPARE(before->valueAt(0).toMap().value("id").toString(), "0");
+        QCoreApplication::processEvents();
+        QCOMPARE(commits.size(), 1);
+        QCOMPARE(model.reads, reads + 100);
+        QCOMPARE(source.valueAt(0).toMap().value("id").toString(), "final");
+        QCOMPARE(before->valueAt(0).toMap().value("id").toString(), "0");
+        const auto change = qvariant_cast<ItemChangeSet>(commits.front().front());
+        QCOMPARE(change.changes.size(), 100);
+        QVERIFY(! change.reset);
+        QCoreApplication::processEvents();
+        QCOMPARE(commits.size(), 1);
+        model.change(1, "one");
+        model.change(2, "two");
+        model.change(3, "three");
+        source.flushDataChanges();
+        const auto contiguous = qvariant_cast<ItemChangeSet>(commits.back().front());
+        QCOMPARE(contiguous.changes.size(), 1);
+        QCOMPARE(contiguous.changes.front().index, 1);
+        QCOMPARE(contiguous.changes.front().count, 3);
+        QCOMPARE(model.reads, reads + 103);
+    }
+    void deferredDataBeforeStructure() {
+        Rows            model;
+        ItemModelSource source;
+        source.setKeyMode(ItemModelSource::PersistentIndexKey);
+        source.setDeferDataChanges(true);
+        source.setModel(&model);
+        const auto key = source.snapshot()->descriptorAt(1).key;
+        QSignalSpy commits(&source, &ItemSource::committed);
+        model.change(1, "inserted");
+        model.insert(0, "prefix");
+        QCOMPARE(commits.size(), 2);
+        QCOMPARE(source.indexOfKey(key), 2);
+        QCOMPARE(source.valueAt(2).toMap().value("id").toString(), "inserted");
+        model.change(2, "moved");
+        model.move(2, 0);
+        QCOMPARE(source.indexOfKey(key), 0);
+        QCOMPARE(source.valueAt(0).toMap().value("id").toString(), "moved");
+        model.change(0, "removed");
+        model.remove(0);
+        QCOMPARE(source.indexOfKey(key), -1);
+        model.change(0, "reset");
+        model.reset({ "replacement" });
+        QCOMPARE(source.count(), 1);
+        QCOMPARE(source.valueAt(0).toMap().value("id").toString(), "replacement");
+        const int changes = commits.size();
+        QCoreApplication::processEvents();
+        QCOMPARE(commits.size(), changes);
+        QVERIFY(source.errorString().isEmpty());
+        model.change(0, "old model");
+        Rows replacement;
+        source.setModel(&replacement);
+        QCoreApplication::processEvents();
+        QCOMPARE(source.count(), 3);
+        QCOMPARE(source.valueAt(0).toMap().value("id").toString(), "a");
+    }
+    void deferredRoleEditing() {
+        Rows            model;
+        ItemModelSource source;
+        source.setKeyMode(ItemModelSource::PersistentIndexKey);
+        source.setDeferDataChanges(true);
+        source.setModel(&model);
+        const auto key    = source.snapshot()->descriptorAt(1).key;
+        auto       object = source.objectForKey(key);
+        QVERIFY(object);
+        model.change(0, "pending");
+        QQmlEngine engine;
+        engine.rootContext()->setContextProperty("entry", object);
+        QQmlExpression expression(engine.rootContext(), nullptr, "entry.id = 'edited'");
+        expression.evaluate();
+        QVERIFY2(! expression.hasError(), qPrintable(expression.error().toString()));
+        QCOMPARE(source.valueAt(0).toMap().value("id").toString(), "pending");
+        QCOMPARE(source.valueAt(1).toMap().value("id").toString(), "edited");
+        QCOMPARE(object->value("id").toString(), "edited");
+        model.change(2, "synchronous");
+        source.setDeferDataChanges(false);
+        QCOMPARE(source.valueAt(2).toMap().value("id").toString(), "synchronous");
+        model.change(0, "immediate");
+        QCOMPARE(source.valueAt(0).toMap().value("id").toString(), "immediate");
+    }
+    void deferredReadReentryAndLifetime() {
+        class ReentrantRows : public Rows {
+        public:
+            mutable std::function<void()> onRead;
+            QVariant                      data(const QModelIndex& index, int role) const override {
+                if (auto action = std::exchange(onRead, {})) action();
+                return Rows::data(index, role);
+            }
+        } model;
+        ItemModelSource source;
+        source.setKeyMode(ItemModelSource::PersistentIndexKey);
+        source.setDeferDataChanges(true);
+        source.setModel(&model);
+        QSignalSpy commits(&source, &ItemSource::committed);
+        model.change(0, "first");
+        model.onRead = [&] {
+            model.change(1, "reentrant");
+        };
+        QTRY_COMPARE(source.valueAt(1).toMap().value("id").toString(), "reentrant");
+        QCOMPARE(commits.size(), 1);
+        QVERIFY(source.errorString().isEmpty());
+        auto disposable = std::make_unique<Rows>();
+        source.setModel(disposable.get());
+        disposable->change(0, "pending");
+        disposable.reset();
+        QCoreApplication::processEvents();
+        QCOMPARE(source.count(), 0);
+        auto adapter = std::make_unique<ItemModelSource>();
+        adapter->setDeferDataChanges(true);
+        adapter->setKeyMode(ItemModelSource::PersistentIndexKey);
+        adapter->setModel(&model);
+        model.change(0, "deleted adapter");
+        adapter.reset();
+        QCoreApplication::processEvents();
     }
     void contentVersionsInvalidateMeasurements() {
         Rows            model;

@@ -1,5 +1,9 @@
 #include "qml_material/model/item_model_source.hpp"
 #include <QTimer>
+#include <QScopeGuard>
+#include <algorithm>
+#include <iterator>
+#include <utility>
 
 namespace qml_material
 {
@@ -37,8 +41,10 @@ void ItemModelSource::setKeyMode(KeyMode mode) {
     if (guard) emit keyModeChanged();
 }
 bool ItemModelSource::setRole(const QString& key, const QString& role, const QVariant& value) {
-    const int                    row = indexOfKey(key);
-    QPointer<ItemModelSource>    guard(this);
+    QPointer<ItemModelSource> guard(this);
+    flushDataChanges();
+    if (! guard) return false;
+    const int                    row   = indexOfKey(key);
     QPointer<QAbstractItemModel> model = m_model;
     if (! model || row < 0) return false;
     const auto generation = m_generation;
@@ -48,7 +54,9 @@ bool ItemModelSource::setRole(const QString& key, const QString& role, const QVa
         if (it.value() == role.toUtf8()) {
             const auto index = model->index(row, 0);
             if (! guard || ! model || generation != m_generation) return false;
-            return model->setData(index, value, it.key());
+            const bool accepted = model->setData(index, value, it.key());
+            if (guard) flushDataChanges();
+            return accepted;
         }
     return false;
 }
@@ -70,6 +78,7 @@ QQmlPropertyMap* ItemModelSource::objectForKey(const QString& key) {
 
 void ItemModelSource::setModel(QAbstractItemModel* model) {
     if (m_model == model) return;
+    cancelDataChanges();
     for (const auto& connection : m_connections) disconnect(connection);
     m_connections.clear();
     m_model = model;
@@ -79,6 +88,38 @@ void ItemModelSource::setModel(QAbstractItemModel* model) {
     m_requestedCount.reset();
     m_demand = {};
     if (model) {
+        m_connections.append({ connect(model,
+                                       &QAbstractItemModel::rowsAboutToBeInserted,
+                                       this,
+                                       &ItemModelSource::flushDataChanges),
+                               connect(model,
+                                       &QAbstractItemModel::rowsAboutToBeRemoved,
+                                       this,
+                                       &ItemModelSource::flushDataChanges),
+                               connect(model,
+                                       &QAbstractItemModel::rowsAboutToBeMoved,
+                                       this,
+                                       &ItemModelSource::flushDataChanges),
+                               connect(model,
+                                       &QAbstractItemModel::layoutAboutToBeChanged,
+                                       this,
+                                       &ItemModelSource::flushDataChanges),
+                               connect(model,
+                                       &QAbstractItemModel::modelAboutToBeReset,
+                                       this,
+                                       &ItemModelSource::flushDataChanges),
+                               connect(model,
+                                       &QAbstractItemModel::columnsAboutToBeInserted,
+                                       this,
+                                       &ItemModelSource::flushDataChanges),
+                               connect(model,
+                                       &QAbstractItemModel::columnsAboutToBeRemoved,
+                                       this,
+                                       &ItemModelSource::flushDataChanges),
+                               connect(model,
+                                       &QAbstractItemModel::columnsAboutToBeMoved,
+                                       this,
+                                       &ItemModelSource::flushDataChanges) });
         m_connections.append(
             connect(model,
                     &QAbstractItemModel::rowsInserted,
@@ -116,15 +157,14 @@ void ItemModelSource::setModel(QAbstractItemModel* model) {
                                    destination > first ? destination - count : destination } },
                                false);
                     }));
-        m_connections.append(connect(
-            model,
-            &QAbstractItemModel::dataChanged,
-            this,
-            [this](const QModelIndex& first, const QModelIndex& last, const QList<int>&) {
-                if (! first.parent().isValid() && first.column() == 0)
-                    update({ { ItemChange::Update, first.row(), last.row() - first.row() + 1 } },
-                           false);
-            }));
+        m_connections.append(
+            connect(model,
+                    &QAbstractItemModel::dataChanged,
+                    this,
+                    [this](const QModelIndex& first, const QModelIndex& last, const QList<int>&) {
+                        if (! first.parent().isValid() && first.column() == 0)
+                            dataChanged(first.row(), last.row());
+                    }));
         m_connections.append(connect(model, &QAbstractItemModel::modelReset, this, [this] {
             update();
         }));
@@ -179,11 +219,69 @@ void ItemModelSource::setRoles(const QStringList& roles) {
     if (guard) Q_EMIT rolesChanged();
 }
 
+void ItemModelSource::setDeferDataChanges(bool defer) {
+    if (m_deferDataChanges == defer) return;
+    m_deferDataChanges = defer;
+    QPointer<ItemModelSource> guard(this);
+    if (! defer) flushDataChanges();
+    if (guard) emit deferDataChangesChanged();
+}
+void ItemModelSource::cancelDataChanges() {
+    ++m_dataChangeTicket;
+    m_dataChangeQueued = false;
+    m_dirtyRanges.clear();
+}
+void ItemModelSource::dataChanged(int first, int last) {
+    if (! m_deferDataChanges) {
+        update({ { ItemChange::Update, first, last - first + 1 } }, false);
+        return;
+    }
+    if (first < 0 || last < first) return;
+    if (m_preparing) {
+        // A notification during model reads invalidates the partially prepared projection.
+        ++m_generation;
+        m_resetRequired = true;
+    }
+    auto it = m_dirtyRanges.lowerBound(first);
+    if (it != m_dirtyRanges.begin()) {
+        auto previous = std::prev(it);
+        if (qint64(previous.value()) + 1 >= first) it = previous;
+    }
+    while (it != m_dirtyRanges.end() && it.key() <= qint64(last) + 1) {
+        first = std::min(first, it.key());
+        last  = std::max(last, it.value());
+        it    = m_dirtyRanges.erase(it);
+    }
+    m_dirtyRanges.insert(first, last);
+    if (m_dataChangeQueued) return;
+    m_dataChangeQueued = true;
+    const auto ticket  = ++m_dataChangeTicket;
+    QTimer::singleShot(0, this, [this, ticket] {
+        if (ticket == m_dataChangeTicket) flushDataChanges();
+    });
+}
+void ItemModelSource::flushDataChanges() {
+    if (m_dirtyRanges.isEmpty()) return;
+    const auto ranges = std::exchange(m_dirtyRanges, {});
+    ++m_dataChangeTicket;
+    m_dataChangeQueued = false;
+    QVector<ItemChange> changes;
+    changes.reserve(ranges.size());
+    for (auto it = ranges.cbegin(); it != ranges.cend(); ++it)
+        changes.append({ ItemChange::Update, it.key(), it.value() - it.key() + 1 });
+    update(std::move(changes), false);
+}
+
 void ItemModelSource::update(QVector<ItemChange> changes, bool reset) {
+    if (reset) cancelDataChanges();
     if (reset) m_requestedCount.reset();
     const auto                   generation = ++m_generation;
     QPointer<ItemModelSource>    guard(this);
-    QPointer<QAbstractItemModel> model = m_model;
+    const bool                   preparing   = std::exchange(m_preparing, true);
+    const auto                   preparation = qScopeGuard([guard, preparing] {
+        if (guard) guard->m_preparing = preparing;
+    });
+    QPointer<QAbstractItemModel> model       = m_model;
     if (! model) {
         m_rows.clear();
         m_resetRequired = false;
