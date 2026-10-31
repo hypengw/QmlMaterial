@@ -12,22 +12,31 @@ MD.BackdropSurfaceBase {
     readonly property bool supported: GraphicsInfo.api !== GraphicsInfo.Software && GraphicsInfo.api !== GraphicsInfo.Unknown
     readonly property bool effectAvailable: captureEnabled && supported && effect.status === Loader.Ready
 
-    Rectangle {
+    Item {
+        id: composition
         anchors.fill: parent
-        radius: root.radius
-        color: root.fallbackColor
-    }
-    Loader {
-        id: effect
-        anchors.fill: parent
-        active: root.captureEnabled && root.supported
-        source: Qt.resolvedUrl("BackdropEffect.qml")
-        onLoaded: item.surface = root
-    }
-    Rectangle {
-        anchors.fill: parent
-        radius: root.radius
-        color: root.tint
-        visible: root.effectAvailable
+        layer.enabled: root.effectAvailable && root.radius > 0
+        layer.effect: MD.RoundClip {
+            radius: root.radius
+            size: Qt.vector2d(composition.width, composition.height)
+        }
+        Rectangle {
+            anchors.fill: parent
+            radius: root.radius
+            color: root.fallbackColor
+            visible: !root.effectAvailable
+        }
+        Loader {
+            id: effect
+            anchors.fill: parent
+            active: root.captureEnabled && root.supported
+            source: Qt.resolvedUrl("BackdropEffect.qml")
+            onLoaded: item.surface = root
+        }
+        Rectangle {
+            anchors.fill: parent
+            color: root.tint
+            visible: root.effectAvailable
+        }
     }
 }

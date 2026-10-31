@@ -7,6 +7,7 @@ Item {
     id: root
     property MD.BackdropSurface surface
     readonly property real padding: surface?.capturePadding ?? 0
+    clip: true
     ShaderEffectSource {
         id: capture
         width: root.width + 2 * root.padding
@@ -19,23 +20,6 @@ Item {
         recursive: false
         live: true
     }
-    Item {
-        id: mask
-        width: capture.width
-        height: capture.height
-        visible: false
-        layer.enabled: true
-        layer.textureSize: capture.textureSize
-        Rectangle {
-            x: root.padding
-            y: root.padding
-            width: root.width
-            height: root.height
-            radius: root.surface?.radius ?? 0
-            color: "white"
-            antialiasing: true
-        }
-    }
     MultiEffect {
         x: -root.padding
         y: -root.padding
@@ -46,7 +30,5 @@ Item {
         blurEnabled: true
         blurMax: 32
         blur: root.surface?.blur ?? 0
-        maskEnabled: true
-        maskSource: mask
     }
 }

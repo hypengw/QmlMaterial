@@ -109,6 +109,7 @@ set(QM_TEST_SOURCES
   view/lazy_list.cpp
   view/lazy_list_scroll_bar.cpp
   visual/backdrop_surface.cpp
+  control/image_color_picker.cpp
   visual/visual_blur_mask.cpp)
 
 add_executable(qm_tests main.cpp ${QM_TEST_SOURCES})

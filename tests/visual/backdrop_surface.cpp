@@ -50,6 +50,7 @@ Window {
         QTRY_VERIFY(surface->property("effectAvailable").toBool());
         QCOMPARE(surface->captureRect(), QRectF(28, 108, 344, 144));
         const auto dpr = window->effectiveDevicePixelRatio();
+        qInfo() << "backdrop capture DPR" << dpr;
         QCOMPARE(surface->captureSize(), QSize(qCeil(172 * dpr), qCeil(72 * dpr)));
         auto sample = [&](int x, int y) {
             const auto image = window->grabWindow();
@@ -60,6 +61,13 @@ Window {
         };
         QTRY_VERIFY(sample(90, 180).red() > 240 && sample(90, 180).green() < 10);
         QCOMPARE(sample(200, 180), QColor(Qt::white));
+        const auto rounded = window->grabWindow();
+        QVERIFY(!rounded.isNull());
+        const auto scale = qreal(rounded.width()) / window->width();
+        for (int y = qFloor(140 * scale); y < qCeil(168 * scale); ++y)
+            for (int x = qFloor(60 * scale); x < qCeil(88 * scale); ++x)
+                QVERIFY2(rounded.pixelColor(x, y).green() < 8,
+                         "fallback color leaked through the rounded edge");
         auto* stripe = root->findChild<QQuickItem*>("stripe");
         stripe->setVisible(true);
         surface->setProperty("blur", 1.0);

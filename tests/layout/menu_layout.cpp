@@ -10,12 +10,14 @@
 #include <QQuickItem>
 #include <QQuickWindow>
 #include <QRegularExpression>
+#include <QScopeGuard>
 #include <QStandardItemModel>
 #include <QtTest>
 #include <algorithm>
 #include <memory>
 
 #include "qml_material/control/icon_spec.hpp"
+#include "qml_material/control/menu.hpp"
 #include "qml_material/layout/layout_container.hpp"
 
 namespace
@@ -72,6 +74,103 @@ private slots:
         m_engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));
         m_window.setGeometry(0, 0, 800, 600);
         m_window.create();
+    }
+
+    void popupUsesLocalPalette_data() {
+        QTest::addColumn<QString>("type");
+        QTest::newRow("menu") << QStringLiteral("Menu");
+        QTest::newRow("popup") << QStringLiteral("Popup");
+    }
+
+    void popupUsesLocalPalette() {
+        QFETCH(QString, type);
+        QQmlComponent component(&m_engine);
+        component.setData(QStringLiteral(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            Item {
+                id: root
+                width: 500; height: 400
+                property bool useLocal: true
+                property int localMode: MD.Enum.Dark
+                readonly property int lightMode: MD.Enum.Light
+                property int savedMode
+                property bool savedSystem
+                readonly property color expectedSurface: MD.MProp.color.surface_container
+                readonly property color expectedText: MD.MProp.color.on_surface
+                readonly property color expectedSupport: MD.MProp.color.on_surface_variant
+                MD.MProp.color: useLocal ? localColors : MD.Token.color
+                MD.MdColorMgr {
+                    id: localColors
+                    useSysColorSM: false
+                    accentColor: '#d05080'
+                    mode: root.localMode
+                }
+                function setupGlobal() {
+                    savedMode = MD.Token.themeMode;
+                    savedSystem = MD.Token.color.useSysColorSM;
+                    MD.Token.color.useSysColorSM = false;
+                    MD.Token.themeMode = MD.Enum.Light;
+                }
+                function restoreGlobal() {
+                    MD.Token.themeMode = savedMode;
+                    MD.Token.color.useSysColorSM = savedSystem;
+                }
+                Item { id: anchor; x: 20; y: 20; width: 48; height: 48 }
+                function launch() {
+                    return MD.Util.showPopup(source, { anchorItem: anchor }, anchor, false);
+                }
+                Component {
+                    id: source
+                    MD.%1 {
+                        width: 200
+                        enter: null; exit: null
+                        MD.MenuItem { objectName: 'row'; text: 'Track'; icon.name: MD.Token.icon.play_arrow }
+                        MD.Menu {
+                            objectName: 'submenu'; title: 'Copy'
+                            enter: null; exit: null
+                            MD.MenuItem { objectName: 'copyRow'; text: 'Title' }
+                        }
+                    }
+                }
+            }
+        )").arg(type).toUtf8(), QUrl(QStringLiteral("qrc:/tests/popup-local-palette.qml")));
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* root = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(root);
+        root->setParentItem(m_window.contentItem());
+        QVERIFY(QMetaObject::invokeMethod(root, "setupGlobal"));
+        const auto restore = qScopeGuard([&] { QMetaObject::invokeMethod(root, "restoreGlobal"); });
+        QVariant launched;
+        QVERIFY(QMetaObject::invokeMethod(root, "launch", Q_RETURN_ARG(QVariant, launched)));
+        auto* popup = qobject_cast<qml_material::Popup*>(launched.value<QObject*>());
+        QVERIFY(popup);
+        popup->open();
+        QTRY_VERIFY(popup->isVisible());
+        auto* row = popup->findChild<QQuickItem*>(QStringLiteral("row"));
+        auto* submenu = popup->findChild<qml_material::Menu*>(QStringLiteral("submenu"));
+        QVERIFY(row && submenu);
+        auto matches = [&](qml_material::Popup* item) {
+            auto* state = item->property("mdState").value<QObject*>();
+            return state && item->background()->property("color") == root->property("expectedSurface") &&
+                   state->property("textColor") == root->property("expectedText") &&
+                   state->property("supportTextColor") == root->property("expectedSupport");
+        };
+        QTRY_COMPARE(popup->background()->property("color"), root->property("expectedSurface"));
+        QVERIFY(matches(popup));
+        QCOMPARE(row->property("leadingIconColor"), root->property("expectedText"));
+        if (auto* menu = qobject_cast<qml_material::Menu*>(popup)) {
+            menu->openSubMenu(submenu, menu->itemAt(1));
+            QTRY_VERIFY(submenu->isVisible());
+            QTRY_VERIFY(matches(submenu));
+        }
+        root->setProperty("localMode", root->property("lightMode"));
+        QTRY_VERIFY(matches(popup));
+        root->setProperty("useLocal", false);
+        QTRY_VERIFY(matches(popup));
+        if (submenu->isVisible()) QTRY_VERIFY(matches(submenu));
+        popup->close();
     }
 
     void menuItemBusyReplacesIcon() {

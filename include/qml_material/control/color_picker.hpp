@@ -1,5 +1,6 @@
 #pragma once
 
+#include "qml_material/export.hpp"
 #include <QtQml/QQmlEngine>
 #include <QtGui/QImage>
 #include <QtCore/QRunnable>
@@ -17,7 +18,7 @@ public:
     QImage image;
 };
 
-class ColorPicker : public QObject {
+class QML_MATERIAL_API ColorPicker : public QObject {
     Q_OBJECT
     QML_NAMED_ELEMENT(ImageColorPicker)
 
@@ -30,6 +31,7 @@ public:
 
     auto image() const -> QImage;
     void setImage(QImage);
+    Q_INVOKABLE void clearImage();
 
     auto color() const noexcept -> QColor;
     void setColor(QColor);
@@ -37,10 +39,12 @@ public:
     Q_SIGNAL void pick();
     Q_SIGNAL void imageChanged();
     Q_SIGNAL void colorChanged();
+    Q_SIGNAL void picked();
 
 private:
     QImage m_image;
     QColor m_color;
+    quint64 m_revision {};
 };
 
 } // namespace qml_material

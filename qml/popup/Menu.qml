@@ -217,7 +217,7 @@ MD.MenuBase {
     }
 
     MD.Overlay.modal: Rectangle {
-        color: MD.Util.transparent(MD.Token.color.scrim, 0.32)
+        color: MD.Util.transparent(control.MD.MProp.color.scrim, 0.32)
         Behavior on opacity {
             NumberAnimation {
                 duration: MD.Token.duration.short3
@@ -227,7 +227,7 @@ MD.MenuBase {
     }
 
     MD.Overlay.modeless: Rectangle {
-        color: MD.Util.transparent(MD.Token.color.scrim, 0.32)
+        color: MD.Util.transparent(control.MD.MProp.color.scrim, 0.32)
         Behavior on opacity {
             NumberAnimation {
                 duration: MD.Token.duration.short3
@@ -241,8 +241,8 @@ MD.MenuBase {
 
         target: control
         elevation: MD.Token.elevation.level2
-        textColor: MD.Token.color.on_surface
-        backgroundColor: MD.Token.color.surface_container
-        supportTextColor: MD.Token.color.on_surface_variant
+        textColor: control.MD.MProp.color.on_surface
+        backgroundColor: control.MD.MProp.color.surface_container
+        supportTextColor: control.MD.MProp.color.on_surface_variant
     }
 }

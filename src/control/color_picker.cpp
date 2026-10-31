@@ -178,14 +178,20 @@ void ColorPickerRunnable::run() {
 
 ColorPicker::ColorPicker(QObject* parent): QObject(parent) {
     connect(this, &ColorPicker::pick, [this] {
+        const auto revision = ++m_revision;
 #if QT_CONFIG(thread)
         auto pick = new ColorPickerRunnable();
         pick->setAutoDelete(true);
         pick->image = m_image;
-        connect(pick, &ColorPickerRunnable::finished, this, &ColorPicker::setColor);
+        connect(pick, &ColorPickerRunnable::finished, this, [this, revision](QColor color) {
+            if (revision != m_revision) return;
+            setColor(color);
+            if (revision == m_revision) picked();
+        });
         QThreadPool::globalInstance()->start(pick);
 #else
         setColor(extractCoolDominantColor(m_image));
+        if (revision == m_revision) picked();
 #endif
     });
 }
@@ -199,8 +205,10 @@ void ColorPicker::setColor(QColor c) {
     }
 }
 auto ColorPicker::image() const -> QImage { return m_image; }
+void ColorPicker::clearImage() { setImage({}); }
 void ColorPicker::setImage(QImage img) {
     if (m_image != img) {
+        ++m_revision;
         m_image = img;
         imageChanged();
     }
