@@ -81,6 +81,14 @@ QVariant ItemSnapshot::valueAt(int index) const {
     if (auto row = m_rows->rowAt(index)) return row->value;
     return m_data->valueAt(index);
 }
+bool ItemSnapshot::sharesValueAt(int index, const ItemSnapshot& other, int otherIndex) const {
+    if (index < 0 || index >= count() || otherIndex < 0 || otherIndex >= other.count())
+        return false;
+    const auto row      = m_rows->rowAt(index);
+    const auto previous = other.m_rows->rowAt(otherIndex);
+    if (row || previous) return row && row == previous;
+    return m_data == other.m_data && index == otherIndex;
+}
 ItemRecord ItemSnapshot::recordAt(int index) const {
     const auto& descriptor = descriptorAt(index);
     return { descriptor.key, descriptor.reuseType, valueAt(index), descriptor.contentRevision };

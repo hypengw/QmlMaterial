@@ -27,7 +27,7 @@ public:
         PersistentIndexKey
     };
     Q_ENUM(KeyMode)
-    using ItemSource::ItemSource;
+    explicit ItemModelSource(QObject* parent = nullptr);
     KeyMode          keyMode() const { return m_keyMode; }
     void             setKeyMode(KeyMode);
     Q_INVOKABLE bool setRole(const QString& key, const QString& role, const QVariant& value);
@@ -55,6 +55,7 @@ public:
     Q_SIGNAL void    rolesChanged();
 
 private:
+    void                           refreshObjects(const ItemChangeSet&);
     void                           dataChanged(int first, int last);
     void                           cancelDataChanges();
     void                           update(QVector<ItemChange> changes = {}, bool reset = true);

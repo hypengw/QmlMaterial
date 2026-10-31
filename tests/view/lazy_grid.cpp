@@ -296,6 +296,111 @@ private slots:
         QCOMPARE(reused->usage(), LazyRow::Visible);
         QCOMPARE(reused->view(), &s.view);
     }
+    void rowBindingsAfterScrollReuse_data() {
+        QTest::addColumn<qreal>("cacheExtent");
+        QTest::newRow("near-cache") << qreal(80);
+        QTest::newRow("default-cache") << qreal(300);
+    }
+    void rowBindingsAfterScrollReuse() {
+        QFETCH(qreal, cacheExtent);
+        Scene s(240);
+        s.engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));
+        QQmlComponent delegate(&s.engine);
+        delegate.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            Item {
+                required property MD.LazyRow row
+                readonly property int mode: !row.active || row.usage === MD.LazyRow.Pooled
+                    ? 2 : row.usage === MD.LazyRow.Cached ? 1 : 0
+                readonly property Item scope: row.view
+                readonly property string observedKey: row.key
+                readonly property string title: row.value.title
+            }
+        )",
+                         {});
+        QVERIFY2(delegate.isReady(), qPrintable(delegate.errorString()));
+        s.view.setSize({ 600, 80 });
+        s.view.setCacheExtent(cacheExtent);
+        s.view.setPoolLimit(16);
+        s.view.setDelegate(&delegate);
+        frames(s.render);
+        QCOMPARE(s.view.slotCount(), 6);
+        QString    firstTitle("0");
+        const auto firstRowError = [&]() -> QString {
+            for (int index = 0; index < 6; ++index) {
+                const auto key  = QString::number(index);
+                auto*      item = s.item(key);
+                if (! item) return QStringLiteral("Missing first-row item %1").arg(index);
+                auto* row = item->property("row").value<LazyRow*>();
+                if (! row || ! row->active() || row->usage() != LazyRow::Visible ||
+                    row->view() != &s.view || item->property("mode").toInt() != 0 ||
+                    item->property("scope").value<QQuickItem*>() != &s.view ||
+                    item->property("observedKey").toString() != key ||
+                    item->property("title").toString() != (index == 0 ? firstTitle : key) ||
+                    ! item->isVisible() || ! item->parentItem() ||
+                    ! item->parentItem()->isVisible() || item->width() != 100 ||
+                    item->height() != 40)
+                    return QStringLiteral("First-row bindings or visibility differ at %1")
+                        .arg(index);
+            }
+            return {};
+        };
+        auto error = firstRowError();
+        QVERIFY2(error.isEmpty(), qPrintable(error));
+        QPointer<QQuickItem> first = s.item("0");
+        s.view.setContentY(40);
+        frames(s.render);
+        QVERIFY(first);
+        QCOMPARE(s.item("0"), first.data());
+        QCOMPARE(first->property("mode").toInt(), 1);
+        QCOMPARE(first->property("scope").value<QQuickItem*>(), &s.view);
+        QVERIFY(s.view.positionAtKey("0"));
+        frames(s.render);
+        QCOMPARE(s.item("0"), first.data());
+        error = firstRowError();
+        QVERIFY2(error.isEmpty(), qPrintable(error));
+
+        auto values = rows(240);
+        auto value  = values[0].toMap();
+        firstTitle  = QStringLiteral("visible-update");
+        value.insert("title", firstTitle);
+        values[0] = value;
+        s.source.setItems(values);
+        frames(s.render);
+        QCOMPARE(s.item("0"), first.data());
+        error = firstRowError();
+        QVERIFY2(error.isEmpty(), qPrintable(error));
+
+        int     pooled = 0, reused = 0;
+        QObject notifications;
+        for (int index = 0; index < 240; ++index) {
+            auto* item = s.item(QString::number(index));
+            if (! item) continue;
+            auto* row = item->property("row").value<LazyRow*>();
+            connect(row, &LazyRow::pooled, &notifications, [&] {
+                ++pooled;
+            });
+            connect(row, &LazyRow::reused, &notifications, [&] {
+                ++reused;
+            });
+        }
+        QVERIFY(s.view.positionAtKey("120"));
+        frames(s.render);
+        QVERIFY(! s.item("0"));
+        QVERIFY(pooled >= 6);
+        QVERIFY(reused > 0);
+        firstTitle = QStringLiteral("pooled-update");
+        value.insert("title", firstTitle);
+        values[0] = value;
+        s.source.setItems(values);
+        frames(s.render);
+        QVERIFY(s.view.positionAtKey("0"));
+        frames(s.render);
+        error = firstRowError();
+        QVERIFY2(error.isEmpty(), qPrintable(error));
+        QVERIFY(s.view.errorString().isEmpty());
+    }
     void usageCallbackReentry() {
         Scene s(100);
         s.view.setSize({ 300, 80 });

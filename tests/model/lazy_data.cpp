@@ -99,6 +99,159 @@ private Q_SLOTS:
         QVERIFY(! row->active());
         QCOMPARE(pooled.size(), 2);
     }
+    void rowContentNotifications() {
+        class Data : public ItemDataSnapshot {
+        public:
+            mutable int    reads = 0;
+            int            count() const override { return 3; }
+            ItemDescriptor descriptorAt(int index) const override {
+                return { QString::number(index), {}, 1 };
+            }
+            std::optional<int> indexOfKey(const QString& key) const override {
+                bool      ok    = false;
+                const int index = key.toInt(&ok);
+                return ok && index >= 0 && index < count() ? std::optional(index) : std::nullopt;
+            }
+            QVariant valueAt(int index) const override {
+                ++reads;
+                return index;
+            }
+        };
+        class Source : public ItemSource {
+        public:
+            using ItemSource::publish;
+            using ItemSource::publishValues;
+        } source;
+        auto data = std::make_shared<Data>();
+        QVERIFY(source.publish(data));
+        QQmlEngine    engine;
+        QQmlComponent component(&engine);
+        component.setData("import QtQuick\nItem { required property QtObject row }", QUrl());
+        QVERIFY(component.isReady());
+        DelegateRecycler recycler(&engine);
+        auto             item = recycler.acquire(&component, source.snapshot(), 0);
+        QVERIFY(item);
+        auto       row = recycler.row(item);
+        QSignalSpy value(row, &LazyRow::valueChanged), index(row, &LazyRow::indexChanged);
+        QSignalSpy key(row, &LazyRow::keyChanged), revision(row, &LazyRow::revisionChanged);
+        QSignalSpy content(row, &LazyRow::contentRevisionChanged), changed(row, &LazyRow::changed);
+        QCOMPARE(data->reads, 1);
+        QVERIFY(source.publishValues({ { 2, 20 } }));
+        QVERIFY(recycler.rebind(item, source.snapshot(), 0));
+        QCOMPARE(data->reads, 1);
+        QCOMPARE(value.size(), 0);
+        QCOMPARE(index.size(), 0);
+        QCOMPARE(key.size(), 0);
+        QCOMPARE(content.size(), 0);
+        QCOMPARE(revision.size(), 1);
+        QCOMPARE(changed.size(), 1);
+        QCOMPARE(row->revision(), source.revision());
+        QVERIFY(source.publishValues({ { 0, 0 } }));
+        QVERIFY(recycler.rebind(item, source.snapshot(), 0));
+        QCOMPARE(value.size(), 1);
+        QCOMPARE(content.size(), 1);
+        QCOMPARE(revision.size(), 2);
+        auto before = source.snapshot();
+        QVERIFY(source.publish(makeItemDataSnapshot(
+            { before->recordAt(1), before->recordAt(0), before->recordAt(2) }, true, before)));
+        QVERIFY(recycler.rebind(item, source.snapshot(), 1));
+        QCOMPARE(value.size(), 1);
+        QCOMPARE(index.size(), 1);
+        QCOMPARE(key.size(), 0);
+        QCOMPARE(content.size(), 1);
+        QCOMPARE(revision.size(), 3);
+        QCOMPARE(row->index(), 1);
+        QCOMPARE(row->value().toInt(), 0);
+        QCOMPARE(row->revision(), source.revision());
+    }
+    void rowFieldNotificationDestruction() {
+        ListSnapshotSource source;
+        source.setKeyRole("id");
+        source.setItems({ QVariantMap { { "id", "a" }, { "text", "before" } } });
+        QQmlEngine    engine;
+        QQmlComponent component(&engine);
+        component.setData("import QtQuick\nItem { required property QtObject row }", QUrl());
+        QVERIFY(component.isReady());
+        DelegateRecycler recycler(&engine);
+        auto             item = recycler.acquire(&component, source.snapshot(), 0);
+        QVERIFY(item);
+        QPointer<QQuickItem> tracked(item);
+        connect(recycler.row(item), &LazyRow::revisionChanged, &recycler, [&] {
+            recycler.clear();
+        });
+        source.setItems({ QVariantMap { { "id", "a" }, { "text", "after" } } });
+        QVERIFY(! recycler.rebind(item, source.snapshot(), 0));
+        QVERIFY(! tracked);
+    }
+    void rowValueStorageLifetime() {
+        class Data : public ItemDataSnapshot {
+        public:
+            QString     value;
+            mutable int reads = 0;
+            explicit Data(QString text): value(std::move(text)) {}
+            int                count() const override { return 1; }
+            ItemDescriptor     descriptorAt(int) const override { return { "a", {}, 1 }; }
+            std::optional<int> indexOfKey(const QString& key) const override {
+                return key == "a" ? std::optional(0) : std::nullopt;
+            }
+            QVariant valueAt(int) const override {
+                ++reads;
+                return QVariant::fromValue(QStringView(value));
+            }
+        };
+        class Source : public ItemSource {
+        public:
+            using ItemSource::publish;
+        } source;
+        auto first = std::make_shared<Data>(QString::fromUtf8("content"));
+        QVERIFY(source.publish(first));
+        QQmlEngine    engine;
+        QQmlComponent component(&engine);
+        component.setData("import QtQuick\nItem { required property QtObject row }", QUrl());
+        QVERIFY(component.isReady());
+        DelegateRecycler recycler(&engine);
+        auto             item = recycler.acquire(&component, source.snapshot(), 0);
+        QVERIFY(item);
+        auto       row = recycler.row(item);
+        QSignalSpy changed(row, &LazyRow::valueChanged);
+        auto       second = std::make_shared<Data>(QString::fromUtf8("content"));
+        QVERIFY(first->value.constData() != second->value.constData());
+        auto previous = source.snapshot();
+        QVERIFY(source.publish(second));
+        QVERIFY(! source.snapshot()->sharesValueAt(0, *previous, 0));
+        QVERIFY(recycler.rebind(item, source.snapshot(), 0));
+        QCOMPARE(second->reads, 1);
+        QCOMPARE(changed.size(), 0);
+        std::weak_ptr<Data> obsolete = first;
+        previous.reset();
+        first.reset();
+        QVERIFY(obsolete.expired());
+        QCOMPARE(row->value().value<QStringView>().data(), second->value.constData());
+        QCOMPARE(row->value().value<QStringView>().toString(), "content");
+    }
+    void roleObjectsObserveCommittedValues() {
+        Rows            model;
+        ItemModelSource source;
+        source.setKeyMode(ItemModelSource::PersistentIndexKey);
+        source.setModel(&model);
+        const auto a       = source.snapshot()->descriptorAt(0).key;
+        const auto b       = source.snapshot()->descriptorAt(1).key;
+        auto       first   = source.objectForKey(a);
+        auto       second  = source.objectForKey(b);
+        int        commits = 0;
+        connect(&source, &ItemSource::committed, &source, [&](const ItemChangeSet& change) {
+            ++commits;
+            QCOMPARE(first->value("id"),
+                     change.after->valueAt(change.after->indexOfKey(a)).toMap().value("id"));
+            QCOMPARE(second->value("id"),
+                     change.after->valueAt(change.after->indexOfKey(b)).toMap().value("id"));
+            if (commits == 1) QVERIFY(source.setRole(b, "id", "nested"));
+        });
+        model.change(0, "changed");
+        QCOMPARE(commits, 2);
+        QCOMPARE(first->value("id").toString(), "changed");
+        QCOMPARE(second->value("id").toString(), "nested");
+    }
     void pooledChildInputState() {
         QQmlEngine   engine;
         QQuickWindow window;

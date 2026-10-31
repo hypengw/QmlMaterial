@@ -79,6 +79,10 @@ private Q_SLOTS:
         QCOMPARE(data->indexes, 0);
         QCOMPARE(source.count(), 100000);
         QCOMPARE(&source.snapshot()->descriptorAt(500), unchanged);
+        QVERIFY(source.snapshot()->sharesValueAt(500, *before, 500));
+        QVERIFY(! source.snapshot()->sharesValueAt(3, *before, 3));
+        QVERIFY(! source.snapshot()->sharesValueAt(500, *before, 501));
+        QVERIFY(! source.snapshot()->sharesValueAt(-1, *before, 0));
         QCOMPARE(source.valueAt(3).value<TypedRow>().title, "first");
         QCOMPARE(source.snapshot()->descriptorAt(127).reuseType, "alternate");
         QCOMPARE(source.snapshot()->descriptorAt(3).reuseType, "track");
@@ -92,6 +96,8 @@ private Q_SLOTS:
         const auto* first = &source.snapshot()->descriptorAt(3);
         QVERIFY(source.publishValues({ { 128, QVariant::fromValue(TypedRow { "new" }) } }));
         QCOMPARE(&source.snapshot()->descriptorAt(3), first);
+        QVERIFY(source.snapshot()->sharesValueAt(3, *change.after, 3));
+        QVERIFY(! source.snapshot()->sharesValueAt(128, *change.after, 128));
         QCOMPARE(change.after->valueAt(128).value<TypedRow>().title, "b");
         QCOMPARE(source.valueAt(128).value<TypedRow>().title, "new");
     }

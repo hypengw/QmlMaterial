@@ -32,6 +32,42 @@ private:
     QString                   m_key;
 };
 } // namespace
+ItemModelSource::ItemModelSource(QObject* parent): ItemSource(parent) {
+    connect(this, &ItemSource::committed, this, &ItemModelSource::refreshObjects);
+}
+void ItemModelSource::refreshObjects(const ItemChangeSet& change) {
+    if (m_objects.isEmpty()) return;
+    QPointer<ItemModelSource> guard(this);
+    const auto                refresh = [&](const QString& key, int index) {
+        const int old = change.before->indexOfKey(key);
+        if (old >= 0 && change.before->descriptorAt(old) == change.after->descriptorAt(index))
+            return;
+        const auto object = m_objects.value(key);
+        if (object)
+            static_cast<ModelRoleObject*>(object.data())
+                ->refresh(change.after->valueAt(index).toMap());
+    };
+    const bool valuesOnly =
+        ! change.reset &&
+        std::all_of(change.changes.cbegin(), change.changes.cend(), [](const auto& item) {
+            return item.kind == ItemChange::Update;
+        });
+    if (valuesOnly) {
+        for (const auto& item : change.changes) {
+            for (int index = item.index; index < item.index + item.count; ++index) {
+                refresh(change.after->descriptorAt(index).key, index);
+                if (! guard) return;
+            }
+        }
+    } else {
+        const auto keys = m_objects.keys();
+        for (const auto& key : keys) {
+            const int index = change.after->indexOfKey(key);
+            if (index >= 0) refresh(key, index);
+            if (! guard) return;
+        }
+    }
+}
 void ItemModelSource::setKeyMode(KeyMode mode) {
     if (m_keyMode == mode) return;
     m_keyMode = mode;
@@ -69,10 +105,6 @@ QQmlPropertyMap* ItemModelSource::objectForKey(const QString& key) {
     m_objects.insert(key, object);
     object->refresh(valueAt(row).toMap());
     if (! guard || ! object) return nullptr;
-    connect(this, &ItemSource::stateChanged, object, [this, object, key] {
-        const int index = indexOfKey(key);
-        if (index >= 0) object->refresh(valueAt(index).toMap());
-    });
     return object;
 }
 

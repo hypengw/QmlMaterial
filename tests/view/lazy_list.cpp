@@ -156,6 +156,8 @@ private slots:
                 id: root
                 width: 300; height: 200
                 property int created: 0
+                property int valueNotifications: 0
+                property int revisionNotifications: 0
                 MD.LazyList {
                     objectName: "view"
                     anchors.fill: parent
@@ -166,6 +168,11 @@ private slots:
                         required property MD.LazyRow row
                         implicitHeight: row.value.extent
                         Component.onCompleted: root.created++
+                        Connections {
+                            target: row
+                            function onValueChanged() { root.valueNotifications++ }
+                            function onRevisionChanged() { root.revisionNotifications++ }
+                        }
                     }
                 }
             }
@@ -183,8 +190,15 @@ private slots:
         QVERIFY(view->positionAtKey("50000"));
         frames(render);
         QCOMPARE(view->firstVisibleIndex(), 50000);
-        const auto               screenY = view->itemRect(50000).y();
-        const int                created = object->property("created").toInt();
+        const auto screenY = view->itemRect(50000).y();
+        const int  created = object->property("created").toInt();
+        object->setProperty("valueNotifications", 0);
+        object->setProperty("revisionNotifications", 0);
+        QVERIFY(source.publishValues({ { 900, QVariantMap { { "extent", 40 } } } }));
+        frames(render);
+        QCOMPARE(object->property("valueNotifications").toInt(), 0);
+        QVERIFY(object->property("revisionNotifications").toInt() > 0);
+        QCOMPARE(object->property("created").toInt(), created);
         QVector<ItemValueUpdate> changes;
         changes.append({ 0, QVariantMap { { "extent", 80 } } });
         changes.append({ 50000, QVariantMap { { "extent", 60 } } });

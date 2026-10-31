@@ -10,11 +10,11 @@ class QML_MATERIAL_API LazyRow : public QObject {
     Q_OBJECT
     QML_ELEMENT
     QML_UNCREATABLE("Rows are supplied by a lazy view")
-    Q_PROPERTY(int index READ index NOTIFY changed FINAL)
-    Q_PROPERTY(QString key READ key NOTIFY changed FINAL)
-    Q_PROPERTY(QVariant value READ value NOTIFY changed FINAL)
-    Q_PROPERTY(quint64 revision READ revision NOTIFY changed FINAL)
-    Q_PROPERTY(quint64 contentRevision READ contentRevision NOTIFY changed FINAL)
+    Q_PROPERTY(int index READ index NOTIFY indexChanged FINAL)
+    Q_PROPERTY(QString key READ key NOTIFY keyChanged FINAL)
+    Q_PROPERTY(QVariant value READ value NOTIFY valueChanged FINAL)
+    Q_PROPERTY(quint64 revision READ revision NOTIFY revisionChanged FINAL)
+    Q_PROPERTY(quint64 contentRevision READ contentRevision NOTIFY contentRevisionChanged FINAL)
     Q_PROPERTY(bool active READ active NOTIFY activeChanged FINAL)
     Q_PROPERTY(Usage usage READ usage NOTIFY usageChanged FINAL)
     Q_PROPERTY(QQuickItem* view READ view NOTIFY viewChanged FINAL)
@@ -38,6 +38,11 @@ public:
     quint64       contentRevision() const { return m_record.contentRevision; }
     bool          active() const { return m_active; }
     Q_SIGNAL void changed();
+    Q_SIGNAL void indexChanged();
+    Q_SIGNAL void keyChanged();
+    Q_SIGNAL void valueChanged();
+    Q_SIGNAL void revisionChanged();
+    Q_SIGNAL void contentRevisionChanged();
     Q_SIGNAL void activeChanged();
     Q_SIGNAL void pooled();
     Q_SIGNAL void reused();

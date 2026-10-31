@@ -5,22 +5,42 @@ namespace qml_material
 {
 void LazyRow::bind(const ItemSnapshotPtr& snapshot, int index) {
     if (! snapshot || index < 0 || index >= snapshot->count()) return;
-    const auto generation   = ++m_generation;
-    const bool activating   = ! m_active;
-    const auto record       = snapshot->recordAt(index);
-    const bool changedUsage = ! m_active || m_record.key != record.key ||
-                              m_record.contentRevision != record.contentRevision;
-    const bool changedView  = changedUsage && m_view;
+    const auto  generation             = ++m_generation;
+    const bool  activating             = ! m_active;
+    const auto& descriptor             = snapshot->descriptorAt(index);
+    const bool  sameContent            = m_snapshot && m_record.key == descriptor.key &&
+                                         m_record.reuseType == descriptor.reuseType &&
+                                         m_record.contentRevision == descriptor.contentRevision;
+    const bool  changedKey             = m_record.key != descriptor.key;
+    const bool  changedIndex           = m_index != index;
+    const bool  changedRevision        = m_revision != snapshot->revision;
+    const bool  changedContentRevision = m_record.contentRevision != descriptor.contentRevision;
+    const bool  changedUsage           = ! m_active || ! sameContent;
+    const bool  changedView            = changedUsage && m_view;
+    const bool  reuseValue = sameContent && snapshot->sharesValueAt(index, *m_snapshot, m_index);
     if (changedUsage) {
         m_usage = Cached;
         m_view  = nullptr;
     }
     m_snapshot = snapshot;
-    m_record   = record;
+    if (! reuseValue) m_record = snapshot->recordAt(index);
     m_index    = index;
     m_revision = snapshot->revision;
     m_active   = true;
     QPointer<LazyRow> guard(this);
+    const auto        current = [&] {
+        return guard && m_generation == generation;
+    };
+    if (changedKey) Q_EMIT keyChanged();
+    if (! current()) return;
+    if (changedIndex) Q_EMIT indexChanged();
+    if (! current()) return;
+    if (changedContentRevision) Q_EMIT contentRevisionChanged();
+    if (! current()) return;
+    if (changedRevision) Q_EMIT revisionChanged();
+    if (! current()) return;
+    if (! sameContent) Q_EMIT valueChanged();
+    if (! current()) return;
     Q_EMIT changed();
     if (guard && m_generation == generation && changedUsage) Q_EMIT usageChanged();
     if (guard && m_generation == generation && changedView) Q_EMIT viewChanged();

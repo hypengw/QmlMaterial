@@ -59,7 +59,9 @@ public:
     const ItemDescriptor& descriptorAt(int index) const;
     int                   indexOfKey(const QString& key) const;
     QVariant              valueAt(int index) const;
-    ItemRecord            recordAt(int index) const;
+    // Whether both snapshots retain the same immutable value storage.
+    bool       sharesValueAt(int index, const ItemSnapshot&, int otherIndex) const;
+    ItemRecord recordAt(int index) const;
 
 private:
     friend class ItemSource;
