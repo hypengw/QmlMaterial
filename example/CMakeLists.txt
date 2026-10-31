@@ -32,6 +32,7 @@ qt_add_resources(
   compositions/FilePickers.qml
   Shape.qml
   ShapeEffects.qml
+  Masonry.qml
   Example.qml
   Typography.qml
   About.qml

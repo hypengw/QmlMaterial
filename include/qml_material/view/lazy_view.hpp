@@ -24,6 +24,7 @@ class QML_MATERIAL_API LazyView : public Flickable {
     Q_PROPERTY(int count READ count NOTIFY layoutChanged FINAL)
     Q_PROPERTY(int firstVisibleIndex READ firstVisibleIndex NOTIFY layoutChanged FINAL)
     Q_PROPERTY(int lastVisibleIndex READ lastVisibleIndex NOTIFY layoutChanged FINAL)
+    Q_PROPERTY(int anchorIndex READ anchorIndex NOTIFY layoutChanged FINAL)
     Q_PROPERTY(int liveCount READ liveCount NOTIFY layoutChanged FINAL)
     Q_PROPERTY(bool estimatedContentWidth READ estimatedContentWidth NOTIFY layoutChanged FINAL)
     Q_PROPERTY(bool estimatedContentHeight READ estimatedContentHeight NOTIFY layoutChanged FINAL)
@@ -54,6 +55,7 @@ public:
     int                 count() const;
     int                 firstVisibleIndex() const;
     int                 lastVisibleIndex() const;
+    int                 anchorIndex() const;
     int                 liveCount() const;
     bool                estimatedContentHeight() const;
     bool                estimatedContentWidth() const;

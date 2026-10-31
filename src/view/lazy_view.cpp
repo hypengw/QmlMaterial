@@ -80,8 +80,12 @@ int            LazyView::poolLimit() const { return d->pool; }
 int            LazyView::count() const { return d->pending->count(); }
 int            LazyView::firstVisibleIndex() const { return d->first; }
 int            LazyView::lastVisibleIndex() const { return d->last; }
-int            LazyView::liveCount() const { return d->live.size(); }
-bool           LazyView::estimatedContentHeight() const {
+int            LazyView::anchorIndex() const {
+    if (d->layout->snapshot() != d->pending || ! d->pending->count()) return -1;
+    return d->layout->indexAt(d->orientation == Qt::Vertical ? contentY() : contentX());
+}
+int  LazyView::liveCount() const { return d->live.size(); }
+bool LazyView::estimatedContentHeight() const {
     return d->orientation == Qt::Vertical && d->layout->estimated();
 }
 bool LazyView::estimatedContentWidth() const {
@@ -89,7 +93,9 @@ bool LazyView::estimatedContentWidth() const {
 }
 Qt::Orientation LazyView::orientation() const { return d->orientation; }
 void            LazyView::setOrientation(Qt::Orientation value) {
-    if ((value != Qt::Horizontal && value != Qt::Vertical) || d->orientation == value) return;
+    if ((value != Qt::Horizontal && value != Qt::Vertical) || d->orientation == value ||
+        ! d->layout->supportsOrientation(value))
+        return;
     QPointer<LazyView> guard(this);
     d->orientation = value;
     d->layout->setOrientation(value);
@@ -178,6 +184,7 @@ void LazyView::setDelegate(QQmlComponent* value) {
 }
 void LazyView::setCacheExtent(qreal value) {
     if (! std::isfinite(value) || value < 0 || d->cache == value) return;
+    invalidateDemand();
     d->cache = value;
     ++d->generation;
     scheduleLayout();
@@ -445,7 +452,8 @@ void LazyView::updatePolish() {
     for (const auto& key : dirty) {
         const auto item  = state->live.value(key);
         const int  index = snapshot->indexOfKey(key);
-        if (! item || index < 0 || itemCrossSize(item) != crossSize()) continue;
+        if (! item || index < 0 || itemCrossSize(item) != state->layout->rect(index).width())
+            continue;
         const auto row = state->recycler->row(item);
         if (! row || row->revision() != snapshot->revision) continue;
         const auto measured = state->layout->measure(index, itemExtent(item), offset);
@@ -476,17 +484,27 @@ void LazyView::updatePolish() {
     QSet<QString> wanted;
     QVector<int>  indexes;
     if (crossSize() > 0 && primarySize() > 0 && state->delegate && state->delegate->isReady()) {
-        for (int index = start, work = 0;
-             index >= 0 && index < layout.count() && index <= requested.last && work < budget;
-             ++index, ++work) {
-            if (layout.offset(index) > end) break;
-            wanted.insert(snapshot->descriptorAt(index).key);
-            indexes.append(index);
+        if (layout.discreteItems()) {
+            indexes = layout.requestedIndices(offset, primarySize(), state->cache);
+            std::stable_partition(indexes.begin(), indexes.end(), [&](int index) {
+                return layout.offset(index) < offset + primarySize() &&
+                       layout.offset(index) + layout.extent(index) > offset;
+            });
+            for (int index : std::as_const(indexes))
+                wanted.insert(snapshot->descriptorAt(index).key);
+        } else {
+            for (int index = start, work = 0;
+                 index >= 0 && index < layout.count() && index <= requested.last && work < budget;
+                 ++index, ++work) {
+                if (layout.offset(index) > end) break;
+                wanted.insert(snapshot->descriptorAt(index).key);
+                indexes.append(index);
+            }
         }
         if (state->position) {
             const int target = snapshot->indexOfKey(state->position->key);
             if (! wanted.contains(state->position->key)) {
-                if (! layout.fixedItemExtent() && indexes.size() == 256)
+                if (! layout.fixedItemExtent() && ! layout.discreteItems() && indexes.size() == 256)
                     wanted.remove(snapshot->descriptorAt(indexes.takeLast()).key);
                 indexes.prepend(target);
                 wanted.insert(state->position->key);
@@ -509,12 +527,22 @@ void LazyView::updatePolish() {
     state->error = (state->source ? state->source->errorString() : QString());
     if (state->delegate && state->delegate->isError())
         state->error = state->delegate->errorString();
-    bool changedExtent = false;
-    int  processed     = 0;
+    bool changedExtent   = false;
+    int  processed       = 0;
+    int  realizationWork = 0;
+    bool deferred        = false;
     for (const int index : std::as_const(indexes)) {
         const auto& key = snapshot->descriptorAt(index).key;
         if (! wanted.contains(key)) break;
-        QPointer<QQuickItem> item = state->live.value(key);
+        QPointer<QQuickItem> item     = state->live.value(key);
+        const auto           boundRow = state->recycler->row(item);
+        const bool           needsBinding =
+            ! item || ! boundRow || boundRow->revision() != snapshot->revision;
+        if (layout.discreteItems() && realizationWork >= 256 && needsBinding) {
+            deferred = true;
+            continue;
+        }
+        if (needsBinding) ++realizationWork;
         if (item) {
             auto row = state->recycler->row(item);
             if (! row || row->revision() != snapshot->revision || row->index() != index) {
@@ -544,6 +572,7 @@ void LazyView::updatePolish() {
                         horizontal ? &QQuickItem::widthChanged : &QQuickItem::heightChanged,
                         this,
                         [this, key] {
+                            invalidateDemand();
                             d->dirtyMeasurements.insert(key);
                             scheduleLayout();
                         }),
@@ -560,11 +589,13 @@ void LazyView::updatePolish() {
             continue;
         }
         const qreal previousExtent = layout.extent(index);
+        const auto  previousRect   = layout.rect(index);
         const auto  measured       = state->layout->measure(index, itemExtent(item), offset);
         ++processed;
         if (measured.accepted) {
             if (! layout.fixedItemExtent()) {
                 changedExtent |= previousExtent != itemExtent(item);
+                changedExtent |= layout.discreteItems() && previousRect != layout.rect(index);
                 if (previousExtent > 0 && itemExtent(item) == 0) ++state->zeroWork;
             }
             offset = measured.offset;
@@ -616,31 +647,37 @@ void LazyView::updatePolish() {
         if (! current()) return;
     }
     if (! layout.fixedItemExtent() &&
-        (state->zeroWork >= 256 || (processed == 256 && start + processed < layout.count() &&
-                                    layout.offset(start + processed) < end))) {
+        (state->zeroWork >= 256 ||
+         (processed == 256 && start + processed < layout.count() && ! layout.discreteItems() &&
+          layout.offset(start + processed) < end))) {
         state->limitedGeneration = generation;
         state->limitedOffset     = primaryOffset();
         state->error = QStringLiteral("Delegate work limit reached before filling viewport");
-    } else if (changedExtent) {
+    } else if (changedExtent || deferred) {
         scheduleLayout();
     }
     const auto range =
         crossSize() > 0 && primarySize() > 0 && state->delegate && state->delegate->isReady()
             ? layout.demandRange(primaryOffset(), primarySize(), state->cache)
             : ItemRange {};
-    const int  first  = range.first >= 0 ? range.first : 0;
-    const int  length = range.first >= 0 ? range.last - range.first + 1 : 0;
-    const bool atEnd = layout.fixedItemExtent()
-                           ? range.last >= 0 && range.last == layout.count() - 1
-                           : primaryOffset() + primarySize() + state->cache >= layout.totalExtent();
+    const int    first  = range.first >= 0 ? range.first : 0;
+    const int    length = range.first >= 0 ? range.last - range.first + 1 : 0;
+    QVector<int> demandIndices;
+    if (layout.discreteItems() && length > 0) {
+        demandIndices = layout.requestedIndices(primaryOffset(), primarySize(), state->cache);
+        std::sort(demandIndices.begin(), demandIndices.end());
+    }
+    const bool atEnd = layout.reachesEnd(primaryOffset(), primarySize(), state->cache);
     if ((length > 0 || state->demand.snapshot() || state->demandDirty) &&
         (state->demand.snapshot() != snapshot || state->demand.first() != first ||
          state->demand.count() != length || state->demand.reachesEnd() != atEnd ||
+         (layout.discreteItems() && state->demand.indices() != demandIndices) ||
          ! state->demand.valid())) {
         invalidateDemand();
         if (length > 0) {
-            state->demandLifetime    = std::make_shared<const bool>(true);
-            state->demand            = ItemDemand(snapshot, first, length, atEnd);
+            state->demandLifetime = std::make_shared<const bool>(true);
+            state->demand = layout.discreteItems() ? ItemDemand(snapshot, demandIndices, atEnd)
+                                                   : ItemDemand(snapshot, first, length, atEnd);
             state->demand.m_tracked  = true;
             state->demand.m_lifetime = state->demandLifetime;
         }
@@ -658,7 +695,7 @@ void LazyView::updatePolish() {
                       (pixelAligned() ? 1.0 : 0.01);
     }
     if (state->position && (! state->error.isEmpty() ||
-                            (! changedExtent && reached &&
+                            (! changedExtent && ! deferred && reached &&
                              ! (horizontal ? isMovingHorizontally() : isMovingVertically()) &&
                              state->live.value(state->position->key)))) {
         finishPositioning(state->error.isEmpty());

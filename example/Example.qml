@@ -30,6 +30,11 @@ MD.Page {
             name: 'shape',
             source: 'qrc:/Qcm/Material/Example/Shape.qml',
             icon: MD.Token.icon.shapes
+        },
+        {
+            name: 'masonry',
+            source: 'qrc:/Qcm/Material/Example/Masonry.qml',
+            icon: MD.Token.icon.dashboard
         }
     ]
 

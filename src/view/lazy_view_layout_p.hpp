@@ -14,6 +14,7 @@ public:
     virtual ItemSnapshotPtr snapshot() const = 0;
     virtual Result          apply(ItemSnapshotPtr, qreal cross, qreal offset, qreal viewport) = 0;
     virtual void            setOrientation(Qt::Orientation) {}
+    virtual bool            supportsOrientation(Qt::Orientation) const { return true; }
     virtual Result          measure(int index, qreal extent, qreal offset) = 0;
     virtual bool            estimated() const                              = 0;
     virtual bool            fixedItemExtent() const { return false; }
@@ -24,7 +25,16 @@ public:
     virtual qreal           totalExtent() const                        = 0;
     virtual QRectF          rect(int) const                            = 0;
     virtual ItemRange       visibleRange(qreal begin, qreal end) const = 0;
-    virtual ItemRange       requestedRange(qreal offset, qreal viewport, qreal cache) const {
+    virtual bool            discreteItems() const { return false; }
+    virtual QVector<int>    requestedIndices(qreal, qreal, qreal) const { return {}; }
+    virtual bool            reachesEnd(qreal offset, qreal viewport, qreal cache) const {
+        if (fixedItemExtent()) {
+            const auto range = demandRange(offset, viewport, cache);
+            return range.last >= 0 && range.last == count() - 1;
+        }
+        return offset + viewport + cache >= totalExtent();
+    }
+    virtual ItemRange requestedRange(qreal offset, qreal viewport, qreal cache) const {
         // Include zero-sized delegates so measurement can advance past them.
         return { indexAt(std::max(qreal(0), offset - cache)), count() - 1 };
     }

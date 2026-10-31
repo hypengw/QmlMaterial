@@ -444,6 +444,10 @@ set(SOURCES
     include/qml_material/view/lazy_view.hpp
     src/view/lazy_grid.cpp
     include/qml_material/view/lazy_grid.hpp
+    src/view/lazy_masonry_grid.cpp
+    include/qml_material/view/lazy_masonry_grid.hpp
+    src/view/masonry_layout_p.hpp
+    src/view/ordered_extent_index_p.hpp
     src/view/lazy_list.cpp
     include/qml_material/view/lazy_list.hpp
     src/model/combo_box_model.cpp

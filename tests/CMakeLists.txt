@@ -74,6 +74,7 @@ set(QM_TEST_SOURCES
   layout/icon_layout.cpp
   layout/item_proxy.cpp
   layout/linear_layout.cpp
+  layout/ordered_extent_index.cpp
   layout/lite_layout.cpp
   layout/menu_layout.cpp
   layout/page_layout.cpp
@@ -106,6 +107,7 @@ set(QM_TEST_SOURCES
   style/control_feedback.cpp
   style/state_lifetime.cpp
   view/lazy_grid.cpp
+  view/lazy_masonry.cpp
   view/lazy_list.cpp
   view/lazy_list_scroll_bar.cpp
   visual/backdrop_surface.cpp
@@ -133,7 +135,7 @@ else()
 endif()
 qt_import_qml_plugins(qm_tests)
 
-set(QM_APPLESS_TESTS viewport_controller linear_layout application_lifetime state_bindings)
+set(QM_APPLESS_TESTS viewport_controller linear_layout ordered_extent_index application_lifetime state_bindings)
 set(QM_CORE_TESTS carousel_keyline_mapping hero_center_end fullscreen_layout multi_browse_layout
   uncontained_layout hero_start_layout appstream_release_model)
 set(QM_FIXED_DPI_TESTS control_layout popup_layout state_lifetime icon_layout menu_layout
@@ -188,7 +190,7 @@ set(VISUAL_SCENES carousel_focal menu_placement font_alignment floating_toolbar 
     focus_button focus_iconbutton focus_fab focus_chip chips command_surfaces
     split_button_input colorpicker_input focus_switch focus_checkbox focus_radio
     datepicker colorpicker colorpicker_button
-    navigation_rail navigation_drawer bottom_sheet side_sheet scrollable carousel table motion_presets clock_presets clock_locales clock_widgets compositions compositions_details composition_pickers systemui)
+    navigation_rail navigation_drawer bottom_sheet side_sheet scrollable masonry carousel table motion_presets clock_presets clock_locales clock_widgets compositions compositions_details composition_pickers systemui)
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/out)
 
 foreach(scene ${VISUAL_SCENES})
