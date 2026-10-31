@@ -198,6 +198,23 @@ private slots:
         QVERIFY(layout.measure(1, 100, 0).accepted);
         QCOMPARE(layout.rect(1).x(), oldLane);
     }
+    void anchorInLeadingSpacing() {
+        ListSnapshotSource source;
+        source.setKeyRole("id");
+        source.setItems(rows(7));
+        MasonryViewLayout layout;
+        layout.fixedSlotCount = 3;
+        layout.estimate       = 40;
+        layout.mainSpacing    = 12;
+        QVERIFY(layout.apply(source.snapshot(), 300, 0, 100).accepted);
+        QVERIFY(layout.measure(0, 1000, 0).accepted);
+        for (int i = 1; i < 7; ++i) QVERIFY(layout.measure(i, 40, 0).accepted);
+        QCOMPARE(layout.offset(3), 52.0);
+        QCOMPARE(layout.indexAt(46), 3);
+        QCOMPARE(layout.indexAt(20), 0);
+        QCOMPARE(layout.indexAt(500), 0);
+        QCOMPARE(layout.indices(46, 50), QVector<int> { 0 });
+    }
     void demandLifetime() {
         Scene      s;
         const auto demand = s.view.currentDemand();

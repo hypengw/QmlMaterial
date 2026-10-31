@@ -149,9 +149,10 @@ public:
         for (const auto& lane : m_lanes) {
             const int candidate = lane.indexAt(position);
             if (candidate < 0) continue;
-            const bool contains =
-                offset(candidate) <= position && offset(candidate) + extent(candidate) > position;
-            const qreal delta = std::abs(offset(candidate) - position);
+            // Leading spacing belongs to the next row for anchoring, but not visibility.
+            const bool  contains = offset(candidate) <= position + mainSpacing &&
+                                   offset(candidate) + extent(candidate) > position;
+            const qreal delta    = std::abs(offset(candidate) - position);
             if ((contains && ! intersects) ||
                 (contains == intersects &&
                  (delta < distance || (delta == distance && candidate < result)))) {

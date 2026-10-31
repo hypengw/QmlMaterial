@@ -108,6 +108,58 @@ private slots:
         QVERIFY(! view->estimatedContentHeight());
         QVERIFY(view->errorString().isEmpty());
     }
+    void initialPositionWithBoundItemExtent() {
+        QQmlEngine engine;
+        engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));
+        QQuickRenderControl render;
+        QQuickWindow        window(&render);
+        ListSnapshotSource  source;
+        source.setKeyRole("id");
+        source.setItems(rows(100));
+        engine.rootContext()->setContextProperty("gridSource", &source);
+        QQmlComponent component(&engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            MD.LazyGrid {
+                width: 496; height: 320
+                leftMargin: 2; rightMargin: 2; topMargin: 2; bottomMargin: 2
+                minimumCellExtent: 140; crossSpacing: 4; mainSpacing: 4
+                itemExtent: cellCrossExtent
+                cacheExtent: 0
+                source: gridSource
+                delegate: Item { required property MD.LazyRow row }
+            }
+        )",
+                          {});
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* view = qobject_cast<LazyGrid*>(object.get());
+        QVERIFY(view);
+        view->setParentItem(window.contentItem());
+        window.setGeometry(0, 0, 496, 320);
+        QSignalSpy done(view, &LazyGrid::positioningFinished);
+        QRectF     completedRect;
+        connect(view, &LazyGrid::positioningFinished, view, [&] {
+            completedRect = view->itemRect(42);
+        });
+        const qreal extent    = 484.0 / 3;
+        const qreal expectedY = 2 - extent;
+        QCOMPARE(view->itemExtent(), 48.0);
+        QVERIFY(view->positionAtKey("42", 0, extent));
+        for (int i = 0; i < 16 && done.isEmpty(); ++i) frames(render, 1);
+        QCOMPARE(done.size(), 1);
+        QCOMPARE(done.first().at(0).toString(), QString("42"));
+        QVERIFY(done.first().at(1).toBool());
+        QVERIFY(! view->positioning());
+        QVERIFY(qAbs(completedRect.y() - expectedY) <= 1);
+        QVERIFY(qAbs(completedRect.height() - extent) < 0.001);
+        frames(render);
+        QCOMPARE(done.size(), 1);
+        QVERIFY(qAbs(view->itemRect(42).y() - expectedY) <= 1);
+        QVERIFY(qAbs(view->itemRect(42).height() - extent) < 0.001);
+        QVERIFY(view->errorString().isEmpty());
+    }
     void geometry_data() {
         QTest::addColumn<bool>("horizontal");
         QTest::newRow("vertical") << false;

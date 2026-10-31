@@ -686,6 +686,8 @@ void LazyView::updatePolish() {
         emit       itemsNeeded(demand);
         if (! current()) return;
     }
+    emit layoutChanged();
+    if (! current()) return;
     bool reached = false;
     if (state->position) {
         const auto& request = *state->position;
@@ -701,7 +703,6 @@ void LazyView::updatePolish() {
         finishPositioning(state->error.isEmpty());
         if (! guard) return;
     }
-    emit layoutChanged();
 }
 
 } // namespace qml_material
