@@ -19,6 +19,12 @@ class SquigglyProgress : public QQuickShape {
     Q_PROPERTY(bool transitionEnabled READ transitionEnabled WRITE setTransitionEnabled NOTIFY
                    appearanceChanged FINAL)
     Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY appearanceChanged FINAL)
+    Q_PROPERTY(QColor trackColor READ trackColor WRITE setTrackColor RESET resetTrackColor NOTIFY
+                   appearanceChanged FINAL)
+    Q_PROPERTY(QColor bufferedColor READ bufferedColor WRITE setBufferedColor RESET
+                   resetBufferedColor NOTIFY appearanceChanged FINAL)
+    Q_PROPERTY(QVector2D bufferedRange READ bufferedRange WRITE setBufferedRange NOTIFY
+                   appearanceChanged FINAL)
     Q_PROPERTY(qreal waveLength READ waveLength WRITE setWaveLength NOTIFY appearanceChanged FINAL)
     Q_PROPERTY(qreal waveAmplitude READ waveAmplitude WRITE setWaveAmplitude NOTIFY
                    appearanceChanged FINAL)
@@ -36,6 +42,9 @@ public:
     bool          animationsEnabled() const { return m_animations; }
     bool          transitionEnabled() const { return m_state.transitionEnabled; }
     QColor        color() const { return m_color; }
+    QColor        trackColor() const;
+    QColor        bufferedColor() const;
+    QVector2D     bufferedRange() const { return m_state.bufferedRange; }
     qreal         waveLength() const { return m_state.waveLength; }
     qreal         waveAmplitude() const { return m_state.waveAmplitude; }
     qreal         waveSpeed() const { return m_speed; }
@@ -48,6 +57,11 @@ public:
     void          setAnimationsEnabled(bool);
     void          setTransitionEnabled(bool);
     void          setColor(QColor);
+    void          setTrackColor(QColor);
+    void          resetTrackColor();
+    void          setBufferedColor(QColor);
+    void          resetBufferedColor();
+    void          setBufferedRange(QVector2D);
     void          setWaveLength(qreal);
     void          setWaveAmplitude(qreal);
     void          setWaveSpeed(qreal);
@@ -67,7 +81,7 @@ private:
     void                          bindWindow(QQuickWindow*);
     void                          updatePaths();
     SquigglyProgressState         m_state;
-    QColor                        m_color = Qt::black;
+    QColor                        m_color = Qt::black, m_trackColor, m_bufferedColor;
     qreal                         m_speed = 8, m_stroke = 2, m_elapsed = 0, m_from = 0;
     bool                          m_animate = false, m_animations = true, m_active = false;
     bool                          m_complete = false, m_dirty = true, m_heightAnimating = false;

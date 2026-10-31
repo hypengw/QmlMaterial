@@ -778,6 +778,31 @@ private slots:
         verify();
     }
 
+    void bufferedSquigglyGeometry() {
+        SquigglyProgressState state;
+        state.progress          = .4;
+        state.transitionEnabled = false;
+        state.amplitudeFraction = 1;
+        state.bufferedRange     = { .2f, .8f };
+        const auto paths        = SquigglyProgressGeometry::render(state, { 200, 16 });
+        QVERIFY(paths.valid);
+        QVERIFY(std::abs(paths.buffered.boundingRect().left() - 80) < .001);
+        QVERIFY(std::abs(paths.buffered.boundingRect().right() - 160) < .001);
+        QCOMPARE(paths.buffered.boundingRect().height(), 0.0);
+        state.bufferedRange = { .9f, .2f };
+        QVERIFY(SquigglyProgressGeometry::render(state, { 200, 16 }).buffered.isEmpty());
+        state.bufferedRange = { -.2f, 2.f };
+        QVERIFY(std::abs(SquigglyProgressGeometry::render(state, { 200, 16 })
+                             .buffered.currentPosition()
+                             .x() -
+                         200) < .001);
+        state.bufferedRange = { std::numeric_limits<float>::quiet_NaN(), .8f };
+        QVERIFY(SquigglyProgressGeometry::render(state, { 200, 16 }).buffered.isEmpty());
+        state.bufferedRange = { .2f, .8f };
+        state.progress      = 1;
+        QVERIFY(SquigglyProgressGeometry::render(state, { 200, 16 }).buffered.isEmpty());
+    }
+
     void squigglyGeometry() {
         using namespace qml_material;
         SquigglyProgressState state;

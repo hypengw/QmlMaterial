@@ -275,6 +275,7 @@ bool Slider::prepareChange() {
     cancel();
     return guard && m_generation == generation;
 }
+void Slider::cancelInteraction() { cancel(); }
 void Slider::cancel() {
     QPointer<Slider> guard(this);
     const auto       generation = m_generation;

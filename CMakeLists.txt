@@ -106,6 +106,8 @@ set(SOURCES
     src/clock/clock_source.cpp
     include/qml_material/control/clock.hpp
     src/control/clock.cpp
+    include/qml_material/item/backdrop_surface.hpp
+    src/item/backdrop_surface.cpp
     include/qml_material/core/item_activity.hpp
     src/core/item_activity.cpp
     include/qml_material/util/time_format.hpp
@@ -652,6 +654,8 @@ set(QML_FILES
     qml/visual/RippleShape.qml
     qml/visual/RippleSkia.qml
     qml/visual/RoundClip.qml
+    qml/visual/BackdropSurface.qml
+    qml/visual/BackdropEffect.qml
     qml/visual/RoundPath.qml
     qml/visual/SdfRectangle.qml
     qml/visual/Shape.qml)
@@ -801,6 +805,8 @@ qt_add_qml_module(
   QtQuick.Layouts
   QtQuick.Shapes
   Qcm.Material.Layouts
+  OPTIONAL_IMPORTS
+  QtQuick.Effects
   DEPENDENCIES
   QtQuick
   OUTPUT_TARGETS

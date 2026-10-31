@@ -82,6 +82,7 @@ public:
     Q_INVOKABLE void requestValue(qreal value);
     Q_INVOKABLE void increase();
     Q_INVOKABLE void decrease();
+    Q_INVOKABLE void cancelInteraction();
     Q_SIGNAL void    fromChanged();
     Q_SIGNAL void    toChanged();
     Q_SIGNAL void    valueChanged();

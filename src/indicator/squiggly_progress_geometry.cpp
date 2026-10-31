@@ -50,6 +50,11 @@ SquigglyProgressPaths SquigglyProgressGeometry::render(const SquigglyProgressSta
     const auto width    = size.width();
     const auto progress = std::clamp(s.progress, 0.0, 1.0);
     const auto end      = width * progress;
+    const auto bufferedStart =
+        width * std::max(progress, qreal(std::clamp(s.bufferedRange.x(), 0.f, 1.f)));
+    const auto bufferedEnd = width * std::clamp(s.bufferedRange.y(), 0.f, 1.f);
+    const bool buffered    = std::isfinite(s.bufferedRange.x()) &&
+                             std::isfinite(s.bufferedRange.y()) && bufferedEnd > bufferedStart;
     // Bound work for pathological lengths without changing ordinary SystemUI dimensions.
     const auto wavelength    = std::max(s.waveLength, width / 4096);
     const auto phase         = std::fmod(std::fmod(s.phase, wavelength) + wavelength, wavelength);
@@ -76,12 +81,19 @@ SquigglyProgressPaths SquigglyProgressGeometry::render(const SquigglyProgressSta
                             { x + half / 2, center + nextY },
                             { x + half, center + nextY } };
         append(result.active, curve, 0, end);
-        if (s.transitionEnabled) append(result.inactive, curve, end, width);
+        if (s.transitionEnabled) {
+            append(result.inactive, curve, end, width);
+            if (buffered) append(result.buffered, curve, bufferedStart, bufferedEnd);
+        }
         y = nextY;
     }
     if (! s.transitionEnabled && end < width) {
         result.inactive.moveTo(end, center);
         result.inactive.lineTo(width, center);
+        if (buffered) {
+            result.buffered.moveTo(bufferedStart, center);
+            result.buffered.lineTo(bufferedEnd, center);
+        }
     }
     result.startCap = {
         0, center + std::cos(std::abs(start) / wavelength * 2 * std::numbers::pi) * amplitude

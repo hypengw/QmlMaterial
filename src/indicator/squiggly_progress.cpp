@@ -56,6 +56,37 @@ void SquigglyProgress::setColor(QColor value) {
     m_color = value;
     invalidate();
 }
+QColor SquigglyProgress::trackColor() const {
+    if (m_trackColor.isValid()) return m_trackColor;
+    auto color = m_color;
+    color.setAlpha(m_color.alpha() * 77 / 255);
+    return color;
+}
+QColor SquigglyProgress::bufferedColor() const {
+    if (m_bufferedColor.isValid()) return m_bufferedColor;
+    auto color = m_color;
+    color.setAlpha(m_color.alpha() * 140 / 255);
+    return color;
+}
+void SquigglyProgress::setTrackColor(QColor value) {
+    if (m_trackColor == value) return;
+    m_trackColor = value;
+    invalidate();
+}
+void SquigglyProgress::resetTrackColor() { setTrackColor({}); }
+void SquigglyProgress::setBufferedColor(QColor value) {
+    if (m_bufferedColor == value) return;
+    m_bufferedColor = value;
+    invalidate();
+}
+void SquigglyProgress::resetBufferedColor() { setBufferedColor({}); }
+void SquigglyProgress::setBufferedRange(QVector2D value) {
+    if (! std::isfinite(value.x()) || ! std::isfinite(value.y())) return;
+    value = { std::clamp(value.x(), 0.f, 1.f), std::clamp(value.y(), 0.f, 1.f) };
+    if (value == m_state.bufferedRange) return;
+    m_state.bufferedRange = value;
+    invalidate();
+}
 #define QM_SQUIGGLY_SETTER(Name, Field, Minimum)                                            \
     void SquigglyProgress::set##Name(qreal value) {                                         \
         if (! std::isfinite(value) || value < Minimum || value > 1000000 || Field == value) \
@@ -154,7 +185,7 @@ void SquigglyProgress::advanceAnimations(qreal ms) {
 void SquigglyProgress::updatePaths() {
     QPointer<SquigglyProgress> guard(this);
     const auto geometry = SquigglyProgressGeometry::render(m_state, { width(), height() });
-    while (m_paths.size() < 3) {
+    while (m_paths.size() < 4) {
         auto* path   = new QQuickShapePath(this);
         auto* status = static_cast<QQmlParserStatus*>(path);
         status->classBegin();
@@ -165,30 +196,29 @@ void SquigglyProgress::updatePaths() {
         if (! guard) return;
         m_paths.append(path);
     }
-    auto inactive = m_color;
-    inactive.setAlpha(m_color.alpha() * 77 / 255);
-    const QPainterPath paths[] = { geometry.active, geometry.inactive };
-    for (int i = 0; i < 2; ++i) {
+    const QPainterPath paths[]  = { geometry.inactive, geometry.buffered, geometry.active };
+    const QColor       colors[] = { trackColor(), bufferedColor(), m_color };
+    for (int i = 0; i < 3; ++i) {
         m_paths[i]->setPath(paths[i]);
         if (! guard) return;
-        m_paths[i]->setCapStyle(i == 0 || m_state.transitionEnabled ? QQuickShapePath::FlatCap
+        m_paths[i]->setCapStyle(i == 2 || m_state.transitionEnabled ? QQuickShapePath::FlatCap
                                                                     : QQuickShapePath::RoundCap);
         if (! guard) return;
         m_paths[i]->setFillColor(Qt::transparent);
         if (! guard) return;
         m_paths[i]->setStrokeWidth(m_stroke);
         if (! guard) return;
-        m_paths[i]->setStrokeColor(i ? inactive : m_color);
+        m_paths[i]->setStrokeColor(colors[i]);
         if (! guard) return;
     }
     QPainterPath cap;
     if (geometry.valid && m_stroke > 0)
         cap.addEllipse(geometry.startCap, m_stroke / 2, m_stroke / 2);
-    m_paths[2]->setPath(cap);
+    m_paths[3]->setPath(cap);
     if (! guard) return;
-    m_paths[2]->setStrokeWidth(0);
+    m_paths[3]->setStrokeWidth(0);
     if (! guard) return;
-    m_paths[2]->setFillColor(m_color);
+    m_paths[3]->setFillColor(m_color);
 }
 void SquigglyProgress::updatePolish() {
     if (QQmlData::wasDeleted(this)) return;
