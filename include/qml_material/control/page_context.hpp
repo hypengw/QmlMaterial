@@ -34,6 +34,9 @@ class PageContext : public QObject {
                    topMarginChanged FINAL)
     Q_PROPERTY(qint32 bottomMargin READ bottomMargin WRITE setBottomMargin RESET resetBottomMargin
                    NOTIFY bottomMarginChanged FINAL)
+    // The portion of bottomMargin reserved for an overlapping bottom surface.
+    Q_PROPERTY(qint32 bottomInset READ bottomInset WRITE setBottomInset RESET resetBottomInset
+                   NOTIFY bottomInsetChanged FINAL)
 public:
     PageContext(QObject* parent = nullptr);
     ~PageContext();
@@ -50,6 +53,7 @@ public:
     auto rightMargin() const -> qint32;
     auto topMargin() const -> qint32;
     auto bottomMargin() const -> qint32;
+    auto bottomInset() const -> qint32;
 
     Q_SLOT void setInherit(PageContext*);
     Q_SLOT void setLeadingAction(QObject*);
@@ -63,6 +67,7 @@ public:
     Q_SLOT void setRightMargin(qint32);
     Q_SLOT void setTopMargin(qint32);
     Q_SLOT void setBottomMargin(qint32);
+    Q_SLOT void setBottomInset(qint32);
 
     Q_SLOT void resetLeadingAction();
     Q_SLOT void resetBackgroundRadius();
@@ -75,6 +80,7 @@ public:
     Q_SLOT void resetRightMargin();
     Q_SLOT void resetTopMargin();
     Q_SLOT void resetBottomMargin();
+    Q_SLOT void resetBottomInset();
 
     Q_SIGNAL void inheritChanged();
     Q_SIGNAL void leadingActionChanged();
@@ -88,6 +94,7 @@ public:
     Q_SIGNAL void rightMarginChanged();
     Q_SIGNAL void topMarginChanged();
     Q_SIGNAL void bottomMarginChanged();
+    Q_SIGNAL void bottomInsetChanged();
 
     Q_SIGNAL void pushItem(const QJSValue& url_or_comp, const QVariantMap& props = {});
     Q_SIGNAL void pop();
@@ -110,5 +117,6 @@ private:
     std::optional<qint32>   m_right_margin;
     std::optional<qint32>   m_top_margin;
     std::optional<qint32>   m_bottom_margin;
+    std::optional<qint32>   m_bottom_inset;
 };
 } // namespace qml_material

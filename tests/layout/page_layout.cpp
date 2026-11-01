@@ -292,6 +292,7 @@ private Q_SLOTS:
         QTest::newRow("right") << QByteArray("rightMargin") << QVariant(12);
         QTest::newRow("top") << QByteArray("topMargin") << QVariant(16);
         QTest::newRow("bottom") << QByteArray("bottomMargin") << QVariant(20);
+        QTest::newRow("bottom-inset") << QByteArray("bottomInset") << QVariant(108);
         QTest::newRow("radius") << QByteArray("radius") << QVariant(24);
         QTest::newRow("background-radius") << QByteArray("backgroundRadius") << QVariant(28);
         QTest::newRow("header-type") << QByteArray("headerType") << QVariant(3);

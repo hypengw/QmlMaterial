@@ -35,6 +35,7 @@ void PageContext::setInherit(PageContext* v) {
         X(rightMargin, m_right_margin);
         X(topMargin, m_top_margin);
         X(bottomMargin, m_bottom_margin);
+        X(bottomInset, m_bottom_inset);
 #undef X
         m_inherit_connections.append(connect(v, &QObject::destroyed, this, [this]() {
             m_inherit = nullptr;
@@ -150,6 +151,14 @@ void PageContext::setBottomMargin(qint32 v) {
         bottomMarginChanged();
     }
 }
+
+auto PageContext::bottomInset() const -> qint32 { return X(bottomInset, m_bottom_inset, 0); }
+void PageContext::setBottomInset(qint32 v) {
+    if (v != m_bottom_inset) {
+        m_bottom_inset = v;
+        bottomInsetChanged();
+    }
+}
 #undef X
 
 #define X(Func, Signal, Mem)          \
@@ -170,6 +179,7 @@ X(LeftMargin, leftMargin, m_left_margin)
 X(RightMargin, rightMargin, m_right_margin)
 X(TopMargin, topMargin, m_top_margin)
 X(BottomMargin, bottomMargin, m_bottom_margin)
+X(BottomInset, bottomInset, m_bottom_inset)
 #undef X
 
 void PageContext::disconnectInherit() {
@@ -195,6 +205,7 @@ void PageContext::notifyInheritedProperties() {
     X(rightMargin, m_right_margin)
     X(topMargin, m_top_margin)
     X(bottomMargin, m_bottom_margin)
+    X(bottomInset, m_bottom_inset)
 #undef X
 }
 } // namespace qml_material
