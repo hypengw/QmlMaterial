@@ -144,6 +144,85 @@ class LazyListTest : public QObject {
         }
     }
 private slots:
+    void countNotifications() {
+        QQmlEngine          engine;
+        QQuickRenderControl render;
+        QQuickWindow        window(&render);
+        QQmlComponent       delegate(&engine);
+        delegate.setData("import QtQuick\nItem { required property QtObject row; "
+                         "implicitHeight: 40 }",
+                         QUrl());
+        ListSnapshotSource source;
+        source.setKeyRole("id");
+        source.setItems(rows(100));
+        LazyList view(window.contentItem());
+        QQmlEngine::setContextForObject(&view, engine.rootContext());
+        view.setSize({ 300, 200 });
+        view.setDelegate(&delegate);
+        QSignalSpy changed(&view, &LazyView::countChanged);
+        view.setSource(&source);
+        QCOMPARE(view.count(), 100);
+        QCOMPARE(changed.size(), 1);
+        frames(render);
+        QCOMPARE(changed.size(), 1);
+
+        connect(&view, &LazyView::countChanged, &view, [&] {
+            view.positionAtIndex(60, 0.5, 0, LazyView::Smooth);
+        });
+        QVERIFY(view.positionAtIndex(60, 0.5, 0, LazyView::Smooth));
+        QTRY_VERIFY_WITH_TIMEOUT(([&] {
+                                     frames(render, 2);
+                                     return ! view.positioning();
+                                 })(),
+                                 3000);
+        QCOMPARE(changed.size(), 1);
+        QVERIFY(std::abs(view.itemRect(60).center().y() - 100) < 1);
+
+        auto updated = rows(100);
+        updated[60]  = QVariantMap { { "id", "60" }, { "height", 70 } };
+        source.setItems(updated);
+        frames(render);
+        QCOMPARE(changed.size(), 1);
+        source.setItems(rows(20));
+        QCOMPARE(view.count(), 20);
+        QCOMPARE(changed.size(), 2);
+        view.setSource(nullptr);
+        QCOMPARE(view.count(), 0);
+        QCOMPARE(changed.size(), 3);
+
+        auto* temporary = new ListSnapshotSource;
+        temporary->setItems(rows(4));
+        view.setSource(temporary);
+        QCOMPARE(changed.size(), 4);
+        delete temporary;
+        QCOMPARE(view.count(), 0);
+        QCOMPARE(changed.size(), 5);
+        frames(render);
+        QCOMPARE(changed.size(), 5);
+    }
+    void countNotificationReentry() {
+        QList<int>         counts;
+        ListSnapshotSource first, second;
+        LazyList           view;
+        first.setItems(rows(5));
+        second.setItems(rows(3));
+        connect(&view, &LazyView::countChanged, &view, [&] {
+            counts.append(view.count());
+            if (view.count() == 5) view.setSource(&second);
+        });
+        view.setSource(&first);
+        QCOMPARE(counts, QList<int>({ 5, 3 }));
+        QCOMPARE(view.source(), &second);
+        counts.clear();
+        connect(&view, &LazyView::sourceChanged, &view, [&] {
+            if (view.source() == &first) view.setSource(&second);
+        });
+        view.setSource(&first);
+        QVERIFY(counts.isEmpty());
+        QCOMPARE(view.count(), 3);
+        second.setItems(rows(2));
+        QCOMPARE(counts, QList<int>({ 2 }));
+    }
     void asynchronousVisibleCreation_data() {
         QTest::addColumn<QString>("type");
         QTest::addColumn<bool>("controlled");

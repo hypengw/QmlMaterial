@@ -26,7 +26,7 @@ class QML_MATERIAL_API LazyView : public Flickable {
     Q_PROPERTY(qreal cachePreparationBudget READ cachePreparationBudget WRITE
                    setCachePreparationBudget NOTIFY cachePreparationBudgetChanged FINAL)
     Q_PROPERTY(int pendingCount READ pendingCount NOTIFY layoutChanged FINAL)
-    Q_PROPERTY(int count READ count NOTIFY layoutChanged FINAL)
+    Q_PROPERTY(int count READ count NOTIFY countChanged FINAL)
     Q_PROPERTY(int firstVisibleIndex READ firstVisibleIndex NOTIFY layoutChanged FINAL)
     Q_PROPERTY(int lastVisibleIndex READ lastVisibleIndex NOTIFY layoutChanged FINAL)
     Q_PROPERTY(int anchorIndex READ anchorIndex NOTIFY layoutChanged FINAL)
@@ -94,6 +94,7 @@ public:
     Q_SIGNAL void       poolLimitChanged();
     Q_SIGNAL void       asynchronousChanged();
     Q_SIGNAL void       cachePreparationBudgetChanged();
+    Q_SIGNAL void       countChanged();
     Q_SIGNAL void       layoutChanged();
 
 protected:
@@ -109,6 +110,7 @@ protected:
     void            scrollActivityCancelled() override;
 
 private:
+    void notifyCountChanged();
     void invalidateDemand();
     void scheduleLayout();
     void schedulePreparation();

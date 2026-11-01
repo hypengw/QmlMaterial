@@ -38,6 +38,7 @@ struct LazyView::Private {
     QMetaObject::Connection                        preparationFrame, windowVisibility;
     int                                            first             = -1;
     int                                            last              = -1;
+    int                                            notifiedCount     = 0;
     quint64                                        generation        = 0;
     bool                                           reset             = true;
     bool                                           apply             = true;
@@ -108,8 +109,11 @@ qreal          LazyView::cacheExtent() const { return d->cache; }
 int            LazyView::poolLimit() const { return d->pool; }
 bool           LazyView::asynchronous() const { return d->asynchronous; }
 qreal          LazyView::cachePreparationBudget() const { return d->preparationBudget; }
-int LazyView::pendingCount() const { return d->recycler ? d->recycler->pendingCount() : 0; }
-int LazyView::count() const { return d->pending->count(); }
+int  LazyView::pendingCount() const { return d->recycler ? d->recycler->pendingCount() : 0; }
+int  LazyView::count() const { return d->pending->count(); }
+void LazyView::notifyCountChanged() {
+    if (std::exchange(d->notifiedCount, count()) != count()) emit countChanged();
+}
 int LazyView::firstVisibleIndex() const { return d->first; }
 int LazyView::lastVisibleIndex() const { return d->last; }
 int LazyView::anchorIndex() const {
@@ -163,6 +167,7 @@ void LazyView::setSource(ItemSource* value) {
     if (value) {
         connect(value, &ItemSource::stateChanged, this, &LazyView::scheduleLayout);
         connect(value, &ItemSource::committed, this, [this](const ItemChangeSet& change) {
+            QPointer<LazyView> guard(this);
             invalidateDemand();
             const int  oldCurrent = currentIndex();
             const bool valuesOnly =
@@ -184,6 +189,7 @@ void LazyView::setSource(ItemSource* value) {
             scheduleLayout();
             if (currentIndex() < 0) d->currentKey.clear();
             if (currentIndex() != oldCurrent) emit currentChanged();
+            if (guard) notifyCountChanged();
         });
         connect(value, &QObject::destroyed, this, [this] {
             invalidateDemand();
@@ -200,12 +206,14 @@ void LazyView::setSource(ItemSource* value) {
             finishPositioning(false);
             if (guard) emit sourceChanged();
             if (guard) emit currentChanged();
+            if (guard) notifyCountChanged();
         });
     }
     scheduleLayout();
     finishPositioning(false);
     if (guard) emit sourceChanged();
     if (guard) emit currentChanged();
+    if (guard) notifyCountChanged();
 }
 void LazyView::setDelegate(QQmlComponent* value) {
     if (d->shuttingDown) return;
