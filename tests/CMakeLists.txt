@@ -64,7 +64,6 @@ set(QM_TEST_SOURCES
   example/example_pickers.cpp
   example/example_smoke.cpp
   example/media_card.cpp
-  example/motion_example.cpp
   example/notifications.cpp
   example/quick_settings.cpp
   input/controlled_input.cpp

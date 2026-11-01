@@ -100,7 +100,8 @@ private slots:
         QCOMPARE(pageCount, 4);
         for (int index = 0; index < pageCount; ++index) {
             const auto name = pages.property(index).property("name").toString();
-            QVERIFY(name != "motion" && name != "about" && name != "typography");
+            QVERIFY(name != "motion" && name != "masonry" && name != "about" &&
+                    name != "typography");
         }
         for (int index : { pageCount - 1, 1 }) {
             auto* button =

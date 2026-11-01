@@ -20,8 +20,7 @@ qt_add_resources(
   FABMenus.qml
   carousel/CarouselDemoData.qml
   Color.qml
-  compositions/Motion.qml
-  compositions/MotionRuntime.qml
+  compositions/Masonry.qml
   compositions/Skeletons.qml
   compositions/Clocks.qml
   compositions/ClockWidget.qml
@@ -33,7 +32,6 @@ qt_add_resources(
   compositions/FilePickers.qml
   Shape.qml
   ShapeEffects.qml
-  Masonry.qml
   Example.qml
   Typography.qml
   About.qml

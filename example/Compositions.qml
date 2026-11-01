@@ -96,13 +96,12 @@ MD.Page {
             }
             MD.AutoDivider {}
             MD.Text {
-                text: 'Motion'
+                text: 'Masonry'
                 typescale: MD.Token.typescale.title_large
             }
-            Motion {
-                objectName: 'compositionMotion'
-                x: (parent.width - width) / 2
-                width: Math.min(800, parent.width)
+            Masonry {
+                objectName: 'compositionMasonry'
+                width: parent.width
             }
             MD.AutoDivider {}
             MD.Text {

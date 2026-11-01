@@ -3,6 +3,7 @@
 #include <QQmlEngine>
 #include <QQuickItem>
 #include <QQuickWindow>
+#include <QWheelEvent>
 #include <QAbstractItemModel>
 #include <QJSValue>
 #include <algorithm>
@@ -15,6 +16,8 @@
 #include "qml_material/control/button_control.hpp"
 #include "qml_material/control/clock.hpp"
 #include "qml_material/input/time_state.hpp"
+#include "qml_material/input/nested_scroll.hpp"
+#include "qml_material/view/lazy_masonry_grid.hpp"
 
 namespace
 {
@@ -173,6 +176,14 @@ private slots:
         QVERIFY(quick->width() > 0 && quick->width() <= 320);
         QVERIFY(! root->findChild<QObject*>("systemUiShade"));
         QVERIFY(! root->findChild<QObject*>("editQuickTiles"));
+        QVERIFY(! root->findChild<QObject*>("compositionMotion"));
+        auto* masonry = root->findChild<qml_material::LazyMasonryGrid*>("compositionMasonry");
+        QVERIFY(masonry && masonry->clip());
+        auto* scroll = qobject_cast<qml_material::NestedScroll*>(
+            qmlAttachedPropertiesObject<qml_material::NestedScroll>(masonry, false));
+        QVERIFY(scroll && scroll->enabled());
+        QCOMPARE(scroll->axes(), Qt::Vertical);
+        QTRY_COMPARE(masonry->count(), 8);
         auto* feed = root->findChild<QObject*>("notificationFeed");
         QVERIFY(feed);
         QCOMPARE(feed->property("count").toInt(), 2);
@@ -191,7 +202,8 @@ private slots:
             verifyText(clock);
             for (const char* name : { "quickControls",
                                       "notifications",
-                                      "compositionMotion",
+                                      "compositionMasonry",
+                                      "compositionSkeletons",
                                       "compositionClocks",
                                       "compositionTimePickers",
                                       "compositionDatePickers",
@@ -203,7 +215,38 @@ private slots:
                 QVERIFY(section->height() > 0);
             }
             QCOMPARE(quick->property("columns").toInt(), width >= 712 ? 3 : 2);
+            QCOMPARE(masonry->slotCount(), width == 320 ? 1 : 5);
         }
+        root->setWidth(320);
+        polish(root);
+        auto* scroller = qobject_cast<qml_material::Flickable*>(
+            root->property("contentItem").value<QQuickItem*>());
+        QVERIFY(scroller);
+        scroller->setContentY(masonry->mapToItem(scroller->contentItem(), QPointF()).y());
+        QTRY_VERIFY(masonry->liveCount() > 0);
+        QVERIFY(masonry->positionAtKey("rose", 1));
+        QTRY_VERIFY(! masonry->positioning() && masonry->isAtYEnd());
+        const auto  before = scroller->contentY();
+        const auto  point  = masonry->mapToScene({ masonry->width() / 2, masonry->height() / 2 });
+        QWheelEvent wheel(point,
+                          window.mapToGlobal(point.toPoint()),
+                          { 0, -40 },
+                          { 0, -120 },
+                          Qt::NoButton,
+                          Qt::NoModifier,
+                          Qt::ScrollBegin,
+                          false);
+        QCoreApplication::sendEvent(&window, &wheel);
+        QTRY_VERIFY(scroller->contentY() > before);
+        QWheelEvent end(point,
+                        window.mapToGlobal(point.toPoint()),
+                        {},
+                        {},
+                        Qt::NoButton,
+                        Qt::NoModifier,
+                        Qt::ScrollEnd,
+                        false);
+        QCoreApplication::sendEvent(&window, &end);
     }
 };
 
