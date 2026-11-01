@@ -106,6 +106,15 @@ MD.Page {
             }
             MD.AutoDivider {}
             MD.Text {
+                text: 'Skeleton loading'
+                typescale: MD.Token.typescale.title_large
+            }
+            Skeletons {
+                objectName: 'compositionSkeletons'
+                width: parent.width
+            }
+            MD.AutoDivider {}
+            MD.Text {
                 text: 'Clocks'
                 typescale: MD.Token.typescale.title_large
             }

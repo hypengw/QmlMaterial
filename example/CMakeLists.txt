@@ -22,6 +22,7 @@ qt_add_resources(
   Color.qml
   compositions/Motion.qml
   compositions/MotionRuntime.qml
+  compositions/Skeletons.qml
   compositions/Clocks.qml
   compositions/ClockWidget.qml
   compositions/ClockWidgetHand.qml

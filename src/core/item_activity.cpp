@@ -86,9 +86,12 @@ void ItemActivity::refresh() {
                 area = area.intersected(item->mapRectToItem(root, item->clipRect()));
         }
     }
-    const bool active = ! area.isEmpty();
-    if (d->active == active) return;
-    d->active = active;
-    Q_EMIT changed();
+    const bool                   active = ! area.isEmpty();
+    const QPointer<ItemActivity> guard(this);
+    if (d->active != active) {
+        d->active = active;
+        Q_EMIT changed();
+    }
+    if (guard) Q_EMIT refreshed();
 }
 } // namespace qml_material

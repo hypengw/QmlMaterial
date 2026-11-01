@@ -92,6 +92,7 @@ set(QM_TEST_SOURCES
   motion/control_motion.cpp
   motion/motion_presets.cpp
   motion/ripple_motion.cpp
+  motion/shimmer.cpp
   motion/spring_motion.cpp
   popup/adaptive_presenter.cpp
   popup/menu_placement.cpp
@@ -111,6 +112,7 @@ set(QM_TEST_SOURCES
   view/lazy_list.cpp
   view/lazy_list_scroll_bar.cpp
   visual/backdrop_surface.cpp
+  visual/shimmer_render.cpp
   control/image_color_picker.cpp
   visual/visual_blur_mask.cpp)
 
@@ -165,12 +167,20 @@ foreach(source IN LISTS QM_TEST_SOURCES)
   if(group IN_LIST QM_FIXED_DPI_TESTS)
     list(APPEND environment "QT_ENABLE_HIGHDPI_SCALING=0" "QT_SCALE_FACTOR=1")
   endif()
+  if(group STREQUAL "shimmer")
+    list(APPEND environment "QT_QUICK_BACKEND=rhi" "QSG_RHI_BACKEND=null")
+  endif()
   set_tests_properties(${group} PROPERTIES ENVIRONMENT "${environment}" LABELS "${labels}")
   if(group IN_LIST QM_SERIAL_TESTS)
     set_tests_properties(${group} PROPERTIES RUN_SERIAL ON)
   endif()
 endforeach()
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/test_groups.inc" CONTENT "${QM_TEST_GROUPS}")
+
+add_test(NAME shimmer_software COMMAND qm_tests shimmer softwareFallback)
+set_tests_properties(shimmer_software PROPERTIES
+  ENVIRONMENT "QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY};QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software"
+  LABELS "behavior;motion")
 
 add_executable(qm_grab visual/qm_grab.cpp)
 target_link_libraries(qm_grab PRIVATE Qt6::Core Qt6::Gui Qt6::GuiPrivate Qt6::Quick Qt6::Qml)
@@ -192,6 +202,7 @@ set(VISUAL_SCENES carousel_focal menu_placement font_alignment floating_toolbar 
     datepicker colorpicker colorpicker_button
     navigation_rail navigation_drawer bottom_sheet side_sheet scrollable masonry carousel table motion_presets clock_presets clock_locales clock_widgets compositions compositions_details composition_pickers systemui)
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/out)
+list(APPEND VISUAL_SCENES shimmer)
 
 foreach(scene ${VISUAL_SCENES})
   add_test(

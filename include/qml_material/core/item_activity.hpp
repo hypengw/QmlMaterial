@@ -19,6 +19,7 @@ public:
     bool          active() const;
     void          refresh();
     Q_SIGNAL void changed();
+    Q_SIGNAL void refreshed();
 
 private:
     struct Private;

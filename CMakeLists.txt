@@ -73,6 +73,18 @@ endif()
 set(LIBNAME qml_material)
 
 set(SOURCES
+    include/qml_material/anim/shimmer.hpp
+    src/anim/shimmer.cpp
+    src/anim/shimmer_subscription_p.hpp
+    include/qml_material/item/skeleton.hpp
+    src/item/skeleton.cpp
+    include/qml_material/item/shimmer_effect.hpp
+    src/item/shimmer_effect.cpp
+    src/item/shimmer_client_p.hpp
+    src/item/shimmer_client.cpp
+    src/item/shimmer_geometry_p.hpp
+    src/scenegraph/shimmer_material_p.hpp
+    src/scenegraph/shimmer_material.cpp
     include/qml_material/control/page_motion.hpp
     src/control/page_motion.cpp
     include/qml_material/anim/seekable_transition.hpp
@@ -484,6 +496,7 @@ set(SOURCES
     include/qml_material/dialog/file_dialog.hpp)
 
 set(QML_FILES
+    qml/visual/Skeleton.qml
     qml/control/Clock.qml
     qml/Token.qml
     qml/Util.qml
@@ -876,8 +889,12 @@ set_source_files_properties(
                                  "${TOKEN_COMPILE_DEFINITIONS}"
                                  SKIP_PRECOMPILE_HEADERS ON)
 
-set(SHADER_GLSLS "assets/shader/common.glsl" "assets/shader/sdf.glsl")
+set(SHADER_GLSLS "assets/shader/common.glsl" "assets/shader/sdf.glsl" "assets/shader/shimmer.glsl")
 set(SHADER_SOURCES
+    "assets/shader/skeleton.vert"
+    "assets/shader/skeleton.frag"
+    "assets/shader/shimmer_texture.vert"
+    "assets/shader/shimmer_texture.frag"
     "assets/shader/default.vert"
     "assets/shader/icon_tint.frag"
     "assets/shader/round_clip.frag"
