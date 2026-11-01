@@ -71,6 +71,20 @@ public:
     }
 };
 
+class GridUsageObserver : public QObject {
+    Q_OBJECT
+public:
+    QVector<int> visible;
+    int          pooled = 0, reused = 0;
+
+    Q_INVOKABLE void usage(QObject* object) {
+        auto* row = qobject_cast<LazyRow*>(object);
+        if (row && row->active() && row->usage() == LazyRow::Visible) visible.append(row->index());
+    }
+    Q_INVOKABLE void pool() { ++pooled; }
+    Q_INVOKABLE void reuse() { ++reused; }
+};
+
 class LazyGridTest : public QObject {
     Q_OBJECT
 private slots:
@@ -295,6 +309,103 @@ private slots:
         auto* reused = s.item("0")->property("row").value<LazyRow*>();
         QCOMPARE(reused->usage(), LazyRow::Visible);
         QCOMPARE(reused->view(), &s.view);
+    }
+    void visibleNotificationOrder_data() {
+        QTest::addColumn<bool>("horizontal");
+        QTest::addColumn<bool>("mirrored");
+        QTest::newRow("vertical") << false << false;
+        QTest::newRow("vertical-rtl") << false << true;
+        QTest::newRow("horizontal") << true << false;
+        QTest::newRow("horizontal-rtl") << true << true;
+    }
+    void visibleNotificationOrder() {
+        QFETCH(bool, horizontal);
+        QFETCH(bool, mirrored);
+        GridUsageObserver   observer;
+        QQmlEngine          engine;
+        QQuickRenderControl render;
+        QQuickWindow        window(&render);
+        QQmlComponent       delegate(&engine);
+        ListSnapshotSource  source;
+        LazyGrid            view(window.contentItem());
+        engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));
+        engine.rootContext()->setContextProperty("usageObserver", &observer);
+        delegate.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            Item {
+                required property MD.LazyRow row
+                Connections {
+                    target: row
+                    function onUsageChanged() { usageObserver.usage(row) }
+                    function onPooled() { usageObserver.pool() }
+                    function onReused() { usageObserver.reuse() }
+                }
+            }
+        )",
+                         {});
+        QVERIFY2(delegate.isReady(), qPrintable(delegate.errorString()));
+        source.setKeyRole("id");
+        source.setItems(rows(240));
+        window.setGeometry(0, 0, 600, 600);
+        QQmlEngine::setContextForObject(&view, engine.rootContext());
+        view.setOrientation(horizontal ? Qt::Horizontal : Qt::Vertical);
+        view.setLayoutDirection(mirrored ? Qt::RightToLeft : Qt::LeftToRight);
+        view.setSize(horizontal ? QSizeF(80, 300) : QSizeF(300, 80));
+        view.setFixedSlotCount(3);
+        view.setItemExtent(40);
+        view.setCacheExtent(40);
+        view.setPoolLimit(32);
+        view.setSource(&source);
+        view.setDelegate(&delegate);
+        const auto visibleIndexes = [&] {
+            QVector<int> indexes;
+            for (int i = view.firstVisibleIndex(); i <= view.lastVisibleIndex(); ++i)
+                indexes.append(i);
+            return indexes;
+        };
+        frames(render);
+        QCOMPARE(view.firstVisibleIndex(), 0);
+        QCOMPARE(view.lastVisibleIndex(), 5);
+        QCOMPARE(observer.visible, visibleIndexes());
+
+        observer.visible.clear();
+        if (horizontal)
+            view.setContentX(view.contentX() + (mirrored ? -40 : 40));
+        else
+            view.setContentY(view.contentY() + 40);
+        frames(render);
+        QCOMPARE(view.firstVisibleIndex(), 3);
+        QCOMPARE(view.lastVisibleIndex(), 8);
+        QCOMPARE(observer.visible, QVector<int>({ 6, 7, 8 }));
+        QCOMPARE(observer.pooled, 0);
+        QCOMPARE(observer.reused, 0);
+
+        observer.visible.clear();
+        QVERIFY(view.positionAtKey("0"));
+        frames(render);
+        QCOMPARE(observer.visible, QVector<int>({ 0, 1, 2 }));
+        QCOMPARE(observer.reused, 0);
+
+        observer.visible.clear();
+        QVERIFY(view.positionAtKey("60"));
+        frames(render);
+        QVERIFY(view.firstVisibleIndex() > 5);
+        QCOMPARE(observer.visible, visibleIndexes());
+        QVERIFY(observer.pooled > 0);
+        QVERIFY(observer.reused > 0);
+
+        observer.visible.clear();
+        const auto pooled = observer.pooled;
+        const auto reused = observer.reused;
+        QVERIFY(view.positionAtKey("0"));
+        frames(render);
+        QCOMPARE(view.firstVisibleIndex(), 0);
+        QCOMPARE(view.lastVisibleIndex(), 5);
+        QCOMPARE(observer.visible, visibleIndexes());
+        QVERIFY(observer.pooled > pooled);
+        QVERIFY(observer.reused > reused);
+        QVERIFY(view.errorString().isEmpty());
     }
     void rowBindingsAfterScrollReuse_data() {
         QTest::addColumn<qreal>("cacheExtent");

@@ -644,13 +644,11 @@ void LazyView::updatePolish() {
             setVerticalScrollTarget(target);
         if (! current()) return;
     }
-    for (const auto& key : state->live.keys()) {
-        const int index = snapshot->indexOfKey(key);
-        if (index < 0) continue;
-        state->recycler->layout(state->live.value(key),
-                                itemGeometry(index),
-                                state->orientation,
-                                layout.fixedItemExtent());
+    for (const int index : std::as_const(indexes)) {
+        auto item = state->live.value(snapshot->descriptorAt(index).key);
+        if (! item) continue;
+        state->recycler->layout(
+            item, itemGeometry(index), state->orientation, layout.fixedItemExtent());
         if (! current()) return;
     }
     const auto visible = crossSize() > 0
@@ -658,8 +656,8 @@ void LazyView::updatePolish() {
                              : ItemRange {};
     state->first       = visible.first;
     state->last        = visible.last;
-    for (const auto& key : state->live.keys()) {
-        auto item = state->live.value(key);
+    for (const int index : std::as_const(indexes)) {
+        auto item = state->live.value(snapshot->descriptorAt(index).key);
         auto row  = state->recycler->row(item);
         if (! item || ! row) continue;
         const auto area = item->mapRectToItem(this, item->boundingRect());
