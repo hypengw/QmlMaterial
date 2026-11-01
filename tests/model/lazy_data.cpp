@@ -3,6 +3,7 @@
 #include <QQmlComponent>
 #include <QQmlContext>
 #include <QQmlExpression>
+#include <QQmlIncubationController>
 #include <QSortFilterProxyModel>
 #include <QQuickWindow>
 #include <utility>
@@ -71,6 +72,194 @@ class LazyDataTest : public QObject {
 private Q_SLOTS:
     void initTestCase() {
         qmlRegisterUncreatableType<LazyRow>("Test", 1, 0, "LazyRow", "Supplied by recycler");
+    }
+    void asynchronousPreparation() {
+        QQmlIncubationController controller;
+        QQmlEngine               engine;
+        engine.setIncubationController(&controller);
+        QQmlContext context(engine.rootContext());
+        context.setContextProperty("creationValue", "context");
+        QQmlComponent factory(&engine);
+        factory.setData(R"(
+            import QtQuick
+            QtObject {
+                property Component delegate: Item {
+                    required property QtObject row
+                    property string initial
+                    property real initialWidth
+                    property bool initialView
+                    Component.onCompleted: {
+                        initial = creationValue + ':' + row.key
+                        initialWidth = width
+                        initialView = row.view !== null
+                    }
+                }
+            }
+        )",
+                        QUrl());
+        std::unique_ptr<QObject> owned(factory.create(&context));
+        auto* delegate = owned ? owned->property("delegate").value<QQmlComponent*>() : nullptr;
+        QVERIFY(delegate);
+        ListSnapshotSource source;
+        source.setItems({ 1, 2 });
+        QQuickItem                  parent, view;
+        DelegateRecycler::Placement placement;
+        placement.valid    = true;
+        placement.parent   = &parent;
+        placement.view     = &view;
+        placement.geometry = QRectF(0, 40, 320, 40);
+        DelegateRecycler recycler(&engine);
+        QVERIFY(! recycler.acquire(delegate, source.snapshot(), 0, placement, true));
+        QCOMPARE(recycler.pendingCount(), 1);
+        QCOMPARE(controller.incubatingObjectCount(), 1);
+        QVERIFY(recycler.pending(source.snapshot()->descriptorAt(0).key));
+        controller.incubateFor(100);
+        auto* item = recycler.acquire(delegate, source.snapshot(), 0, placement, true);
+        QVERIFY(item);
+        QCOMPARE(item->property("initial").toString(),
+                 "context:" + source.snapshot()->descriptorAt(0).key);
+        QCOMPARE(item->property("initialWidth").toReal(), 320.0);
+        QVERIFY(item->property("initialView").toBool());
+        QCOMPARE(recycler.pendingCount(), 0);
+        QVERIFY(! recycler.acquire(delegate, source.snapshot(), 1, placement, true));
+        QCOMPARE(controller.incubatingObjectCount(), 1);
+        auto* promoted = recycler.acquire(delegate, source.snapshot(), 1, placement, false);
+        QVERIFY(promoted);
+        QCOMPARE(recycler.row(promoted)->index(), 1);
+        QCOMPARE(controller.incubatingObjectCount(), 0);
+    }
+    void preparationSnapshotChanges() {
+        QQmlIncubationController controller;
+        QQmlEngine               engine;
+        engine.setIncubationController(&controller);
+        QQmlComponent component(&engine);
+        component.setData("import QtQuick\nItem { required property QtObject row }", QUrl());
+        QVERIFY(component.isReady());
+        class Source : public ItemSource {
+        public:
+            using ItemSource::publish;
+        } source;
+        QVERIFY(source.publish(makeItemDataSnapshot({ { "a", {}, "old" }, { "b", {}, "b" } })));
+        DelegateRecycler            recycler(&engine);
+        DelegateRecycler::Placement placement;
+        QVERIFY(! recycler.acquire(&component, source.snapshot(), 0, placement, true));
+        auto before = source.snapshot();
+        QVERIFY(source.publish(
+            makeItemDataSnapshot({ before->recordAt(1), before->recordAt(0) }, true, before)));
+        recycler.retainPreparations(&component, source.snapshot(), { "a" });
+        QCOMPARE(recycler.pendingCount(), 1);
+        controller.incubateFor(100);
+        auto* item = recycler.acquire(&component, source.snapshot(), 1, placement, false);
+        QVERIFY(item);
+        QCOMPARE(recycler.row(item)->key(), "a");
+        QCOMPARE(recycler.row(item)->index(), 1);
+        QCOMPARE(recycler.row(item)->revision(), source.revision());
+        QCOMPARE(recycler.row(item)->value().toString(), "old");
+        QVERIFY(! recycler.acquire(&component, source.snapshot(), 0, placement, true));
+        before = source.snapshot();
+        QVERIFY(source.publish(
+            makeItemDataSnapshot({ { "b", {}, "changed" }, before->recordAt(1) }, true, before)));
+        recycler.retainPreparations(&component, source.snapshot(), { "b" });
+        QCOMPARE(recycler.pendingCount(), 0);
+        QCOMPARE(controller.incubatingObjectCount(), 0);
+        auto* changed = recycler.acquire(&component, source.snapshot(), 0, placement, false);
+        QVERIFY(changed);
+        QCOMPARE(recycler.row(changed)->value().toString(), "changed");
+        recycler.release(changed);
+        recycler.setPoolLimit(0);
+        QVERIFY(! recycler.acquire(&component, source.snapshot(), 0, placement, true));
+        recycler.retainPreparations(&component, source.snapshot(), {});
+        QCOMPARE(recycler.pendingCount(), 0);
+        QCOMPARE(controller.incubatingObjectCount(), 0);
+    }
+    void asynchronousCancellationDuringCompletion() {
+        QQmlIncubationController controller;
+        QQmlEngine               engine;
+        engine.setIncubationController(&controller);
+        CreationHook hook;
+        engine.rootContext()->setContextProperty("creationHook", &hook);
+        QQmlComponent component(&engine);
+        component.setData(R"(
+            import QtQuick
+            Item {
+                required property QtObject row
+                property string completedKey
+                Component.onCompleted: {
+                    creationHook.invoke()
+                    completedKey = row.key
+                }
+            }
+        )",
+                          QUrl());
+        QVERIFY(component.isReady());
+        ListSnapshotSource source;
+        source.setItems({ 1 });
+        DelegateRecycler recycler(&engine);
+        hook.callback = [&] {
+            recycler.clear();
+        };
+        QVERIFY(! recycler.acquire(&component, source.snapshot(), 0, {}, true));
+        controller.incubateFor(100);
+        QCOMPARE(recycler.pendingCount(), 0);
+        QCOMPARE(controller.incubatingObjectCount(), 0);
+        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+        QCoreApplication::processEvents();
+        hook.callback = [] {
+        };
+        QVERIFY(recycler.acquire(&component, source.snapshot(), 0));
+    }
+    void asynchronousFailure() {
+        QQmlIncubationController controller;
+        QQmlEngine               engine;
+        engine.setIncubationController(&controller);
+        QQmlComponent component(&engine);
+        component.setData("import QtQml\nQtObject { required property QtObject row }", QUrl());
+        QVERIFY(component.isReady());
+        ListSnapshotSource source;
+        source.setItems({ 1 });
+        DelegateRecycler recycler(&engine);
+        QVERIFY(! recycler.acquire(&component, source.snapshot(), 0, {}, true));
+        controller.incubateFor(100);
+        QVERIFY(! recycler.acquire(&component, source.snapshot(), 0, {}, true));
+        QVERIFY(recycler.errorString().contains("root is not an Item"));
+        QCOMPARE(recycler.pendingCount(), 0);
+        QCOMPARE(controller.incubatingObjectCount(), 0);
+        recycler.cancelPreparations();
+    }
+    void completedPreparationReentersPool() {
+        QQmlIncubationController controller;
+        QQmlEngine               engine;
+        engine.setIncubationController(&controller);
+        CreationHook hook;
+        int          created = 0;
+        hook.callback        = [&] {
+            ++created;
+        };
+        engine.rootContext()->setContextProperty("creationHook", &hook);
+        QQmlComponent component(&engine);
+        component.setData(R"(
+            import QtQuick
+            Item {
+                required property QtObject row
+                Component.onCompleted: creationHook.invoke()
+            }
+        )",
+                          QUrl());
+        QVERIFY(component.isReady());
+        ListSnapshotSource source;
+        source.setItems({ 1, 2 });
+        DelegateRecycler recycler(&engine);
+        QVERIFY(! recycler.acquire(&component, source.snapshot(), 0, {}, true));
+        controller.incubateFor(100);
+        QCOMPARE(created, 1);
+        recycler.retainPreparations(&component, source.snapshot(), {});
+        QCOMPARE(recycler.pendingCount(), 0);
+        QCOMPARE(recycler.poolSize(), 1);
+        auto* item = recycler.acquire(&component, source.snapshot(), 1);
+        QVERIFY(item);
+        QCOMPARE(created, 1);
+        QCOMPARE(recycler.row(item)->value().toInt(), 2);
+        QCOMPARE(recycler.poolSize(), 0);
     }
     void rowActivityNotifications() {
         ListSnapshotSource source;

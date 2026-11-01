@@ -7,6 +7,7 @@
 #include <QSet>
 #include <utility>
 #include <algorithm>
+#include <QElapsedTimer>
 
 namespace qml_material
 {
@@ -29,14 +30,17 @@ struct LazyView::Private {
     QHash<QString, QPointer<QQuickItem>>           live;
     QSet<QString>                                  dirtyMeasurements;
     QHash<QString, QList<QMetaObject::Connection>> connections;
-    qreal                                          cache      = 160;
-    int                                            pool       = 16;
-    int                                            first      = -1;
-    int                                            last       = -1;
-    quint64                                        generation = 0;
-    bool                                           reset      = true;
-    bool                                           apply      = true;
-    bool                                           queued     = false;
+    qreal                                          cache             = 160;
+    int                                            pool              = 16;
+    qreal                                          preparationBudget = 2;
+    QMetaObject::Connection                        preparationFrame, windowVisibility;
+    int                                            first             = -1;
+    int                                            last              = -1;
+    quint64                                        generation        = 0;
+    bool                                           reset             = true;
+    bool                                           apply             = true;
+    bool                                           preparationsDirty = false;
+    bool                                           queued            = false;
     QString                                        error;
     std::optional<quint64>                         limitedGeneration;
     qreal                                          limitedOffset  = 0;
@@ -64,9 +68,30 @@ LazyView::LazyView(std::unique_ptr<LazyViewLayout> layout, QQuickItem* parent)
     connect(this, &Flickable::rightMarginChanged, this, marginsChanged);
     connect(this, &Flickable::topMarginChanged, this, marginsChanged);
     connect(this, &Flickable::bottomMarginChanged, this, marginsChanged);
+    connect(this, &QQuickItem::visibleChanged, this, [this] {
+        QPointer<LazyView> guard(this);
+        if (! isVisible()) cancelPreparations();
+        if (guard) scheduleLayout();
+    });
+    connect(this, &QQuickItem::windowChanged, this, [this](QQuickWindow* window) {
+        disconnect(d->windowVisibility);
+        QPointer<LazyView> guard(this);
+        cancelPreparations();
+        if (! guard) return;
+        if (window) {
+            d->windowVisibility =
+                connect(window, &QWindow::visibleChanged, this, [this](bool visible) {
+                    QPointer<LazyView> guard(this);
+                    if (! visible) cancelPreparations();
+                    if (guard) scheduleLayout();
+                });
+        }
+        scheduleLayout();
+    });
 }
 LazyView::~LazyView() {
     d->shuttingDown = true;
+    disconnect(d->preparationFrame);
     d->demandLifetime.reset();
     if (d->source) disconnect(d->source, nullptr, this, nullptr);
     if (d->delegate) disconnect(d->delegate, nullptr, this, nullptr);
@@ -79,10 +104,12 @@ ItemSource*    LazyView::source() const { return d->source; }
 QQmlComponent* LazyView::delegate() const { return d->delegate; }
 qreal          LazyView::cacheExtent() const { return d->cache; }
 int            LazyView::poolLimit() const { return d->pool; }
-int            LazyView::count() const { return d->pending->count(); }
-int            LazyView::firstVisibleIndex() const { return d->first; }
-int            LazyView::lastVisibleIndex() const { return d->last; }
-int            LazyView::anchorIndex() const {
+qreal          LazyView::cachePreparationBudget() const { return d->preparationBudget; }
+int LazyView::pendingCount() const { return d->recycler ? d->recycler->pendingCount() : 0; }
+int LazyView::count() const { return d->pending->count(); }
+int LazyView::firstVisibleIndex() const { return d->first; }
+int LazyView::lastVisibleIndex() const { return d->last; }
+int LazyView::anchorIndex() const {
     if (d->layout->snapshot() != d->pending || ! d->pending->count()) return -1;
     return d->layout->indexAt(d->orientation == Qt::Vertical ? contentY() : contentX());
 }
@@ -104,6 +131,8 @@ void            LazyView::setOrientation(Qt::Orientation value) {
     invalidateDemand();
     d->reset = d->apply = true;
     ++d->generation;
+    cancelPreparations();
+    if (! guard || d->orientation != value) return;
     scheduleLayout();
     finishPositioning(false);
     if (! guard || d->orientation != value) return;
@@ -126,6 +155,8 @@ void LazyView::setSource(ItemSource* value) {
     if (currentIndex() < 0) d->currentKey.clear();
     d->reset = d->apply = true;
     ++d->generation;
+    cancelPreparations();
+    if (! guard || d->source != value) return;
     if (value) {
         connect(value, &ItemSource::stateChanged, this, &LazyView::scheduleLayout);
         connect(value, &ItemSource::committed, this, [this](const ItemChangeSet& change) {
@@ -159,8 +190,10 @@ void LazyView::setSource(ItemSource* value) {
             d->currentKey.clear();
             d->reset = d->apply = true;
             ++d->generation;
-            scheduleLayout();
             QPointer<LazyView> guard(this);
+            cancelPreparations();
+            if (! guard) return;
+            scheduleLayout();
             finishPositioning(false);
             if (guard) emit sourceChanged();
             if (guard) emit currentChanged();
@@ -180,6 +213,8 @@ void LazyView::setDelegate(QQmlComponent* value) {
     d->delegate = value;
     d->reset = d->apply = true;
     ++d->generation;
+    cancelPreparations();
+    if (! guard || d->delegate != value) return;
     if (value) {
         connect(value, &QQmlComponent::statusChanged, this, [this] {
             scheduleLayout();
@@ -189,8 +224,10 @@ void LazyView::setDelegate(QQmlComponent* value) {
             d->delegate = nullptr;
             d->reset = d->apply = true;
             ++d->generation;
-            scheduleLayout();
             QPointer<LazyView> guard(this);
+            cancelPreparations();
+            if (! guard) return;
+            scheduleLayout();
             finishPositioning(false);
             if (guard) emit delegateChanged();
         });
@@ -210,7 +247,8 @@ void LazyView::setCacheExtent(qreal value) {
 LazyViewLayout& LazyView::layoutEngine() const { return *d->layout; }
 void            LazyView::invalidateLayout() {
     invalidateDemand();
-    d->apply = true;
+    d->apply             = true;
+    d->preparationsDirty = true;
     ++d->generation;
     scheduleLayout();
 }
@@ -290,6 +328,33 @@ void LazyView::scheduleLayout() {
         },
         Qt::QueuedConnection);
 }
+void LazyView::setCachePreparationBudget(qreal value) {
+    if (! std::isfinite(value) || value < 0 || d->preparationBudget == value) return;
+    d->preparationBudget = value;
+    QPointer<LazyView> guard(this);
+    if (value == 0) cancelPreparations();
+    if (! guard) return;
+    scheduleLayout();
+    emit cachePreparationBudgetChanged();
+}
+void LazyView::cancelPreparations() {
+    disconnect(d->preparationFrame);
+    d->preparationFrame = {};
+    if (d->recycler) d->recycler->cancelPreparations();
+}
+void LazyView::schedulePreparation() {
+    if (d->preparationFrame || d->shuttingDown) return;
+    if (! window() || ! window()->isVisible()) {
+        scheduleLayout();
+        return;
+    }
+    d->preparationFrame = connect(window(), &QQuickWindow::afterAnimating, this, [this] {
+        disconnect(d->preparationFrame);
+        d->preparationFrame = {};
+        polish();
+    });
+    window()->update();
+}
 void LazyView::componentComplete() {
     Flickable::componentComplete();
     scheduleLayout();
@@ -299,8 +364,12 @@ void LazyView::geometryChange(const QRectF& geometry, const QRectF& old) {
     if (! d) return;
     invalidateDemand();
     if ((d->orientation == Qt::Vertical && geometry.width() != old.width()) ||
-        (d->orientation == Qt::Horizontal && geometry.height() != old.height()))
+        (d->orientation == Qt::Horizontal && geometry.height() != old.height())) {
         d->apply = true;
+        QPointer<LazyView> guard(this);
+        cancelPreparations();
+        if (! guard) return;
+    }
     ++d->generation;
     scheduleLayout();
 }
@@ -357,6 +426,8 @@ void LazyView::setContentX(qreal value) {
 }
 
 void LazyView::updatePolish() {
+    QElapsedTimer preparationClock;
+    preparationClock.start();
     const auto         state = d;
     QPointer<LazyView> guard(this);
     Flickable::updatePolish();
@@ -429,6 +500,9 @@ void LazyView::updatePolish() {
         auto* engine = qmlEngine(this);
         if (! engine) return;
         state->recycler = std::make_unique<DelegateRecycler>(engine);
+        state->recycler->setReadyCallback([guard] {
+            if (guard) guard->scheduleLayout();
+        });
     }
     if (state->reset) {
         state->reset = false;
@@ -443,10 +517,14 @@ void LazyView::updatePolish() {
     }
     state->recycler->setPoolLimit(state->pool);
     if (! current()) return;
+    if (std::exchange(state->preparationsDirty, false)) {
+        cancelPreparations();
+        if (! current()) return;
+    }
     qreal offset = primaryOffset();
     if (state->apply) {
-        state->apply      = false;
-        const auto values = std::exchange(state->pendingValues, {});
+        state->apply        = false;
+        const auto values   = std::exchange(state->pendingValues, {});
         const auto viewport = primarySize() - startMargin() - endMargin();
         const auto result =
             values && values->before == state->layout->snapshot()
@@ -533,12 +611,15 @@ void LazyView::updatePolish() {
             }
         }
     }
-    if (layout.fixedItemExtent()) {
-        const auto visible = layout.visibleRange(offset, offset + primarySize());
-        std::stable_partition(indexes.begin(), indexes.end(), [&](int index) {
-            return visible.first >= 0 && index >= visible.first && index <= visible.last;
-        });
-    }
+    const auto urgentIndex = [&](int index) {
+        if (state->position && snapshot->descriptorAt(index).key == state->position->key)
+            return true;
+        const qreal start = layout.offset(index), extent = layout.extent(index);
+        return start < offset + primarySize() && (start + extent > offset || extent == 0);
+    };
+    std::stable_partition(indexes.begin(), indexes.end(), urgentIndex);
+    state->recycler->retainPreparations(state->delegate, snapshot, wanted);
+    if (! current()) return;
     for (const auto& key : state->live.keys()) {
         if (wanted.contains(key) && state->live[key]) continue;
         auto item = state->live.take(key);
@@ -549,86 +630,146 @@ void LazyView::updatePolish() {
     state->error = (state->source ? state->source->errorString() : QString());
     if (state->delegate && state->delegate->isError())
         state->error = state->delegate->errorString();
-    bool changedExtent   = false;
-    int  processed       = 0;
-    int  realizationWork = 0;
-    bool deferred        = false;
-    for (const int index : std::as_const(indexes)) {
-        const auto& key = snapshot->descriptorAt(index).key;
-        if (! wanted.contains(key)) break;
-        QPointer<QQuickItem> item     = state->live.value(key);
-        const auto           boundRow = state->recycler->row(item);
-        const bool           needsBinding =
-            ! item || ! boundRow || boundRow->revision() != snapshot->revision;
-        if (layout.discreteItems() && realizationWork >= 256 && needsBinding) {
-            deferred = true;
-            continue;
-        }
-        if (needsBinding) ++realizationWork;
-        if (item) {
-            auto row = state->recycler->row(item);
-            if (! row || row->revision() != snapshot->revision || row->index() != index) {
-                if (! state->recycler->rebind(item, snapshot, index)) {
-                    for (const auto& connection : state->connections.take(key))
-                        disconnect(connection);
-                    state->live.remove(key);
-                    if (item) state->recycler->release(item);
-                    item = nullptr;
+    bool       changedExtent   = false;
+    int        processed       = 0;
+    int        realizationWork = 0;
+    bool       deferred        = false;
+    bool       cacheDeferred   = false;
+    auto*      engine          = qmlEngine(this);
+    const bool canPrepare      = ! engine || ! engine->incubationController() ||
+                                 (isVisible() && window() && window()->isVisible());
+    auto       work            = indexes;
+    while (! work.isEmpty()) {
+        for (const int index : std::as_const(work)) {
+            const auto& descriptor = snapshot->descriptorAt(index);
+            const auto& key        = descriptor.key;
+            if (! wanted.contains(key)) break;
+            const bool           urgent   = urgentIndex(index);
+            QPointer<QQuickItem> item     = state->live.value(key);
+            const auto           boundRow = state->recycler->row(item);
+            const bool           needsBinding =
+                ! item || ! boundRow || boundRow->revision() != snapshot->revision;
+            const bool needsMeasurement =
+                state->dirtyMeasurements.contains(key) || state->layout->needsMeasurement(index);
+            const bool needsPreparation =
+                ! item || ! boundRow || boundRow->index() != index ||
+                boundRow->contentRevision() != descriptor.contentRevision || needsMeasurement;
+            if (! urgent && needsPreparation) {
+                if (! canPrepare || state->preparationBudget == 0) continue;
+                if (preparationClock.nsecsElapsed() / 1e6 >= state->preparationBudget) {
+                    cacheDeferred = true;
+                    continue;
                 }
-                if (! current()) return;
             }
-        }
-        if (! item) {
-            item = state->recycler->acquire(state->delegate, snapshot, index);
-            if (! current()) {
-                if (item) state->recycler->release(item);
-                return;
+            DelegateRecycler::Placement placement;
+            placement.valid       = true;
+            placement.parent      = contentItem();
+            placement.view        = this;
+            placement.geometry    = itemGeometry(index);
+            placement.orientation = state->orientation;
+            placement.fixedExtent = layout.fixedItemExtent();
+            placement.usage       = boundRow && boundRow->usage() == LazyRow::Visible && urgent
+                                        ? LazyRow::Visible
+                                        : LazyRow::Cached;
+            if (layout.discreteItems() && realizationWork >= 256 && needsBinding) {
+                deferred = true;
+                continue;
+            }
+            if (needsBinding) ++realizationWork;
+            if (item) {
+                auto row = state->recycler->row(item);
+                if (! row || row->revision() != snapshot->revision || row->index() != index) {
+                    if (! state->recycler->rebind(item, snapshot, index, placement)) {
+                        for (const auto& connection : state->connections.take(key))
+                            disconnect(connection);
+                        state->live.remove(key);
+                        if (item) state->recycler->release(item);
+                        item = nullptr;
+                    }
+                    if (! current()) return;
+                }
             }
             if (! item) {
-                state->error = state->recycler->errorString();
-                break;
+                item =
+                    state->recycler->acquire(state->delegate, snapshot, index, placement, ! urgent);
+                if (! current()) {
+                    if (item) state->recycler->release(item);
+                    return;
+                }
+                if (! item) {
+                    if (state->recycler->pending(key)) continue;
+                    state->error = state->recycler->errorString();
+                    break;
+                }
+                state->live.insert(key, item);
+                state->connections[key] = {
+                    connect(item,
+                            horizontal ? &QQuickItem::widthChanged : &QQuickItem::heightChanged,
+                            this,
+                            [this, key] {
+                                invalidateDemand();
+                                d->dirtyMeasurements.insert(key);
+                                scheduleLayout();
+                            }),
+                    connect(item, &QObject::destroyed, this, &LazyView::scheduleLayout)
+                };
+                state->recycler->attach(item, contentItem());
+                if (! current()) return;
             }
-            state->live.insert(key, item);
-            state->connections[key] = {
-                connect(item,
-                        horizontal ? &QQuickItem::widthChanged : &QQuickItem::heightChanged,
-                        this,
-                        [this, key] {
-                            invalidateDemand();
-                            d->dirtyMeasurements.insert(key);
-                            scheduleLayout();
-                        }),
-                connect(item, &QObject::destroyed, this, &LazyView::scheduleLayout)
-            };
-            state->recycler->attach(item, contentItem());
-            if (! current()) return;
-        }
-        state->recycler->layout(
-            item, itemGeometry(index), state->orientation, layout.fixedItemExtent());
-        if (! current()) return;
-        if (! item) {
-            scheduleLayout();
-            continue;
-        }
-        const qreal previousExtent = layout.extent(index);
-        const auto  previousRect   = layout.rect(index);
-        const auto  measured       = state->layout->measure(index, itemExtent(item), offset);
-        ++processed;
-        if (measured.accepted) {
-            if (! layout.fixedItemExtent()) {
-                changedExtent |= previousExtent != itemExtent(item);
-                changedExtent |= layout.discreteItems() && previousRect != layout.rect(index);
-                if (previousExtent > 0 && itemExtent(item) == 0) ++state->zeroWork;
+            const bool measure =
+                ! layout.fixedItemExtent() &&
+                (needsBinding || needsMeasurement || state->dirtyMeasurements.contains(key));
+            if (measure) {
+                if (! needsBinding)
+                    state->recycler->layout(item, itemGeometry(index), state->orientation);
+                if (! current()) return;
+                if (! item) {
+                    scheduleLayout();
+                    continue;
+                }
+                const qreal previousExtent = layout.extent(index);
+                const auto  previousRect   = layout.rect(index);
+                const auto  measured = state->layout->measure(index, itemExtent(item), offset);
+                ++processed;
+                if (measured.accepted) {
+                    state->dirtyMeasurements.remove(key);
+                    changedExtent |= previousExtent != itemExtent(item);
+                    changedExtent |= layout.discreteItems() && previousRect != layout.rect(index);
+                    if (previousExtent > 0 && itemExtent(item) == 0) ++state->zeroWork;
+                    offset = measured.offset;
+                } else {
+                    state->error = QStringLiteral("Invalid delegate extent for key %1").arg(key);
+                }
             }
-            offset = measured.offset;
-        } else {
-            // Keep the last valid extent and retry only when layout inputs change.
-            state->error = QStringLiteral("Invalid delegate extent for key %1").arg(key);
+        }
+        if (state->position && state->position->mode == Immediate) {
+            const auto& request = *state->position;
+            offset              = *positionFor(request);
+        }
+        if (! layout.discreteItems() || deferred || ! state->error.isEmpty() ||
+            state->zeroWork >= 256)
+            break;
+        work.clear();
+        for (int index : layout.requestedIndices(offset, primarySize(), 0)) {
+            if (! urgentIndex(index)) continue;
+            const auto& key  = snapshot->descriptorAt(index).key;
+            const auto  item = state->live.value(key);
+            const auto  row  = state->recycler->row(item);
+            if (item && row && row->revision() == snapshot->revision && row->index() == index &&
+                ! state->dirtyMeasurements.contains(key) && ! layout.needsMeasurement(index))
+                continue;
+            if (! wanted.contains(key)) {
+                wanted.insert(key);
+                indexes.append(index);
+            }
+            work.append(index);
         }
     }
-    if (state->position && state->position->mode == Immediate) {
-        const auto& request = *state->position;
-        offset              = *positionFor(request);
+    if (layout.discreteItems()) {
+        std::stable_sort(indexes.begin(), indexes.end(), [&](int a, int b) {
+            const bool urgentA = urgentIndex(a), urgentB = urgentIndex(b);
+            return urgentA != urgentB ? urgentA : a < b;
+        });
     }
     updateContentGeometry(horizontal ? QSizeF(layout.totalExtent(), crossSize())
                                      : QSizeF(crossSize(), layout.totalExtent()),
@@ -676,6 +817,7 @@ void LazyView::updatePolish() {
     } else if (changedExtent || deferred) {
         scheduleLayout();
     }
+    if (cacheDeferred) schedulePreparation();
     const auto range =
         crossSize() > 0 && primarySize() > 0 && state->delegate && state->delegate->isReady()
             ? layout.demandRange(primaryOffset(), primarySize(), state->cache)

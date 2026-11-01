@@ -21,6 +21,9 @@ class QML_MATERIAL_API LazyView : public Flickable {
     Q_PROPERTY(
         qreal cacheExtent READ cacheExtent WRITE setCacheExtent NOTIFY cacheExtentChanged FINAL)
     Q_PROPERTY(int poolLimit READ poolLimit WRITE setPoolLimit NOTIFY poolLimitChanged FINAL)
+    Q_PROPERTY(qreal cachePreparationBudget READ cachePreparationBudget WRITE
+                   setCachePreparationBudget NOTIFY cachePreparationBudgetChanged FINAL)
+    Q_PROPERTY(int pendingCount READ pendingCount NOTIFY layoutChanged FINAL)
     Q_PROPERTY(int count READ count NOTIFY layoutChanged FINAL)
     Q_PROPERTY(int firstVisibleIndex READ firstVisibleIndex NOTIFY layoutChanged FINAL)
     Q_PROPERTY(int lastVisibleIndex READ lastVisibleIndex NOTIFY layoutChanged FINAL)
@@ -52,6 +55,9 @@ public:
     void                setCacheExtent(qreal);
     int                 poolLimit() const;
     void                setPoolLimit(int);
+    qreal               cachePreparationBudget() const;
+    void                setCachePreparationBudget(qreal);
+    int                 pendingCount() const;
     int                 count() const;
     int                 firstVisibleIndex() const;
     int                 lastVisibleIndex() const;
@@ -82,6 +88,7 @@ public:
     Q_SIGNAL void       delegateChanged();
     Q_SIGNAL void       cacheExtentChanged();
     Q_SIGNAL void       poolLimitChanged();
+    Q_SIGNAL void       cachePreparationBudgetChanged();
     Q_SIGNAL void       layoutChanged();
 
 protected:
@@ -99,6 +106,8 @@ protected:
 private:
     void invalidateDemand();
     void scheduleLayout();
+    void schedulePreparation();
+    void cancelPreparations();
     void finishPositioning(bool success);
     struct Private;
     std::shared_ptr<Private> d;

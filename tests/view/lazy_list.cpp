@@ -2,6 +2,7 @@
 #include "qml_material/model/lazy_row.hpp"
 #include "qml_material/model/item_model_source.hpp"
 #include <QQmlContext>
+#include <QQmlIncubationController>
 #include <QQuickRenderControl>
 #include <QQuickWindow>
 #include <QtTest>
@@ -143,6 +144,129 @@ class LazyListTest : public QObject {
         }
     }
 private slots:
+    void incubationCacheAndPositioning() {
+        QQmlIncubationController controller;
+        QQmlEngine               engine;
+        engine.setIncubationController(&controller);
+        ListSnapshotSource source;
+        source.setKeyRole("id");
+        source.setItems(rows(100));
+        engine.rootContext()->setContextProperty("testSource", &source);
+        QQmlComponent component(&engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            MD.LazyList {
+                width: 300; height: 120
+                source: testSource
+                cacheExtent: 160
+                cachePreparationBudget: 1000
+                poolLimit: 0
+                estimatedItemExtent: 40
+                delegate: Item {
+                    required property MD.LazyRow row
+                    implicitHeight: 40
+                    property string observedKey: row.key
+                }
+            }
+        )",
+                          QUrl());
+        std::unique_ptr<QObject> object(component.create());
+        auto*                    view = qobject_cast<LazyList*>(object.get());
+        QVERIFY2(view, qPrintable(component.errorString()));
+        QQuickRenderControl render;
+        QQuickWindow        window(&render);
+        view->setParentItem(window.contentItem());
+        window.setVisible(true);
+        frames(render);
+        QCOMPARE(view->firstVisibleIndex(), 0);
+        QCOMPARE(view->lastVisibleIndex(), 2);
+        QCOMPARE(view->liveCount(), 3);
+        QVERIFY(view->pendingCount() > 0);
+        QCOMPARE(view->pendingCount(), controller.incubatingObjectCount());
+        QSignalSpy positioned(view, &LazyView::positioningFinished);
+        QVERIFY(view->positionAtKey("3"));
+        render.polishItems();
+        frames(render);
+        QVERIFY(! view->positioning());
+        QCOMPARE(positioned.size(), 1);
+        QVERIFY(positioned.first().at(1).toBool());
+        QCOMPARE(view->firstVisibleIndex(), 3);
+        QVERIFY(view->pendingCount() > 0);
+        controller.incubateFor(100);
+        frames(render);
+        QCOMPARE(view->pendingCount(), 0);
+        QVERIFY(view->liveCount() > 3);
+        QVERIFY(view->errorString().isEmpty());
+        view->setContentY(1600);
+        frames(render);
+        QVERIFY(view->pendingCount() > 0);
+        view->setVisible(false);
+        QCOMPARE(view->pendingCount(), 0);
+        QCOMPARE(controller.incubatingObjectCount(), 0);
+        view->setCachePreparationBudget(0);
+        view->setVisible(true);
+        frames(render);
+        QCOMPARE(view->pendingCount(), 0);
+        QCOMPARE(view->liveCount(), 3);
+    }
+    void incubationLifecycle_data() {
+        QTest::addColumn<int>("change");
+        QTest::newRow("source") << 0;
+        QTest::newRow("delegate") << 1;
+        QTest::newRow("window-hidden") << 2;
+        QTest::newRow("view-destroyed") << 3;
+        QTest::newRow("width") << 4;
+        QTest::newRow("orientation") << 5;
+        QTest::newRow("window-replaced") << 6;
+    }
+    void incubationLifecycle() {
+        QFETCH(int, change);
+        QQmlIncubationController controller;
+        QQmlEngine               engine;
+        engine.setIncubationController(&controller);
+        ListSnapshotSource source;
+        source.setItems(rows(100));
+        engine.rootContext()->setContextProperty("testSource", &source);
+        QQmlComponent component(&engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            MD.LazyList {
+                width: 300; height: 120
+                source: testSource
+                estimatedItemExtent: 40
+                cachePreparationBudget: 1000
+                delegate: Item {
+                    required property MD.LazyRow row
+                    implicitWidth: 40; implicitHeight: 40
+                }
+            }
+        )",
+                          QUrl());
+        std::unique_ptr<QObject> object(component.create());
+        auto*                    view = qobject_cast<LazyList*>(object.get());
+        QVERIFY(view);
+        QQuickRenderControl render, otherRender;
+        QQuickWindow        window(&render), otherWindow(&otherRender);
+        view->setParentItem(window.contentItem());
+        window.setVisible(true);
+        frames(render);
+        QVERIFY(view->pendingCount() > 0);
+        switch (change) {
+        case 0: view->setSource(nullptr); break;
+        case 1: view->setDelegate(nullptr); break;
+        case 2: window.setVisible(false); break;
+        case 3: object.reset(); break;
+        case 4: view->setWidth(350); break;
+        case 5: view->setOrientation(Qt::Horizontal); break;
+        case 6: view->setParentItem(otherWindow.contentItem()); break;
+        }
+        QCOMPARE(controller.incubatingObjectCount(), 0);
+        if (object) QCOMPARE(view->pendingCount(), 0);
+        controller.incubateFor(100);
+        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+    }
     void valueUpdatesKeepDelegatesAndAnchor() {
         ValueUpdateSource source;
         QVERIFY(source.resetItems(100000));

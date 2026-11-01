@@ -24,7 +24,14 @@ public:
     ItemSnapshotPtr snapshot() const override { return m_snapshot; }
     int             count() const override { return m_locations.size(); }
     bool            estimated() const override { return m_cache.size() < count(); }
-    void            clear() override {
+    bool            needsMeasurement(int index) const override {
+        if (! m_snapshot || index < 0 || index >= count()) return true;
+        const auto& row      = m_snapshot->descriptorAt(index);
+        const auto  measured = m_cache.constFind(row.key);
+        return ! m_bound.contains(row.key) || measured == m_cache.cend() ||
+               measured->type != row.reuseType || measured->revision != row.contentRevision;
+    }
+    void clear() override {
         m_snapshot.reset();
         m_locations.clear();
         m_lanes.clear();

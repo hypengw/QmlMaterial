@@ -20,7 +20,8 @@ public:
     virtual void         setOrientation(Qt::Orientation) {}
     virtual bool         supportsOrientation(Qt::Orientation) const { return true; }
     virtual Result       measure(int index, qreal extent, qreal offset) = 0;
-    virtual bool         estimated() const                              = 0;
+    virtual bool         needsMeasurement(int) const { return ! fixedItemExtent(); }
+    virtual bool         estimated() const = 0;
     virtual bool         fixedItemExtent() const { return false; }
     virtual int          count() const                              = 0;
     virtual int          indexAt(qreal) const                       = 0;
@@ -80,6 +81,7 @@ public:
     Result measure(int index, qreal extent, qreal offset) override {
         return m_controller.measure(index, extent, offset);
     }
+    bool  needsMeasurement(int index) const override { return ! m_controller.measured(index); }
     bool  estimated() const override { return m_controller.estimated(); }
     int   count() const override { return m_controller.layout().count(); }
     int   indexAt(qreal position) const override { return m_controller.layout().indexAt(position); }

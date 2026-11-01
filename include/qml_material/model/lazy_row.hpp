@@ -53,13 +53,13 @@ private:
     void                 setUsage(Usage, QQuickItem*);
     Usage                m_usage = Pooled;
     QPointer<QQuickItem> m_view;
-    void                 bind(const ItemSnapshotPtr&, int index);
-    void                 pool();
-    ItemSnapshotPtr      m_snapshot;
-    ItemRecord           m_record;
-    int                  m_index      = -1;
-    quint64              m_revision   = 0;
-    bool                 m_active     = false;
-    quint64              m_generation = 0;
+    void bind(const ItemSnapshotPtr&, int index, QQuickItem* view = nullptr, Usage usage = Cached);
+    void pool();
+    ItemSnapshotPtr m_snapshot;
+    ItemRecord      m_record;
+    int             m_index      = -1;
+    quint64         m_revision   = 0;
+    bool            m_active     = false;
+    quint64         m_generation = 0;
 };
 } // namespace qml_material

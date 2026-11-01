@@ -3,7 +3,7 @@
 
 namespace qml_material
 {
-void LazyRow::bind(const ItemSnapshotPtr& snapshot, int index) {
+void LazyRow::bind(const ItemSnapshotPtr& snapshot, int index, QQuickItem* view, Usage usage) {
     if (! snapshot || index < 0 || index >= snapshot->count()) return;
     const auto  generation             = ++m_generation;
     const bool  activating             = ! m_active;
@@ -15,14 +15,12 @@ void LazyRow::bind(const ItemSnapshotPtr& snapshot, int index) {
     const bool  changedIndex           = m_index != index;
     const bool  changedRevision        = m_revision != snapshot->revision;
     const bool  changedContentRevision = m_record.contentRevision != descriptor.contentRevision;
-    const bool  changedUsage           = ! m_active || ! sameContent;
-    const bool  changedView            = changedUsage && m_view;
+    const bool  changedUsage           = m_usage != usage;
+    const bool  changedView            = m_view != view;
     const bool  reuseValue = sameContent && snapshot->sharesValueAt(index, *m_snapshot, m_index);
-    if (changedUsage) {
-        m_usage = Cached;
-        m_view  = nullptr;
-    }
-    m_snapshot = snapshot;
+    m_usage                = usage;
+    m_view                 = view;
+    m_snapshot             = snapshot;
     if (! reuseValue) m_record = snapshot->recordAt(index);
     m_index    = index;
     m_revision = snapshot->revision;

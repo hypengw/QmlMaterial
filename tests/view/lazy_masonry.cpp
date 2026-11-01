@@ -2,6 +2,7 @@
 #include "qml_material/model/lazy_row.hpp"
 #include "masonry_layout_p.hpp"
 #include <QQmlContext>
+#include <QQmlIncubationController>
 #include <QQuickRenderControl>
 #include <QQuickWindow>
 #include <QtTest>
@@ -29,7 +30,9 @@ struct Scene {
     QQmlComponent       delegate { &engine };
     ListSnapshotSource  source;
     LazyMasonryGrid     view { window.contentItem() };
-    explicit Scene(QVariantList values = rows(1000), QByteArray code = {}) {
+    explicit Scene(QVariantList values = rows(1000), QByteArray code = {},
+                   QQmlIncubationController* controller = nullptr) {
+        if (controller) engine.setIncubationController(controller);
         delegate.setData(
             code.isEmpty()
                 ? QByteArray("import QtQuick\nItem { required property QtObject row; "
@@ -46,7 +49,10 @@ struct Scene {
         view.setCacheExtent(0);
         view.setSource(&source);
         view.setDelegate(&delegate);
-        frames(render);
+        if (controller)
+            window.setVisible(true);
+        else
+            frames(render);
     }
     QQuickItem* item(const QString& key) {
         for (auto* host : view.contentItem()->childItems())
@@ -62,6 +68,220 @@ struct Scene {
 class LazyMasonryTest : public QObject {
     Q_OBJECT
 private slots:
+    void incubationFillsVisibleBeforeNotification_data() {
+        QTest::addColumn<qreal>("budget");
+        QTest::newRow("no-cache") << qreal(0);
+        QTest::newRow("default-budget") << qreal(2);
+        QTest::newRow("large-budget") << qreal(1000);
+    }
+    void incubationFillsVisibleBeforeNotification() {
+        QFETCH(qreal, budget);
+        auto values = rows(5000);
+        for (int i = 0; i < values.size(); ++i) {
+            auto value    = values[i].toMap();
+            value["size"] = i == 0 ? 6000 : 120 + i % 5 * 31;
+            values[i]     = value;
+        }
+        QQmlIncubationController controller;
+        Scene                    s(values, {}, &controller);
+        s.view.setSize({ 900, 900 });
+        s.view.setMinimumCellExtent(160);
+        s.view.setCrossSpacing(12);
+        s.view.setMainSpacing(12);
+        s.view.setEstimatedItemExtent(160);
+        s.view.setCacheExtent(160);
+        s.view.setCachePreparationBudget(budget);
+        QString failure;
+        int     checked = 0;
+        connect(&s.view, &LazyView::layoutChanged, &s.view, [&] {
+            for (int index : s.view.currentDemand().indices()) {
+                if (! s.view.itemRect(index).intersects(s.view.boundingRect())) continue;
+                ++checked;
+                const auto key = s.source.snapshot()->descriptorAt(index).key;
+                if (! s.item(key) && failure.isEmpty()) failure = QString::number(index);
+            }
+        });
+        for (int step = 0; step <= 80; ++step) {
+            s.view.setContentY(step * 480);
+            for (int frame = 0; frame < 3; ++frame) {
+                QCoreApplication::processEvents();
+                s.render.polishItems();
+                QVERIFY2(failure.isEmpty(), qPrintable(failure));
+                controller.incubateFor(100);
+            }
+        }
+        QVERIFY(checked > 0);
+        QVERIFY(s.view.errorString().isEmpty());
+    }
+    void incubationSparseItemsAndPositioning() {
+        auto values = rows(1000);
+        for (int i = 1; i < values.size(); ++i) {
+            auto value    = values[i].toMap();
+            value["size"] = 40 + i % 3 * 20;
+            values[i]     = value;
+        }
+        auto longRow    = values[0].toMap();
+        longRow["size"] = 10000;
+        values[0]       = longRow;
+        QQmlIncubationController controller;
+        Scene                    s(values, {}, &controller);
+        s.view.setPoolLimit(0);
+        s.view.setCachePreparationBudget(1000);
+        s.view.setCacheExtent(160);
+        frames(s.render);
+        QVERIFY(s.view.pendingCount() > 0);
+        QCOMPARE(controller.incubatingObjectCount(), s.view.pendingCount());
+        s.view.setContentY(2000);
+        frames(s.render);
+        QVERIFY(s.item("0"));
+        QCOMPARE(s.view.firstVisibleIndex(), 0);
+        QVERIFY(s.view.lastVisibleIndex() > 30);
+        const auto needed = s.view.currentDemand().indices();
+        QVERIFY(needed.contains(0));
+        QVERIFY(! needed.contains(1));
+        QVERIFY(needed.size() < 40);
+        int target = -1;
+        for (int index : needed) {
+            const auto key = s.source.snapshot()->descriptorAt(index).key;
+            if (s.view.itemRect(index).intersects(s.view.boundingRect())) {
+                QVERIFY2(s.item(key), qPrintable(key));
+                QCOMPARE(s.item(key)->property("row").value<LazyRow*>()->usage(), LazyRow::Visible);
+            } else if (! s.item(key))
+                target = index;
+        }
+        QVERIFY(target >= 0);
+        const auto key = s.source.snapshot()->descriptorAt(target).key;
+        QSignalSpy finished(&s.view, &LazyView::positioningFinished);
+        QVERIFY(s.view.positionAtKey(key));
+        frames(s.render);
+        QCOMPARE(finished.size(), 1);
+        QVERIFY(finished.first().at(1).toBool());
+        QVERIFY(s.item(key));
+        QCOMPARE(s.item(key)->property("row").value<LazyRow*>()->usage(), LazyRow::Visible);
+        QVERIFY(qAbs(s.view.itemRect(target).y()) <= 1);
+        QCOMPARE(s.view.itemRect(target).height(),
+                 s.source.valueAt(target).toMap().value("size").toReal());
+        for (int i = 0; i < 32 && s.view.pendingCount(); ++i) {
+            controller.incubateFor(100);
+            frames(s.render);
+        }
+        QCOMPARE(s.view.pendingCount(), 0);
+        for (int index : s.view.currentDemand().indices())
+            QVERIFY(s.item(s.source.snapshot()->descriptorAt(index).key));
+        QVERIFY(s.view.errorString().isEmpty());
+        s.view.setContentY(8000);
+        frames(s.render);
+        QVERIFY(s.view.pendingCount() > 0);
+        s.view.setVisible(false);
+        QCOMPARE(s.view.pendingCount(), 0);
+        QCOMPARE(controller.incubatingObjectCount(), 0);
+        s.view.setCachePreparationBudget(0);
+        s.view.setVisible(true);
+        frames(s.render);
+        QCOMPARE(s.view.pendingCount(), 0);
+        QVERIFY(s.item("0"));
+    }
+    void incubationSourceChanges() {
+        QQmlIncubationController controller;
+        Scene                    s(rows(100), {}, &controller);
+        s.view.setHeight(120);
+        s.view.setPoolLimit(0);
+        s.view.setCachePreparationBudget(1000);
+        s.view.setCacheExtent(160);
+        frames(s.render);
+        QVERIFY(s.view.pendingCount() > 0);
+        QVERIFY(! s.item("10"));
+        auto values = s.source.items();
+        values.swapItemsAt(10, 11);
+        auto changed    = values[12].toMap();
+        changed["size"] = 90;
+        values[12]      = changed;
+        values.removeAt(13);
+        s.source.setItems(values);
+        frames(s.render);
+        for (int i = 0; i < 32 && s.view.pendingCount(); ++i) {
+            controller.incubateFor(100);
+            frames(s.render);
+        }
+        QCOMPARE(s.view.pendingCount(), 0);
+        QVERIFY(s.item("10"));
+        QCOMPARE(s.item("10")->property("row").value<LazyRow*>()->index(), 11);
+        QVERIFY(s.item("12"));
+        QCOMPARE(s.view.itemRect(s.source.indexOfKey("12")).height(), 90.0);
+        QVERIFY(! s.item("13"));
+        QCOMPARE(s.view.currentDemand().snapshot(), s.source.snapshot());
+        QVERIFY(s.view.errorString().isEmpty());
+    }
+    void incubationColumnChanges() {
+        QQmlIncubationController controller;
+        Scene                    s(rows(100),
+                                   R"(
+            import QtQuick
+            Item {
+                required property QtObject row
+                implicitHeight: row.value.size + width / 10
+                property real initialWidth
+                Component.onCompleted: initialWidth = width
+            }
+        )",
+                                   &controller);
+        s.view.setPoolLimit(0);
+        s.view.setCachePreparationBudget(1000);
+        s.view.setCacheExtent(200);
+        frames(s.render);
+        QVERIFY(s.view.pendingCount() > 0);
+        int target = -1;
+        for (int index : s.view.currentDemand().indices())
+            if (! s.item(s.source.snapshot()->descriptorAt(index).key)) target = index;
+        QVERIFY(target >= 0);
+        const auto key = s.source.snapshot()->descriptorAt(target).key;
+        s.view.setFixedSlotCount(2);
+        frames(s.render);
+        QVERIFY(s.view.positionAtKey(key));
+        frames(s.render);
+        auto* item = s.item(key);
+        QVERIFY(item);
+        QCOMPARE(item->property("initialWidth").toReal(), 150.0);
+        QCOMPARE(item->width(), 150.0);
+        QCOMPARE(s.view.itemRect(s.source.indexOfKey(key)).height(), 55.0);
+        QVERIFY(s.view.errorString().isEmpty());
+    }
+    void measurementValidity() {
+        ListSnapshotSource source;
+        source.setKeyRole("id");
+        source.setItems(rows(6));
+        MasonryViewLayout layout;
+        layout.fixedSlotCount = 2;
+        layout.estimate       = 40;
+        QVERIFY(layout.apply(source.snapshot(), 200, 0, 100).accepted);
+        for (int i = 0; i < 6; ++i) {
+            QVERIFY(layout.needsMeasurement(i));
+            QVERIFY(layout.measure(i, 40, 0).accepted);
+            QVERIFY(! layout.needsMeasurement(i));
+        }
+        QVERIFY(layout.apply(source.snapshot(), 200, 0, 100).accepted);
+        for (int i = 0; i < 6; ++i) QVERIFY(! layout.needsMeasurement(i));
+        auto values = source.items();
+        values.swapItemsAt(2, 3);
+        source.setItems(values);
+        QVERIFY(layout.apply(source.snapshot(), 200, 0, 100).accepted);
+        QVERIFY(! layout.needsMeasurement(0));
+        QVERIFY(! layout.needsMeasurement(1));
+        for (int i = 2; i < 6; ++i) {
+            QVERIFY(layout.needsMeasurement(i));
+            QVERIFY(layout.measure(i, 40, 0).accepted);
+            QVERIFY(! layout.needsMeasurement(i));
+        }
+        auto changed    = values[0].toMap();
+        changed["size"] = 90;
+        values[0]       = changed;
+        source.setItems(values);
+        QVERIFY(layout.apply(source.snapshot(), 200, 0, 100).accepted);
+        QVERIFY(layout.needsMeasurement(0));
+        QVERIFY(! layout.needsMeasurement(1));
+        QVERIFY(layout.apply(source.snapshot(), 300, 0, 100).accepted);
+        for (int i = 0; i < 6; ++i) QVERIFY(layout.needsMeasurement(i));
+    }
     void qmlConstruction() {
         QQmlEngine engine;
         engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));

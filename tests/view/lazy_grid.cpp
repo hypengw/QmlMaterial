@@ -4,6 +4,7 @@
 #include "qml_material/model/item_model_source.hpp"
 #include "grid_layout_p.hpp"
 #include <QQmlContext>
+#include <QQmlIncubationController>
 #include <QQuickRenderControl>
 #include <QQuickWindow>
 #include <QKeyEvent>
@@ -34,9 +35,12 @@ struct Scene {
     QQmlComponent       delegate { &engine };
     ListSnapshotSource  source;
     LazyGrid            view { window.contentItem() };
-    Scene(int count = 100) {
+    Scene(int count = 100, QQmlIncubationController* controller = nullptr) {
+        if (controller) engine.setIncubationController(controller);
         delegate.setData("import QtQuick\nItem { required property QtObject row; property string "
-                         "title: row.value.title }",
+                         "title: row.value.title; property size initialSize; property point "
+                         "initialPosition; Component.onCompleted: { initialSize = Qt.size(width, "
+                         "height); initialPosition = Qt.point(parent.x, parent.y) } }",
                          {});
         source.setKeyRole("id");
         source.setItems(rows(count));
@@ -48,7 +52,10 @@ struct Scene {
         view.setCacheExtent(0);
         view.setSource(&source);
         view.setDelegate(&delegate);
-        frames(render);
+        if (controller)
+            window.setVisible(true);
+        else
+            frames(render);
     }
     QQuickItem* item(const QString& key) {
         for (auto* host : view.contentItem()->childItems())
@@ -88,6 +95,130 @@ public:
 class LazyGridTest : public QObject {
     Q_OBJECT
 private slots:
+    void incubationAndPositioning_data() {
+        QTest::addColumn<bool>("horizontal");
+        QTest::addColumn<bool>("mirrored");
+        QTest::newRow("vertical") << false << false;
+        QTest::newRow("vertical-rtl") << false << true;
+        QTest::newRow("horizontal") << true << false;
+        QTest::newRow("horizontal-rtl") << true << true;
+    }
+    void incubationAndPositioning() {
+        QFETCH(bool, horizontal);
+        QFETCH(bool, mirrored);
+        QQmlIncubationController controller;
+        Scene                    s(240, &controller);
+        s.view.setOrientation(horizontal ? Qt::Horizontal : Qt::Vertical);
+        s.view.setLayoutDirection(mirrored ? Qt::RightToLeft : Qt::LeftToRight);
+        s.view.setSize(horizontal ? QSizeF(120, 300) : QSizeF(300, 120));
+        s.view.setFixedSlotCount(3);
+        s.view.setPoolLimit(0);
+        s.view.setCachePreparationBudget(1000);
+        s.view.setCacheExtent(80);
+        frames(s.render);
+        QCOMPARE(s.view.firstVisibleIndex(), 0);
+        QCOMPARE(s.view.lastVisibleIndex(), 8);
+        QCOMPARE(s.view.liveCount(), 9);
+        QVERIFY(s.view.pendingCount() > 0);
+        QCOMPARE(controller.incubatingObjectCount(), s.view.pendingCount());
+        QVERIFY(! s.item("9"));
+        QSignalSpy finished(&s.view, &LazyView::positioningFinished);
+        QVERIFY(s.view.positionAtKey("9"));
+        frames(s.render);
+        QCOMPARE(finished.size(), 1);
+        QVERIFY(finished.first().at(1).toBool());
+        auto* target = s.item("9");
+        QVERIFY(target);
+        auto* row = target->property("row").value<LazyRow*>();
+        QCOMPARE(row->usage(), LazyRow::Visible);
+        QCOMPARE(row->view(), &s.view);
+        QCOMPARE(target->size(), s.view.itemRect(9).size());
+        QCOMPARE(target->property("initialSize").toSizeF(), target->size());
+        QVERIFY(s.view.pendingCount() > 0);
+        controller.incubateFor(100);
+        frames(s.render);
+        QCOMPARE(s.view.pendingCount(), 0);
+        QVERIFY(s.view.liveCount() > 9);
+        QVERIFY(s.view.errorString().isEmpty());
+        if (horizontal)
+            s.view.setContentX(s.view.contentX() + (mirrored ? -800 : 800));
+        else
+            s.view.setContentY(s.view.contentY() + 800);
+        frames(s.render);
+        QVERIFY(s.view.pendingCount() > 0);
+        s.view.setCachePreparationBudget(0);
+        QCOMPARE(s.view.pendingCount(), 0);
+        QCOMPARE(controller.incubatingObjectCount(), 0);
+        frames(s.render);
+        QCOMPARE(s.view.liveCount(), 9);
+    }
+    void incubationSourceChanges() {
+        QQmlIncubationController controller;
+        Scene                    s(100, &controller);
+        s.view.setHeight(120);
+        s.view.setPoolLimit(0);
+        s.view.setCachePreparationBudget(1000);
+        s.view.setCacheExtent(80);
+        frames(s.render);
+        QVERIFY(! s.item("10"));
+        QVERIFY(s.view.pendingCount() > 0);
+        auto values = s.source.items();
+        values.swapItemsAt(10, 11);
+        auto updated     = values[12].toMap();
+        updated["title"] = "updated";
+        values[12]       = updated;
+        values.removeAt(13);
+        s.source.setItems(values);
+        frames(s.render);
+        controller.incubateFor(100);
+        frames(s.render);
+        QCOMPARE(s.view.pendingCount(), 0);
+        QVERIFY(s.item("10"));
+        QCOMPARE(s.item("10")->property("row").value<LazyRow*>()->index(), 11);
+        QCOMPARE(s.item("12")->property("title").toString(), "updated");
+        QVERIFY(! s.item("13"));
+        QCOMPARE(s.view.currentDemand().snapshot(), s.source.snapshot());
+        QVERIFY(s.view.errorString().isEmpty());
+    }
+    void incubationLayoutChanges_data() {
+        QTest::addColumn<int>("change");
+        QTest::newRow("columns") << 0;
+        QTest::newRow("minimum-cell") << 1;
+        QTest::newRow("cross-spacing") << 2;
+        QTest::newRow("item-extent") << 3;
+        QTest::newRow("mirrored") << 4;
+        QTest::newRow("main-spacing") << 5;
+    }
+    void incubationLayoutChanges() {
+        QFETCH(int, change);
+        QQmlIncubationController controller;
+        Scene                    s(100, &controller);
+        s.view.setHeight(120);
+        s.view.setPoolLimit(0);
+        s.view.setCachePreparationBudget(1000);
+        s.view.setCacheExtent(160);
+        frames(s.render);
+        QVERIFY(! s.item("9"));
+        QVERIFY(s.view.pendingCount() > 0);
+        switch (change) {
+        case 0: s.view.setFixedSlotCount(2); break;
+        case 1: s.view.setMinimumCellExtent(150); break;
+        case 2: s.view.setCrossSpacing(10); break;
+        case 3: s.view.setItemExtent(50); break;
+        case 4: s.view.setLayoutDirection(Qt::RightToLeft); break;
+        case 5: s.view.setMainSpacing(5); break;
+        }
+        frames(s.render);
+        controller.incubateFor(100);
+        frames(s.render);
+        auto* item = s.item("9");
+        QVERIFY(item);
+        QCOMPARE(item->property("initialSize").toSizeF(), item->size());
+        QCOMPARE(item->property("initialPosition").toPointF(), item->parentItem()->position());
+        QCOMPARE(item->size(), s.view.itemRect(9).size());
+        QCOMPARE(s.view.pendingCount(), 0);
+        QVERIFY(s.view.errorString().isEmpty());
+    }
     void qmlConstruction() {
         QQmlEngine engine;
         engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));

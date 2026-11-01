@@ -19,6 +19,13 @@ public:
     const LinearLayout& layout() const { return m_layout; }
     ItemSnapshotPtr     snapshot() const { return m_snapshot; }
     bool                estimated() const { return m_cache.size() < m_layout.count(); }
+    bool                measured(int index) const {
+        if (! m_snapshot || index < 0 || index >= m_snapshot->count()) return false;
+        const auto& row   = m_snapshot->descriptorAt(index);
+        const auto  found = m_cache.constFind(row.key);
+        return found != m_cache.cend() && found->type == row.reuseType &&
+               found->revision == row.contentRevision;
+    }
 
     void clear() {
         m_snapshot.reset();
