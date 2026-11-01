@@ -1,611 +1,214 @@
 #include "qml_material/core/attached_property.hpp"
 
-#include <QHash>
-#include <QChildEvent>
-#include <QMetaProperty>
 #include <QQmlEngine>
 #include <QQmlInfo>
 #include <QQuickItem>
 #include <QQuickWindow>
-#include <QSet>
-#include <QVariant>
 #include <QtQml/qqml.h>
+#include <utility>
 
 namespace qml_material
 {
-
 namespace
 {
-constexpr auto registryPropertyName = "_qcm_material_attached_property_registry";
-
-QObject* objectProperty(QObject* object, const char* name) {
-    if (! object) return nullptr;
-
-    const auto propertyIndex = object->metaObject()->indexOfProperty(name);
-    if (propertyIndex < 0) return nullptr;
-
-    const auto value = object->metaObject()->property(propertyIndex).read(object);
-    if (auto* item = value.value<QQuickItem*>()) return item;
-    return value.value<QObject*>();
+AttachedPropertyNode* attachedObject(const QMetaObject* type, QObject* target,
+                                     bool create = false) {
+    if (! target) return nullptr;
+    const auto factory = qmlAttachedPropertiesFunction(target, type);
+    return qobject_cast<AttachedPropertyNode*>(
+        qmlAttachedPropertiesObject(target, factory, create));
 }
 
-QQuickItem* itemProperty(QObject* object, const char* name) {
-    return qobject_cast<QQuickItem*>(objectProperty(object, name));
+QQmlEngine* engineFor(QObject* target) { return target ? qmlEngine(target) : nullptr; }
+
+bool sameEngine(QObject* first, QObject* second) {
+    const auto firstEngine  = engineFor(first);
+    const auto secondEngine = engineFor(second);
+    return ! firstEngine || ! secondEngine || firstEngine == secondEngine;
 }
 
-QMetaObject::Connection connectPropertyNotify(QObject* sender, const char* propertyName,
-                                              AttachedPropertyNode* receiver) {
-    const auto propertyIndex = sender->metaObject()->indexOfProperty(propertyName);
-    if (propertyIndex < 0) return {};
-
-    const auto property = sender->metaObject()->property(propertyIndex);
-    if (! property.hasNotifySignal()) return {};
-
-    const auto slotIndex =
-        AttachedPropertyNode::staticMetaObject.indexOfSlot("refreshPropagation()");
-    return QObject::connect(sender,
-                            property.notifySignal(),
-                            receiver,
-                            AttachedPropertyNode::staticMetaObject.method(slotIndex));
+void collectChildren(const QMetaObject* type, QQuickItem* item,
+                     QList<QPointer<AttachedPropertyNode>>& children) {
+    const auto items = item->childItems();
+    for (auto* child : items) {
+        if (auto* node = attachedObject(type, child))
+            children.append(node);
+        else
+            collectChildren(type, child, children);
+    }
+    const auto objects = item->children();
+    for (auto* child : objects)
+        if (auto* window = qobject_cast<QQuickWindow*>(child))
+            if (auto* node = attachedObject(type, window)) children.append(node);
 }
 } // namespace
-
-class AttachedPropertyRegistry final : public QObject {
-public:
-    explicit AttachedPropertyRegistry(QQmlEngine* engine): QObject(engine), m_engine(engine) {}
-
-    ~AttachedPropertyRegistry() override {
-        if (m_engine) m_engine->setProperty(registryPropertyName, {});
-
-        const auto nodes = allNodes();
-        for (const auto& guardedNode : nodes) {
-            auto* node = guardedNode.data();
-            if (! node) continue;
-
-            disconnectTarget(node);
-            QObject::disconnect(node->m_registry_destroyed);
-            node->m_registry          = nullptr;
-            node->m_registered_target = nullptr;
-            node->m_attached_parent   = nullptr;
-            node->m_attached_children = {};
-        }
-    }
-
-    static AttachedPropertyRegistry* get(QQmlEngine* engine) {
-        if (! engine) return nullptr;
-
-        const auto value = engine->property(registryPropertyName);
-        if (auto* object = value.value<QObject*>())
-            return static_cast<AttachedPropertyRegistry*>(object);
-
-        auto* registry = new AttachedPropertyRegistry(engine);
-        engine->setProperty(registryPropertyName,
-                            QVariant::fromValue(static_cast<QObject*>(registry)));
-        return registry;
-    }
-
-    void add(AttachedPropertyNode* node) {
-        if (! node || ! node->target() || ! node->m_attached_type) return;
-
-        auto& slot = m_nodes[node->target()][node->m_attached_type];
-        if (slot && slot != node) {
-            qmlWarning(node->target()) << "Duplicate attached property propagation node for"
-                                       << node->m_attached_type->className();
-            return;
-        }
-
-        slot                       = node;
-        node->m_registry           = this;
-        node->m_registered_target  = node->target();
-        node->m_registry_destroyed = connect(this, &QObject::destroyed, node, [node]() {
-            node->m_registry = nullptr;
-        });
-
-        connectTarget(node);
-        updateContentRoot(node);
-        setAttachedParent(node, findParent(node));
-        adoptAttachedChildren(node);
-
-        if (! qobject_cast<QQuickItem*>(node->target()) &&
-            ! qobject_cast<QQuickWindow*>(node->target()) &&
-            node->target()->metaObject()->indexOfProperty("contentItem") >= 0) {
-            QMetaObject::invokeMethod(
-                node, &AttachedPropertyNode::refreshPropagation, Qt::QueuedConnection);
-        }
-    }
-
-    void remove(AttachedPropertyNode* node) {
-        if (! node || node->m_registry != this) return;
-
-        disconnectTarget(node);
-        QObject::disconnect(node->m_registry_destroyed);
-        removeNodeIndex(node);
-        removeContentRootIndex(node);
-        detachFromAttachedParent(node);
-
-        const auto children = node->m_attached_children;
-        for (const auto& guardedChild : children) {
-            auto* child = guardedChild.data();
-            if (child && child->m_attached_parent == node) child->m_attached_parent = nullptr;
-        }
-
-        node->m_attached_children = {};
-        node->m_registry          = nullptr;
-        node->m_registered_target = nullptr;
-    }
-
-    void refreshNode(AttachedPropertyNode* node) {
-        if (! node || node->m_registry != this) return;
-
-        const auto contentRootChanged = updateContentRoot(node);
-        reconnectNode(node);
-        if (! contentRootChanged) return;
-
-        const auto children = node->m_attached_children;
-        for (const auto& guardedChild : children) {
-            auto* child = guardedChild.data();
-            if (child && child->m_registry == this) reconnectNode(child);
-        }
-        adoptAttachedChildren(node);
-    }
-
-    void refreshChildren(AttachedPropertyNode* node) {
-        if (! node) return;
-
-        const auto children = node->m_attached_children;
-        for (const auto& guardedChild : children) {
-            auto* child = guardedChild.data();
-            if (child && child->m_attached_parent == node) child->updateInheritedValues();
-        }
-    }
-
-protected:
-    bool eventFilter(QObject*, QEvent* event) override {
-        if (event->type() == QEvent::ChildAdded || event->type() == QEvent::ChildRemoved)
-            scheduleObjectRefresh();
-        return false;
-    }
-
-private:
-    void scheduleObjectRefresh() {
-        if (m_refreshQueued) return;
-        m_refreshQueued = true;
-        QMetaObject::invokeMethod(
-            this,
-            [this] {
-                m_refreshQueued  = false;
-                const auto nodes = allNodes();
-                for (const auto& node : nodes) {
-                    if (! node || qobject_cast<QQuickItem*>(node->target()) ||
-                        qobject_cast<QQuickWindow*>(node->target()))
-                        continue;
-                    for (auto connection : node->m_target_connections) disconnect(connection);
-                    node->m_target_connections.clear();
-                    connectTarget(node);
-                    refreshNode(node);
-                }
-            },
-            Qt::QueuedConnection);
-    }
-    void watchObject(QObject* object) {
-        if (m_watched.contains(object)) return;
-        m_watched.insert(object);
-        object->installEventFilter(this);
-        connect(object, &QObject::destroyed, this, [this, object] {
-            m_watched.remove(object);
-        });
-    }
-    QSet<QObject*> m_watched;
-    bool           m_refreshQueued = false;
-    using TypeNodes                = QHash<const QMetaObject*, QPointer<AttachedPropertyNode>>;
-
-    QList<QPointer<AttachedPropertyNode>> allNodes() const {
-        QList<QPointer<AttachedPropertyNode>> nodes;
-        for (auto targetIt = m_nodes.cbegin(); targetIt != m_nodes.cend(); ++targetIt) {
-            for (auto typeIt = targetIt->cbegin(); typeIt != targetIt->cend(); ++typeIt) {
-                if (typeIt.value()) nodes.append(typeIt.value());
-            }
-        }
-        return nodes;
-    }
-
-    AttachedPropertyNode* nodeForTarget(QObject* target, const QMetaObject* attachedType) const {
-        const auto targetIt = m_nodes.constFind(target);
-        if (targetIt == m_nodes.cend()) return nullptr;
-
-        const auto typeIt = targetIt->constFind(attachedType);
-        return typeIt == targetIt->cend() ? nullptr : typeIt.value().data();
-    }
-
-    AttachedPropertyNode* nodeForContentRoot(QQuickItem*        item,
-                                             const QMetaObject* attachedType) const {
-        const auto itemIt = m_content_roots.constFind(item);
-        if (itemIt == m_content_roots.cend()) return nullptr;
-
-        const auto typeIt = itemIt->constFind(attachedType);
-        return typeIt == itemIt->cend() ? nullptr : typeIt.value().data();
-    }
-
-    AttachedPropertyNode* nodeForVisualRoot(QQuickItem*        item,
-                                            const QMetaObject* attachedType) const {
-        if (! item) return nullptr;
-        if (auto* direct = nodeForTarget(item, attachedType)) return direct;
-        return nodeForContentRoot(item, attachedType);
-    }
-
-    AttachedPropertyNode* findFromWindow(QQuickWindow* window, const QMetaObject* attachedType,
-                                         bool includeWindow) const {
-        auto* current =
-            includeWindow
-                ? window
-                : qobject_cast<QQuickWindow*>(window ? window->transientParent() : nullptr);
-        while (current) {
-            if (auto* node = nodeForTarget(current, attachedType)) return node;
-            current = qobject_cast<QQuickWindow*>(current->transientParent());
-        }
-        return nullptr;
-    }
-
-    AttachedPropertyNode* findFromItem(QQuickItem* item, const QMetaObject* attachedType,
-                                       bool includeItem) const {
-        if (! item) return nullptr;
-
-        if (! includeItem) {
-            if (auto* owner = nodeForContentRoot(item, attachedType)) return owner;
-        }
-
-        auto* current = includeItem ? item : item->parentItem();
-        while (current) {
-            if (auto* node = nodeForVisualRoot(current, attachedType)) return node;
-            current = current->parentItem();
-        }
-        return findFromWindow(item->window(), attachedType, true);
-    }
-
-    AttachedPropertyNode* findParent(AttachedPropertyNode* node) {
-        if (! node || ! node->target()) return nullptr;
-
-        auto* source = node->inheritFrom();
-        if (source) {
-            const auto* sourceEngine = qmlEngine(source);
-            if (sourceEngine && sourceEngine != m_engine) {
-                if (! node->m_cross_engine_warning_issued) {
-                    qmlWarning(node->target()) << "inheritFrom cannot cross QQmlEngine boundaries";
-                    node->m_cross_engine_warning_issued = true;
-                }
-                return nullptr;
-            }
-            node->m_cross_engine_warning_issued = false;
-
-            if (auto* direct = nodeForTarget(source, node->m_attached_type)) return direct;
-            if (auto* item = qobject_cast<QQuickItem*>(source))
-                return findFromItem(item, node->m_attached_type, true);
-            if (auto* window = qobject_cast<QQuickWindow*>(source))
-                return findFromWindow(window, node->m_attached_type, true);
-            if (auto* parentItem = itemProperty(source, "parent"))
-                return findFromItem(parentItem, node->m_attached_type, true);
-            return nullptr;
-        }
-        node->m_cross_engine_warning_issued = false;
-
-        if (auto* item = qobject_cast<QQuickItem*>(node->target()))
-            return findFromItem(item, node->m_attached_type, false);
-        if (auto* window = qobject_cast<QQuickWindow*>(node->target()))
-            return findFromWindow(window, node->m_attached_type, false);
-        if (auto* parentItem = itemProperty(node->target(), "parent"))
-            return findFromItem(parentItem, node->m_attached_type, true);
-        for (auto* object = node->target()->parent(); object; object = object->parent()) {
-            if (auto* direct = nodeForTarget(object, node->m_attached_type)) return direct;
-            if (auto* item = qobject_cast<QQuickItem*>(object))
-                return findFromItem(item, node->m_attached_type, true);
-            if (auto* window = qobject_cast<QQuickWindow*>(object))
-                return findFromWindow(window, node->m_attached_type, true);
-        }
-        return nullptr;
-    }
-
-    void collectAttachedChildren(QQuickItem* item, AttachedPropertyNode* owner, bool includeItem,
-                                 QList<QPointer<AttachedPropertyNode>>& children,
-                                 QSet<QQuickItem*>&                     visitedItems,
-                                 QSet<AttachedPropertyNode*>&           visitedNodes) const {
-        if (! item || visitedItems.contains(item)) return;
-        visitedItems.insert(item);
-
-        if (includeItem) {
-            auto* attached = nodeForVisualRoot(item, owner->m_attached_type);
-            if (attached && attached != owner) {
-                if (! visitedNodes.contains(attached)) {
-                    visitedNodes.insert(attached);
-                    children.append(attached);
-                }
-                return;
-            }
-        }
-
-        const auto childItems = item->childItems();
-        for (auto* child : childItems)
-            collectAttachedChildren(child, owner, true, children, visitedItems, visitedNodes);
-
-        const auto objectChildren = item->children();
-        for (auto* objectChild : objectChildren) {
-            auto* childWindow = qobject_cast<QQuickWindow*>(objectChild);
-            if (! childWindow) continue;
-
-            auto* attached = nodeForTarget(childWindow, owner->m_attached_type);
-            if (attached && attached != owner && ! visitedNodes.contains(attached)) {
-                visitedNodes.insert(attached);
-                children.append(attached);
-            }
-        }
-    }
-
-    QList<QPointer<AttachedPropertyNode>> findAttachedChildren(AttachedPropertyNode* node) const {
-        QList<QPointer<AttachedPropertyNode>> children;
-        QSet<QQuickItem*>                     visitedItems;
-        QSet<AttachedPropertyNode*>           visitedNodes;
-
-        if (auto* item = qobject_cast<QQuickItem*>(node->target())) {
-            collectAttachedChildren(item, node, false, children, visitedItems, visitedNodes);
-            return children;
-        }
-
-        if (auto* window = qobject_cast<QQuickWindow*>(node->target())) {
-            collectAttachedChildren(
-                window->contentItem(), node, false, children, visitedItems, visitedNodes);
-            return children;
-        }
-
-        collectAttachedChildren(
-            node->m_content_root, node, true, children, visitedItems, visitedNodes);
-        return children;
-    }
-
-    void adoptAttachedChildren(AttachedPropertyNode* node) {
-        auto children = findAttachedChildren(node);
-        for (const auto& candidate : allNodes()) {
-            if (candidate && candidate != node &&
-                candidate->m_attached_type == node->m_attached_type &&
-                ! qobject_cast<QQuickItem*>(candidate->target()) && ! children.contains(candidate))
-                children.append(candidate);
-        }
-        for (const auto& guardedChild : children) {
-            auto* child = guardedChild.data();
-            if (! child || child->m_registry != this) continue;
-            if (findParent(child) == node) setAttachedParent(child, node);
-        }
-    }
-
-    void reconnectNode(AttachedPropertyNode* node) {
-        if (! node || node->m_registry != this) return;
-        setAttachedParent(node, findParent(node));
-    }
-
-    bool createsCycle(AttachedPropertyNode* node, AttachedPropertyNode* parent) const {
-        QSet<AttachedPropertyNode*> visited;
-        for (auto* current = parent; current; current = current->m_attached_parent) {
-            if (current == node) return true;
-            if (visited.contains(current)) return true;
-            visited.insert(current);
-        }
-        return false;
-    }
-
-    void setAttachedParent(AttachedPropertyNode* node, AttachedPropertyNode* parent) {
-        if (! node) return;
-
-        if (parent && createsCycle(node, parent)) {
-            if (! node->m_cycle_warning_issued) {
-                qmlWarning(node->target())
-                    << node->m_attached_type->className()
-                    << "inheritFrom creates an attached property propagation cycle";
-                node->m_cycle_warning_issued = true;
-            }
-            parent = nullptr;
-        } else {
-            node->m_cycle_warning_issued = false;
-        }
-
-        if (node->m_attached_parent == parent) return;
-
-        detachFromAttachedParent(node);
-        node->m_attached_parent = parent;
-        if (parent && ! parent->m_attached_children.contains(node))
-            parent->m_attached_children.append(node);
-        node->updateInheritedValues();
-    }
-
-    void detachFromAttachedParent(AttachedPropertyNode* node) {
-        if (! node) return;
-        if (node->m_attached_parent) node->m_attached_parent->m_attached_children.removeAll(node);
-        node->m_attached_parent = nullptr;
-    }
-
-    void connectTarget(AttachedPropertyNode* node) {
-        auto* target = node->target();
-        if (auto* item = qobject_cast<QQuickItem*>(target)) {
-            node->m_target_connections.append(connect(
-                item, &QQuickItem::parentChanged, node, &AttachedPropertyNode::refreshPropagation));
-            node->m_target_connections.append(connect(
-                item, &QQuickItem::windowChanged, node, &AttachedPropertyNode::refreshPropagation));
-            return;
-        }
-        if (auto* window = qobject_cast<QQuickWindow*>(target)) {
-            node->m_target_connections.append(connect(window,
-                                                      &QWindow::transientParentChanged,
-                                                      node,
-                                                      &AttachedPropertyNode::refreshPropagation));
-            return;
-        }
-
-        for (auto* ancestor = target->parent(); ancestor; ancestor = ancestor->parent()) {
-            watchObject(ancestor);
-            if (auto* item = qobject_cast<QQuickItem*>(ancestor)) {
-                node->m_target_connections.append(
-                    connect(item,
-                            &QQuickItem::parentChanged,
-                            node,
-                            &AttachedPropertyNode::refreshPropagation));
-                node->m_target_connections.append(
-                    connect(item,
-                            &QQuickItem::windowChanged,
-                            node,
-                            &AttachedPropertyNode::refreshPropagation));
-                break;
-            }
-        }
-        const auto parentConnection = connectPropertyNotify(target, "parent", node);
-        if (parentConnection) node->m_target_connections.append(parentConnection);
-        const auto contentConnection = connectPropertyNotify(target, "contentItem", node);
-        if (contentConnection) node->m_target_connections.append(contentConnection);
-    }
-
-    void disconnectTarget(AttachedPropertyNode* node) {
-        for (const auto& connection : node->m_target_connections) QObject::disconnect(connection);
-        node->m_target_connections.clear();
-        QObject::disconnect(node->m_content_root_destroyed);
-        node->m_content_root_destroyed = {};
-    }
-
-    bool updateContentRoot(AttachedPropertyNode* node) {
-        QQuickItem* contentRoot = nullptr;
-        if (! qobject_cast<QQuickItem*>(node->target()) &&
-            ! qobject_cast<QQuickWindow*>(node->target())) {
-            contentRoot = itemProperty(node->target(), "contentItem");
-        }
-
-        if (node->m_content_root == contentRoot) return false;
-
-        removeContentRootIndex(node);
-        node->m_content_root = contentRoot;
-        if (! contentRoot) return true;
-
-        m_content_roots[contentRoot][node->m_attached_type] = node;
-        node->m_content_root_destroyed =
-            connect(contentRoot, &QObject::destroyed, node, [this, node, contentRoot]() {
-                auto itemIt = m_content_roots.find(contentRoot);
-                if (itemIt != m_content_roots.end()) {
-                    auto typeIt = itemIt->find(node->m_attached_type);
-                    if (typeIt != itemIt->end() && typeIt.value() == node) itemIt->erase(typeIt);
-                    if (itemIt->isEmpty()) m_content_roots.erase(itemIt);
-                }
-                node->m_content_root           = nullptr;
-                node->m_content_root_destroyed = {};
-            });
-        return true;
-    }
-
-    void removeNodeIndex(AttachedPropertyNode* node) {
-        auto targetIt = m_nodes.find(node->m_registered_target);
-        if (targetIt == m_nodes.end()) return;
-
-        auto typeIt = targetIt->find(node->m_attached_type);
-        if (typeIt != targetIt->end() && typeIt.value() == node) targetIt->erase(typeIt);
-        if (targetIt->isEmpty()) m_nodes.erase(targetIt);
-    }
-
-    void removeContentRootIndex(AttachedPropertyNode* node) {
-        QObject::disconnect(node->m_content_root_destroyed);
-        node->m_content_root_destroyed = {};
-
-        auto* contentRoot = node->m_content_root.data();
-        if (! contentRoot) {
-            node->m_content_root = nullptr;
-            return;
-        }
-
-        auto itemIt = m_content_roots.find(contentRoot);
-        if (itemIt != m_content_roots.end()) {
-            auto typeIt = itemIt->find(node->m_attached_type);
-            if (typeIt != itemIt->end() && typeIt.value() == node) itemIt->erase(typeIt);
-            if (itemIt->isEmpty()) m_content_roots.erase(itemIt);
-        }
-        node->m_content_root = nullptr;
-    }
-
-    QPointer<QQmlEngine>          m_engine;
-    QHash<QObject*, TypeNodes>    m_nodes;
-    QHash<QQuickItem*, TypeNodes> m_content_roots;
-};
 
 AttachedPropertyNode::AttachedPropertyNode(QObject* target, const QMetaObject* attachedType)
     : QObject(target), m_target(target), m_attached_type(attachedType) {}
 
 AttachedPropertyNode::~AttachedPropertyNode() {
+    m_destroying = true;
+    disconnectTarget();
     QObject::disconnect(m_inherit_from_destroyed);
-    if (m_registry) m_registry->remove(this);
+    if (m_attached_parent) m_attached_parent->m_attached_children.removeOne(this);
+    for (const auto& child : std::exchange(m_attached_children, {}))
+        if (child && child->m_attached_parent == this) child->m_attached_parent = nullptr;
 }
 
 QObject* AttachedPropertyNode::target() const { return m_target; }
-
 QObject* AttachedPropertyNode::inheritFrom() const { return m_inherit_from; }
 
 void AttachedPropertyNode::setInheritFrom(QObject* source) {
     if (m_inherit_from == source) return;
-
-    QObject::disconnect(m_inherit_from_destroyed);
+    const auto                     revision = ++m_source_revision;
+    QPointer<AttachedPropertyNode> guard(this);
+    QObject::disconnect(std::exchange(m_inherit_from_destroyed, {}));
     m_inherit_from = source;
     if (source) {
-        m_inherit_from_destroyed = connect(source, &QObject::destroyed, this, [this]() {
-            m_inherit_from = nullptr;
-            emit inheritFromChanged();
+        m_inherit_from_destroyed = connect(source, &QObject::destroyed, this, [this] {
+            const auto                     revision = ++m_source_revision;
+            QPointer<AttachedPropertyNode> guard(this);
+            m_inherit_from           = nullptr;
+            m_inherit_from_destroyed = {};
             refreshPropagation();
+            if (guard && m_source_revision == revision) emit inheritFromChanged();
         });
-    } else {
-        m_inherit_from_destroyed = {};
     }
-
-    emit inheritFromChanged();
     refreshPropagation();
+    if (guard && m_source_revision == revision) emit inheritFromChanged();
 }
 
 void AttachedPropertyNode::resetInheritFrom() { setInheritFrom(nullptr); }
+
+void AttachedPropertyNode::setInheritanceParent(QQuickItem* item) {
+    m_inheritance_parent = item;
+    refreshPropagation();
+}
 
 AttachedPropertyNode* AttachedPropertyNode::attachedParent() const { return m_attached_parent; }
 
 QList<AttachedPropertyNode*> AttachedPropertyNode::attachedChildren() const {
     QList<AttachedPropertyNode*> children;
     children.reserve(m_attached_children.size());
-    for (const auto& child : m_attached_children) {
+    for (const auto& child : m_attached_children)
         if (child) children.append(child);
-    }
     return children;
+}
+
+bool AttachedPropertyNode::acceptsParent(AttachedPropertyNode* node) const {
+    return node && sameEngine(m_target, node->target());
+}
+
+AttachedPropertyNode* AttachedPropertyNode::findParent() {
+    if (auto* source = m_inherit_from.data()) {
+        if (! sameEngine(m_target, source)) {
+            if (! m_cross_engine_warning_issued) {
+                qmlWarning(m_target) << "inheritFrom cannot cross QQmlEngine boundaries";
+                m_cross_engine_warning_issued = true;
+            }
+            return nullptr;
+        }
+        m_cross_engine_warning_issued = false;
+        return attachedObject(m_attached_type, source, true);
+    }
+    m_cross_engine_warning_issued = false;
+
+    QQuickItem* item = nullptr;
+    if (auto* visual = qobject_cast<QQuickItem*>(m_target.data())) {
+        item = visual->parentItem();
+        for (auto* parent = item; parent; parent = parent->parentItem())
+            if (auto* node = attachedObject(m_attached_type, parent); acceptsParent(node))
+                return node;
+        auto* node = attachedObject(m_attached_type, visual->window());
+        return acceptsParent(node) ? node : nullptr;
+    }
+    if (auto* window = qobject_cast<QQuickWindow*>(m_target.data())) {
+        auto* node =
+            attachedObject(m_attached_type, qobject_cast<QQuickWindow*>(window->transientParent()));
+        return acceptsParent(node) ? node : nullptr;
+    }
+    item = m_inheritance_parent;
+    return sameEngine(m_target, item) ? attachedObject(m_attached_type, item, true) : nullptr;
+}
+
+void AttachedPropertyNode::setAttachedParent(AttachedPropertyNode* parent) {
+    for (auto* ancestor = parent; ancestor; ancestor = ancestor->m_attached_parent) {
+        if (ancestor != this) continue;
+        if (! m_cycle_warning_issued) {
+            qmlWarning(m_target) << m_attached_type->className()
+                                 << "inheritFrom creates an attached property propagation cycle";
+            m_cycle_warning_issued = true;
+        }
+        parent = nullptr;
+        break;
+    }
+    if (parent) m_cycle_warning_issued = false;
+    if (m_attached_parent == parent) return;
+    ++m_revision;
+    if (m_attached_parent) m_attached_parent->m_attached_children.removeOne(this);
+    m_attached_parent = parent;
+    if (parent) parent->m_attached_children.append(this);
+    updateInheritedValues();
+}
+
+void AttachedPropertyNode::adoptAttachedChildren() {
+    auto* item = qobject_cast<QQuickItem*>(m_target.data());
+    if (auto* window = qobject_cast<QQuickWindow*>(m_target.data())) item = window->contentItem();
+    if (! item) return;
+    QList<QPointer<AttachedPropertyNode>> children;
+    collectChildren(m_attached_type, item, children);
+    QPointer<AttachedPropertyNode> guard(this);
+    for (const auto& child : children) {
+        if (! guard) return;
+        if (child && ! child->m_inherit_from && child->acceptsParent(this))
+            child->setAttachedParent(this);
+    }
+}
+
+void AttachedPropertyNode::connectTarget() {
+    if (auto* item = qobject_cast<QQuickItem*>(m_target.data())) {
+        m_parent_connection = connect(
+            item, &QQuickItem::parentChanged, this, &AttachedPropertyNode::refreshPropagation);
+        m_window_connection = connect(
+            item, &QQuickItem::windowChanged, this, &AttachedPropertyNode::refreshPropagation);
+    } else if (auto* window = qobject_cast<QQuickWindow*>(m_target.data())) {
+        m_parent_connection = connect(window,
+                                      &QWindow::transientParentChanged,
+                                      this,
+                                      &AttachedPropertyNode::refreshPropagation);
+    }
+}
+
+void AttachedPropertyNode::disconnectTarget() {
+    QObject::disconnect(std::exchange(m_parent_connection, {}));
+    QObject::disconnect(std::exchange(m_window_connection, {}));
 }
 
 void AttachedPropertyNode::initializeAttachedProperty() {
     if (m_initialized) return;
     m_initialized = true;
+    connectTarget();
+    QPointer<AttachedPropertyNode> guard(this);
     refreshPropagation();
-
-    if (! m_registry) {
-        QMetaObject::invokeMethod(
-            this,
-            [this]() {
-                if (! m_registry) refreshPropagation();
-            },
-            Qt::QueuedConnection);
-    }
+    if (guard) adoptAttachedChildren();
 }
 
 void AttachedPropertyNode::propagateAttachedValues() {
-    if (m_registry) m_registry->refreshChildren(this);
+    const auto                     children = m_attached_children;
+    QPointer<AttachedPropertyNode> guard(this);
+    for (const auto& child : children) {
+        if (! guard) return;
+        if (child && child->m_attached_parent == this) child->updateInheritedValues();
+    }
 }
 
 void AttachedPropertyNode::refreshPropagation() {
-    if (! m_initialized) return;
-
-    if (! m_registry) {
-        auto* engine = qmlEngine(m_target);
-        if (engine) {
-            AttachedPropertyRegistry::get(engine)->add(this);
-            return;
-        }
-    }
-
-    if (m_registry) {
-        m_registry->refreshNode(this);
-    } else {
-        updateInheritedValues();
-    }
+    if (! m_initialized || m_destroying || ! m_target) return;
+    const auto                     revision = ++m_revision;
+    QPointer<AttachedPropertyNode> guard(this);
+    QPointer<AttachedPropertyNode> parent = findParent();
+    if (! guard || revision != m_revision) return;
+    setAttachedParent(parent);
 }
 
 } // namespace qml_material

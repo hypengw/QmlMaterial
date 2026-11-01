@@ -13,8 +13,6 @@ class QQuickItem;
 namespace qml_material
 {
 
-class AttachedPropertyRegistry;
-
 class QML_MATERIAL_API AttachedPropertyNode : public QObject {
     Q_OBJECT
     QML_ANONYMOUS
@@ -32,6 +30,9 @@ public:
     void     setInheritFrom(QObject* source);
     void     resetInheritFrom();
 
+    // Non-visual owners publish this again when their logical context changes.
+    void setInheritanceParent(QQuickItem*);
+
     AttachedPropertyNode*        attachedParent() const;
     QList<AttachedPropertyNode*> attachedChildren() const;
 
@@ -47,21 +48,26 @@ private Q_SLOTS:
     void refreshPropagation();
 
 private:
-    friend class AttachedPropertyRegistry;
+    AttachedPropertyNode* findParent();
+    bool                  acceptsParent(AttachedPropertyNode*) const;
+    void                  setAttachedParent(AttachedPropertyNode*);
+    void                  adoptAttachedChildren();
+    void                  connectTarget();
+    void                  disconnectTarget();
 
     QPointer<QObject>                     m_target;
     QPointer<QObject>                     m_inherit_from;
-    QObject*                              m_registered_target { nullptr };
+    QPointer<QQuickItem>                  m_inheritance_parent;
     const QMetaObject*                    m_attached_type { nullptr };
-    AttachedPropertyRegistry*             m_registry { nullptr };
     QPointer<AttachedPropertyNode>        m_attached_parent;
     QList<QPointer<AttachedPropertyNode>> m_attached_children;
-    QPointer<QQuickItem>                  m_content_root;
-    QList<QMetaObject::Connection>        m_target_connections;
-    QMetaObject::Connection               m_registry_destroyed;
-    QMetaObject::Connection               m_content_root_destroyed;
+    QMetaObject::Connection               m_parent_connection;
+    QMetaObject::Connection               m_window_connection;
     QMetaObject::Connection               m_inherit_from_destroyed;
+    quint64                               m_revision { 0 };
+    quint64                               m_source_revision { 0 };
     bool                                  m_initialized { false };
+    bool                                  m_destroying { false };
     bool                                  m_cycle_warning_issued { false };
     bool                                  m_cross_engine_warning_issued { false };
 };

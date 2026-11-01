@@ -204,10 +204,15 @@ void DelegateRecycler::setPoolLimit(int limit) {
     m_poolLimit = std::max(0, limit);
     trim();
 }
+void DelegateRecycler::beginUpdate() { ++m_updateDepth; }
+void DelegateRecycler::endUpdate() {
+    Q_ASSERT(m_updateDepth > 0);
+    if (--m_updateDepth == 0) trim();
+}
 void DelegateRecycler::trim() {
     QPointer<DelegateRecycler> guard(this);
     while (guard) {
-        const bool overflow = poolSize() > m_poolLimit;
+        const bool overflow = m_updateDepth == 0 && poolSize() > m_poolLimit;
         auto       it = std::find_if(m_entries.begin(), m_entries.end(), [overflow](const auto& e) {
             return ! e->row || ! e->host || ! e->component || (! e->preparing && ! e->item) ||
                    (overflow && e->idle);
@@ -240,8 +245,14 @@ QQuickItem* DelegateRecycler::acquire(QQmlComponent* component, const ItemSnapsh
     if (! current() || ! componentGuard || ! m_engine) return nullptr;
     const auto& descriptor = snapshot->descriptorAt(index);
     auto        value      = m_pending.value(descriptor.key);
-    if (value && (value->component != component || value->type != descriptor.reuseType ||
-                  ! value->row || value->row->contentRevision() != descriptor.contentRevision)) {
+    const bool  reuseReady = value && value->incubator && value->incubator->isLoading() &&
+                             std::any_of(m_entries.cbegin(), m_entries.cend(), [&](const auto& e) {
+                                return e->idle && ! e->updating && e->item && e->host && e->row &&
+                                       e->component == component && e->type == descriptor.reuseType;
+                             });
+    if (value &&
+        (value->component != component || value->type != descriptor.reuseType || ! value->row ||
+         value->row->contentRevision() != descriptor.contentRevision || reuseReady)) {
         remove(value);
         value.reset();
         if (! current()) return nullptr;

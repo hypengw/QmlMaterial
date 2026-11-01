@@ -95,6 +95,24 @@ public:
 class LazyGridTest : public QObject {
     Q_OBJECT
 private slots:
+    void viewportJumpReusesActiveDelegates() {
+        Scene s(1000);
+        s.view.setPoolLimit(0);
+        frames(s.render);
+        QList<QPointer<QQuickItem>> original;
+        for (int index = s.view.firstVisibleIndex(); index <= s.view.lastVisibleIndex(); ++index)
+            original.append(s.item(QString::number(index)));
+        s.view.setContentY(1600);
+        frames(s.render);
+        for (const auto& item : original) {
+            QVERIFY(item);
+            auto* row = item->property("row").value<LazyRow*>();
+            QVERIFY(row->active());
+            QVERIFY(row->index() >= s.view.firstVisibleIndex());
+            QCOMPARE(item->property("title").toString(), row->key());
+        }
+        QCOMPARE(s.view.liveCount(), original.size());
+    }
     void incubationAndPositioning_data() {
         QTest::addColumn<bool>("horizontal");
         QTest::addColumn<bool>("mirrored");
@@ -140,6 +158,8 @@ private slots:
         QCOMPARE(s.view.pendingCount(), 0);
         QVERIFY(s.view.liveCount() > 9);
         QVERIFY(s.view.errorString().isEmpty());
+        s.view.setSource(nullptr);
+        s.view.setSource(&s.source);
         if (horizontal)
             s.view.setContentX(s.view.contentX() + (mirrored ? -800 : 800));
         else

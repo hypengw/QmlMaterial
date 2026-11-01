@@ -8,6 +8,7 @@
 #include <utility>
 #include <algorithm>
 #include <QElapsedTimer>
+#include <QScopeGuard>
 
 namespace qml_material
 {
@@ -32,6 +33,7 @@ struct LazyView::Private {
     QHash<QString, QList<QMetaObject::Connection>> connections;
     qreal                                          cache             = 160;
     int                                            pool              = 16;
+    bool                                           asynchronous      = false;
     qreal                                          preparationBudget = 2;
     QMetaObject::Connection                        preparationFrame, windowVisibility;
     int                                            first             = -1;
@@ -104,6 +106,7 @@ ItemSource*    LazyView::source() const { return d->source; }
 QQmlComponent* LazyView::delegate() const { return d->delegate; }
 qreal          LazyView::cacheExtent() const { return d->cache; }
 int            LazyView::poolLimit() const { return d->pool; }
+bool           LazyView::asynchronous() const { return d->asynchronous; }
 qreal          LazyView::cachePreparationBudget() const { return d->preparationBudget; }
 int LazyView::pendingCount() const { return d->recycler ? d->recycler->pendingCount() : 0; }
 int LazyView::count() const { return d->pending->count(); }
@@ -337,6 +340,13 @@ void LazyView::setCachePreparationBudget(qreal value) {
     scheduleLayout();
     emit cachePreparationBudgetChanged();
 }
+void LazyView::setAsynchronous(bool value) {
+    if (d->asynchronous == value) return;
+    d->asynchronous = value;
+    ++d->generation;
+    scheduleLayout();
+    emit asynchronousChanged();
+}
 void LazyView::cancelPreparations() {
     disconnect(d->preparationFrame);
     d->preparationFrame = {};
@@ -517,6 +527,10 @@ void LazyView::updatePolish() {
     }
     state->recycler->setPoolLimit(state->pool);
     if (! current()) return;
+    state->recycler->beginUpdate();
+    const auto recycleUpdate = qScopeGuard([recycler = QPointer(state->recycler.get())] {
+        if (recycler) recycler->endUpdate();
+    });
     if (std::exchange(state->preparationsDirty, false)) {
         cancelPreparations();
         if (! current()) return;
@@ -644,7 +658,10 @@ void LazyView::updatePolish() {
             const auto& descriptor = snapshot->descriptorAt(index);
             const auto& key        = descriptor.key;
             if (! wanted.contains(key)) break;
-            const bool           urgent   = urgentIndex(index);
+            const bool urgent            = urgentIndex(index);
+            const bool positioningTarget = state->position && state->position->key == key;
+            const bool asynchronous      = ! urgent || (state->asynchronous && ! positioningTarget);
+            if (state->asynchronous && ! canPrepare && ! positioningTarget) continue;
             QPointer<QQuickItem> item     = state->live.value(key);
             const auto           boundRow = state->recycler->row(item);
             const bool           needsBinding =
@@ -690,8 +707,8 @@ void LazyView::updatePolish() {
                 }
             }
             if (! item) {
-                item =
-                    state->recycler->acquire(state->delegate, snapshot, index, placement, ! urgent);
+                item = state->recycler->acquire(
+                    state->delegate, snapshot, index, placement, asynchronous);
                 if (! current()) {
                     if (item) state->recycler->release(item);
                     return;
@@ -752,9 +769,15 @@ void LazyView::updatePolish() {
         work.clear();
         for (int index : layout.requestedIndices(offset, primarySize(), 0)) {
             if (! urgentIndex(index)) continue;
-            const auto& key  = snapshot->descriptorAt(index).key;
-            const auto  item = state->live.value(key);
-            const auto  row  = state->recycler->row(item);
+            const auto& key = snapshot->descriptorAt(index).key;
+            if (state->asynchronous && state->recycler->pending(key) &&
+                (! state->position || state->position->key != key))
+                continue;
+            if (state->asynchronous && ! canPrepare &&
+                (! state->position || state->position->key != key))
+                continue;
+            const auto item = state->live.value(key);
+            const auto row  = state->recycler->row(item);
             if (item && row && row->revision() == snapshot->revision && row->index() == index &&
                 ! state->dirtyMeasurements.contains(key) && ! layout.needsMeasurement(index))
                 continue;

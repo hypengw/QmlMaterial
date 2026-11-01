@@ -144,6 +144,95 @@ class LazyListTest : public QObject {
         }
     }
 private slots:
+    void asynchronousVisibleCreation_data() {
+        QTest::addColumn<QString>("type");
+        QTest::addColumn<bool>("controlled");
+        for (const auto& type : { "LazyList", "LazyGrid", "LazyMasonryGrid" }) {
+            QTest::newRow(type) << QString(type) << true;
+            QTest::newRow(qPrintable(QString(type) + "-fallback")) << QString(type) << false;
+        }
+    }
+    void asynchronousVisibleCreation() {
+        QFETCH(QString, type);
+        QFETCH(bool, controlled);
+        QQmlIncubationController controller;
+        QQmlEngine               engine;
+        if (controlled) engine.setIncubationController(&controller);
+        ListSnapshotSource source;
+        source.setKeyRole("id");
+        source.setItems(rows(200));
+        engine.rootContext()->setContextProperty("testSource", &source);
+        QQmlComponent component(&engine);
+        const auto    settings = type == "LazyGrid" ? "fixedSlotCount: 3; itemExtent: 40;"
+                                 : type == "LazyMasonryGrid"
+                                     ? "fixedSlotCount: 3; estimatedItemExtent: 40;"
+                                     : "estimatedItemExtent: 40;";
+        component.setData(
+            "import QtQuick\nimport Qcm.Material as MD\nMD." + type.toUtf8() +
+                " { width: 300; height: 120; asynchronous: true; cacheExtent: 0; "
+                "cachePreparationBudget: 0; poolLimit: 0; " +
+                settings +
+                " source: testSource; delegate: Item { required property MD.LazyRow row; "
+                "implicitHeight: 40; property string observedKey: row.key } }",
+            {});
+        std::unique_ptr<QObject> object(component.create());
+        auto*                    view = qobject_cast<LazyView*>(object.get());
+        QVERIFY2(view, qPrintable(component.errorString()));
+        QQuickRenderControl render;
+        QQuickWindow        window(&render);
+        view->setParentItem(window.contentItem());
+        window.setVisible(true);
+        frames(render);
+        const int visible = type == "LazyList" ? 3 : 9;
+        if (! controlled) {
+            QCOMPARE(view->liveCount(), visible);
+            QCOMPARE(view->pendingCount(), 0);
+            return;
+        }
+        QCOMPARE(view->liveCount(), 0);
+        QCOMPARE(view->pendingCount(), visible);
+        QCOMPARE(controller.incubatingObjectCount(), visible);
+        frames(render);
+        QCOMPARE(view->liveCount(), 0);
+        QSignalSpy finished(view, &LazyView::positioningFinished);
+        QVERIFY(view->positionAtKey("1"));
+        frames(render);
+        QCOMPARE(view->liveCount(), 1);
+        QCOMPARE(finished.size(), 1);
+        QVERIFY(finished.first().at(1).toBool());
+        controller.incubateFor(100);
+        frames(render);
+        QCOMPARE(view->liveCount(), visible);
+        QCOMPARE(view->pendingCount(), 0);
+        view->setContentY(800);
+        frames(render);
+        QCOMPARE(view->liveCount(), visible);
+        QCOMPARE(view->pendingCount(), 0);
+        view->setSource(nullptr);
+        view->setSource(&source);
+        frames(render);
+        QCOMPARE(view->liveCount(), 0);
+        QCOMPARE(view->pendingCount(), visible);
+        view->setAsynchronous(false);
+        frames(render);
+        QCOMPARE(view->liveCount(), visible);
+        QCOMPARE(view->pendingCount(), 0);
+        view->setAsynchronous(true);
+        view->setContentY(1600);
+        view->setSource(nullptr);
+        view->setSource(&source);
+        frames(render);
+        QCOMPARE(view->pendingCount(), visible);
+        view->setVisible(false);
+        frames(render);
+        QCOMPARE(controller.incubatingObjectCount(), 0);
+        QCOMPARE(view->pendingCount(), 0);
+        view->setVisible(true);
+        frames(render);
+        QCOMPARE(view->pendingCount(), visible);
+        object.reset();
+        QCOMPARE(controller.incubatingObjectCount(), 0);
+    }
     void incubationCacheAndPositioning() {
         QQmlIncubationController controller;
         QQmlEngine               engine;
@@ -198,6 +287,8 @@ private slots:
         QCOMPARE(view->pendingCount(), 0);
         QVERIFY(view->liveCount() > 3);
         QVERIFY(view->errorString().isEmpty());
+        view->setSource(nullptr);
+        view->setSource(&source);
         view->setContentY(1600);
         frames(render);
         QVERIFY(view->pendingCount() > 0);

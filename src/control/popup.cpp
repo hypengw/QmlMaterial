@@ -252,11 +252,16 @@ Popup::~Popup() {
     delete m_surface;
 }
 void Popup::classBegin() {
+    QPointer<Popup> guard(this);
     QQmlEngine::setContextForObject(m_surface, qmlContext(this));
     static_cast<QQmlParserStatus*>(m_surface)->classBegin();
-    qmlAttachedPropertiesObject<Theme>(this, true);
+    if (! guard) return;
+    auto ownerTheme = qobject_cast<Theme*>(qmlAttachedPropertiesObject<Theme>(this, true));
+    if (! guard || ! ownerTheme) return;
+    ownerTheme->setInheritanceParent(m_parent);
+    if (! guard) return;
     auto theme = qobject_cast<Theme*>(qmlAttachedPropertiesObject<Theme>(m_surface, true));
-    theme->setInheritFrom(this);
+    if (guard && theme) theme->setInheritFrom(this);
 }
 void Popup::componentComplete() {
     static_cast<QQmlParserStatus*>(m_surface)->componentComplete();
@@ -410,6 +415,9 @@ void Popup::observeParent() {
     if (m_parent) {
         m_parentConnections.append(connect(m_parent, &QQuickItem::windowChanged, this, [this] {
             QPointer<Popup> guard(this);
+            if (auto theme = qobject_cast<Theme*>(qmlAttachedPropertiesObject<Theme>(this, false)))
+                theme->setInheritanceParent(m_parent);
+            if (! guard) return;
             updateOverlay();
             if (guard && m_complete && m_requestedVisible && m_overlay && ! isVisible()) open();
         }));
@@ -424,14 +432,22 @@ void Popup::observeParent() {
             dismissImmediately();
             if (! guard) return;
             updateOverlay();
+            if (! guard) return;
+            if (auto theme = qobject_cast<Theme*>(qmlAttachedPropertiesObject<Theme>(this, false)))
+                theme->setInheritanceParent(nullptr);
             if (guard) Q_EMIT parentChanged();
         }));
     }
     QPointer<Popup> guard(this);
+    if (auto theme = qobject_cast<Theme*>(qmlAttachedPropertiesObject<Theme>(this, true)))
+        theme->setInheritanceParent(m_parent);
+    if (! guard) return;
     refreshInheritedZ();
     if (! guard) return;
     if (m_parent) refreshEnvironment();
+    if (! guard) return;
     updateOverlay();
+    if (! guard) return;
     reposition();
 }
 void Popup::refreshInheritedZ() {

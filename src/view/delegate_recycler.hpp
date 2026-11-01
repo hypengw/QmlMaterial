@@ -39,6 +39,8 @@ public:
     void        release(QQuickItem*);
     void        clear();
     void        setPoolLimit(int);
+    void        beginUpdate();
+    void        endUpdate();
     int         poolSize() const;
     LazyRow*    row(QQuickItem*) const;
     QString     errorString() const { return m_error; }
@@ -77,6 +79,7 @@ private:
     QString                                  m_error;
     quint64                                  m_generation  = 0;
     int                                      m_poolLimit   = 16;
+    int                                      m_updateDepth = 0;
     bool                                     m_clearing    = false;
     bool                                     m_readyQueued = false;
 };

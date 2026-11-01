@@ -128,6 +128,51 @@ private Q_SLOTS:
         QCOMPARE(recycler.row(promoted)->index(), 1);
         QCOMPARE(controller.incubatingObjectCount(), 0);
     }
+    void viewportUpdateReusesBeforeTrimming() {
+        QQmlEngine    engine;
+        QQmlComponent component(&engine);
+        component.setData("import QtQuick\nItem { required property QtObject row }", {});
+        QVERIFY(component.isReady());
+        ListSnapshotSource source;
+        source.setItems({ 1, 2, 3 });
+        DelegateRecycler recycler(&engine);
+        recycler.setPoolLimit(0);
+        QPointer<QQuickItem> first  = recycler.acquire(&component, source.snapshot(), 0);
+        QPointer<QQuickItem> second = recycler.acquire(&component, source.snapshot(), 1);
+        QVERIFY(first && second);
+        recycler.beginUpdate();
+        recycler.release(first);
+        recycler.release(second);
+        QCOMPARE(recycler.poolSize(), 2);
+        QCOMPARE(recycler.acquire(&component, source.snapshot(), 2), first.data());
+        recycler.endUpdate();
+        QVERIFY(first);
+        QVERIFY(! second);
+        QCOMPARE(recycler.poolSize(), 0);
+        QCOMPARE(recycler.row(first)->index(), 2);
+    }
+    void pooledDelegateReplacesPendingCreation() {
+        QQmlIncubationController controller;
+        QQmlEngine               engine;
+        engine.setIncubationController(&controller);
+        QQmlComponent component(&engine);
+        component.setData("import QtQuick\nItem { required property QtObject row }", {});
+        QVERIFY(component.isReady());
+        ListSnapshotSource source;
+        source.setItems({ 1, 2 });
+        DelegateRecycler recycler(&engine);
+        auto*            first = recycler.acquire(&component, source.snapshot(), 0);
+        QVERIFY(first);
+        QVERIFY(! recycler.acquire(&component, source.snapshot(), 1, {}, true));
+        QCOMPARE(controller.incubatingObjectCount(), 1);
+        recycler.release(first);
+        QCOMPARE(recycler.acquire(&component, source.snapshot(), 1, {}, true), first);
+        QCOMPARE(recycler.row(first)->index(), 1);
+        QCOMPARE(recycler.pendingCount(), 0);
+        QCOMPARE(controller.incubatingObjectCount(), 0);
+        controller.incubateFor(100);
+        QCOMPARE(recycler.row(first)->index(), 1);
+    }
     void preparationSnapshotChanges() {
         QQmlIncubationController controller;
         QQmlEngine               engine;

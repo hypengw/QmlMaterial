@@ -106,12 +106,15 @@ void Theme::setProp(AttachProp<V>& property, const V& value) {
     property.explicited = true;
     if (property.value == value) return;
 
+    const auto            signal = property.sig_func;
+    const QPointer<Theme> guard(this);
     property.value = value;
     if constexpr (std::is_pointer_v<V> && std::is_base_of_v<QObject, std::remove_pointer_t<V>>) {
         if (value) value->setParent(this);
     }
+    if (! guard) return;
     propagateAttachedValues();
-    std::invoke(property.sig_func, this);
+    if (guard) std::invoke(signal, this);
 }
 
 template<typename V>
@@ -120,8 +123,10 @@ void Theme::resetProp(AttachProp<V>& property, const V& inheritedValue) {
 
     property.explicited = false;
     if (! inheritProp(property, inheritedValue)) return;
+    const auto            signal = property.sig_func;
+    const QPointer<Theme> guard(this);
     propagateAttachedValues();
-    std::invoke(property.sig_func, this);
+    if (guard) std::invoke(signal, this);
 }
 
 template<typename V>
@@ -146,6 +151,7 @@ void Theme::updateInheritedValues() {
         }
         m_colorParent = attached;
     }
+    if (! guard) return;
 
     const auto elevationChanged =
         inheritProp(m_elevation, attached ? attached->elevation() : theGlobalTheme()->elevation);
@@ -157,8 +163,11 @@ void Theme::updateInheritedValues() {
     if (! elevationChanged && ! sizeChanged && ! pageChanged) return;
 
     propagateAttachedValues();
+    if (! guard) return;
     if (elevationChanged) std::invoke(m_elevation.sig_func, this);
+    if (! guard) return;
     if (sizeChanged) std::invoke(m_size.sig_func, this);
+    if (! guard) return;
     if (pageChanged) std::invoke(m_page.sig_func, this);
 }
 

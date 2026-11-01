@@ -169,6 +169,7 @@ private slots:
         for (int index : s.view.currentDemand().indices())
             QVERIFY(s.item(s.source.snapshot()->descriptorAt(index).key));
         QVERIFY(s.view.errorString().isEmpty());
+        s.view.setCacheExtent(1600);
         s.view.setContentY(8000);
         frames(s.render);
         QVERIFY(s.view.pendingCount() > 0);
@@ -225,6 +226,7 @@ private slots:
             }
         )",
                                    &controller);
+        s.source.setTypeRole("id");
         s.view.setPoolLimit(0);
         s.view.setCachePreparationBudget(1000);
         s.view.setCacheExtent(200);
