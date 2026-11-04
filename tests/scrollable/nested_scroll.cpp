@@ -15,6 +15,7 @@
 #include <QtQuick/private/qquickanimation_p.h>
 #include <QtQuick/private/qquicktext_p.h>
 #include <QtTest>
+#include "../../src/input/scroll_wheel_p.hpp"
 
 using namespace qml_material;
 
@@ -956,14 +957,18 @@ MD.Scrollable {
     void verticalWheelAcrossHorizontalLists_data() {
         QTest::addColumn<bool>("precision");
         QTest::addColumn<bool>("removeList");
-        QTest::newRow("smooth") << false << false;
-        QTest::newRow("smooth-list-removed") << false << true;
-        QTest::newRow("precision") << true << false;
-        QTest::newRow("precision-list-removed") << true << true;
+        QTest::addColumn<bool>("mousePixels");
+        QTest::newRow("smooth") << false << false << false;
+        QTest::newRow("smooth-list-removed") << false << true << false;
+        QTest::newRow("precision") << true << false << false;
+        QTest::newRow("precision-list-removed") << true << true << false;
+        QTest::newRow("smooth-mouse-pixels") << false << false << true;
+        QTest::newRow("smooth-mouse-pixels-list-removed") << false << true << true;
     }
     void verticalWheelAcrossHorizontalLists() {
         QFETCH(bool, precision);
         QFETCH(bool, removeList);
+        QFETCH(bool, mousePixels);
         root.reset();
         QQmlComponent component(&engine);
         component.setData(R"(
@@ -1007,8 +1012,11 @@ MD.Scrollable {
             qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(lists.first()));
         TestScrollConnection childConnection;
         childConfig->setConnection(&childConnection);
-        QSignalSpy  childStarted(childConfig, &NestedScroll::scrollStarted);
-        const qreal step = 24 * qGuiApp->styleHints()->wheelScrollLines();
+        QSignalSpy   childStarted(childConfig, &NestedScroll::scrollStarted);
+        const qreal  step   = 24 * qGuiApp->styleHints()->wheelScrollLines();
+        const QPoint pixels = precision     ? QPoint(0, -qRound(step))
+                              : mousePixels ? QPoint(0, -15)
+                                            : QPoint();
         if (precision) {
             QWheelEvent begin({ 100, 50 },
                               window.mapToGlobal(QPoint(100, 50)),
@@ -1024,7 +1032,7 @@ MD.Scrollable {
         for (const auto position : { QPointF(100, 50), QPointF(100, 150), QPointF(100, 250) }) {
             QWheelEvent event(position,
                               window.mapToGlobal(position),
-                              precision ? QPoint(0, -qRound(step)) : QPoint(),
+                              pixels,
                               { 0, -120 },
                               Qt::NoButton,
                               Qt::NoModifier,
@@ -1043,7 +1051,9 @@ MD.Scrollable {
             }
         }
         if (precision) wheel({}, Qt::ScrollEnd);
-        const qreal expected = 3 * step;
+        const auto  mode     = parseWheelDistanceMode(qgetenv("QML_MATERIAL_WHEEL_DISTANCE"))
+                                   .value_or(WheelDistanceMode::Steps);
+        const qreal expected = 3 * (mousePixels && mode == WheelDistanceMode::Platform ? 15 : step);
         QTRY_VERIFY(std::abs(outer->contentY() - expected) < 0.001);
         QTRY_VERIFY(! outer->isMoving());
         QCOMPARE(finished.size(), 1);
@@ -1154,18 +1164,30 @@ MD.Scrollable {
         QCOMPARE(outer->contentY(), 0.);
         wheel({}, Qt::ScrollEnd);
     }
+    void smoothWheelRemainder_data() {
+        QTest::addColumn<QPoint>("pixels");
+        QTest::newRow("angle-only") << QPoint();
+        QTest::newRow("platform-pixels") << QPoint(0, -15);
+        QTest::newRow("platform-speed") << QPoint(0, -30);
+    }
     void smoothWheelRemainder() {
+        QFETCH(QPoint, pixels);
         inner->setContentY(390);
         QWheelEvent event({ 100, 100 },
                           window.mapToGlobal(QPoint(100, 100)),
-                          {},
+                          pixels,
                           { 0, -120 },
                           Qt::NoButton,
                           Qt::NoModifier,
                           Qt::NoScrollPhase,
                           false);
         QCoreApplication::sendEvent(&window, &event);
-        const qreal expected = 24 * qGuiApp->styleHints()->wheelScrollLines() - 10;
+        const auto  mode     = parseWheelDistanceMode(qgetenv("QML_MATERIAL_WHEEL_DISTANCE"))
+                                   .value_or(WheelDistanceMode::Steps);
+        const qreal distance = mode == WheelDistanceMode::Platform && ! pixels.isNull()
+                                   ? -pixels.y()
+                                   : 24 * qGuiApp->styleHints()->wheelScrollLines();
+        const qreal expected = distance - 10;
         QTRY_VERIFY(qFuzzyCompare(outer->contentY(), expected));
         QCOMPARE(inner->contentY(), 400);
         QTRY_VERIFY(! inner->isMoving() && ! outer->isMoving());

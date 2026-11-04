@@ -1,5 +1,6 @@
 #include "qml_material/scrollable/flickable.hpp"
 #include "qml_material/input/nested_scroll.hpp"
+#include "../../src/input/scroll_wheel_p.hpp"
 #include <QQuickRenderControl>
 #include <QQuickWindow>
 #include <QStyleHints>
@@ -277,6 +278,77 @@ private slots:
         motion.fling(10, -1000, 1000, 5);
         QCOMPARE(motion.sample(6).position, -490.0);
     }
+    void wheelDistanceParsing_data() {
+        QTest::addColumn<QByteArray>("value");
+        QTest::addColumn<int>("expected");
+        QTest::newRow("default") << QByteArray() << int(WheelDistanceMode::Steps);
+        QTest::newRow("platform") << QByteArray("platform") << int(WheelDistanceMode::Platform);
+        QTest::newRow("steps") << QByteArray("steps") << int(WheelDistanceMode::Steps);
+        QTest::newRow("case-and-space")
+            << QByteArray(" PLATFORM ") << int(WheelDistanceMode::Platform);
+        QTest::newRow("empty-space") << QByteArray("  ") << int(WheelDistanceMode::Steps);
+        QTest::newRow("invalid") << QByteArray("invalid") << -1;
+    }
+    void wheelDistanceParsing() {
+        QFETCH(QByteArray, value);
+        QFETCH(int, expected);
+        const auto mode = parseWheelDistanceMode(value);
+        QCOMPARE(bool(mode), expected >= 0);
+        if (mode) QCOMPARE(int(*mode), expected);
+    }
+    void wheelInputDistance_data() {
+        QTest::addColumn<bool>("steps");
+        QTest::addColumn<int>("phase");
+        QTest::addColumn<QPoint>("pixels");
+        QTest::addColumn<QPoint>("angles");
+        QTest::addColumn<QPointF>("expected");
+        QTest::addColumn<bool>("smooth");
+        QTest::newRow("platform-mouse") << false << int(Qt::NoScrollPhase) << QPoint(0, -15)
+                                        << QPoint(0, -120) << QPointF(0, 15) << true;
+        QTest::newRow("platform-speed") << false << int(Qt::NoScrollPhase) << QPoint(0, -30)
+                                        << QPoint(0, -120) << QPointF(0, 30) << true;
+        QTest::newRow("steps-mouse") << true << int(Qt::NoScrollPhase) << QPoint(0, -30)
+                                     << QPoint(0, -120) << QPointF(0, 72) << true;
+        QTest::newRow("platform-fallback") << false << int(Qt::NoScrollPhase) << QPoint()
+                                           << QPoint(0, -120) << QPointF(0, 72) << true;
+        QTest::newRow("steps-fallback") << true << int(Qt::NoScrollPhase) << QPoint()
+                                        << QPoint(0, -120) << QPointF(0, 72) << true;
+        QTest::newRow("precision-platform") << false << int(Qt::ScrollUpdate) << QPoint(0, -15)
+                                            << QPoint(0, -120) << QPointF(0, 15) << false;
+        QTest::newRow("precision-steps") << true << int(Qt::ScrollUpdate) << QPoint(0, -15)
+                                         << QPoint(0, -120) << QPointF(0, 15) << false;
+        QTest::newRow("precision-fallback") << true << int(Qt::ScrollUpdate) << QPoint()
+                                            << QPoint(0, -120) << QPointF(0, 72) << false;
+        QTest::newRow("momentum") << true << int(Qt::ScrollMomentum) << QPoint(0, -8)
+                                  << QPoint(0, -64) << QPointF(0, 8) << false;
+        QTest::newRow("zero-mouse")
+            << false << int(Qt::NoScrollPhase) << QPoint() << QPoint() << QPointF() << true;
+        QTest::newRow("zero-end") << false << int(Qt::ScrollEnd) << QPoint() << QPoint()
+                                  << QPointF() << false;
+        QTest::newRow("horizontal") << false << int(Qt::NoScrollPhase) << QPoint(-15, 0)
+                                    << QPoint(-120, 0) << QPointF(15, 0) << true;
+        QTest::newRow("pixel-vector-not-axis-fallback")
+            << false << int(Qt::NoScrollPhase) << QPoint(0, -15) << QPoint(-120, -120)
+            << QPointF(0, 15) << true;
+        QTest::newRow("reverse") << false << int(Qt::NoScrollPhase) << QPoint(0, 15)
+                                 << QPoint(0, 120) << QPointF(0, -15) << true;
+        QTest::newRow("coalesced") << false << int(Qt::NoScrollPhase) << QPoint(0, -30)
+                                   << QPoint(0, -240) << QPointF(0, 30) << true;
+    }
+    void wheelInputDistance() {
+        QFETCH(bool, steps);
+        QFETCH(int, phase);
+        QFETCH(QPoint, pixels);
+        QFETCH(QPoint, angles);
+        QFETCH(QPointF, expected);
+        QFETCH(bool, smooth);
+        const QWheelEvent event(
+            {}, {}, pixels, angles, Qt::NoButton, Qt::NoModifier, Qt::ScrollPhase(phase), false);
+        const auto input =
+            wheelInput(event, steps ? WheelDistanceMode::Steps : WheelDistanceMode::Platform, 3);
+        QCOMPARE(input.delta, expected);
+        QCOMPARE(input.smooth, smooth);
+    }
     void mouseWheelPixels_data() {
         QTest::addColumn<QPoint>("pixels");
         QTest::addColumn<QPoint>("angles");
@@ -315,9 +387,13 @@ private slots:
             QCOMPARE(started.size(), 1);
             QVERIFY(finished.isEmpty());
         }
-        const auto expected =
-            QPointF(500, 500) -
-            QPointF(angles) / 120 * (4 * 24 * qGuiApp->styleHints()->wheelScrollLines());
+        const auto mode = parseWheelDistanceMode(qgetenv("QML_MATERIAL_WHEEL_DISTANCE"))
+                              .value_or(WheelDistanceMode::Steps);
+        const auto distance =
+            mode == WheelDistanceMode::Platform && ! pixels.isNull()
+                ? -QPointF(pixels)
+                : -QPointF(angles) / 120 * (24 * qGuiApp->styleHints()->wheelScrollLines());
+        const auto expected = QPointF(500, 500) + distance * 4;
         QTRY_VERIFY(std::abs(item.contentX() - expected.x()) < 0.001 &&
                     std::abs(item.contentY() - expected.y()) < 0.001);
         QTRY_COMPARE(finished.size(), 1);

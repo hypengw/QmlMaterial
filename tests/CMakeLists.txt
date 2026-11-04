@@ -169,12 +169,22 @@ foreach(source IN LISTS QM_TEST_SOURCES)
   if(group STREQUAL "shimmer")
     list(APPEND environment "QT_QUICK_BACKEND=rhi" "QSG_RHI_BACKEND=null")
   endif()
+  if(group STREQUAL "scroll_motion" OR group STREQUAL "nested_scroll")
+    list(APPEND environment "QML_MATERIAL_WHEEL_DISTANCE=")
+  endif()
   set_tests_properties(${group} PROPERTIES ENVIRONMENT "${environment}" LABELS "${labels}")
   if(group IN_LIST QM_SERIAL_TESTS)
     set_tests_properties(${group} PROPERTIES RUN_SERIAL ON)
   endif()
 endforeach()
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/test_groups.inc" CONTENT "${QM_TEST_GROUPS}")
+
+add_test(NAME scroll_motion_platform COMMAND qm_tests scroll_motion mouseWheelPixels)
+add_test(NAME nested_scroll_platform COMMAND qm_tests nested_scroll
+  smoothWheelRemainder verticalWheelAcrossHorizontalLists)
+set_tests_properties(scroll_motion_platform nested_scroll_platform PROPERTIES
+  ENVIRONMENT "QML_IMPORT_PATH=${QT_QML_OUTPUT_DIRECTORY};QT_QPA_PLATFORM=offscreen;QML_MATERIAL_WHEEL_DISTANCE=platform"
+  LABELS "behavior;scrollable")
 
 add_test(NAME shimmer_software COMMAND qm_tests shimmer softwareFallback)
 set_tests_properties(shimmer_software PROPERTIES

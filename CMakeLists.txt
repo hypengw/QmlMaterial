@@ -411,6 +411,7 @@ set(SOURCES
     src/input/scroll_input.cpp
     src/input/scroll_input_p.hpp
     src/input/scroll_coordinates_p.hpp
+    src/input/scroll_wheel_p.hpp
     src/input/scroll_gesture_p.hpp
     src/input/nested_scroll_dispatcher_p.hpp
     src/input/app_bar_scroll.cpp

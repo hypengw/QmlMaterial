@@ -1,6 +1,7 @@
 #include "scroll_input_p.hpp"
 #include "scroll_gesture_p.hpp"
 #include "scroll_coordinates_p.hpp"
+#include "scroll_wheel_p.hpp"
 #include "nested_scroll_dispatcher_p.hpp"
 #include "qml_material/input/nested_scroll.hpp"
 #include "scroll_participant_p.hpp"
@@ -21,6 +22,16 @@ namespace qml_material
 {
 namespace
 {
+WheelDistanceMode configuredWheelDistance() {
+    static const auto mode = [] {
+        if (auto value = parseWheelDistanceMode(qgetenv("QML_MATERIAL_WHEEL_DISTANCE")))
+            return *value;
+        qWarning("Invalid QML_MATERIAL_WHEEL_DISTANCE; expected 'platform' or 'steps', using "
+                 "'steps'");
+        return WheelDistanceMode::Steps;
+    }();
+    return mode;
+}
 NestedScroll* attached(QQuickItem* item) {
     return qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(item, false));
 }
@@ -539,14 +550,10 @@ private:
         event->point(0).setAccepted();
         event->accept();
         QPointer<ScrollInputHandler> guard(this);
-        // Mouse wheels may report pixels too; only phased input is pixel-direct.
-        const bool smooth = event->phase() == Qt::NoScrollPhase;
-        QPointF    delta  = smooth ? QPointF() : -QPointF(event->pixelDelta());
-        if (delta.isNull())
-            delta = -QPointF(event->angleDelta()) / 120 *
-                    (24.0 * qGuiApp->styleHints()->wheelScrollLines());
-        if (delta.isNull()) return;
-        delta = vectorToScene(m_config->item(), delta);
+        const auto                   input = wheelInput(
+            *event, configuredWheelDistance(), qGuiApp->styleHints()->wheelScrollLines());
+        if (input.delta.isNull()) return;
+        const auto                   delta = vectorToScene(m_config->item(), input.delta);
         QPointer<ScrollInputHandler> receiver(this);
         // Orthogonal child lists must not own their parent's wheel animation.
         for (auto config : chainFor(m_config->item(), true)) {
@@ -569,7 +576,7 @@ private:
                 break;
             }
         }
-        if (receiver) receiver->scrollWheel(delta, smooth, event->phase());
+        if (receiver) receiver->scrollWheel(delta, input.smooth, event->phase());
     }
     void scrollWheel(QPointF delta, bool smooth, Qt::ScrollPhase phase, bool local = false) {
         QPointer<ScrollInputHandler> guard(this);
