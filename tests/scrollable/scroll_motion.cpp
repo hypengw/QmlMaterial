@@ -1,6 +1,8 @@
 #include "qml_material/scrollable/flickable.hpp"
+#include "qml_material/input/nested_scroll.hpp"
 #include <QQuickRenderControl>
 #include <QQuickWindow>
+#include <QStyleHints>
 #include <QWheelEvent>
 #include <QtTest>
 #include <QtQuick/private/qquickwindow_p.h>
@@ -274,6 +276,53 @@ private slots:
         QVERIFY(motion.sample(20).finished);
         motion.fling(10, -1000, 1000, 5);
         QCOMPARE(motion.sample(6).position, -490.0);
+    }
+    void mouseWheelPixels_data() {
+        QTest::addColumn<QPoint>("pixels");
+        QTest::addColumn<QPoint>("angles");
+        QTest::newRow("angle-only") << QPoint() << QPoint(0, -120);
+        QTest::newRow("mouse-pixels") << QPoint(0, -15) << QPoint(0, -120);
+        QTest::newRow("horizontal-mouse-pixels") << QPoint(-15, 0) << QPoint(-120, 0);
+        QTest::newRow("coalesced-mouse-pixels") << QPoint(0, -30) << QPoint(0, -240);
+        QTest::newRow("high-resolution-mouse-pixels") << QPoint(0, -1) << QPoint(0, -8);
+        QTest::newRow("reverse-mouse-pixels") << QPoint(0, 15) << QPoint(0, 120);
+    }
+    void mouseWheelPixels() {
+        QFETCH(QPoint, pixels);
+        QFETCH(QPoint, angles);
+        Flickable item(inputWindow.contentItem());
+        item.setSize({ 100, 100 });
+        item.setContentWidth(2000);
+        item.setContentHeight(2000);
+        item.setFlickableDirection(Flickable::HorizontalAndVerticalFlick);
+        item.setContentX(500);
+        item.setContentY(500);
+        auto* config =
+            qobject_cast<NestedScroll*>(qmlAttachedPropertiesObject<NestedScroll>(&item));
+        QSignalSpy started(config, &NestedScroll::scrollStarted);
+        QSignalSpy finished(config, &NestedScroll::scrollFinished);
+        for (int i = 0; i < 4; ++i) {
+            QWheelEvent event({ 50, 50 },
+                              inputWindow.mapToGlobal(QPoint(50, 50)),
+                              pixels,
+                              angles,
+                              Qt::NoButton,
+                              Qt::NoModifier,
+                              Qt::NoScrollPhase,
+                              false);
+            deliver(item, &event);
+            QVERIFY(event.isAccepted());
+            QCOMPARE(started.size(), 1);
+            QVERIFY(finished.isEmpty());
+        }
+        const auto expected =
+            QPointF(500, 500) -
+            QPointF(angles) / 120 * (4 * 24 * qGuiApp->styleHints()->wheelScrollLines());
+        QTRY_VERIFY(std::abs(item.contentX() - expected.x()) < 0.001 &&
+                    std::abs(item.contentY() - expected.y()) < 0.001);
+        QTRY_COMPARE(finished.size(), 1);
+        QVERIFY(! item.isMoving());
+        QCOMPARE(finished.first().first().toBool(), false);
     }
     void wheelDuration_data() {
         QTest::addColumn<double>("distance");

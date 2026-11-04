@@ -539,8 +539,9 @@ private:
         event->point(0).setAccepted();
         event->accept();
         QPointer<ScrollInputHandler> guard(this);
-        QPointF                      delta  = -QPointF(event->pixelDelta());
-        const bool                   smooth = delta.isNull() && event->phase() == Qt::NoScrollPhase;
+        // Mouse wheels may report pixels too; only phased input is pixel-direct.
+        const bool smooth = event->phase() == Qt::NoScrollPhase;
+        QPointF    delta  = smooth ? QPointF() : -QPointF(event->pixelDelta());
         if (delta.isNull())
             delta = -QPointF(event->angleDelta()) / 120 *
                     (24.0 * qGuiApp->styleHints()->wheelScrollLines());
