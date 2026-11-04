@@ -327,6 +327,7 @@ private slots:
     }
 
     void tabBarMotionGeometry() {
+        QTest::failOnWarning(QRegularExpression(QStringLiteral(".*")));
         QFETCH(bool, secondary);
         QFETCH(bool, mirrored);
         QQmlComponent component(&m_engine);
@@ -363,6 +364,7 @@ private slots:
         QObject* scrollAnimation = nullptr;
         QVERIFY(bar->clip());
         QVERIFY(! indicator->clip());
+        QCOMPARE(indicator->y(), view->height() - indicator->height());
         QCOMPARE(indicator->property("topLeftRadius").toReal(), secondary ? 0.0 : 3.0);
         QCOMPARE(indicator->property("bottomLeftRadius").toReal(), 0.0);
         bar->setProperty("position", int(qml_material::TabBar::Footer));
@@ -370,6 +372,7 @@ private slots:
         QCOMPARE(indicator->property("topLeftRadius").toReal(), 0.0);
         QCOMPARE(indicator->property("bottomLeftRadius").toReal(), secondary ? 0.0 : 3.0);
         bar->setProperty("position", int(qml_material::TabBar::Header));
+        QCOMPARE(indicator->y(), view->height() - indicator->height());
         for (auto* child : view->findChildren<QObject*>())
             if (child->property("property").toString() == QStringLiteral("contentX"))
                 scrollAnimation = child;

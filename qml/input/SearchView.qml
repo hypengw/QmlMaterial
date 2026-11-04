@@ -6,19 +6,19 @@ MD.SearchViewBase {
     id: control
     property alias placeholderText: editor.placeholderText
     property real maximumDockedHeight: overlayHeight * 2 / 3
-    readonly property real radius: presentation === MD.SearchView.FullScreen ? 28 * (1 - expansion) : 28
+    readonly property real radius: presentation === MD.SearchViewBase.FullScreen ? 28 * (1 - expansion) : 28
 
     parent: searchBar
-    positioningItem: presentation === MD.SearchView.FullScreen ? overlayItem : null
+    positioningItem: presentation === MD.SearchViewBase.FullScreen ? overlayItem : null
     x: 0
     y: 0
     implicitWidth: searchBar ? searchBar.width : 360
     implicitHeight: Math.max(240, implicitContentHeight + 56)
-    width: presentation === MD.SearchView.FullScreen ? overlayWidth : Math.min(implicitWidth, overlayWidth)
-    height: presentation === MD.SearchView.FullScreen ? overlayHeight : Math.max(0, Math.min(implicitHeight, maximumDockedHeight, overlayHeight))
+    width: presentation === MD.SearchViewBase.FullScreen ? overlayWidth : Math.min(implicitWidth, overlayWidth)
+    height: presentation === MD.SearchViewBase.FullScreen ? overlayHeight : Math.max(0, Math.min(implicitHeight, maximumDockedHeight, overlayHeight))
     padding: 0
     modal: true
-    dim: presentation === MD.SearchView.FullScreen
+    dim: presentation === MD.SearchViewBase.FullScreen
     focus: true
     inputField: editor
     font.pixelSize: MD.Token.typescale.body_large.size
@@ -77,7 +77,7 @@ MD.SearchViewBase {
     background: MD.ElevationRectangle {
         radius: control.radius
         color: MD.Token.color.surface_container_high
-        elevation: control.presentation === MD.SearchView.FullScreen ? 0 : MD.Token.elevation.level3
+        elevation: control.presentation === MD.SearchViewBase.FullScreen ? 0 : MD.Token.elevation.level3
     }
     enter: Transition {
         NumberAnimation {

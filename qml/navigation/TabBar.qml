@@ -116,14 +116,14 @@ MD.TabBarBase {
         }
         Rectangle {
             id: m_indicator
-            y: control.position === MD.TabBar.Footer ? 0 : m_view.height - height
+            y: control.position === MD.TabBarBase.Footer ? 0 : m_view.height - height
             height: control.type == MD.Enum.PrimaryTab ? 3 : 2
             visible: control.currentItem !== null
             z: 2
             color: MD.Token.color.primary
-            topLeftRadius: control.type === MD.Enum.PrimaryTab && control.position !== MD.TabBar.Footer ? 3 : 0
+            topLeftRadius: control.type === MD.Enum.PrimaryTab && control.position !== MD.TabBarBase.Footer ? 3 : 0
             topRightRadius: topLeftRadius
-            bottomLeftRadius: control.type === MD.Enum.PrimaryTab && control.position === MD.TabBar.Footer ? 3 : 0
+            bottomLeftRadius: control.type === MD.Enum.PrimaryTab && control.position === MD.TabBarBase.Footer ? 3 : 0
             bottomRightRadius: bottomLeftRadius
         }
     }

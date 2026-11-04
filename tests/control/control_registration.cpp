@@ -8,6 +8,7 @@
 #include <QQmlIncubator>
 #include <QQuickItem>
 #include <QQuickWindow>
+#include <QRegularExpression>
 #include <QTemporaryDir>
 #include <QtTest>
 #include <memory>
@@ -15,6 +16,8 @@
 #include "qml_material/control/action_group.hpp"
 #include "qml_material/control/button_group.hpp"
 #include "qml_material/control/tool_separator.hpp"
+#include "qml_material/control/tab_bar.hpp"
+#include "qml_material/control/search_view.hpp"
 
 namespace
 {
@@ -31,6 +34,29 @@ class ControlRegistrationTest : public QObject {
 
 private slots:
     void initTestCase() { m_engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH)); }
+
+    void inheritedControlEnums() {
+        QTest::failOnWarning(QRegularExpression(QStringLiteral(".*")));
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQml
+            import Qcm.Material as MD
+            QtObject {
+                readonly property int header: MD.TabBar.Header
+                readonly property int footer: MD.TabBar.Footer
+                readonly property int docked: MD.SearchView.Docked
+                readonly property int fullScreen: MD.SearchView.FullScreen
+            }
+        )",
+                          QUrl("qrc:/tests/InheritedControlEnums.qml"));
+        QVERIFY2(component.isReady(), qPrintable(component.errorString()));
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        QCOMPARE(object->property("header").toInt(), int(qml_material::TabBar::Header));
+        QCOMPARE(object->property("footer").toInt(), int(qml_material::TabBar::Footer));
+        QCOMPARE(object->property("docked").toInt(), int(qml_material::SearchView::Docked));
+        QCOMPARE(object->property("fullScreen").toInt(), int(qml_material::SearchView::FullScreen));
+    }
 
     void nativeControlExports() {
         QQmlComponent component(&m_engine);

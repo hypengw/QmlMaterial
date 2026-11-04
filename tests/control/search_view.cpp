@@ -349,6 +349,11 @@ private slots:
         QVERIFY(s.bar && s.view);
         QCOMPARE(s.bar->searchView(), s.view);
         QCOMPARE(s.view->searchState(), s.bar->searchState());
+        QVERIFY(! s.view->dim());
+        QVERIFY(! s.view->positioningItem());
+        QCOMPARE(s.view->property("radius").toReal(), 28.0);
+        QVERIFY(s.view->background());
+        QVERIFY(s.view->background()->property("elevation").toReal() > 0);
         s.view->open();
         QVERIFY(s.view->entering());
         QCOMPARE(s.view->surfaceItem()->size(), s.bar->size());
@@ -360,6 +365,10 @@ private slots:
         QCOMPARE(s.view->surfaceItem()->position(), QPointF(40, 30));
         QCOMPARE(s.view->surfaceItem()->width(), 320);
         s.view->setPresentation(SearchView::FullScreen);
+        QVERIFY(s.view->dim());
+        QCOMPARE(s.view->positioningItem(), s.view->overlayItem());
+        QCOMPARE(s.view->property("radius").toReal(), 0.0);
+        QTRY_COMPARE(s.view->background()->property("elevation").toReal(), 0.0);
         QCOMPARE(s.view->surfaceItem()->size(), QSizeF(800, 600));
         QCOMPARE(s.view->surfaceItem()->position(), QPointF(0, 0));
         auto result = s.root->findChild<CommandButton*>("result");
