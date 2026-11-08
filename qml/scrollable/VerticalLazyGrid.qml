@@ -7,7 +7,9 @@ MD.LazyGrid {
     property bool busy: false
     property bool expand: false
     property Component header: null
-    property Component footer: MD.ListBusyFooter { running: root.busy }
+    property Component footer: MD.ListBusyFooter {
+        running: root.busy
+    }
     readonly property Item headerItem: decoration.headerItem
     readonly property Item footerItem: decoration.footerItem
     property real extraLeftMargin: 0
@@ -17,7 +19,8 @@ MD.LazyGrid {
 
     implicitHeight: expand ? contentHeight + topMargin + bottomMargin : 0
     onItemsNeeded: demand => {
-        if (source instanceof MD.ItemModelSource) source.requestMore(demand);
+        if (source instanceof MD.ItemModelSource)
+            source.requestMore(demand);
     }
     clip: true
     synchronousDrag: true

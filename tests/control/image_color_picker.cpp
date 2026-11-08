@@ -8,7 +8,7 @@ class ImageColorPickerTest : public QObject {
 private slots:
     void latestResult() {
         using qml_material::ColorPicker;
-        auto* pool = QThreadPool::globalInstance();
+        auto*      pool    = QThreadPool::globalInstance();
         const auto threads = pool->maxThreadCount();
         pool->setMaxThreadCount(1);
         QSemaphore started, release;
@@ -18,8 +18,8 @@ private slots:
         });
         QVERIFY(started.tryAcquire(1, 5000));
         ColorPicker picker;
-        QSignalSpy completed(&picker, &ColorPicker::picked);
-        QImage image(256, 256, QImage::Format_RGB32);
+        QSignalSpy  completed(&picker, &ColorPicker::picked);
+        QImage      image(256, 256, QImage::Format_RGB32);
         image.fill(QColor("#c00000"));
         picker.setImage(image);
         picker.pick();
@@ -39,8 +39,8 @@ private slots:
 
     void clearedImage() {
         qml_material::ColorPicker picker;
-        QSignalSpy completed(&picker, &qml_material::ColorPicker::picked);
-        QImage image(8, 8, QImage::Format_RGB32);
+        QSignalSpy                completed(&picker, &qml_material::ColorPicker::picked);
+        QImage                    image(8, 8, QImage::Format_RGB32);
         image.fill(Qt::blue);
         picker.setImage(image);
         picker.pick();

@@ -62,7 +62,7 @@ Window {
         QTRY_VERIFY(sample(90, 180).red() > 240 && sample(90, 180).green() < 10);
         QCOMPARE(sample(200, 180), QColor(Qt::white));
         const auto rounded = window->grabWindow();
-        QVERIFY(!rounded.isNull());
+        QVERIFY(! rounded.isNull());
         const auto scale = qreal(rounded.width()) / window->width();
         for (int y = qFloor(140 * scale); y < qCeil(168 * scale); ++y)
             for (int x = qFloor(60 * scale); x < qCeil(88 * scale); ++x)

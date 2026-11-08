@@ -1,4 +1,28 @@
 <releases>
+  <release version="0.7.0" date="2026-11-08">
+    <description>
+      <p>Breaking changes:</p>
+      <ul>
+        <li>Remove MenuButton and replace PageStack transition properties with PageMotion.</li>
+        <li>Change ItemSource snapshot, publication, and fetch APIs.</li>
+      </ul>
+      <p>Added:</p>
+      <ul>
+        <li>LazyGrid, LazyMasonryGrid, and horizontal LazyList.</li>
+        <li>Animatable, SeekableTransition, and interactive PageMotion.</li>
+        <li>Shimmer, Skeleton, ShimmerEffect, and BackdropSurface.</li>
+      </ul>
+      <p>Changed:</p>
+      <ul>
+        <li>Align Button shape motion and unify Scrollable and NestedScroll input.</li>
+      </ul>
+      <p>Fixed:</p>
+      <ul>
+        <li>Fix wheel scrolling, LazyView updates, and ToolBarLayout delegate creation.</li>
+        <li>Fix submenu hover, high-DPI IconSvg rendering, and TabBar and SearchView enum bindings.</li>
+      </ul>
+    </description>
+  </release>
   <release version="0.6.1" date="2026-10-22">
     <description>
       <ul>

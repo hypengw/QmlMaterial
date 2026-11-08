@@ -6,7 +6,8 @@ MD.LazyList {
     id: root
     orientation: Qt.Horizontal
     onItemsNeeded: demand => {
-        if (source instanceof MD.ItemModelSource) source.requestMore(demand);
+        if (source instanceof MD.ItemModelSource)
+            source.requestMore(demand);
     }
     clip: true
     implicitWidth: contentWidth + leftMargin + rightMargin

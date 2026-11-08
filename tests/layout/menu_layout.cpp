@@ -134,26 +134,32 @@ private slots:
                     }
                 }
             }
-        )").arg(type).toUtf8(), QUrl(QStringLiteral("qrc:/tests/popup-local-palette.qml")));
+        )")
+                              .arg(type)
+                              .toUtf8(),
+                          QUrl(QStringLiteral("qrc:/tests/popup-local-palette.qml")));
         std::unique_ptr<QObject> object(component.create());
         QVERIFY2(object, qPrintable(component.errorString()));
         auto* root = qobject_cast<QQuickItem*>(object.get());
         QVERIFY(root);
         root->setParentItem(m_window.contentItem());
         QVERIFY(QMetaObject::invokeMethod(root, "setupGlobal"));
-        const auto restore = qScopeGuard([&] { QMetaObject::invokeMethod(root, "restoreGlobal"); });
-        QVariant launched;
+        const auto restore = qScopeGuard([&] {
+            QMetaObject::invokeMethod(root, "restoreGlobal");
+        });
+        QVariant   launched;
         QVERIFY(QMetaObject::invokeMethod(root, "launch", Q_RETURN_ARG(QVariant, launched)));
         auto* popup = qobject_cast<qml_material::Popup*>(launched.value<QObject*>());
         QVERIFY(popup);
         popup->open();
         QTRY_VERIFY(popup->isVisible());
-        auto* row = popup->findChild<QQuickItem*>(QStringLiteral("row"));
+        auto* row     = popup->findChild<QQuickItem*>(QStringLiteral("row"));
         auto* submenu = popup->findChild<qml_material::Menu*>(QStringLiteral("submenu"));
         QVERIFY(row && submenu);
         auto matches = [&](qml_material::Popup* item) {
             auto* state = item->property("mdState").value<QObject*>();
-            return state && item->background()->property("color") == root->property("expectedSurface") &&
+            return state &&
+                   item->background()->property("color") == root->property("expectedSurface") &&
                    state->property("textColor") == root->property("expectedText") &&
                    state->property("supportTextColor") == root->property("expectedSupport");
         };

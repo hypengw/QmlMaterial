@@ -29,8 +29,8 @@ public:
     ColorPicker(QObject* = nullptr);
     ~ColorPicker();
 
-    auto image() const -> QImage;
-    void setImage(QImage);
+    auto             image() const -> QImage;
+    void             setImage(QImage);
     Q_INVOKABLE void clearImage();
 
     auto color() const noexcept -> QColor;
@@ -42,8 +42,8 @@ public:
     Q_SIGNAL void picked();
 
 private:
-    QImage m_image;
-    QColor m_color;
+    QImage  m_image;
+    QColor  m_color;
     quint64 m_revision {};
 };
 
