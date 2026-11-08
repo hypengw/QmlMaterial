@@ -6,6 +6,7 @@
 #include <QGuiApplication>
 #include <QQmlComponent>
 #include <QQmlEngine>
+#include <QQmlIncubationController>
 #include <QQuickItem>
 #include <QQuickWindow>
 #include <QThread>
@@ -43,7 +44,9 @@ int run_toolbar_dynamic_visibility(int argc, char** argv) {
     qmlRegisterType<qml_material::Action>("QmlMaterialTest", 1, 0, "Action");
     qmlRegisterType<qml_material::ToolBarLayout>("QmlMaterialTest", 1, 0, "ToolBarLayout");
 
-    QQmlEngine    engine;
+    QQmlIncubationController incubation;
+    QQmlEngine               engine;
+    engine.setIncubationController(&incubation);
     QQmlComponent component(&engine, QUrl::fromLocalFile(TOOLBAR_DYNAMIC_QML_PATH));
     if (component.isError()) {
         for (const auto& error : component.errors()) {
@@ -57,6 +60,18 @@ int run_toolbar_dynamic_visibility(int argc, char** argv) {
     if (! root) {
         delete object;
         return fail("root object is not a QQuickItem");
+    }
+
+    auto* layout = root->findChild<qml_material::ToolBarLayout*>();
+    if (! layout) {
+        delete root;
+        return fail("toolbar layout was not created");
+    }
+    layout->ensurePolished();
+    if (incubation.incubatingObjectCount() != 0 || ! layout->moreButtonItem() ||
+        layout->implicitWidth() < 80.0 || layout->implicitHeight() < 40.0) {
+        delete root;
+        return fail("toolbar delegates did not finish during the first layout");
     }
 
     QQuickWindow window;
@@ -123,11 +138,6 @@ int run_toolbar_dynamic_visibility(int argc, char** argv) {
             window)) {
         delete root;
         return fail("restoring maxShowActionNum did not restore actions");
-    }
-    auto* layout = root->findChild<qml_material::ToolBarLayout*>();
-    if (! layout) {
-        delete root;
-        return fail("toolbar layout was not created");
     }
     root->setProperty("actionBarWidthLimit", layout->minimumWidth());
     if (! waitFor(

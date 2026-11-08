@@ -13,7 +13,7 @@ namespace qml_material
 {
 
 ToolBarDelegateIncubator::ToolBarDelegateIncubator(QQmlComponent* component, QQmlContext* context)
-    : QQmlIncubator(QQmlIncubator::Asynchronous), m_component(component), m_context(context) {}
+    : QQmlIncubator(QQmlIncubator::Synchronous), m_component(component), m_context(context) {}
 
 void ToolBarDelegateIncubator::setStateCallback(std::function<void(QQuickItem*)> callback) {
     m_stateCallback = callback;
