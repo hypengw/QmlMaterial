@@ -19,6 +19,8 @@ class QML_MATERIAL_API NestedScroll : public QObject {
     Q_PROPERTY(bool enabled READ enabled WRITE setEnabled NOTIFY enabledChanged FINAL)
     Q_PROPERTY(Qt::Orientations axes READ axes WRITE setAxes NOTIFY axesChanged FINAL)
     Q_PROPERTY(bool wheelEnabled MEMBER m_wheelEnabled NOTIFY wheelEnabledChanged FINAL)
+    Q_PROPERTY(
+        bool smoothWheelEnabled MEMBER m_smoothWheelEnabled NOTIFY smoothWheelEnabledChanged FINAL)
     Q_PROPERTY(bool restoreOnReverse MEMBER m_restoreOnReverse NOTIFY restoreOnReverseChanged FINAL)
     Q_PROPERTY(NestedScrollConnection* connection READ connection WRITE setConnection NOTIFY
                    connectionChanged FINAL)
@@ -33,6 +35,7 @@ public:
     static bool             coordinates(QQuickItem* receiver, QQuickItem* ancestor);
     bool                    restoreOnReverse() const { return m_restoreOnReverse; }
     bool                    wheelEnabled() const { return m_wheelEnabled; }
+    bool                    smoothWheelEnabled() const { return m_smoothWheelEnabled; }
     bool                    enabled() const { return m_enabled; }
     void                    setEnabled(bool);
     Qt::Orientations        axes() const { return m_axes; }
@@ -44,6 +47,7 @@ public:
     Q_SIGNAL void           enabledChanged();
     Q_SIGNAL void           axesChanged();
     Q_SIGNAL void           wheelEnabledChanged();
+    Q_SIGNAL void           smoothWheelEnabledChanged();
     Q_SIGNAL void           restoreOnReverseChanged();
     // Actual content displacement in this participant's local coordinates, excluding overscroll.
     Q_SIGNAL void scrollConsumed(QPointF delta);
@@ -58,11 +62,12 @@ private:
     QPointer<ScrollInputHandler>     m_controller;
     QPointer<NestedScrollConnection> m_connection;
     QMetaObject::Connection          m_connectionDestroyed;
-    int                              m_pressDelay       = 100;
-    bool                             m_enabled          = false;
-    bool                             m_wheelEnabled     = true;
-    bool                             m_restoreOnReverse = false;
-    Qt::Orientations                 m_axes             = Qt::Horizontal | Qt::Vertical;
+    int                              m_pressDelay         = 100;
+    bool                             m_enabled            = false;
+    bool                             m_wheelEnabled       = true;
+    bool                             m_smoothWheelEnabled = true;
+    bool                             m_restoreOnReverse   = false;
+    Qt::Orientations                 m_axes               = Qt::Horizontal | Qt::Vertical;
 };
 } // namespace qml_material
 

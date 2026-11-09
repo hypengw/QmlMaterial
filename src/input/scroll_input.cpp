@@ -455,6 +455,12 @@ private:
             m_connections << connect(config, &NestedScroll::wheelEnabledChanged, this, [this] {
                 stop();
             });
+            m_connections << connect(
+                config, &NestedScroll::smoothWheelEnabledChanged, this, [this] {
+                    if (m_wheel) {
+                        stop();
+                    }
+                });
             m_connections << connect(config, &NestedScroll::restoreOnReverseChanged, this, [this] {
                 stop();
             });
@@ -576,7 +582,11 @@ private:
                 break;
             }
         }
-        if (receiver) receiver->scrollWheel(delta, input.smooth, event->phase());
+        if (receiver) {
+            const bool smooth =
+                input.smooth && receiver->m_config && receiver->m_config->smoothWheelEnabled();
+            receiver->scrollWheel(delta, smooth, event->phase());
+        }
     }
     void scrollWheel(QPointF delta, bool smooth, Qt::ScrollPhase phase, bool local = false) {
         QPointer<ScrollInputHandler> guard(this);
