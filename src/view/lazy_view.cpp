@@ -560,7 +560,8 @@ void LazyView::updatePolish() {
             emit layoutChanged();
             return;
         }
-        offset = result.offset;
+        // Empty sources can still have visible content in the leading margin.
+        if (state->pending->count() != 0 || offset >= 0) offset = result.offset;
     }
     const auto snapshot = state->layout->snapshot();
     if (! snapshot) return;

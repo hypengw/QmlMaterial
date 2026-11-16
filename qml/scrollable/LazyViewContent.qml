@@ -10,19 +10,26 @@ Item {
     readonly property Item headerItem: headerLoader.item
     readonly property Item footerItem: footerLoader.item
     property real previousTopMargin: 0
+    property real previousContentY: 0
 
     Connections {
         target: root.view
+        function onContentYChanged() {
+            if (root.view.topMargin === root.previousTopMargin)
+                root.previousContentY = root.view.contentY;
+        }
         function onTopMarginChanged() {
             // Preserve the top anchor when asynchronous header content changes size.
-            if (!root.view.moving && Math.abs(root.view.contentY + root.previousTopMargin) < 0.5)
+            if (!root.view.moving && Math.abs(root.previousContentY + root.previousTopMargin) < 0.5)
                 root.view.contentY = -root.view.topMargin;
             root.previousTopMargin = root.view.topMargin;
+            root.previousContentY = root.view.contentY;
         }
     }
     Component.onCompleted: {
         previousTopMargin = view.topMargin;
         view.contentY = -view.topMargin;
+        previousContentY = view.contentY;
     }
     Loader {
         id: headerLoader

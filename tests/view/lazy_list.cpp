@@ -595,6 +595,91 @@ private slots:
         QCOMPARE(view->contentY(), -132.0);
     }
 
+    void emptyHeaderKeepsViewportPosition() {
+        MutableRows model;
+        QQmlEngine  engine;
+        engine.rootContext()->setContextProperty("testModel", &model);
+        QQmlComponent component(&engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            Item {
+                id: testRoot
+                width: 320; height: 240
+                property real headerHeight: 800
+                MD.VerticalLazyList {
+                    objectName: "list"
+                    anchors.fill: parent
+                    extraBottomMargin: 8
+                    source: MD.ItemModelSource {
+                        model: testModel
+                        keyMode: MD.ItemModelSource.PersistentIndexKey
+                    }
+                    header: Item { implicitHeight: testRoot.headerHeight }
+                    footer: null
+                    delegate: Item {
+                        required property MD.LazyRow row
+                        implicitHeight: 48
+                    }
+                }
+            }
+        )",
+                          QUrl());
+        QVERIFY2(component.isReady(), qPrintable(component.errorString()));
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY(object);
+        auto view = object->findChild<LazyList*>("list");
+        QVERIFY(view);
+        QQuickRenderControl render;
+        QQuickWindow        window(&render);
+        qobject_cast<QQuickItem*>(object.get())->setParentItem(window.contentItem());
+        frames(render);
+        QCOMPARE(view->count(), 0);
+        QCOMPARE(view->contentY(), -800.0);
+        QVERIFY(view->isAtYBeginning());
+        QVERIFY(! view->isAtYEnd());
+
+        object->setProperty("headerHeight", 900);
+        frames(render);
+        QCOMPARE(view->contentY(), -900.0);
+
+        model.reset(30);
+        frames(render);
+        QCOMPARE(view->count(), 30);
+        QCOMPARE(view->contentY(), -900.0);
+
+        view->setContentY(247);
+        frames(render);
+        model.prepend(1);
+        frames(render);
+        QCOMPARE(view->contentY(), 295.0);
+
+        view->setContentY(-400);
+        frames(render);
+        model.reset(0);
+        frames(render);
+        QCOMPARE(view->count(), 0);
+        QCOMPARE(view->contentY(), -400.0);
+
+        object->setProperty("headerHeight", 1000);
+        qobject_cast<QQuickItem*>(object.get())->setWidth(400);
+        frames(render);
+        QCOMPARE(view->contentY(), -400.0);
+
+        model.reset(30);
+        frames(render);
+        QCOMPARE(view->contentY(), -400.0);
+
+        model.reset(0);
+        object->setProperty("headerHeight", 80);
+        frames(render);
+        view->setContentY(-80);
+        frames(render);
+        object->setProperty("headerHeight", 800);
+        frames(render);
+        QCOMPARE(view->contentY(), -800.0);
+    }
+
     void rowUsage() {
         QQmlEngine          engine;
         QQuickRenderControl render;
