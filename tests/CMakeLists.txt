@@ -106,6 +106,7 @@ set(QM_TEST_SOURCES
   shape/material_shapes.cpp
   style/control_feedback.cpp
   style/state_lifetime.cpp
+  token/color_overrides.cpp
   view/lazy_grid.cpp
   view/lazy_masonry.cpp
   view/lazy_list.cpp

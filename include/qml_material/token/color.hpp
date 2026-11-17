@@ -59,6 +59,16 @@ public:
     Q_PROPERTY(bool useSysAccentColor READ useSysAccentColor WRITE setUseSysAccentColor NOTIFY
                    useSysAccentColorChanged FINAL)
 
+    /**
+     * @property overrides
+     * @brief Per-role colors applied on top of the generated scheme
+     *
+     * Maps a role name (e.g. "surface_container") to a color or a "#rrggbb" string.
+     * Unknown roles are ignored.
+     */
+    Q_PROPERTY(
+        QVariantMap overrides READ overrides WRITE setOverrides NOTIFY overridesChanged FINAL)
+
 #define X(_n_)                                           \
     Q_PROPERTY(QColor _n_ READ _n_ NOTIFY schemeChanged) \
     QColor _n_() const { return m_scheme.value()._n_; }
@@ -204,6 +214,8 @@ public:
     bool   useSysAccentColor() const;
     auto   paletteType() const -> Enum::PaletteType;
     void   setPaletteType(Enum::PaletteType);
+    auto   overrides() const -> const QVariantMap&;
+    void   setOverrides(const QVariantMap&);
 
     Q_INVOKABLE QColor getOn(QColor) const;
 
@@ -222,6 +234,7 @@ public:
     Q_SIGNAL void accentColorChanged(QColor);
     Q_SIGNAL void useSysColorSMChanged();
     Q_SIGNAL void useSysAccentColorChanged();
+    Q_SIGNAL void overridesChanged();
 
 private:
     void genSchemeImpl(Enum::ThemeMode);
@@ -231,6 +244,7 @@ private:
     Enum::ThemeMode     m_last_mode;
     Enum::PaletteType   m_scheme_type;
     QProperty<MdScheme> m_scheme;
+    QVariantMap         m_overrides;
     bool                m_use_sys_color_scheme;
     bool                m_use_sys_accent_color;
 };

@@ -12,6 +12,14 @@ using namespace qml_material;
 namespace
 {
 constexpr QRgb BASE_COLOR { qRgb(190, 231, 253) };
+
+auto scheme_role(MdScheme& s, QStringView name) -> QRgb* {
+#define X(_n_) \
+    if (name == QLatin1StringView(#_n_)) return &s._n_;
+    QM_SCHEME_ROLES(X)
+#undef X
+    return nullptr;
+}
 } // namespace
 
 MdColorMgr::MdColorMgr(QObject* parent)
@@ -52,6 +60,20 @@ void MdColorMgr::setPaletteType(Enum::PaletteType t) {
     if (std::exchange(m_scheme_type, t) != t) {
         paletteTypeChanged();
     }
+}
+
+auto MdColorMgr::overrides() const -> const QVariantMap& { return m_overrides; }
+void MdColorMgr::setOverrides(const QVariantMap& v) {
+    if (m_overrides == v) return;
+    MdScheme probe;
+    for (auto it = v.cbegin(); it != v.cend(); ++it) {
+        if (! scheme_role(probe, it.key())) {
+            qWarning() << "MdColorMgr: unknown color role in overrides:" << it.key();
+        }
+    }
+    m_overrides = v;
+    Q_EMIT overridesChanged();
+    genSchemeImpl(m_last_mode);
 }
 
 void MdColorMgr::setAccentColor(QColor v) {
@@ -99,6 +121,11 @@ void MdColorMgr::genSchemeImpl(Enum::ThemeMode mode) {
     auto scheme = mode == Enum::ThemeMode::Light
                       ? material_light_color_scheme(m_accent_color.rgb(), paletteType())
                       : material_dark_color_scheme(m_accent_color.rgb(), paletteType());
+    for (auto it = m_overrides.cbegin(); it != m_overrides.cend(); ++it) {
+        auto role  = scheme_role(scheme, it.key());
+        auto color = it.value().value<QColor>();
+        if (role && color.isValid()) *role = color.rgba();
+    }
     m_last_mode = mode;
     const QPointer<MdColorMgr> guard(this);
     m_scheme = std::move(scheme);
