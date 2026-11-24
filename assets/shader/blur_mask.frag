@@ -2,6 +2,7 @@
 
 #extension GL_GOOGLE_include_directive : enable
 #include "common.glsl"
+#include "sdf.glsl"
 
 layout(location = 0) out vec4 fragColor;
 
@@ -66,15 +67,8 @@ void main() {
         inside = step(0.0, p.x) * step(p.x, rect_size.x)
                * step(0.0, p.y) * step(p.y, rect_size.y);
     } else {
-        vec2  hs  = rect_size * 0.5;
-        vec2  ctr = p - hs;
-        float sx  = step(0.0, ctr.x);
-        float sy  = step(0.0, ctr.y);
-        float r_q = mix(mix(radius_tl, radius_tr, sx),
-                        mix(radius_bl, radius_br, sx),
-                        sy);
-        vec2  q   = abs(ctr) - (hs - vec2(r_q));
-        float sdf = min(max(q.x, q.y), 0.0) + length(max(q, vec2(0.0))) - r_q;
+        vec2 halfSize = rect_size * 0.5;
+        float sdf = sdf_rounded_rectangle(p - halfSize, halfSize, vec4(radius_br, radius_tr, radius_bl, radius_tl));
         inside    = 1.0 - clamp(sdf, 0.0, 1.0);
     }
 
@@ -96,5 +90,5 @@ void main() {
     else if (style == 2) alpha = blurred * (1.0 - inside);  // Outer
     else                 alpha = blurred * inside;          // Inner
 
-    fragColor = v_color * (alpha * qt_Opacity);
+    fragColor = vec4(v_color.rgb * v_color.a, v_color.a) * (alpha * qt_Opacity);
 }

@@ -17,6 +17,15 @@ constexpr float     kShadowLightRadius = 800.0f;
 constexpr float     kShadowLightHeight = 600.0f;
 constexpr QVector3D kLightPos          = { 0, -1, 1 };
 
+static auto shadow_params(float elevation) -> qml_material::sg::ShadowParams {
+    qml_material::sg::ShadowParams params;
+    params.z_plane_params = QVector3D(0, 0, elevation);
+    params.light_pos      = kLightPos;
+    params.light_radius   = kShadowLightRadius / kShadowLightHeight;
+    params.flags          = qml_material::sg::DirectionalLight_ShadowFlag;
+    return params;
+}
+
 namespace qml_material
 {
 namespace sg
@@ -35,19 +44,15 @@ public:
 
     void updateGeometry() {
         if (elevation == m_last_elevation && rect == m_last_rect && color == m_last_color &&
-            radius == m_last_radius)
+            radius == m_last_radius && opaqueOccluder == m_lastOpaqueOccluder)
             return;
 
-        sg::ShadowParams params;
+        auto params = shadow_params(elevation);
         {
-            params.z_plane_params = QVector3D(0, 0, elevation);
-            params.light_pos      = kLightPos;
-            params.light_radius   = kShadowLightRadius / kShadowLightHeight;
-            params.radius         = radius;
-            if (elevation == 0) {
+            params.radius = radius;
+            if (! opaqueOccluder) {
                 params.flags |= sg::ShadowFlags::TransparentOccluder_ShadowFlag;
             }
-            params.flags |= sg::ShadowFlags::DirectionalLight_ShadowFlag;
             auto c = this->color;
             c.setAlphaF(kAmbientAlpha * this->color.alphaF());
             params.ambient_color = c.rgba();
@@ -60,10 +65,11 @@ public:
         }
         update_shadow_geometry(geometry(), params, rect);
 
-        m_last_elevation = elevation;
-        m_last_rect      = rect;
-        m_last_color     = color;
-        m_last_radius    = radius;
+        m_last_elevation     = elevation;
+        m_last_rect          = rect;
+        m_last_color         = color;
+        m_last_radius        = radius;
+        m_lastOpaqueOccluder = opaqueOccluder;
         markDirty(QSGNode::DirtyGeometry);
     }
 
@@ -71,12 +77,14 @@ public:
     QRectF    rect;
     QColor    color;
     QVector4D radius;
+    bool      opaqueOccluder;
 
 private:
     double    m_last_elevation { -1 };
     QRectF    m_last_rect;
     QColor    m_last_color;
     QVector4D m_last_radius;
+    bool      m_lastOpaqueOccluder = true;
 };
 } // namespace sg
 
@@ -125,6 +133,19 @@ void RRectShadow::setColor(const QColor& newColor) {
     colorChanged(m_color);
 }
 
+void RRectShadow::setOpaqueOccluder(bool value) {
+    if (m_opaqueOccluder == value) return;
+    m_opaqueOccluder = value;
+    update();
+    Q_EMIT opaqueOccluderChanged();
+}
+
+QRectF RRectShadow::boundingRect() const {
+    const auto rect = QQuickItem::boundingRect();
+    return rect.isEmpty() || m_elevation <= 0 ? rect
+                                              : sg::shadow_bounds(shadow_params(m_elevation), rect);
+}
+
 void RRectShadow::componentComplete() { QQuickItem::componentComplete(); }
 
 void RRectShadow::itemChange(QQuickItem::ItemChange            change,
@@ -137,7 +158,8 @@ void RRectShadow::itemChange(QQuickItem::ItemChange            change,
 QSGNode* RRectShadow::updatePaintNode(QSGNode* node, QQuickItem::UpdatePaintNodeData* data) {
     Q_UNUSED(data);
 
-    if (boundingRect().isEmpty()) {
+    const auto rect = QQuickItem::boundingRect();
+    if (rect.isEmpty() || m_elevation <= 0) {
         delete node;
         return nullptr;
     }
@@ -147,9 +169,10 @@ QSGNode* RRectShadow::updatePaintNode(QSGNode* node, QQuickItem::UpdatePaintNode
         shadowNode = new sg::RRectShadowNode {};
         shadowNode->init(this);
     }
-    shadowNode->rect      = boundingRect();
-    shadowNode->elevation = m_elevation;
-    shadowNode->color     = m_color.rgb();
+    shadowNode->rect           = rect;
+    shadowNode->elevation      = m_elevation;
+    shadowNode->color          = m_color;
+    shadowNode->opaqueOccluder = m_opaqueOccluder;
     {
         auto vec = m_corners.toVector4D();
         vec[0]   = std::exchange(vec[3], vec[0]);

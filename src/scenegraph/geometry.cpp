@@ -82,9 +82,11 @@ auto create_blur_mask_geometry() -> up<QSGGeometry> {
     return out;
 }
 
+float blur_mask_margin(float sigma) noexcept { return 3.0f * std::max(sigma, 0.0f); }
+
 void update_blur_mask_geometry(BasicVertex* v, QVector2D rect_size, float sigma, QRgb color,
                                QVector4D radius) {
-    const float margin = 3.0f * std::max(sigma, 0.0f);
+    const float margin = blur_mask_margin(sigma);
 
     // Nine-patch outer size covers rect + halo. Corner cells must be UNIFORM
     // in size — per-corner sizes (e.g. one corner r=20, another r=0) make the
@@ -134,17 +136,57 @@ auto create_shadow_geometry() -> up<QSGGeometry> {
             1, 4, QSGGeometry::FloatType, QSGGeometry::UnknownAttribute),
         QSGGeometry::Attribute::createWithAttributeType(
             2, 3, QSGGeometry::FloatType, QSGGeometry::UnknownAttribute),
+        QSGGeometry::Attribute::createWithAttributeType(
+            3, 4, QSGGeometry::FloatType, QSGGeometry::UnknownAttribute),
+        QSGGeometry::Attribute::createWithAttributeType(
+            4, 4, QSGGeometry::FloatType, QSGGeometry::UnknownAttribute),
     };
-    static QSGGeometry::AttributeSet attrset = { 3, sizeof(ShadowVertex), attrs };
+    static QSGGeometry::AttributeSet attrset = { 5, sizeof(ShadowVertex), attrs };
     auto                             out     = std::make_unique<QSGGeometry>(attrset, 0);
     out->setDrawingMode(QSGGeometry::DrawTriangles);
     return out;
 }
 
+namespace
+{
+struct SpotProjection {
+    QRectF rect;
+    float  blur;
+    float  scale;
+};
+
+SpotProjection project_spot(const ShadowParams& params, const QRectF& rect) {
+    const auto     height = params.z_plane_params.z();
+    const auto     light  = params.light_pos;
+    SpotProjection spot;
+    QVector2D      offset;
+    const auto     project =
+        params.flags & DirectionalLight_ShadowFlag ? math::directional_params : math::spot_params;
+    project(height,
+            light.x(),
+            light.y(),
+            light.z(),
+            params.light_radius,
+            &spot.blur,
+            &spot.scale,
+            &offset);
+    const auto dw = (spot.scale - 1.0f) * rect.width() / 2.0;
+    const auto dh = (spot.scale - 1.0f) * rect.height() / 2.0;
+    spot.rect     = rect.translated(offset.x(), offset.y()).adjusted(-dw, -dh, dw, dh);
+    return spot;
+}
+} // namespace
+
+QRectF shadow_bounds(const ShadowParams& params, const QRectF& rect) {
+    const auto ambient = math::ambient_blur_radius(params.z_plane_params.z());
+    const auto spot    = project_spot(params, rect);
+    return rect.adjusted(-ambient, -ambient, ambient, ambient)
+        .united(spot.rect.adjusted(-spot.blur, -spot.blur, spot.blur, spot.blur));
+}
+
 void update_shadow_geometry(QSGGeometry* geo, const ShadowParams& params, const QRectF& rect) {
     const float occluderHeight = params.z_plane_params.z();
     const bool  transparent    = (params.flags & ShadowFlags::TransparentOccluder_ShadowFlag);
-    const bool  directional    = (params.flags & ShadowFlags::DirectionalLight_ShadowFlag);
     const auto  max_radius     = std::min<float>(rect.width(), rect.height()) / 2.0f;
 
     // Detect if we can use circle optimization
@@ -180,30 +222,8 @@ void update_shadow_geometry(QSGGeometry* geo, const ShadowParams& params, const 
 
     // 2. Spot Shadow Pass
     if (params.spot_color > 0) {
-        math::scalar blur, scale;
-        QVector2D    offset;
-        if (directional)
-            math::directional_params(occluderHeight,
-                                     params.light_pos.x(),
-                                     params.light_pos.y(),
-                                     params.light_pos.z(),
-                                     params.light_radius,
-                                     &blur,
-                                     &scale,
-                                     &offset);
-        else
-            math::spot_params(occluderHeight,
-                              params.light_pos.x(),
-                              params.light_pos.y(),
-                              params.light_pos.z(),
-                              params.light_radius,
-                              &blur,
-                              &scale,
-                              &offset);
-
-        float dw = (scale - 1.0f) * rect.width() / 2.0f, dh = (scale - 1.0f) * rect.height() / 2.0f;
-        QRectF    spotRRect  = rect.translated(offset.x(), offset.y()).adjusted(-dw, -dh, dw, dh);
-        QVector4D spotRadius = params.radius * scale;
+        auto [spotRRect, blur, scale] = project_spot(params, rect);
+        QVector4D spotRadius          = params.radius * scale;
 
         // InsetWidth calculation to cover the penumbra
         math::scalar insetWidth = blur;
@@ -255,6 +275,15 @@ void update_shadow_geometry(QSGGeometry* geo, const ShadowParams& params, const 
             idx += p->fIndexCount;
             v_off += p->fVertCount;
         }
+    auto* vertices = static_cast<ShadowVertex*>(geo->vertexData());
+    for (int i = 0; i < v_count; ++i) {
+        // Batching can transform the position attribute before the shader reads it.
+        vertices[i].occluder_x      = vertices[i].x;
+        vertices[i].occluder_y      = vertices[i].y;
+        vertices[i].occluder_width  = transparent ? 0.0f : rect.width();
+        vertices[i].occluder_height = rect.height();
+        for (int j = 0; j < 4; ++j) vertices[i].occluder_radii[j] = params.radius[j];
+    }
 }
 
 } // namespace qml_material::sg

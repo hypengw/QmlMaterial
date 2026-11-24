@@ -7,6 +7,7 @@ Item {
     property real elevation: 0
     property color color: MD.MProp.color.shadow
     property MD.corners corners: MD.Util.corners(0)
+    property bool opaqueOccluder: true
 
     visible: !MD.Util.epsilonEqual(elevation, MD.Token.elevation.level0)
 
@@ -31,6 +32,7 @@ Item {
                 elevation: root.elevation
                 color: root.color
                 corners: root.corners
+                opaqueOccluder: root.opaqueOccluder
             }
         }
 
@@ -40,7 +42,7 @@ Item {
                 sigma: Math.max(root.elevation * 1.2, 0.5)
                 color: Qt.rgba(root.color.r, root.color.g, root.color.b, root.color.a * 0.35)
                 corners: root.corners
-                style: MD.BlurMaskImpl.Outer
+                style: root.opaqueOccluder ? MD.BlurMaskImpl.Outer : MD.BlurMaskImpl.Normal
             }
         }
     }

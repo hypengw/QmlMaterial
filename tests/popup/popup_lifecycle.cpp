@@ -6,6 +6,7 @@
 #include <QQmlComponent>
 #include <QQmlEngine>
 #include <QQmlIncubator>
+#include <QQmlProperty>
 #include <QQuickItem>
 #include <QQuickWindow>
 #include <QTemporaryDir>
@@ -29,6 +30,51 @@ class PopupLifecycleTest : public QObject {
     Q_OBJECT
 
 private slots:
+    void fadeLayersOnlyTransitionalOpacity() {
+        QQuickWindow window;
+        if (window.rendererInterface()->graphicsApi() == QSGRendererInterface::Software)
+            QSKIP("Layer compositing requires a graphics backend");
+        window.resize(640, 480);
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            MD.PopupBase {
+                width: 160; height: 120
+                deferredCompletion: true
+                background: MD.ElevationRectangle { elevation: MD.Token.elevation.level2 }
+            }
+        )",
+                          QUrl("qrc:/tests/popup-fade-layer.qml"));
+        std::unique_ptr<qml_material::Popup> popup(
+            qobject_cast<qml_material::Popup*>(component.create()));
+        QVERIFY2(popup, qPrintable(component.errorString()));
+        popup->setParentItem(window.contentItem());
+        const QQmlProperty layerEnabled(popup->surfaceItem(), QStringLiteral("layer.enabled"));
+        const QQmlProperty sourceRect(popup->surfaceItem(), QStringLiteral("layer.sourceRect"));
+        QVERIFY(layerEnabled.isValid());
+
+        popup->open();
+        QVERIFY(popup->entering());
+        popup->setOpacity(.4);
+        QVERIFY(layerEnabled.read().toBool());
+        QVERIFY(sourceRect.read().toRectF().bottom() > popup->surfaceItem()->height());
+        popup->setOpacity(1);
+        popup->completeEnter();
+        QVERIFY(! layerEnabled.read().toBool());
+
+        popup->close();
+        popup->setOpacity(.4);
+        QVERIFY(layerEnabled.read().toBool());
+        popup->open();
+        QVERIFY(popup->entering());
+        QVERIFY(layerEnabled.read().toBool());
+        popup->dismissImmediately();
+        QVERIFY(! popup->isVisible());
+        QVERIFY(! layerEnabled.read().toBool());
+        QVERIFY(sourceRect.read().toRectF().isNull());
+    }
+
     void popupSurvivesWindowDestruction() {
         auto window = std::make_unique<QQuickWindow>();
         window->resize(640, 480);

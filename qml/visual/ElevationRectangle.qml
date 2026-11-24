@@ -13,6 +13,7 @@ MD.Rectangle {
         corners: root.corners
         width: root.width
         height: root.height
+        opaqueOccluder: root.color.a === 1
         visible: !MD.Util.epsilonEqual(elevation, MD.Token.elevation.level0) && root.color.a > 0
     }
 }

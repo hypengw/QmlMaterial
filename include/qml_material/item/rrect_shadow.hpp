@@ -15,6 +15,8 @@ class RRectShadow : public QQuickItem {
     Q_PROPERTY(double elevation READ elevation WRITE setelevation NOTIFY elevationChanged FINAL)
     Q_PROPERTY(qreal radius READ radius WRITE setRadius NOTIFY radiusChanged FINAL)
     Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY colorChanged FINAL)
+    Q_PROPERTY(bool opaqueOccluder READ opaqueOccluder WRITE setOpaqueOccluder NOTIFY
+                   opaqueOccluderChanged FINAL)
     Q_PROPERTY(qml_material::CornersGroup corners READ corners WRITE setCorners NOTIFY
                    cornersChanged FINAL)
 public:
@@ -36,8 +38,12 @@ public:
     QColor        color() const;
     void          setColor(const QColor& newColor);
     Q_SIGNAL void colorChanged(QColor);
+    bool          opaqueOccluder() const { return m_opaqueOccluder; }
+    void          setOpaqueOccluder(bool);
+    Q_SIGNAL void opaqueOccluderChanged();
 
-    void componentComplete() override;
+    void   componentComplete() override;
+    QRectF boundingRect() const override;
 
 protected:
     void     itemChange(QQuickItem::ItemChange            change,
@@ -49,5 +55,6 @@ private:
     CornersGroup m_corners;
     qreal        m_radius;
     QColor       m_color;
+    bool         m_opaqueOccluder = true;
 };
 } // namespace qml_material

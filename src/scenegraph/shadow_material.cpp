@@ -1,7 +1,5 @@
 #include "qml_material/scenegraph/shadow_material.h"
 
-#include <cmath>
-
 #include <QQuickWindow>
 #include <QSGTexture>
 
@@ -60,7 +58,7 @@ bool ShadowShader::updateUniformData(RenderState& state, QSGMaterial* newMateria
     }
 
     if (state.isOpacityDirty()) {
-        const float opacity = std::pow(state.opacity(), 3);
+        const float opacity = state.opacity();
         memcpy(buf->data() + 64, &opacity, 4);
         changed = true;
     }

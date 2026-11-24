@@ -108,8 +108,15 @@ void            BlurMask::setStyle(Style s) {
     styleChanged(s);
 }
 
+QRectF BlurMask::boundingRect() const {
+    const auto rect   = QQuickItem::boundingRect();
+    const auto margin = sg::blur_mask_margin(m_sigma);
+    return rect.isEmpty() ? rect : rect.adjusted(-margin, -margin, margin, margin);
+}
+
 QSGNode* BlurMask::updatePaintNode(QSGNode* node, QQuickItem::UpdatePaintNodeData* /*data*/) {
-    if (boundingRect().isEmpty()) {
+    const auto rect = QQuickItem::boundingRect();
+    if (rect.isEmpty()) {
         delete node;
         return nullptr;
     }
@@ -118,7 +125,7 @@ QSGNode* BlurMask::updatePaintNode(QSGNode* node, QQuickItem::UpdatePaintNodeDat
         n = new sg::BlurMaskNode {};
         n->init(this);
     }
-    n->rect  = boundingRect();
+    n->rect  = rect;
     n->color = m_color;
     n->sigma = m_sigma;
     n->style = static_cast<sg::BlurStyle>(m_style);

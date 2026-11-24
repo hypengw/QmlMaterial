@@ -36,6 +36,7 @@ public:
 
     BlurMask(QQuickItem* parent = nullptr);
     ~BlurMask() override;
+    QRectF boundingRect() const override;
 
     qreal         sigma() const;
     void          setSigma(qreal);

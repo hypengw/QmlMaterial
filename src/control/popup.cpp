@@ -9,6 +9,7 @@
 #include <QQuickWindow>
 #include <QGuiApplication>
 #include <QQmlInfo>
+#include <QQmlComponent>
 #include <QQmlEngine>
 #include <QQmlProperty>
 #include <QStyleHints>
@@ -21,6 +22,22 @@
 
 namespace qml_material
 {
+namespace
+{
+void addPaintBounds(QQuickItem* surface, QQuickItem* item, QRectF& bounds) {
+    if (! item->isVisible() || item->opacity() == 0) return;
+    if (item->clip()) {
+        bounds = bounds.united(item->mapRectToItem(surface, item->clipRect()));
+        return;
+    }
+    if (item->flags().testFlag(QQuickItem::ItemHasContents)) {
+        const auto rect = item->boundingRect();
+        if (! rect.isEmpty()) bounds = bounds.united(item->mapRectToItem(surface, rect));
+    }
+    for (auto* child : item->childItems()) addPaintBounds(surface, child, bounds);
+}
+} // namespace
+
 // An observation-only child receives complete ancestor transforms on Qt 6.8 too.
 class PopupAnchorObserver : public QQuickItem {
     class Private : public QQuickItemPrivate {
@@ -204,7 +221,13 @@ Popup::Popup(Panel* surface, QObject* parent)
     connect(m_surface, &Panel::rightInsetChanged, this, &Popup::rightInsetChanged);
     connect(m_surface, &Panel::topInsetChanged, this, &Popup::topInsetChanged);
     connect(m_surface, &Panel::bottomInsetChanged, this, &Popup::bottomInsetChanged);
-    connect(m_surface, &Panel::opacityChanged, this, &Popup::opacityChanged);
+    connect(m_surface, &Panel::opacityChanged, this, [this] {
+        const QPointer<Popup> guard(this);
+        updateOpacityLayer();
+        if (guard) Q_EMIT opacityChanged();
+    });
+    connect(m_surface, &Panel::widthChanged, this, &Popup::updateOpacityLayer);
+    connect(m_surface, &Panel::heightChanged, this, &Popup::updateOpacityLayer);
     connect(m_surface, &Panel::scaleChanged, this, &Popup::scaleChanged);
     connect(m_surface, &Panel::transformOriginChanged, this, &Popup::transformOriginChanged);
     connect(m_surface, &Panel::enabledChanged, this, &Popup::enabledChanged);
@@ -564,6 +587,8 @@ bool Popup::changeState(State state) {
     const auto old = m_state;
     m_state        = state;
     QPointer<Popup> guard(this);
+    updateOpacityLayer();
+    if (! guard || m_state != state) return false;
     if ((old == Closed) != (state == Closed)) Q_EMIT visibleChanged();
     if (! guard || m_state != state) return false;
     if ((old == Entering) != (state == Entering)) Q_EMIT enteringChanged();
@@ -572,6 +597,52 @@ bool Popup::changeState(State state) {
     if (! guard || m_state != state) return false;
     if ((old == Closing) != (state == Closing)) Q_EMIT closingChanged();
     return guard && m_state == state;
+}
+
+void Popup::updateOpacityLayer() {
+    const auto  alpha  = opacity();
+    const auto* window = m_surface->window();
+    const bool  fading =
+        (entering() || closing()) && alpha > 0 && alpha < 1 && m_surface->isVisible() && window &&
+        window->rendererInterface()->graphicsApi() != QSGRendererInterface::Software;
+    if (! fading && ! m_opacityEffect) return;
+
+    QPointer<QQuickItemLayer> layer(QQuickItemPrivate::get(m_surface)->layer());
+    const bool                owned = m_opacityEffect && layer->effect() == m_opacityEffect;
+    if (! fading) {
+        if (owned) {
+            layer->setEnabled(false);
+            if (layer) layer->setEffect(nullptr);
+            if (layer) layer->setSourceRect({});
+        }
+        return;
+    }
+    // Leave explicitly configured effects and layers in the caller's hands.
+    if (! owned && (layer->enabled() || layer->effect() || ! layer->sourceRect().isNull() ||
+                    layer->name() != QByteArrayLiteral("source")))
+        return;
+    if (! m_opacityEffect) {
+        auto* engine = qmlEngine(this);
+        if (! engine) return;
+        if (! m_opacityEffectOwner) {
+            QQmlComponent factory(
+                engine, QUrl(QStringLiteral("qrc:/Qcm/Material/qml/popup/PopupOpacityEffect.qml")));
+            if (! factory.isReady()) return;
+            m_opacityEffectOwner.reset(factory.create());
+            if (! m_opacityEffectOwner) return;
+        }
+        m_opacityEffect = m_opacityEffectOwner->property("effect").value<QQmlComponent*>();
+    }
+    if (! m_opacityEffect || ! m_opacityEffect->isReady()) return;
+
+    QRectF bounds = m_surface->boundingRect();
+    addPaintBounds(m_surface, m_surface, bounds);
+    if (bounds.isEmpty()) return;
+    const QPointer<Popup> guard(this);
+    layer->setSourceRect(bounds.toAlignedRect());
+    if (! guard || ! layer) return;
+    if (! owned) layer->setEffect(m_opacityEffect);
+    if (guard && layer) layer->setEnabled(true);
 }
 bool Popup::acquirePresentation(QObject* owner) {
     if (! owner || (m_presentationOwner && m_presentationOwner != owner)) return false;

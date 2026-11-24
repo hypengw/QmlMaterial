@@ -453,6 +453,7 @@ private:
     void                                 updateOverlay();
     void                                 finishClose();
     void                                 startTransition(bool);
+    void                                 updateOpacityLayer();
     QPointer<QQuickItem>                 m_anchor;
     std::unique_ptr<PopupAnchorObserver> m_anchorObserver;
     QList<QMetaObject::Connection>       m_anchorConnections;
@@ -469,6 +470,8 @@ private:
     QList<QMetaObject::Connection>       m_positioningConnections;
     QPointer<QQuickTransition>           m_enter, m_exit;
     std::unique_ptr<PopupMotion>         m_motion;
+    std::unique_ptr<QObject>             m_opacityEffectOwner;
+    QPointer<QQmlComponent>              m_opacityEffect;
     State                                m_state          = Closed;
     bool                                 m_dismissing     = false;
     bool                                 m_finishingClose = false;

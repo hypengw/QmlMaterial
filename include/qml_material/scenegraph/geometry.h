@@ -51,7 +51,8 @@ auto create_rectangle_geometry() -> up<QSGGeometry>;
 void update_rectangle_geometry(RectangleVertex* vertexs, QVector2D size, QRgb color,
                                QVector4D radius);
 
-auto create_blur_mask_geometry() -> up<QSGGeometry>;
+auto  create_blur_mask_geometry() -> up<QSGGeometry>;
+float blur_mask_margin(float sigma) noexcept;
 /// Populate 54 `BasicVertex`es for a blurred rrect.
 /// `rect_size` is the original rect size; mesh is expanded by `3 * sigma` per side
 /// so the gaussian tail is covered. Vertex positions are in item-local coords where
@@ -64,6 +65,11 @@ struct ShadowVertex : BasicVertex {
     float offset_x;
     float offset_y;
     float distance_correction;
+    float occluder_x;
+    float occluder_y;
+    float occluder_width;
+    float occluder_height;
+    float occluder_radii[4];
 
     void set_offset(QVector2D v) noexcept {
         offset_x = v.x();
@@ -96,6 +102,7 @@ struct ShadowParams {
     uint32_t  flags { 0 };
     QVector4D radius;
 };
-void update_shadow_geometry(QSGGeometry* geo, const ShadowParams& params, const QRectF& rect);
+void   update_shadow_geometry(QSGGeometry* geo, const ShadowParams& params, const QRectF& rect);
+QRectF shadow_bounds(const ShadowParams& params, const QRectF& rect);
 
 } // namespace qml_material::sg
