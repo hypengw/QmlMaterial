@@ -8,6 +8,13 @@ import Qcm.Material as MD
 MD.MenuBase {
     id: control
 
+    enum Variant {
+        Vertical,
+        Baseline
+    }
+
+    property int variant: (parentMenu as Menu)?.variant ?? Menu.Variant.Vertical
+    property bool vibrant: (parentMenu as MD.Menu)?.vibrant ?? false
     property alias mdState: item_state
     property real maximumWidth: 280
     readonly property bool cascade: true
@@ -16,6 +23,7 @@ MD.MenuBase {
     property list<Item> __ownedItems
     property list<Item> __entryOwnedItems
     property bool __entriesDirty: true
+    readonly property var __itemWidths: new Map()
 
     function insertAction(index: int, action: MD.Action) {
         const item = delegate.createObject(contentItem, {
@@ -107,7 +115,86 @@ MD.MenuBase {
         __entriesDirty = true;
         Qt.callLater(__syncEntries);
     }
-    onAboutToPrepare: __syncEntries()
+    onCountChanged: __syncItemWidths()
+    onAboutToPrepare: {
+        __syncEntries();
+        __syncItemWidths();
+    }
+
+    function __syncItemWidths() {
+        const items = new Set();
+        for (let index = 0; index < count; ++index)
+            items.add(itemAt(index));
+
+        for (const [item, binding] of __itemWidths) {
+            if (!items.has(item)) {
+                binding.when = false;
+                binding.destroy();
+                __itemWidths.delete(item);
+            }
+        }
+        for (const item of items) {
+            if (!__itemWidths.has(item))
+                __itemWidths.set(item, itemWidthBinding.createObject(control, {
+                    target: item
+                }));
+        }
+    }
+
+    readonly property var __groups: {
+        if (variant !== Menu.Variant.Vertical)
+            return [];
+
+        const groups = [];
+        let first = null;
+        let last = null;
+        for (let index = 0; index < count; ++index) {
+            const item = itemAt(index);
+            if (!item?.visible)
+                continue;
+            if (item instanceof MD.MenuSeparator && item.gap) {
+                if (first)
+                    groups.push({
+                        first,
+                        last,
+                        start: first.y,
+                        end: last.y + last.height
+                    });
+                first = null;
+            } else {
+                first = first ?? item;
+                last = item;
+            }
+        }
+        if (first)
+            groups.push({
+                first,
+                last,
+                start: first.y,
+                end: last.y + last.height
+            });
+        return groups;
+    }
+
+    readonly property bool __submenuActive: {
+        if (variant !== Menu.Variant.Vertical)
+            return false;
+        for (let index = 0; index < count; ++index) {
+            const item = itemAt(index);
+            const child = item?.subMenu;
+            if (child?.visible && !child.closing && child.anchorItem === item)
+                return true;
+        }
+        return false;
+    }
+
+    property real __outerRadius: variant === Menu.Variant.Baseline || __submenuActive ? MD.MenuMetrics.itemRadius : MD.MenuMetrics.containerRadius
+    Behavior on __outerRadius {
+        NumberAnimation {
+            duration: MD.Token.duration.short3
+            easing: MD.Token.easing.standard
+        }
+    }
 
     implicitWidth: {
         const preferredWidth = Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding);
@@ -117,7 +204,7 @@ MD.MenuBase {
 
     margins: anchorItem ? 8 : 0
     anchorGap: 4
-    verticalPadding: 8
+    verticalPadding: variant === Menu.Variant.Baseline ? MD.MenuMetrics.baselineVerticalPadding : MD.MenuMetrics.verticalInset
 
     transformOrigin: anchorItem ? anchorTransformOrigin : (!cascade ? Item.Top : (mirrored ? Item.TopRight : Item.TopLeft))
 
@@ -159,6 +246,9 @@ MD.MenuBase {
     }
 
     contentItem: MD.ListView {
+        id: menuView
+        readonly property MD.Menu menu: control
+        spacing: control.variant === Menu.Variant.Vertical ? MD.MenuMetrics.verticalInset : 0
         implicitWidth: {
             let preferredWidth = 0;
             for (let index = 0; index < control.count; ++index) {
@@ -191,29 +281,43 @@ MD.MenuBase {
         onObjectRemoved: (index, object) => control.takeItem(control.indexOf(object))
     }
 
-    Instantiator {
-        model: control.count
-        delegate: QtObject {
-            required property int index
-            readonly property Item item: {
-                const count = control.count;
-                return index < count ? control.itemAt(index) : null;
-            }
-            property Binding itemWidth: Binding {
-                target: item
-                property: "width"
-                value: control.availableWidth
-                when: item !== null
-            }
+    Component {
+        id: itemWidthBinding
+        Binding {
+            property: "width"
+            value: control.availableWidth
+            restoreMode: Binding.RestoreBindingOrValue
         }
     }
 
     background: MD.ElevationRectangle {
-        implicitWidth: 200
+        implicitWidth: control.variant === Menu.Variant.Baseline ? 112 : 200
         implicitHeight: 48
-        radius: MD.Token.shape.corner.extra_small
-        color: control.mdState.backgroundColor
+        radius: control.__outerRadius
+        color: control.__groups.length > 1 ? "transparent" : control.mdState.backgroundColor
         elevation: control.mdState.elevation
+
+        Item {
+            anchors.fill: parent
+            visible: control.__groups.length > 1
+            clip: menuView.contentHeight > menuView.height
+
+            Repeater {
+                model: control.__groups.length > 1 ? control.__groups : []
+                MD.ElevationRectangle {
+                    required property var modelData
+                    required property int index
+                    readonly property real innerRadius: Math.min(control.__outerRadius, MD.MenuMetrics.groupRadius)
+
+                    width: parent.width
+                    y: menuView.y + modelData.start - menuView.contentY - MD.MenuMetrics.verticalInset
+                    height: Math.max(0, modelData.end - modelData.start) + MD.MenuMetrics.verticalInset * 2
+                    corners: MD.Util.corners(index === 0 ? control.__outerRadius : innerRadius, index === 0 ? control.__outerRadius : innerRadius, index === control.__groups.length - 1 ? control.__outerRadius : innerRadius, index === control.__groups.length - 1 ? control.__outerRadius : innerRadius)
+                    color: control.mdState.backgroundColor
+                    elevation: control.mdState.elevation
+                }
+            }
+        }
     }
 
     MD.Overlay.modal: Rectangle {
@@ -241,8 +345,13 @@ MD.MenuBase {
 
         target: control
         elevation: MD.Token.elevation.level2
-        textColor: control.MD.MProp.color.on_surface
-        backgroundColor: control.MD.MProp.color.surface_container
-        supportTextColor: control.MD.MProp.color.on_surface_variant
+        textColor: control.variant === Menu.Variant.Vertical && control.vibrant ? control.MD.MProp.color.on_tertiary_container : control.MD.MProp.color.on_surface
+        backgroundColor: {
+            const colors = control.MD.MProp.color;
+            if (control.variant === Menu.Variant.Baseline)
+                return colors.surface_container;
+            return control.vibrant ? colors.tertiary_container : colors.surface_container_low;
+        }
+        supportTextColor: control.variant === Menu.Variant.Vertical && control.vibrant ? control.MD.MProp.color.on_tertiary_container : control.MD.MProp.color.on_surface_variant
     }
 }

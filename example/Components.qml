@@ -1039,23 +1039,36 @@ MD.Page {
                                 MD.Menu {
                                     id: m_menu
                                     width: 240
+                                    property int selectedIndex: 1
+
                                     MD.MenuItem {
-                                        text: 'First'
+                                        text: 'Preview'
+                                        icon.name: MD.Token.icon.visibility
                                     }
                                     MD.SelectionMenuItem {
-                                        selected: m_menu.currentIndex === 1
-                                        onSelectionRequested: m_menu.currentIndex = 1
-                                        text: 'Second'
+                                        selected: m_menu.selectedIndex === 1
+                                        onSelectionRequested: m_menu.selectedIndex = 1
+                                        text: 'List view'
+                                        trailingText: 'Ctrl+1'
+                                    }
+                                    MD.SelectionMenuItem {
+                                        selected: m_menu.selectedIndex === 2
+                                        onSelectionRequested: m_menu.selectedIndex = 2
+                                        text: 'Grid view'
+                                        trailingText: 'Ctrl+2'
+                                    }
+                                    MD.MenuSeparator {
+                                        gap: true
+                                    }
+                                    MD.MenuLabel {
+                                        text: 'Options'
                                     }
                                     MD.ToggleMenuItem {
-                                        property bool enabledChoice: false
-                                        checked: enabledChoice
-                                        onCheckedChangeRequested: value => enabledChoice = value
-                                        text: 'Third'
-                                    }
-                                    MD.MenuItem {
-                                        text: 'long long long long long long long long long'
-                                        icon.name: MD.Token.icon.description
+                                        id: detailsItem
+                                        checked: true
+                                        onCheckedChangeRequested: value => detailsItem.checked = value
+                                        text: 'Show details'
+                                        supportText: 'Include file metadata'
                                     }
                                 }
                             }

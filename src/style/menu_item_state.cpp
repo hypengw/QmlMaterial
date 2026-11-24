@@ -10,13 +10,31 @@ MenuItemState::MenuItemState(QObject* parent): ButtonInteractionState(parent) {
     base.bind(m_appearance.elevation, [this]() -> qreal {
         return elevationTokens().level2;
     });
-    base.bind(m_appearance.textColor, colorBinding(&MdColorMgr::on_surface));
-    base.bind(m_appearance.backgroundColor, [this] {
-        return selected() ? color(&MdColorMgr::secondary_container) : QColor(Qt::transparent);
+    const auto foreground = [this](auto standard) {
+        if (! expressive()) return color(standard);
+        if (vibrant()) {
+            return selected() ? color(&MdColorMgr::on_tertiary)
+                              : color(&MdColorMgr::on_tertiary_container);
+        }
+        return selected() ? color(&MdColorMgr::on_tertiary_container) : color(standard);
+    };
+    base.bind(m_appearance.textColor, [foreground] {
+        return foreground(&MdColorMgr::on_surface);
     });
-    base.bind(m_appearance.supportTextColor, colorBinding(&MdColorMgr::on_surface_variant));
-    base.bind(m_leadingKey, colorBinding(&MdColorMgr::on_surface));
-    base.bind(m_trailingKey, colorBinding(&MdColorMgr::on_surface));
+    base.bind(m_appearance.backgroundColor, [this] {
+        if (! selected()) return QColor(Qt::transparent);
+        if (! expressive()) return color(&MdColorMgr::surface_container_highest);
+        return vibrant() ? color(&MdColorMgr::tertiary) : color(&MdColorMgr::tertiary_container);
+    });
+    auto supporting = [foreground] {
+        return foreground(&MdColorMgr::on_surface_variant);
+    };
+    base.bind(m_appearance.supportTextColor, supporting);
+    base.bind(m_leadingKey, supporting);
+    base.bind(m_trailingKey, supporting);
+    base.bind(m_appearance.stateLayerColor, [foreground] {
+        return foreground(&MdColorMgr::on_surface);
+    });
     auto disabled = disabledBindings();
     disabled.bind(m_appearance.elevation, [this]() -> qreal {
         return elevationTokens().level0;
@@ -25,12 +43,6 @@ MenuItemState::MenuItemState(QObject* parent): ButtonInteractionState(parent) {
         return qreal(.38);
     });
     bindStateLayerOpacity();
-    auto active = appearanceWhen([this] {
-        return pressed() || hovered() || visualFocus();
-    });
-    active.bind(m_leadingKey, colorBinding(&MdColorMgr::on_surface_variant));
-    active.bind(m_trailingKey, colorBinding(&MdColorMgr::on_surface_variant));
-    active.bind(m_appearance.stateLayerColor, colorBinding(&MdColorMgr::on_surface));
 }
 ButtonControl*  MenuItemState::item() const { return inputItem(); }
 void            MenuItemState::setItem(ButtonControl* item) { setInputItem(item, {}, {}); }

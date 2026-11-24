@@ -96,7 +96,7 @@ private slots:
                 readonly property int lightMode: MD.Enum.Light
                 property int savedMode
                 property bool savedSystem
-                readonly property color expectedSurface: MD.MProp.color.surface_container
+                readonly property color expectedSurface: %2
                 readonly property color expectedText: MD.MProp.color.on_surface
                 readonly property color expectedSupport: MD.MProp.color.on_surface_variant
                 MD.MProp.color: useLocal ? localColors : MD.Token.color
@@ -135,7 +135,10 @@ private slots:
                 }
             }
         )")
-                              .arg(type)
+                              .arg(type,
+                                   type == QStringLiteral("Menu")
+                                       ? QStringLiteral("MD.MProp.color.surface_container_low")
+                                       : QStringLiteral("MD.MProp.color.surface_container"))
                               .toUtf8(),
                           QUrl(QStringLiteral("qrc:/tests/popup-local-palette.qml")));
         std::unique_ptr<QObject> object(component.create());
@@ -165,7 +168,7 @@ private slots:
         };
         QTRY_COMPARE(popup->background()->property("color"), root->property("expectedSurface"));
         QVERIFY(matches(popup));
-        QCOMPARE(row->property("leadingIconColor"), root->property("expectedText"));
+        QCOMPARE(row->property("leadingIconColor"), root->property("expectedSupport"));
         if (auto* menu = qobject_cast<qml_material::Menu*>(popup)) {
             menu->openSubMenu(submenu, menu->itemAt(1));
             QTRY_VERIFY(submenu->isVisible());
@@ -177,6 +180,62 @@ private slots:
         QTRY_VERIFY(matches(popup));
         if (submenu->isVisible()) QTRY_VERIFY(matches(submenu));
         popup->close();
+    }
+
+    void expressiveMenuGroupsAndPalette() {
+        QQmlComponent component(&m_engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            Item {
+                width: 500
+                height: 400
+                MD.Menu {
+                    objectName: "menu"
+                    width: 220
+                    enter: null
+                    exit: null
+                    readonly property color expectedBackground: MD.MProp.color.tertiary_container
+                    readonly property color expectedSelection: MD.MProp.color.tertiary
+                    readonly property color expectedSelectionText: MD.MProp.color.on_tertiary
+                    MD.MenuItem { text: "Open" }
+                    MD.MenuSeparator { objectName: "separator"; gap: true }
+                    MD.MenuLabel { text: "View" }
+                    MD.SelectionMenuItem {
+                        text: "Details"
+                        supportText: "Show metadata"
+                        trailingText: "Ctrl+D"
+                        selected: true
+                    }
+                }
+            }
+        )",
+                          QUrl(QStringLiteral("qrc:/tests/expressive-menu.qml")));
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* root = qobject_cast<QQuickItem*>(object.get());
+        QVERIFY(root);
+        root->setParentItem(m_window.contentItem());
+        auto* menu = root->findChild<qml_material::Menu*>(QStringLiteral("menu"));
+        QVERIFY(menu);
+        menu->open();
+        QTRY_COMPARE(menu->count(), 4);
+        for (int index = 0; index < menu->count(); ++index)
+            QTRY_COMPARE(menu->itemAt(index)->width(), menu->availableWidth());
+        QTRY_COMPARE(menu->itemAt(1)->height(), 2.0);
+        QTRY_COMPARE(menu->itemAt(2)->y(), menu->itemAt(0)->height() + 6.0);
+        QTRY_COMPARE(menu->background()->property("color").value<QColor>(),
+                     QColor(Qt::transparent));
+
+        QVERIFY(menu->setProperty("vibrant", true));
+        auto* style = menu->itemAt(3)->property("mdState").value<QObject*>();
+        QVERIFY(style);
+        QTRY_COMPARE(style->property("backgroundColor"), menu->property("expectedSelection"));
+        QCOMPARE(style->property("textColor"), menu->property("expectedSelectionText"));
+
+        QVERIFY(menu->itemAt(1)->setProperty("gap", false));
+        QTRY_COMPARE(menu->background()->property("color"), menu->property("expectedBackground"));
+        menu->close();
     }
 
     void menuItemBusyReplacesIcon() {

@@ -1,12 +1,15 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import Qcm.Material as MD
-import Qcm.Material.Layouts as Lite
 
 MD.SelectionMenuItemBase {
     id: control
 
     property alias arrow: defaultStyle.arrow
+    property alias supportText: defaultStyle.supportText
+    property alias trailingText: defaultStyle.trailingText
+    property alias trailingIcon: defaultStyle.trailingIcon
+    property alias badge: defaultStyle.badge
     property bool highlighted: false
     property int busy: MD.Enum.Idle
     property real progress: 0
@@ -21,12 +24,13 @@ MD.SelectionMenuItemBase {
     implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, implicitContentWidth + leftPadding + rightPadding)
     implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, implicitContentHeight + topPadding + bottomPadding, implicitIndicatorHeight + topPadding + bottomPadding)
 
-    padding: 16
+    padding: MD.MenuMetrics.horizontalPadding + (mdState.expressive ? MD.MenuMetrics.horizontalInset : 0)
     verticalPadding: 0
-    spacing: 16
+    spacing: mdState.expressive ? MD.MenuMetrics.spacing : MD.MenuMetrics.baselineSpacing
+    hoverEnabled: true
 
-    icon.width: 24
-    icon.height: 24
+    icon.width: mdState.expressive ? MD.MenuMetrics.iconSize : MD.MenuMetrics.baselineIconSize
+    icon.height: icon.width
     icon.color: control.leadingIconColor
     icon.fill: control.selected
 

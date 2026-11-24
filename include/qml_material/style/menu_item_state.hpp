@@ -9,6 +9,8 @@ class QML_MATERIAL_API MenuItemState : public ButtonInteractionState {
     Q_PROPERTY(qml_material::ButtonControl* item READ item WRITE setItem NOTIFY itemChanged FINAL)
     Q_PROPERTY(bool selected READ selected WRITE setSelected NOTIFY selectedChanged BINDABLE
                    bindableSelected FINAL)
+    Q_PROPERTY(bool expressive READ expressive WRITE setExpressive NOTIFY expressiveChanged FINAL)
+    Q_PROPERTY(bool vibrant READ vibrant WRITE setVibrant NOTIFY vibrantChanged FINAL)
     Q_PROPERTY(QColor leadingIconColor READ leadingIconColor WRITE setLeadingIconColor RESET
                    resetLeadingIconColor NOTIFY leadingIconColorChanged BINDABLE
                        bindableLeadingIconColor FINAL)
@@ -22,6 +24,10 @@ public:
     bool              selected() const;
     void              setSelected(bool);
     QBindable<bool>   bindableSelected();
+    bool              expressive() const { return m_expressive; }
+    void              setExpressive(bool value) { m_expressive = value; }
+    bool              vibrant() const { return m_vibrant; }
+    void              setVibrant(bool value) { m_vibrant = value; }
     QColor            leadingIconColor() const;
     void              setLeadingIconColor(const QColor&);
     Q_INVOKABLE void  resetLeadingIconColor();
@@ -31,12 +37,17 @@ public:
     Q_INVOKABLE void  resetTrailingIconColor();
     QBindable<QColor> bindableTrailingIconColor();
     Q_SIGNAL void     selectedChanged();
+    Q_SIGNAL void     expressiveChanged();
+    Q_SIGNAL void     vibrantChanged();
     Q_SIGNAL void     leadingIconColorChanged();
     Q_SIGNAL void     trailingIconColorChanged();
 
 private:
     Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(MenuItemState, bool, m_selected, false,
                                          &MenuItemState::selectedChanged)
+    Q_OBJECT_BINDABLE_PROPERTY_WITH_ARGS(MenuItemState, bool, m_expressive, true,
+                                         &MenuItemState::expressiveChanged)
+    Q_OBJECT_BINDABLE_PROPERTY(MenuItemState, bool, m_vibrant, &MenuItemState::vibrantChanged)
     Q_OBJECT_BINDABLE_PROPERTY(MenuItemState, QColor, m_leadingIconColor,
                                &MenuItemState::leadingIconColorChanged)
     Q_OBJECT_BINDABLE_PROPERTY(MenuItemState, QColor, m_trailingIconColor,

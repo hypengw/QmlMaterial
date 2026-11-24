@@ -615,6 +615,8 @@ set(QML_FILES
     qml/popup/Menu.qml
     qml/popup/MenuItem.qml
     qml/popup/MenuItemStyle.qml
+    qml/popup/MenuMetrics.qml
+    qml/popup/MenuLabel.qml
     qml/popup/SelectionMenuItem.qml
     qml/popup/ToggleMenuItem.qml
     qml/popup/ActionMenuItem.qml
@@ -781,6 +783,7 @@ list(APPEND RESOURCES "${QM_ICON_FILL_0_FONT_FILE}"
 
 set_source_files_properties(qml/Token.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 set_source_files_properties(qml/Util.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+set_source_files_properties(qml/popup/MenuMetrics.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 include_directories(include)
 
 set(LAYOUT_LIBNAME qml_material_layouts)
