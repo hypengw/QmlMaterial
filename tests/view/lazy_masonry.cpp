@@ -248,6 +248,79 @@ private slots:
         QCOMPARE(s.view.itemRect(s.source.indexOfKey(key)).height(), 55.0);
         QVERIFY(s.view.errorString().isEmpty());
     }
+    void resizingRetainsVisibleDelegates_data() {
+        QTest::addColumn<qreal>("minimumRatio");
+        QTest::addColumn<qreal>("cache");
+        QTest::newRow("landscape-no-cache") << qreal(1.4) << qreal(0);
+        QTest::newRow("landscape-cache") << qreal(1.4) << qreal(300);
+        QTest::newRow("mixed-no-cache") << qreal(0.45) << qreal(0);
+        QTest::newRow("mixed-cache") << qreal(0.45) << qreal(300);
+    }
+    void resizingRetainsVisibleDelegates() {
+        QFETCH(qreal, minimumRatio);
+        QFETCH(qreal, cache);
+        auto values = rows(2000);
+        for (int index = 0; index < values.size(); ++index) {
+            auto value     = values[index].toMap();
+            value["ratio"] = minimumRatio + (index * 7 % 19) / 8.0;
+            values[index]  = value;
+        }
+        QSet<QString> pooled;
+        Scene         s(values, R"(
+            import QtQuick
+            Item {
+                required property QtObject row
+                implicitHeight: Math.max(64, width / row.value.ratio)
+            }
+        )");
+        s.view.setSize({ 900, 600 });
+        s.view.setMinimumCellExtent(140);
+        s.view.setEstimatedItemExtent(140);
+        s.view.setCacheExtent(cache);
+        s.view.setCachePreparationBudget(1000);
+        frames(s.render);
+        QVERIFY(s.view.positionAtKey("300"));
+        frames(s.render);
+        for (qreal width : { 920, 880, 910, 900, 760, 970 }) {
+            QHash<QString, QPointer<QQuickItem>> visible;
+            QList<QMetaObject::Connection>       connections;
+            pooled.clear();
+            for (int index : s.view.currentDemand().indices()) {
+                if (! s.view.itemRect(index).intersects(s.view.boundingRect())) continue;
+                const auto key  = s.view.keyAtIndex(index);
+                auto*      item = s.item(key);
+                QVERIFY(item);
+                visible.insert(key, item);
+                connections.append(connect(item->property("row").value<LazyRow*>(),
+                                           &LazyRow::pooled,
+                                           &s.view,
+                                           [&pooled, key] {
+                                               pooled.insert(key);
+                                           }));
+            }
+            s.view.setWidth(width);
+            frames(s.render);
+            int retained = 0;
+            for (int index : s.view.currentDemand().indices()) {
+                if (! s.view.itemRect(index).intersects(s.view.boundingRect())) continue;
+                const auto key  = s.view.keyAtIndex(index);
+                auto*      item = s.item(key);
+                QVERIFY(item);
+                QCOMPARE(item->width(), s.view.cellCrossExtent());
+                const auto ratio = s.source.valueAt(index).toMap().value("ratio").toReal();
+                QCOMPARE(s.view.itemRect(index).height(),
+                         std::max(qreal(64), item->width() / ratio));
+                if (! visible.contains(key)) continue;
+                ++retained;
+                QVERIFY2(! pooled.contains(key),
+                         qPrintable(QStringLiteral("%1 at width %2").arg(key).arg(width)));
+                QCOMPARE(s.item(key), visible.value(key).data());
+            }
+            QVERIFY(retained > 0);
+            for (const auto& connection : connections) disconnect(connection);
+            QVERIFY(s.view.errorString().isEmpty());
+        }
+    }
     void measurementValidity() {
         ListSnapshotSource source;
         source.setKeyRole("id");

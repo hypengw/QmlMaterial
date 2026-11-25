@@ -544,8 +544,8 @@ void LazyView::updatePolish() {
         if (! current()) return;
     }
     qreal offset = primaryOffset();
-    if (state->apply) {
-        state->apply        = false;
+    const bool applied = std::exchange(state->apply, false);
+    if (applied) {
         const auto values   = std::exchange(state->pendingValues, {});
         const auto viewport = primarySize() - startMargin() - endMargin();
         const auto result =
@@ -571,17 +571,41 @@ void LazyView::updatePolish() {
         ! limited ||
         (visibleBeforeMeasurement.first >= 0 &&
          state->live.contains(snapshot->descriptorAt(visibleBeforeMeasurement.first).key));
-    const auto dirty = std::exchange(state->dirtyMeasurements, {});
-    for (const auto& key : dirty) {
+    auto dirty        = std::exchange(state->dirtyMeasurements, {});
+    bool crossChanged = false;
+    if (applied && ! state->layout->fixedItemExtent()) {
+        // Remeasure retained delegates before estimates decide which rows to recycle.
+        for (auto it = state->live.cbegin(); it != state->live.cend(); ++it) {
+            const int index = snapshot->indexOfKey(it.key());
+            if (it.value() && index >= 0 && state->layout->needsMeasurement(index) &&
+                itemCrossSize(it.value()) != state->layout->rect(index).width()) {
+                dirty.insert(it.key());
+                crossChanged = true;
+            }
+        }
+    }
+    auto orderedDirty = dirty.values();
+    std::sort(orderedDirty.begin(), orderedDirty.end(), [&](const auto& a, const auto& b) {
+        return snapshot->indexOfKey(a) < snapshot->indexOfKey(b);
+    });
+    for (const auto& key : orderedDirty) {
         const auto item  = state->live.value(key);
         const int  index = snapshot->indexOfKey(key);
-        if (! item || index < 0 || itemCrossSize(item) != state->layout->rect(index).width())
-            continue;
+        if (! item || index < 0) continue;
         const auto row = state->recycler->row(item);
         if (! row || row->revision() != snapshot->revision) continue;
+        if (itemCrossSize(item) != state->layout->rect(index).width()) {
+            if (state->layout->fixedItemExtent()) continue;
+            state->recycler->layout(item, itemGeometry(index), state->orientation);
+            if (! current()) return;
+            if (! item) continue;
+        }
         const auto measured = state->layout->measure(index, itemExtent(item), offset);
         // A budget-limited empty viewport has no measured anchor to preserve.
-        if (measured.accepted && preserveAnchor) offset = measured.offset;
+        if (measured.accepted) {
+            state->dirtyMeasurements.remove(key);
+            if (preserveAnchor) offset = measured.offset;
+        }
     }
     if (state->position) {
         const auto& request = *state->position;
@@ -643,13 +667,17 @@ void LazyView::updatePolish() {
     std::stable_partition(indexes.begin(), indexes.end(), urgentIndex);
     state->recycler->retainPreparations(state->delegate, snapshot, wanted);
     if (! current()) return;
-    for (const auto& key : state->live.keys()) {
-        if (wanted.contains(key) && state->live[key]) continue;
-        auto item = state->live.take(key);
-        for (const auto& connection : state->connections.take(key)) disconnect(connection);
-        if (item) state->recycler->release(item);
-        if (! current()) return;
-    }
+    const auto recycleUnwanted = [&] {
+        for (const auto& key : state->live.keys()) {
+            if (wanted.contains(key) && state->live[key]) continue;
+            auto item = state->live.take(key);
+            for (const auto& connection : state->connections.take(key)) disconnect(connection);
+            if (item) state->recycler->release(item);
+            if (! current()) return false;
+        }
+        return true;
+    };
+    if (! crossChanged && ! recycleUnwanted()) return;
     state->error = (state->source ? state->source->errorString() : QString());
     if (state->delegate && state->delegate->isError())
         state->error = state->delegate->errorString();
@@ -787,13 +815,13 @@ void LazyView::updatePolish() {
                 continue;
             const auto item = state->live.value(key);
             const auto row  = state->recycler->row(item);
-            if (item && row && row->revision() == snapshot->revision && row->index() == index &&
-                ! state->dirtyMeasurements.contains(key) && ! layout.needsMeasurement(index))
-                continue;
             if (! wanted.contains(key)) {
                 wanted.insert(key);
                 indexes.append(index);
             }
+            if (item && row && row->revision() == snapshot->revision && row->index() == index &&
+                ! state->dirtyMeasurements.contains(key) && ! layout.needsMeasurement(index))
+                continue;
             work.append(index);
         }
     }
@@ -839,6 +867,7 @@ void LazyView::updatePolish() {
                       this);
         if (! current()) return;
     }
+    if (crossChanged && ! recycleUnwanted()) return;
     if (! layout.fixedItemExtent() &&
         (state->zeroWork >= 256 ||
          (processed == 256 && start + processed < layout.count() && ! layout.discreteItems() &&
