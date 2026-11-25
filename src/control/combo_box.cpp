@@ -141,14 +141,15 @@ void ComboBox::ensureModel() {
         m_data.get(), &ComboBoxModel::delegateModelChanged, this, &ComboBox::delegateModelChanged);
     connect(m_data.get(), &ComboBoxModel::countChanged, this, [this]() {
         QPointer<ComboBox> guard(this);
-        if (m_ready && ! m_accepting && count() == 0 && m_selection != Selection::Value)
+        if (m_ready && ! m_accepting && count() == 0 && m_selection == Selection::None)
             publish(-1, {});
         if (guard) Q_EMIT countChanged();
     });
     connect(m_data.get(), &ComboBoxModel::modelChanged, this, [this]() {
         QPointer<ComboBox> guard(this);
         if (m_ready && ! m_accepting) {
-            if (m_selection == Selection::Value)
+            // A late model must not replace the owner's explicit selection.
+            if (m_selection != Selection::None)
                 synchronize();
             else
                 publish(count() > 0 ? 0 : -1, valueAt(0));

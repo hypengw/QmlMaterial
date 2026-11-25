@@ -1,7 +1,9 @@
 #include <QtTest>
 #include <QQmlComponent>
+#include <QQmlContext>
 #include <QQmlEngine>
 #include <QQuickWindow>
+#include <QStandardItemModel>
 #include "qml_material/control/combo_box.hpp"
 #include "qml_material/control/navigation_rail.hpp"
 #include "qml_material/control/menu.hpp"
@@ -11,11 +13,20 @@
 #include "qml_material/control/action_command.hpp"
 #include "qml_material/style/slider_state.hpp"
 #include "qml_material/style/combo_box_state.hpp"
+#include "qml_material/view/lazy_list.hpp"
 #include "../input_test.hpp"
 
 using namespace qml_material;
 namespace
 {
+ComboBox* findCombo(QQuickItem* root, const QString& name) {
+    if (auto* combo = qobject_cast<ComboBox*>(root); combo && combo->objectName() == name)
+        return combo;
+    for (auto* child : root->childItems())
+        if (auto* combo = findCombo(child, name)) return combo;
+    return nullptr;
+}
+
 void mouse(QQuickItem* item, QEvent::Type type, QPointF point) {
     QMouseEvent event(type,
                       point,
@@ -32,6 +43,195 @@ class ComboBoxInputTest : public QObject {
     Q_OBJECT
 
 private slots:
+    void explicitIndexSurvivesModelChanges_data() {
+        QTest::addColumn<int>("selection");
+        QTest::newRow("selected") << 2;
+        QTest::newRow("cleared") << -1;
+    }
+
+    void explicitIndexSurvivesModelChanges() {
+        QFETCH(int, selection);
+        QQmlEngine engine;
+        engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));
+        QQmlComponent component(&engine);
+        component.setData(R"(
+            import QtQuick
+            import Qcm.Material as MD
+            Item {
+                id: owner
+                property int selection: 0
+                property var labels: []
+                MD.ComboBox {
+                    id: combo
+                    objectName: "combo"
+                    model: owner.labels
+                }
+                Binding {
+                    target: combo
+                    property: "currentIndex"
+                    value: owner.selection
+                }
+            }
+        )",
+                          QUrl());
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* combo = object->findChild<ComboBox*>("combo");
+        QVERIFY(combo);
+        QSignalSpy requests(combo, &ComboBox::selectionChangeRequested);
+        object->setProperty("selection", selection);
+        const auto check = [&] {
+            QCOMPARE(combo->currentIndex(), selection);
+            QCOMPARE(combo->currentText(), selection < 0 ? QString() : combo->textAt(selection));
+            QCOMPARE(object->property("selection").toInt(), selection);
+        };
+        object->setProperty("labels", QStringList { "One", "Two", "Three" });
+        check();
+        object->setProperty("labels", QStringList { "First", "Second", "Third" });
+        check();
+        object->setProperty("labels", QStringList {});
+        check();
+        object->setProperty("labels", QStringList { "One", "Two", "Three" });
+        check();
+        QCOMPARE(requests.size(), 0);
+    }
+
+    void implicitIndexFollowsModel() {
+        QQmlEngine engine;
+        engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));
+        QQmlComponent component(&engine);
+        component.setData(R"(
+            import Qcm.Material as MD
+            MD.ComboBox { property var labels: []; model: labels }
+        )",
+                          QUrl());
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        auto* combo = qobject_cast<ComboBox*>(object.get());
+        QVERIFY(combo);
+        QSignalSpy requests(combo, &ComboBox::selectionChangeRequested);
+        QCOMPARE(combo->currentIndex(), -1);
+        object->setProperty("labels", QStringList { "One", "Two", "Three" });
+        QCOMPARE(combo->currentIndex(), 0);
+        object->setProperty("labels", QStringList {});
+        QCOMPARE(combo->currentIndex(), -1);
+        object->setProperty("labels", QStringList { "First", "Second" });
+        QCOMPARE(combo->currentIndex(), 0);
+        QCOMPARE(combo->currentText(), QString("First"));
+        QCOMPARE(requests.size(), 0);
+    }
+
+    void lazyDelegateRecreationKeepsBoundIndex_data() {
+        QTest::addColumn<int>("poolLimit");
+        QTest::newRow("destroyed") << 0;
+        QTest::newRow("reused") << 16;
+    }
+
+    void lazyDelegateRecreationKeepsBoundIndex() {
+        QFETCH(int, poolLimit);
+        constexpr int      valueRole = Qt::UserRole + 1;
+        QStandardItemModel model(100, 1);
+        model.setItemRoleNames({ { Qt::UserRole, "key" },
+                                 { valueRole, "currentValue" },
+                                 { Qt::UserRole + 2, "optionLabels" },
+                                 { Qt::UserRole + 3, "optionValues" } });
+        for (int row = 0; row < model.rowCount(); ++row) {
+            const auto index = model.index(row, 0);
+            model.setData(index, QString::number(row), Qt::UserRole);
+            model.setData(index, "first", valueRole);
+            model.setData(index,
+                          QStringList { QString("One %1").arg(row),
+                                        QString("Two %1").arg(row),
+                                        QString("Three %1").arg(row) },
+                          Qt::UserRole + 2);
+            model.setData(index, QStringList { "first", "second", "third" }, Qt::UserRole + 3);
+        }
+        QQmlEngine engine;
+        engine.addImportPath(QStringLiteral(QM_QML_IMPORT_PATH));
+        engine.rootContext()->setContextProperty("testProperties", &model);
+        QQmlComponent component(&engine);
+        component.setData(R"(
+            pragma ComponentBehavior: Bound
+            import QtQuick
+            import Qcm.Material as MD
+            Item {
+                id: owner
+                width: 320; height: 200
+                property int poolLimit: 0
+                MD.VerticalLazyList {
+                    id: view
+                    objectName: "list"
+                    anchors.fill: parent
+                    cacheExtent: 0; cachePreparationBudget: 0; poolLimit: owner.poolLimit
+                    asynchronous: false
+                    footer: null
+                    source: MD.ItemModelSource {
+                        id: propertySource
+                        keyRole: "key"
+                        model: testProperties
+                    }
+                    delegate: Item {
+                        id: rowDelegate
+                        required property MD.LazyRow row
+                        readonly property string currentValue: row.value.currentValue
+                        readonly property var optionLabels: row.value.optionLabels
+                        readonly property var optionValues: row.value.optionValues
+                        implicitHeight: 64
+                        function optionIndex(value) {
+                            const values = rowDelegate.optionValues || [];
+                            for (let i = 0; i < values.length; ++i)
+                                if (String(values[i]) === String(value)) return i;
+                            return 0;
+                        }
+                        MD.ComboBox {
+                            id: combo
+                            objectName: "combo-" + rowDelegate.row.index
+                            width: 240
+                            model: rowDelegate.optionLabels || []
+                            onSelectionChangeRequested: index => propertySource.setRole(
+                                rowDelegate.row.key, "currentValue", String(rowDelegate.optionValues[index]))
+                        }
+                        Binding {
+                            target: combo
+                            property: "currentIndex"
+                            value: rowDelegate.optionIndex(rowDelegate.currentValue)
+                        }
+                    }
+                }
+            }
+        )",
+                          QUrl());
+        std::unique_ptr<QObject> object(component.create());
+        QVERIFY2(object, qPrintable(component.errorString()));
+        object->setProperty("poolLimit", poolLimit);
+        auto* view = object->findChild<LazyList*>("list");
+        QVERIFY(view);
+        QQuickWindow window;
+        window.resize(320, 200);
+        qobject_cast<QQuickItem*>(object.get())->setParentItem(window.contentItem());
+        window.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        QTRY_VERIFY(findCombo(view, "combo-0"));
+        auto* combo = findCombo(view, "combo-0");
+        combo->activateIndex(2);
+        QCOMPARE(model.data(model.index(0, 0), valueRole).toString(), QString("third"));
+        QTRY_VERIFY(([&] {
+            const auto current = findCombo(view, "combo-0");
+            return current && current->currentIndex() == 2;
+        })());
+        QPointer<ComboBox> previous(findCombo(view, "combo-0"));
+        QVERIFY(view->positionAtIndex(99));
+        QTRY_VERIFY(! findCombo(view, "combo-0"));
+        if (poolLimit == 0) QTRY_VERIFY(! previous);
+        QVERIFY(view->positionAtIndex(50));
+        QTRY_VERIFY(findCombo(view, "combo-50"));
+        QVERIFY(view->positionAtIndex(0));
+        QTRY_VERIFY(findCombo(view, "combo-0"));
+        QCOMPARE(model.data(model.index(0, 0), valueRole).toString(), QString("third"));
+        QCOMPARE(findCombo(view, "combo-0")->currentIndex(), 2);
+        QCOMPARE(findCombo(view, "combo-0")->currentText(), QString("Three 0"));
+    }
+
     void comboRequests_data() {
         QTest::addColumn<bool>("accept");
         QTest::newRow("reject") << false;
