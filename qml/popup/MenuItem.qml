@@ -7,6 +7,7 @@ MD.MenuItemBase {
 
     property alias arrow: defaultStyle.arrow
     property alias supportText: defaultStyle.supportText
+    property alias supporting: defaultStyle.supporting
     property alias trailingText: defaultStyle.trailingText
     property alias trailingIcon: defaultStyle.trailingIcon
     property alias badge: defaultStyle.badge

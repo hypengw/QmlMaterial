@@ -11,6 +11,7 @@ MD.StateMenuItem {
     vibrant: owner?.vibrant ?? false
 
     property string supportText
+    property Component supporting: null
     property string trailingText
     property string trailingIcon
     property Component badge
@@ -67,8 +68,8 @@ MD.StateMenuItem {
         }
 
         Item {
-            implicitWidth: Math.max(mainLabel.implicitWidth, style.supportText.length > 0 ? supportingLabel.implicitWidth : 0)
-            implicitHeight: mainLabel.implicitHeight + (style.supportText.length > 0 ? supportingLabel.implicitHeight : 0)
+            implicitWidth: Math.max(mainLabel.implicitWidth, style.supporting !== null ? supportingLoader.item?.implicitWidth ?? 0 : style.supportText.length > 0 ? supportingLabel.implicitWidth : 0)
+            implicitHeight: mainLabel.implicitHeight + (style.supporting !== null ? supportingLoader.item?.implicitHeight ?? 0 : style.supportText.length > 0 ? supportingLabel.implicitHeight : 0)
             Lite.Layout.fillWidth: true
 
             MD.Label {
@@ -86,12 +87,21 @@ MD.StateMenuItem {
                 id: supportingLabel
                 y: mainLabel.height
                 width: parent.width
-                visible: text.length > 0
+                visible: style.supporting === null && text.length > 0
                 text: style.supportText
                 color: control.mdState.supportTextColor
                 typescale: MD.Token.typescale.body_small
                 horizontalAlignment: control.mirrored ? Text.AlignRight : Text.AlignLeft
                 wrapMode: Text.NoWrap
+            }
+
+            MD.Loader {
+                id: supportingLoader
+                y: mainLabel.height
+                width: parent.width
+                active: style.supporting !== null
+                visible: active
+                sourceComponent: style.supporting
             }
         }
 
